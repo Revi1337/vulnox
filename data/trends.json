@@ -1,33 +1,5 @@
 [
   {
-    "id": "CVE-2026-0930",
-    "description": "Potential read out of bounds case with wolfSSHd on Windows while handling a terminal resize request. An authenticated user could trigger the out of bounds read after establishing a connection which would leak the adjacent stack memory to the pseudo-console output.",
-    "severity": "Medium",
-    "tech": "Wolfssh",
-    "published": "2026-04-20T22:16:23.210"
-  },
-  {
-    "id": "CVE-2026-22051",
-    "description": "StorageGRID (formerly StorageGRID Webscale) versions prior to 11.9.0.13 and 12.0.0.6 are susceptible to a Information Disclosure vulnerability. Successful exploit could allow an authenticated attacker with low privileges to run arbitrary metrics queries, revealing metric results that they do not have access to.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-20T22:16:23.367"
-  },
-  {
-    "id": "CVE-2026-29643",
-    "description": "XiangShan (Open-source high-performance RISC-V processor) commit edb1dfaf7d290ae99724594507dc46c2c2125384 (2024-11-28) contains an improper exceptional-condition handling flaw in its CSR subsystem (NewCSR). On affected versions, certain sequences of CSR operations targeting non-existent/custom CSR addresses may trigger an illegal-instruction exception but fail to reliably transfer control to the configured trap handler (mtvec), causing control-flow disruption and potentially leaving the core in a hung or unrecoverable state. This can be exploited by a local attacker able to execute code on the processor to cause a denial of service and potentially inconsistent architectural state.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-04-20T22:16:23.507"
-  },
-  {
-    "id": "CVE-2026-6729",
-    "description": "HKUDS OpenHarness prior to PR #159 remediation contains a session key derivation vulnerability that allows authenticated participants in shared chats or threads to hijack other users' sessions by exploiting a shared ohmo session key that lacks sender identity verification. Attackers can reuse another user's conversation state and replace or interrupt their active tasks by colliding into the same session boundary through the shared chat or thread scope.",
-    "severity": "Medium",
-    "tech": "Openharness",
-    "published": "2026-04-20T22:16:23.800"
-  },
-  {
     "id": "CVE-2026-34082",
     "description": "Dify is an open-source LLM app development platform. Prior to 1.13.1, the method `DELETE /console/api/installed-apps/<appId>/conversations/<conversationId>` has poor authorization checking and allows any Dify-authenticated user to delete someone else's chat history. Version 1.13.1 patches the issue.",
     "severity": "Medium",
@@ -19126,8 +19098,8 @@
   {
     "id": "CVE-2026-43068",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\next4: avoid allocate block from corrupted group in ext4_mb_find_by_goal()\n\nThere's issue as follows:\n...\nEXT4-fs (mmcblk0p1): Delayed block allocation failed for inode 206 at logical offset 0 with max blocks 1 with error 117\nEXT4-fs (mmcblk0p1): This should not happen!! Data will be lost\n\nEXT4-fs (mmcblk0p1): Delayed block allocation failed for inode 206 at logical offset 0 with max blocks 1 with error 117\nEXT4-fs (mmcblk0p1): This should not happen!! Data will be lost\n\nEXT4-fs (mmcblk0p1): Delayed block allocation failed for inode 206 at logical offset 0 with max blocks 1 with error 117\nEXT4-fs (mmcblk0p1): This should not happen!! Data will be lost\n\nEXT4-fs (mmcblk0p1): Delayed block allocation failed for inode 206 at logical offset 0 with max blocks 1 with error 117\nEXT4-fs (mmcblk0p1): This should not happen!! Data will be lost\n\nEXT4-fs (mmcblk0p1): Delayed block allocation failed for inode 2243 at logical offset 0 with max blocks 1 with error 117\nEXT4-fs (mmcblk0p1): This should not happen!! Data will be lost\n\nEXT4-fs (mmcblk0p1): Delayed block allocation failed for inode 2239 at logical offset 0 with max blocks 1 with error 117\nEXT4-fs (mmcblk0p1): This should not happen!! Data will be lost\n\nEXT4-fs (mmcblk0p1): error count since last fsck: 1\nEXT4-fs (mmcblk0p1): initial error at time 1765597433: ext4_mb_generate_buddy:760\nEXT4-fs (mmcblk0p1): last error at time 1765597433: ext4_mb_generate_buddy:760\n...\n\nAccording to the log analysis, blocks are always requested from the\ncorrupted block group. This may happen as follows:\next4_mb_find_by_goal\n  ext4_mb_load_buddy\n   ext4_mb_load_buddy_gfp\n     ext4_mb_init_cache\n      ext4_read_block_bitmap_nowait\n      ext4_wait_block_bitmap\n       ext4_validate_block_bitmap\n        if (!grp || EXT4_MB_GRP_BBITMAP_CORRUPT(grp))\n         return -EFSCORRUPTED; // There's no logs.\n if (err)\n  return err;  // Will return error\next4_lock_group(ac->ac_sb, group);\n  if (unlikely(EXT4_MB_GRP_BBITMAP_CORRUPT(e4b->bd_info))) // Unreachable\n   goto out;\n\nAfter commit 9008a58e5dce (\"ext4: make the bitmap read routines return\nreal error codes\") merged, Commit 163a203ddb36 (\"ext4: mark block group\nas corrupt on block bitmap error\") is no real solution for allocating\nblocks from corrupted block groups. This is because if\n'EXT4_MB_GRP_BBITMAP_CORRUPT(e4b->bd_info)' is true, then\n'ext4_mb_load_buddy()' may return an error. This means that the block\nallocation will fail.\nTherefore, check block group if corrupted when ext4_mb_load_buddy()\nreturns error.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-05T16:16:16.053"
   },
   {
@@ -19911,7 +19883,7 @@
     "id": "CVE-2026-43084",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nfnetlink_queue: make hash table per queue\n\nSharing a global hash table among all queues is tempting, but\nit can cause crash:\n\nBUG: KASAN: slab-use-after-free in nfqnl_recv_verdict+0x11ac/0x15e0 [nfnetlink_queue]\n[..]\n nfqnl_recv_verdict+0x11ac/0x15e0 [nfnetlink_queue]\n nfnetlink_rcv_msg+0x46a/0x930\n kmem_cache_alloc_node_noprof+0x11e/0x450\n\nstruct nf_queue_entry is freed via kfree, but parallel cpu can still\nencounter such an nf_queue_entry when walking the list.\n\nAlternative fix is to free the nf_queue_entry via kfree_rcu() instead,\nbut as we have to alloc/free for each skb this will cause more mem\npressure.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-06T10:16:21.610"
   },
   {
@@ -41569,7 +41541,7 @@
     "id": "CVE-2026-8741",
     "description": "A vulnerability has been found in EMQX up to 6.2.0. This affects an unknown function of the file apps/emqx/src/emqx_persistent_session_ds.erl of the component QoS 2 PUBLISH Packet Handler. Such manipulation leads to race condition. The attack may be performed from remote. A high complexity level is associated with this attack. The exploitability is reported as difficult. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Emqx",
     "published": "2026-05-17T09:16:35.013"
   },
   {
@@ -43984,21 +43956,21 @@
     "id": "CVE-2026-6365",
     "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Drupal core allows Cross-Site Scripting (XSS).\n\nThis issue affects Drupal core: from 8.0.0 before 10.5.9, from 10.6.0 before 10.6.7, from 11.0.0 before 11.2.11, from 11.3.0 before 11.3.7.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Drupal",
     "published": "2026-05-19T23:16:58.103"
   },
   {
     "id": "CVE-2026-6366",
     "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Drupal core allows Object Injection.\n\nThis issue affects Drupal core: from 8.0.0 before 10.5.9, from 10.6.0 before 10.6.7, from 11.0.0 before 11.2.11, from 11.3.0 before 11.3.7.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Drupal",
     "published": "2026-05-19T23:16:58.233"
   },
   {
     "id": "CVE-2026-6367",
     "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Drupal core allows Cross-Site Scripting (XSS).\n\nThis issue affects Drupal core: from 11.3.0 before 11.3.7.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Drupal",
     "published": "2026-05-19T23:16:58.353"
   },
   {
@@ -44543,15 +44515,15 @@
   {
     "id": "CVE-2026-32792",
     "description": "NLnet Labs Unbound 1.6.2 up to and including version 1.25.0 has a denial of service vulnerability when compiled with DNSCrypt support ('--enable-dnscrypt'). A bad DNSCrypt query could underflow Unbound's DNSCrypt packet reading procedure that may lead to heap overflow. A malicious actor can exploit the vulnerability with a single bad DNSCrypt query that its decrypted plaintext consists entirely of '0x00' bytes and does not contain the expected '0x80' marker. Unbound would then start reading more bytes than necessary until it finds a non-'0x00' byte. Based on the underlying memory allocator and the memory layout, it could lead to heap overflow while reading followed by a crash. Likelihood of a crash is low, since it relies heavily on the underlying memory allocator and the memory layout. If the heap overflow does not happen, Unbound's later packet checks will deny the packet. Unbound 1.25.1 contains a patch with a fix to bound reading in the given buffer space.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:26.277"
   },
   {
     "id": "CVE-2026-33278",
     "description": "NLnet Labs Unbound 1.19.1 up to and including version 1.25.0 has a vulnerability in the DNSSEC validator that enables denial of service and possible remote code execution as a result of deep copying a data structure and erroneously overwriting a destination pointer. An adversary can exploit the vulnerability by controlling a malicious signed zone and querying a vulnerable Unbound. When DS sub-queries need to suspend validation due to NSEC3 computational budget exhaustion (introduced in Unbound 1.19.1), Unbound deep-copies response messages to preserve them across memory region teardown. A struct-assignment bug overwrites the destination's pointer with the source's pointer. After the sub-query region is freed, the resumed validator dereferences this dangling pointer, triggering a crash or potentially enabling arbitrary code execution. Unbound 1.25.1 contains a patch with a fix to preserve the correct pointer when deep copying the data structure.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:26.530"
   },
   {
@@ -44578,57 +44550,57 @@
   {
     "id": "CVE-2026-41292",
     "description": "NLnet Labs Unbound up to and including version 1.25.0 is vulnerable to a degradation of service attack related to parsing long lists of incoming EDNS options. An adversary sending queries with too many EDNS options can hold Unbound threads hostage while they are parsing and creating internal data structures for the options. Coordinated attacks can result in degradation and/or denial of service. Unbound 1.25.1 contains a patch with a fix to limit acceptable incoming EDNS options (100).",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:27.327"
   },
   {
     "id": "CVE-2026-42534",
     "description": "NLnet Labs Unbound up to and including version 1.25.0 has a vulnerability in the jostle logic that could defeat its purpose and degrade resolution performance. Retransmits of the same query could renew the age of slow running queries and not allow the jostle logic to see them as aged and potential targets for replacement with new queries. An adversary who can query a vulnerable Unbound and who can control a domain name server that replies slowly and/or maliciously to Unbound's queries can exploit the vulnerability and degrade the resolution performance of Unbound. When Unbound's 'num-queries-per-thread' reaches its limit, the jostle logic kicks in. When a new query comes in, half of the available queries that are also slow to resolve are candidates for replacement. The vulnerability then happens because duplicate queries that need resolution would skew the aging result by using the timestamp of the latest duplicate query instead of the original one that started the resolution effort. Cache and local data response performance remains unaffected. Coordinated attacks could raise this to a denial of resolution service. Unbound 1.25.1 contains a patch with a fix to attach an initial, non-updatable start time for incoming queries that allow the jostle logic to work as intended.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:27.477"
   },
   {
     "id": "CVE-2026-42923",
     "description": "NLnet Labs Unbound up to and including version 1.25.0 has a vulnerability in the DNSSEC validator where the code path to consult the negative cache for DS records does not take into account the limit on NSEC3 hash calculations introduced in 1.19.1. This leads to degradation of service during the attack. An adversary that controls a DNSSEC signed zone can exploit this by signing NSEC3 records with acceptably high iterations for child delegations and querying a vulnerable Unbound. Unbound will keep performing the allowed hash calculations on the NSEC3 records and will not limit the work by the mitigation introduced in 1.19.1. As a side effect, a global lock for the negative cache will be held for the duration of the hashing, blocking other threads that need to consult the negative cache. Coordinated attacks could raise the vulnerability to denial of service. Unbound 1.25.1 contains a patch with a fix to bound the vulnerable code path with the existing limit for NSEC3 hash calculations.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:27.630"
   },
   {
     "id": "CVE-2026-42944",
     "description": "NLnet Labs Unbound 1.14.0 up to and including version 1.25.0 has a vulnerability that results in heap overflow when encoding multiple NSID and/or DNS Cookie EDNS and/or EDNS Padding options in the reply packet. The relevant options ('nsid', 'answer-cookie', 'pad-responses' (default)) need to be enabled for the vulnerability to be exploited. An adversary who can query Unbound can exploit the vulnerability by attaching multiple NSID and/or DNS Cookie EDNS and/or EDNS Padding options to the query. A flaw in the size calculation of the EDNS field truncates the correct value which allows the encoder to overflow the available space when writing. Those two combined lead to a heap overflow write of Unbound controlled data and eventually a crash. Unbound 1.25.1 contains a patch with a fix to de-duplicate the EDNS options and a fix to prevent truncation of the EDNS field size calculation.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:27.760"
   },
   {
     "id": "CVE-2026-42959",
     "description": "NLnet Labs Unbound up to and including version 1.25.0 has a denial of service vulnerability in the DNSSEC validator that can lead to a crash given malicious upstream replies. When Unbound constructs chase-reply messages for validation, the code uses the wrong counter to calculate write offsets for ADDITIONAL section rrsets. DNAME duplication could increase the ANSWER section count and authority filtering could decrease the AUTHORITY section count and create an uninitialized array slot. Combining these two, the validator later dereferences this uninitialized pointer, causing an immediate process crash. An adversary controlling a DNSSEC-signed domain can trigger this bug with a single query by configuring a DNAME chain with unsigned CNAMEs and a response containing unsigned AUTHORITY records alongside signed ADDITIONAL glue records. Unbound 1.25.1 contains a patch with a fix to use the proper counters to calculate the write offsets.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:27.903"
   },
   {
     "id": "CVE-2026-42960",
     "description": "NLnet Labs Unbound up to and including version 1.25.0 is vulnerable to poisoning via promiscuous records for the authority section. Promiscuous RRSets that complement DNS replies in the authority section can be used to trick Unbound to cache such records. If an adversary is able to attach such records in a reply (i.e., spoofed packet, fragmentation attack) he would be able to poison Unbound's cache. A malicious actor can exploit the possible poisonous effect by injecting RRSets other than NS that are also accompanied by address records in a reply, for example MX. This could be achieved by trying to spoof a reply packet or fragmentation attacks. Unbound would then accept the relative address records in the additional section and cache them if the authority RRSet has enough trust at this point, i.e., in-zone data for the delegation point. Unbound 1.25.1 contains a patch with a fix that disregards address records from the additional section if they are not explicitly relevant only to authority NS records, mitigating the possible poison effect. This is a complement fix to CVE-2025-11411.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:28.037"
   },
   {
     "id": "CVE-2026-44390",
     "description": "NLnet Labs Unbound up to and including version 1.25.0 has a vulnerability when handling replies with very large RRsets that Unbound needs to perform name compression for. Malicious upstream responses with very large RRsets with records that don't share a suffix above the root can cause Unbound to spend a considerable time applying name compression to downstream replies. This can lead to degraded performance and eventually denial of service in well orchestrated attacks. An adversary can exploit the vulnerability by querying Unbound for the specially crafted contents of a malicious zone with very large RRsets. Before Unbound replies to the query it will try to apply name compression which was an unbounded operation that could lock the CPU until the whole packet was complete. A compression limit was introduced in 1.21.1 for this but it didn't account for the case where records would not share any suffix above the root. That causes Unbound to go in a different code path because of the compression tree lookup failure and eventually not increment the compression counter for those operations. Unbound 1.25.1 contains a patch with a fix that increments the compression counter regardless of the compression tree lookup. This is a complement fix to CVE-2024-8508.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:28.183"
   },
   {
     "id": "CVE-2026-44608",
     "description": "NLnet Labs Unbound 1.14.0 up to and including version 1.25.0 has a locking inconsistency vulnerability that when certain conditions are met (multi-threaded, RPZ XFR reload, RPZ zone with 'rpz-nsip'/'rpz-nsdname' triggers) it could result in heap use-after-free and eventual crash. An adversary can exploit the vulnerability if conditions are first met on a vulnerable Unbound, i.e., multi-threaded, an RPZ zone with 'rpz-nsip'/'rpz-nsdname' triggers and an ongoing XFR for that RPZ zone. Local RPZ files do not trigger the vulnerability. If the timing is right and an XFR happens at the same time another thread needs to read that RPZ zone, the reader may not hold the lock long enough and the thread applying the XFR may free objects that the reader is about to walk causing the use-after-free. Unbound 1.25.1 contains a patch with a fix to the locking code.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Unbound",
     "published": "2026-05-20T10:16:28.313"
   },
   {
@@ -45435,5 +45407,40 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-05-20T21:16:18.233"
+  },
+  {
+    "id": "CVE-2026-39960",
+    "description": "Mantis Bug Tracker (MantisBT) is an open source issue tracker. Versions 2.28.1 and below contain flawed logic that causes improper escaping of a textarea custom field's contents in the Update Issue page, (bug_update_page.php) allowing an attacker to inject HTML and, if CSP settings permit, execute arbitrary JavaScript when the page is loaded. This facilitates session theft, leading to admin account takeover, full project data access. In order to exploit this issue, a textarea-type custom field must be configured for the project, the attack must be carried out by an authenticated user with bug report permission (low privilege). This can affect any user viewing the bug edit form, including administrators. The issue has been fixed in version 2.28.2. If users cannot immediately upgrade, they can work around the issue by using the default Content-Security Policy, which blocks script execution.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-20T22:16:36.563"
+  },
+  {
+    "id": "CVE-2026-40092",
+    "description": "nimiq-blockchain provides persistent block storage for Nimiq's Rust implementation. In versions 1.3.0 and below, a malicious network peer can crash any Nimiq full node by publishing a crafted Kademlia DHT record. The maliciously crafted record would contain a TaggedSigned<ValidatorRecord, KeyPair> with a signature field whose byte length is not exactly 64 in order to cause a crash. When the victim node's DHT verifier calls TaggedSigned::verify, execution reaches Ed25519Signature::from_bytes(sig).unwrap() in the TaggedPublicKey implementation for Ed25519PublicKey. The from_bytes call fails because ed25519_zebra::Signature::try_from rejects slices not 64 bytes, and the unwrap() panics. The BLS TaggedPublicKey implementation correctly returns false on error; only the Ed25519 implementation panics. This issue has been fixed in version 1.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-20T22:16:36.850"
+  },
+  {
+    "id": "CVE-2026-40094",
+    "description": "nimiq-blockchain provides persistent block storage for Nimiq's Rust implementation. In versions 1.3.0 and prior, network-libp2p discovery accepts signed PeerContact updates from untrusted peers and stores them in a peer contact book, eventually leading to address book crash. A PeerContact can legally contain an empty addresses list (no intrinsic validation enforces non-empty). Later, PeerContactBook::known_peers builds an address book by taking addresses.first().expect(\"every peer should have at least one address\"). If the attacker has inserted a signed peer contact with addresses=[], any call to get_address_book (RPC/web client) can panic and crash the node/RPC task depending on panic settings. This issue has been fixed in version 1.4.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-20T22:16:36.993"
+  },
+  {
+    "id": "CVE-2026-40102",
+    "description": "Plane is an open-source project management tool. In versions 1.3.0 and below, SavedAnalyticEndpoint passes the user-controlled segment query parameter directly to a Django F() expression without validation (unlike the regular AnalyticsEndpoint, which checks against an allowlist), causing ORM Field Reference Injection. An authenticated workspace MEMBER can send GET /api/workspaces/<slug>/saved-analytic-view/<analytic_id>/ with a crafted segment value that is forwarded into build_graph_plot() and traverses foreign-key relationships (e.g. workspace__owner__password) before being projected via .values(\"dimension\", \"segment\"), returning the referenced field values directly in the JSON response. This exposes sensitive data such as bcrypt password hashes, API tokens, and related users' email addresses, making it a stronger primitive than the related order_by injection where values are only leaked through ordering. This issue has been fixed in version 1.3.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-20T22:16:37.130"
+  },
+  {
+    "id": "CVE-2026-47372",
+    "description": "Crypt::SaltedHash versions through 0.09 for Perl generate insecure random values for salts.\n\nThese versions use the built-in rand function, which is predictable and unsuitable for cryptography.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-20T22:16:37.270"
   }
 ]
