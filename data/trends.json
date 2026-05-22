@@ -1,313 +1,5 @@
 [
   {
-    "id": "CVE-2026-3307",
-    "description": "An authorization bypass vulnerability was identified in GitHub Enterprise Server that allowed an attacker with admin access on one repository to modify the secret scanning push protection delegated bypass reviewer list on another repository by manipulating the owner_id parameter in the request body. Authorization was verified against the repository in the URL, but the action was applied to a different repository specified in the request body. The impact is limited to assigning existing trusted users as bypass reviewers; it does not allow adding arbitrary external users. This vulnerability affected all versions of GitHub Enterprise Server prior to 3.21 and was fixed in versions 3.14.25, 3.15.20, 3.16.16, 3.17.13, 3.18.7, 3.19.4 and 3.20.1. This vulnerability was reported via the GitHub Bug Bounty program.",
-    "severity": "Low",
-    "tech": "Enterprise server",
-    "published": "2026-04-21T23:16:19.950"
-  },
-  {
-    "id": "CVE-2026-40926",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and prior, three admin-only JSON endpoints — `objects/categoryAddNew.json.php`, `objects/categoryDelete.json.php`, and `objects/pluginRunUpdateScript.json.php` — enforce only a role check (`Category::canCreateCategory()` / `User::isAdmin()`) and perform state-changing actions against the database without calling `isGlobalTokenValid()` or `forbidIfIsUntrustedRequest()`. Peer endpoints in the same directory (`pluginSwitch.json.php`, `pluginRunDatabaseScript.json.php`) do enforce the CSRF token, so the missing checks are an omission rather than a design choice. An attacker who lures a logged-in admin to a malicious page can create, update, or delete categories and force execution of any installed plugin's `updateScript()` method in the admin's session. Commit ee5615153c40628ab3ec6fe04962d1f92e67d3e2 contains a fix.",
-    "severity": "High",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:20.163"
-  },
-  {
-    "id": "CVE-2026-40928",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and prior, multiple AVideo JSON endpoints under `objects/` accept state-changing requests via `$_REQUEST`/`$_GET` and persist changes tied to the caller's session user, without any anti-CSRF token, origin check, or referer check. A malicious page visited by a logged-in victim can silently cast/flip the victim's like/dislike on any comment (`objects/comments_like.json.php`), post a comment authored by the victim on any video, with attacker-chosen text (`objects/commentAddNew.json.php`), and/or delete assets from any category (`objects/categoryDeleteAssets.json.php`) when the victim has category management rights. Each endpoint is reachable from a browser via a simple `<img src=\"…\">` tag or form submission, so exploitation only requires the victim to load an attacker-controlled HTML resource. Commit 7aaad601bd9cd7b993ba0ee1b1bea6c32ee7b77c contains a fix.",
-    "severity": "Medium",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:20.300"
-  },
-  {
-    "id": "CVE-2026-40929",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and prior, `objects/commentDelete.json.php` is a state-mutating JSON endpoint that deletes comments but performs no CSRF validation. It does not call `forbidIfIsUntrustedRequest()`, does not verify a CSRF/global token, and does not check `Origin`/`Referer`. Because AVideo intentionally sets `session.cookie_samesite=None` (to support cross-origin embed players), a cross-site request from any attacker-controlled page automatically carries the victim's `PHPSESSID`. Any authenticated victim who has authority to delete one or more comments (site moderators, video owners, and comment authors) can be tricked into deleting comments en masse simply by visiting an attacker page. Commit 184f36b1896f3364f864f17c1acca3dd8df3af27 contains a fix.",
-    "severity": "Medium",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:20.433"
-  },
-  {
-    "id": "CVE-2026-40935",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and prior, `objects/getCaptcha.php` accepts the CAPTCHA length (`ql`) directly from the query string with no clamping or sanitization, letting any unauthenticated client force the server to generate a 1-character CAPTCHA word. Combined with a case-insensitive `strcasecmp` comparison over a ~33-character alphabet and the fact that failed validations do NOT consume the stored session token, an attacker can trivially brute-force the CAPTCHA on any endpoint that relies on `Captcha::validation()` (user registration, password recovery, contact form, etc.) in at most ~33 requests per session. Commit bf1c76989e6a9054be4f0eb009d68f0f2464b453 contains a fix.",
-    "severity": "Medium",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:20.577"
-  },
-  {
-    "id": "CVE-2026-41055",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, an incomplete SSRF fix in AVideo's LiveLinks proxy adds `isSSRFSafeURL()` validation but leaves DNS TOCTOU vulnerabilities where DNS rebinding between validation and the actual HTTP request redirects traffic to internal endpoints. Commit 8d8fc0cadb425835b4861036d589abcea4d78ee8 contains an updated fix.",
-    "severity": "High",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:20.707"
-  },
-  {
-    "id": "CVE-2026-41056",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, the `allowOrigin($allowAll=true)` function in `objects/functions.php` reflects any arbitrary `Origin` header back in `Access-Control-Allow-Origin` along with `Access-Control-Allow-Credentials: true`. This function is called by both `plugin/API/get.json.php` and `plugin/API/set.json.php` — the primary API endpoints that handle user data retrieval, authentication, livestream credentials, and state-changing operations. Combined with the application's `SameSite=None` session cookie policy, any website can make credentialed cross-origin requests and read authenticated API responses, enabling theft of user PII, livestream keys, and performing state changes on behalf of the victim. Commit caf705f38eae0ccfac4c3af1587781355d24495e contains a fix.",
-    "severity": "High",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:20.850"
-  },
-  {
-    "id": "CVE-2026-41057",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, the CORS origin validation fix in commit `986e64aad` is incomplete. Two separate code paths still reflect arbitrary `Origin` headers with credentials allowed for all `/api/*` endpoints: (1) `plugin/API/router.php` lines 4-8 unconditionally reflect any origin before application code runs, and (2) `allowOrigin(true)` called by `get.json.php` and `set.json.php` reflects any origin with `Access-Control-Allow-Credentials: true`. An attacker can make cross-origin credentialed requests to any API endpoint and read authenticated responses containing user PII, email, admin status, and session-sensitive data. Commit 5e2b897ccac61eb6daca2dee4a6be3c4c2d93e13 contains a fix.",
-    "severity": "High",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:20.987"
-  },
-  {
-    "id": "CVE-2026-41058",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, the incomplete fix for AVideo's CloneSite `deleteDump` parameter does not apply path traversal filtering, allowing `unlink()` of arbitrary files via `../../` sequences in the GET parameter. Commit 3c729717c26f160014a5c86b0b6accdbd613e7b2 contains an updated fix.",
-    "severity": "High",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:21.117"
-  },
-  {
-    "id": "CVE-2026-41060",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, the `isSSRFSafeURL()` function in `objects/functions.php` contains a same-domain shortcircuit (lines 4290-4296) that allows any URL whose hostname matches `webSiteRootURL` to bypass all SSRF protections. Because the check compares only the hostname and ignores the port, an attacker can reach arbitrary ports on the AVideo server by using the site's public hostname with a non-standard port. The response body is saved to a web-accessible path, enabling full exfiltration. Commit a0156a6398362086390d949190f9d52a823000ba fixes the issue.",
-    "severity": "High",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:21.250"
-  },
-  {
-    "id": "CVE-2026-41061",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, the `isValidDuration()` regex at `objects/video.php:918` uses `/^[0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2}/` without a `$` end anchor, allowing arbitrary HTML/JavaScript to be appended after a valid duration prefix. The crafted duration is stored in the database and rendered without HTML escaping via `echo Video::getCleanDuration()` on trending pages, playlist pages, and video gallery thumbnails, resulting in stored cross-site scripting. Commit bcba324644df8b4ed1f891462455f1cd26822a45 contains a fix.",
-    "severity": "Medium",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:21.387"
-  },
-  {
-    "id": "CVE-2026-41062",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, the directory traversal fix introduced in commit 2375eb5e0 for `objects/aVideoEncoderReceiveImage.json.php` only checks the URL path component (via `parse_url($url, PHP_URL_PATH)`) for `..` sequences. However, the downstream function `try_get_contents_from_local()` in `objects/functionsFile.php` uses `explode('/videos/', $url)` on the **full URL string** including the query string. An attacker can place the `/videos/../../` traversal payload in the query string to bypass the security check and read arbitrary files from the server filesystem. Commit bd11c16ec894698e54e2cdae25026c61ad1ed441 contains an updated fix.",
-    "severity": "Medium",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:21.520"
-  },
-  {
-    "id": "CVE-2026-41063",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, an incomplete XSS fix in AVideo's `ParsedownSafeWithLinks` class overrides `inlineMarkup` for raw HTML but does not override `inlineLink()` or `inlineUrlTag()`, allowing `javascript:` URLs in markdown link syntax to bypass sanitization. Commit cae8f0dadbdd962c89b91d0095c76edb8aadcacf contains an updated fix.",
-    "severity": "Medium",
-    "tech": "Avideo",
-    "published": "2026-04-21T23:16:21.663"
-  },
-  {
-    "id": "CVE-2026-4296",
-    "description": "An incorrect regular expression vulnerability was identified in GitHub Enterprise Server that allowed an attacker to bypass OAuth redirect URI validation. An attacker with knowledge of a first-party OAuth application's registered callback URL could craft a malicious authorization link that, when clicked by a victim, would redirect the OAuth authorization code to an attacker-controlled domain. This could allow the attacker to gain unauthorized access to the victim's account with the scopes granted to the OAuth application. This vulnerability affected all versions of GitHub Enterprise Server prior to 3.21 and was fixed in versions 3.20.1, 3.19.5, 3.18.8, 3.17.14, 3.16.17, 3.15.21, 3.14.26. This vulnerability was reported via the GitHub Bug Bounty program.",
-    "severity": "High",
-    "tech": "Enterprise server",
-    "published": "2026-04-21T23:16:21.807"
-  },
-  {
-    "id": "CVE-2026-4821",
-    "description": "An improper neutralization of special elements vulnerability was identified in GitHub Enterprise Server that allowed an authenticated Management Console administrator to execute arbitrary OS commands via shell metacharacter injection in proxy configuration fields such as http_proxy. Exploitation of this vulnerability required access to the GitHub Enterprise Server instance and administrator privileges to the Management Console. This vulnerability affected all versions of GitHub Enterprise Server prior to 3.21 and was fixed in versions 3.20.1, 3.19.5, 3.18.8, 3.17.14, 3.16.17, 3.15.21, 3.14.26. This vulnerability was reported via the GitHub Bug Bounty program.",
-    "severity": "High",
-    "tech": "Enterprise server",
-    "published": "2026-04-21T23:16:22.037"
-  },
-  {
-    "id": "CVE-2026-4872",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-21T23:16:22.230"
-  },
-  {
-    "id": "CVE-2026-5512",
-    "description": "An improper authorization vulnerability was identified in GitHub Enterprise Server that allowed an authenticated attacker to determine the names of private repositories by their numeric ID. The mobile upload policy API endpoint did not perform an early authorization check, and validation error messages included the full repository name for repositories the caller did not have access to. This vulnerability affected all versions of GitHub Enterprise Server prior to 3.21 and was fixed in versions 3.20.1, 3.19.5, 3.18.8, 3.17.14, 3.16.17, 3.15.21, and 3.14.26. This vulnerability was reported via the GitHub Bug Bounty program.",
-    "severity": "Medium",
-    "tech": "Enterprise server",
-    "published": "2026-04-21T23:16:22.297"
-  },
-  {
-    "id": "CVE-2026-5845",
-    "description": "An improper authorization vulnerability in scoped user-to-server (ghu_) token authorization in GitHub Enterprise Server allows an authenticated attacker to access private repositories outside the intended installation scope, which can include write operations, via an authorization fallback that treated a revoked/deleted installation as a global installation context, which could be chained with token revocation timing and SSH push attribution to obtain and reuse a victim-scoped token. This vulnerability affected all versions of GitHub Enterprise Server prior to 3.21 and was fixed in versions 3.20.1, 3.19.5, 3.18.8, 3.17.14, 3.16.17, 3.15.21, and 3.14.26. This vulnerability was reported via the GitHub Bug Bounty program.",
-    "severity": "Critical",
-    "tech": "Enterprise server",
-    "published": "2026-04-21T23:16:22.473"
-  },
-  {
-    "id": "CVE-2026-5921",
-    "description": "A server-side request forgery (SSRF) vulnerability was identified in GitHub Enterprise Server that allowed an attacker to extract sensitive environment variables from the instance through a timing side-channel attack against the notebook rendering service. When private mode was disabled, the notebook viewer followed HTTP redirects without revalidating the destination host, enabling an unauthenticated SSRF to internal services. By chaining this with regex filter queries against an internal API and measuring response time differences, an attacker could infer secret values character by character. Exploitation required that private mode be disabled and that the attacker be able to chain the instance's open redirect endpoint through an external redirect to reach internal services. This vulnerability affected all versions of GitHub Enterprise Server prior to 3.21 and was fixed in versions 3.14.26, 3.15.21, 3.16.17, 3.17.14, 3.18.8, 3.19.5, and 3.20.1. This vulnerability was reported via the GitHub Bug Bounty program.",
-    "severity": "High",
-    "tech": "Enterprise server",
-    "published": "2026-04-21T23:16:22.667"
-  },
-  {
-    "id": "CVE-2026-40343",
-    "description": "free5GC UDR is the user data repository (UDR) for free5GC, an an open-source project for 5th generation (5G) mobile core networks. In versions up to and including 1.4.2, a fail-open request handling flaw in the UDR service causes the `/nudr-dr/v2/policy-data/subs-to-notify` POST handler to continue processing requests even after request body retrieval or deserialization errors. This may allow unintended creation of Policy Data notification subscriptions with invalid, empty, or partially processed input, depending on downstream processor behavior. As of time of publication, a patched version is not available.",
-    "severity": "Medium",
-    "tech": "Free5gc",
-    "published": "2026-04-22T00:16:27.670"
-  },
-  {
-    "id": "CVE-2026-40575",
-    "description": "OAuth2 Proxy is a reverse proxy that provides authentication using OAuth2 providers. Versions 7.5.0 through 7.15.1 may trust a client-supplied `X-Forwarded-Uri` header when `--reverse-proxy` is enabled and `--skip-auth-regex` or `--skip-auth-route` is configured. An attacker can spoof this header so OAuth2 Proxy evaluates authentication and skip-auth rules against a different path than the one actually sent to the upstream application. This can result in an unauthenticated remote attacker bypassing authentication and accessing protected routes without a valid session. Impacted users are deployments that run oauth2-proxy with `--reverse-proxy` enabled and configure at least one `--skip-auth-regex` or `--skip-auth-route` rule. This issue is patched in `v7.15.2`. Some workarounds are available for those who cannot upgrade immediately. Strip any client-provided `X-Forwarded-Uri` header at the reverse proxy or load balancer level; explicitly overwrite `X-Forwarded-Uri` with the actual request URI before forwarding requests to OAuth2 Proxy; restrict direct client access to OAuth2 Proxy so it can only be reached through a trusted reverse proxy; and/or remove or narrow `--skip-auth-regex` / `--skip-auth-route` rules where possible. For nginx-based deployments, ensure `X-Forwarded-Uri` is set by nginx and not passed through from the client.",
-    "severity": "Critical",
-    "tech": "Oauth2 proxy",
-    "published": "2026-04-22T00:16:27.817"
-  },
-  {
-    "id": "CVE-2026-41059",
-    "description": "OAuth2 Proxy is a reverse proxy that provides authentication using OAuth2 providers. Versions 7.5.0 through 7.15.1 have a configuration-dependent authentication bypass. Deployments are affected when all of the following are true: Use of `skip_auth_routes` or the legacy `skip_auth_regex`; use of patterns that can be widened by attacker-controlled suffixes, such as `^/foo/.*/bar$` causing potential exposure of `/foo/secret`; and protected upstream applications that interpret `#` as a fragment delimiter or otherwise route the request to the protected base path. In deployments that rely on these settings, an unauthenticated attacker can send a crafted request containing a number sign in the path, including the browser-safe encoded form `%23`, so that OAuth2 Proxy matches a public allowlist rule while the backend serves a protected resource. Deployments that do not use these skip-auth options, or that only allow exact public paths with tightly scoped method and path rules, are not affected. A fix has been implemented in version 7.15.2 to normalize request paths more conservatively before skip-auth matching so fragment content does not influence allowlist decisions. Users who cannot upgrade immediately can reduce exposure by tightening or removing `skip_auth_routes` and `skip_auth_regex` rules, especially patterns that use broad wildcards across path segments. Recommended mitigations include replacing broad rules with exact, anchored public paths and explicit HTTP methods; rejecting requests whose path contains `%23` or `#` at the ingress, load balancer, or WAF level; and/or avoiding placing sensitive application paths behind broad `skip_auth_routes` rules.",
-    "severity": "High",
-    "tech": "Oauth2 proxy",
-    "published": "2026-04-22T00:16:27.957"
-  },
-  {
-    "id": "CVE-2026-41064",
-    "description": "WWBN AVideo is an open source video platform. In versions up to and including 29.0, an incomplete fix for AVideo's `test.php` adds `escapeshellarg` for wget but leaves the `file_get_contents` and `curl` code paths unsanitized, and the URL validation regex `/^http/` accepts strings like `httpevil[.]com`. Commit 78bccae74634ead68aa6528d631c9ec4fd7aa536 contains an updated fix.",
-    "severity": "Critical",
-    "tech": "Avideo",
-    "published": "2026-04-22T00:16:28.187"
-  },
-  {
-    "id": "CVE-2026-41126",
-    "description": "BigBlueButton is an open-source virtual classroom. Versions prior to 3.0.24 have an Open Redirect through bigbluebutton/api/join via get-parameter \"logoutURL.\" Version 3.0.24 has adjusted the handling of requests with incorrect checksum so that the default logoutURL is used. No known workarounds are available.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-04-22T00:16:28.327"
-  },
-  {
-    "id": "CVE-2026-41127",
-    "description": "BigBlueButton is an open-source virtual classroom. Versions prior to 3.0.24 have a missing authorization that allows viewers to inject/overwrite captions Version 3.0.24 tightened the permissions on who is able to submit captions. No known workarounds are available.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-04-22T00:16:28.463"
-  },
-  {
-    "id": "CVE-2026-41128",
-    "description": "Craft CMS is a content management system (CMS). In versions 5.6.0 through 5.9.14, the `actionSavePermissions()` endpoint allows a user with only `viewUsers` permission to remove arbitrary users from all user groups. While `_saveUserGroups()` enforces per-group authorization for additions, it performs no equivalent authorization check for removals, so submitting an empty `groups` value removes all existing group memberships. Version 5.9.15 contains a patch.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-22T00:16:28.593"
-  },
-  {
-    "id": "CVE-2026-41129",
-    "description": "Craft CMS is a content management system (CMS). Versions on the 4.x branch through 4.17.8 and the 5.x branch through 5.9.14 are vulnerable to Server-Side Request Forgery. The exploitation requires a few permissions to be enabled in the used GraphQL schema: \"Edit assets in the <VolumeName> volume\" and \"Create assets in the <VolumeName> volume.\" Versions 4.17.9 and 5.9.15 patch the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-22T00:16:28.733"
-  },
-  {
-    "id": "CVE-2026-41130",
-    "description": "Craft CMS is a content management system (CMS). In versions on the 4.x branch through 4.17.8 and the 5.x branch through 5.9.14, the `resource-js` endpoint in Craft CMS allows unauthenticated requests to proxy remote JavaScript resources. \nWhen `trustedHosts` is not explicitly restricted (default configuration), the application trusts the client-supplied Host header. This allows an attacker to control the derived `baseUrl`, which is used in prefix validation inside `actionResourceJs()`. By supplying a malicious Host header, the attacker can make the server issue arbitrary HTTP requests, leading to Server-Side Request Forgery (SSRF). Versions 4.17.9 and 5.9.15 patch the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-22T00:16:28.880"
-  },
-  {
-    "id": "CVE-2026-41131",
-    "description": "OpenFGA is an authorization/permission engine built for developers. Prior to version 1.14.1, in specific scenarios, models using conditions with caching enabled can result in two different check requests producing the same cache key. This could result in OpenFGA reusing an earlier cached result for a subsequent request. The preconditions for vulnerability are the model having relations which rely on condition evaluation and the user having caching enabled. OpenFGA v1.14.1 contains a fix.",
-    "severity": "Medium",
-    "tech": "Helm charts",
-    "published": "2026-04-22T00:16:29.013"
-  },
-  {
-    "id": "CVE-2026-41133",
-    "description": "pyLoad is a free and open-source download manager written in Python. Versions up to and including 0.5.0b3.dev97 cache `role` and `permission` in the session at login and continues to authorize requests using these cached values, even after an admin changes the user's role/permissions in the database. As a result, an already logged-in user can keep old (revoked) privileges until logout/session expiry, enabling continued privileged actions. This is a core authorization/session-consistency issue and is not resolved by toggling an optional security feature. Commit e95804fb0d06cbb07d2ba380fc494d9ff89b68c1 contains a fix for the issue.",
-    "severity": "High",
-    "tech": "Pyload",
-    "published": "2026-04-22T00:16:29.153"
-  },
-  {
-    "id": "CVE-2026-41135",
-    "description": "free5GC UDR is the Policy Control Function (PCF) for free5GC, an an open-source project for 5th generation (5G) mobile core networks. A memory leak vulnerability in versions prior to 1.4.3 allows any unauthenticated attacker with network access to the PCF SBI interface to cause uncontrolled memory growth by sending repeated HTTP requests to the OAM endpoint. The root cause is a `router.Use()` call inside an HTTP handler that registers a new CORS middleware on every incoming request, permanently growing the Gin router's handler chain. This leads to progressive memory exhaustion and eventual Denial of Service of the PCF, preventing all UEs from obtaining AM and SM policies and blocking 5G session establishment. Version 1.4.3 contains a patch.",
-    "severity": "High",
-    "tech": "Free5gc",
-    "published": "2026-04-22T00:16:29.287"
-  },
-  {
-    "id": "CVE-2026-41136",
-    "description": "free5GC AMF provides Access & Mobility Management Function (AMF) for free5GC, an an open-source project for 5th generation (5G) mobile core networks. Prior to version 1.4.3, the `HTTPUEContextTransfer` handler in `internal/sbi/api_communication.go` does not include a `default` case in the `Content-Type` switch statement. When a request arrives with an unsupported `Content-Type`, the deserialization step is silently skipped, `err` remains `nil`, and the processor is invoked with a completely uninitialized `UeContextTransferRequest` object. Version 1.4.3 contains a fix.",
-    "severity": "Medium",
-    "tech": "Amf",
-    "published": "2026-04-22T00:16:29.423"
-  },
-  {
-    "id": "CVE-2026-41144",
-    "description": "F´ (F Prime) is a framework that enables development and deployment of spaceflight and other embedded software applications. Prior to version 4.2.0, the bounds check byteOffset + dataSize > fileSize uses U32 addition that wraps around on overflow. An attacker-crafted DataPacket with byteOffset=0xFFFFFF9C and dataSize=100 overflows to 0, bypassing the check entirely. The subsequent file write proceeds at the original ~4GB offset. Additionally, Svc/FileUplink/File.cpp:20-31 performs no sanitization on the destination file path. Combined, these allow writing arbitrary data to any file at any offset. The impact is arbitrary file write leading to remote code execution on embedded targets. Note that this is a logic bug. ASAN does not detect it because all memory accesses are within valid buffers — the corruption occurs in file I/O. Version 4.2.0 contains a patch. No known workarounds are available.",
-    "severity": "None",
-    "tech": "Fprime",
-    "published": "2026-04-22T00:16:29.550"
-  },
-  {
-    "id": "CVE-2026-41304",
-    "description": "WWBN AVideo is an open source video platform. In versions 29.0 and below, the `cloneServer.json.php` endpoint in the CloneSite plugin constructs shell commands using user-controlled input (`url` parameter) without proper sanitization. The input is directly concatenated into a `wget` command executed via `exec()`, allowing command injection. An attacker can inject arbitrary shell commands by breaking out of the intended URL context using shell metacharacters (e.g., `;`). This leads to Remote Code Execution (RCE) on the server. Commit 473c609fc2defdea8b937b00e86ce88eba1f15bb contains a fix.",
-    "severity": "Critical",
-    "tech": "Avideo",
-    "published": "2026-04-22T00:16:29.697"
-  },
-  {
-    "id": "CVE-2026-40344",
-    "description": "MinIO is a high-performance object storage system. Starting in RELEASE.2023-05-18T00-05-36Z and prior to RELEASE.2026-04-11T03-20-12Z, an authentication bypass vulnerability in MinIO's Snowball auto-extract handler (`PutObjectExtractHandler`) allows any user who knows a valid access key to write arbitrary objects to any bucket without knowing the secret key or providing a valid cryptographic signature. Any MinIO deployment is impacted. The attack requires only a valid access key (the well-known default `minioadmin`, or any key with WRITE permission on a bucket) and a target bucket name. When `authTypeStreamingUnsignedTrailer` support was added, the new auth type was handled in `PutObjectHandler` and `PutObjectPartHandler` but was never added to `PutObjectExtractHandler`. The snowball auto-extract handler's `switch rAuthType` block has no case for `authTypeStreamingUnsignedTrailer`, so execution falls through with zero signature verification. The `isPutActionAllowed` call before the switch extracts the access key and checks IAM permissions, but does not verify the cryptographic signature. An attacker sends a PUT request with `X-Amz-Content-Sha256: STREAMING-UNSIGNED-PAYLOAD-TRAILER`, `X-Amz-Meta-Snowball-Auto-Extract: true`, and an `Authorization` header containing a valid access key with a completely fabricated signature. The request is accepted and the tar payload is extracted into the bucket. Users of the open-source minio/minio project should upgrade to MinIO AIStor RELEASE.2026-04-11T03-20-12Z or later. If upgrading is not immediately possible, block unsigned-trailer requests at the load balancer. Reject any request containing X-Amz-Content-Sha256: STREAMING-UNSIGNED-PAYLOAD-TRAILER at the reverse proxy or WAF layer. Clients can use STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER (the signed variant) instead. Alternatively, restrict WRITE permissions. Limit s3:PutObject grants to trusted principals. While this reduces the attack surface, it does not eliminate the vulnerability since any user with WRITE permission can exploit it with only their access key.",
-    "severity": "High",
-    "tech": "Minio",
-    "published": "2026-04-22T01:16:05.430"
-  },
-  {
-    "id": "CVE-2026-41145",
-    "description": "MinIO is a high-performance object storage system. Starting in RELEASE.2023-05-18T00-05-36Z and prior to RELEASE.2026-04-11T03-20-12Z, an authentication bypass vulnerability in MinIO's `STREAMING-UNSIGNED-PAYLOAD-TRAILER` code path\nallows any user who knows a valid access key to write arbitrary objects to any bucket without knowing the secret key or providing a valid cryptographic signature. Any MinIO deployment is impacted. The attack requires only a valid access key (the well-known default `minioadmin`, or any key with WRITE permission on a bucket) and a target bucket name. `PutObjectHandler` and `PutObjectPartHandler` call `newUnsignedV4ChunkedReader` with a signature verification gate based solely on the presence of the `Authorization` header. Meanwhile, `isPutActionAllowed` extracts credentials from either the `Authorization` header or the\n`X-Amz-Credential` query parameter, and trusts whichever it finds. An attacker omits the `Authorization` header and supplies credentials exclusively via the query string. The signature gate evaluates to `false`, `doesSignatureMatch` is never called, and the request proceeds with the permissions of the impersonated access key. This affects `PutObjectHandler` (standard and tables/warehouse bucket paths) and `PutObjectPartHandler` (multipart uploads). Users of the open-source `minio/minio` project should upgrade to MinIO AIStor `RELEASE.2026-04-11T03-20-12Z` or later. If upgrading is not immediately possible, block unsigned-trailer requests at the load balancer. Reject any request containing `X-Amz-Content-Sha256: STREAMING-UNSIGNED-PAYLOAD-TRAILER` at the reverse proxy or WAF layer. Clients can use `STREAMING-AWS4-HMAC-SHA256-PAYLOAD-TRAILER` (the signed variant) instead. Alternatively, restrict WRITE permissions. Limit `s3:PutObject` grants to trusted principals. While this reduces the attack surface, it does not eliminate the vulnerability since any user with WRITE permission can exploit it with only their access key.",
-    "severity": "High",
-    "tech": "Minio",
-    "published": "2026-04-22T01:16:05.603"
-  },
-  {
-    "id": "CVE-2026-41146",
-    "description": "facil.io is a C micro-framework for web applications. Prior to commit 5128747363055201d3ecf0e29bf0a961703c9fa0, `fio_json_parse` can enter an infinite loop when it encounters a nested JSON value starting with `i` or `I`. The process spins in user space and pegs one CPU core at ~100% instead of returning a parse error. Because `iodine` vendors the same parser code, the issue also affects `iodine` when it parses attacker-controlled JSON. The smallest reproducer I found is `[i`. The quoted-value form that originally exposed the issue, `[\"\"i`, reaches the same bug because the parser tolerates missing commas and then treats the trailing `i` as the start of another value. Commit 5128747363055201d3ecf0e29bf0a961703c9fa0 fixes the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-22T02:16:02.237"
-  },
-  {
-    "id": "CVE-2026-41457",
-    "description": "OwnTone Server versions 28.4 through 29.0 contain a SQL injection vulnerability in DAAP query and filter handling that allows attackers to inject arbitrary SQL expressions by supplying malicious values through the query= and filter= parameters for integer-mapped DAAP fields. Attackers can exploit insufficient sanitization of these parameters to bypass filters and gain unauthorized access to media library data.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-22T03:16:00.613"
-  },
-  {
-    "id": "CVE-2026-41458",
-    "description": "OwnTone Server versions 28.4 through 29.0 contain a race condition vulnerability in the DAAP login handler that allows unauthenticated attackers to crash the server by exploiting unsynchronized access to the global DAAP session list. Attackers can flood the DAAP /login endpoint with concurrent requests to trigger a remote denial of service condition without requiring authentication.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-04-22T03:16:01.067"
-  },
-  {
-    "id": "CVE-2026-5398",
-    "description": "The implementation of TIOCNOTTY failed to clear a back-pointer from the structure representing the controlling terminal to the calling process' session.  If the invoking process then exits, the terminal structure may end up containing a pointer to freed memory.\n\nA malicious process can abuse the dangling pointer to grant itself root privileges.",
-    "severity": "High",
-    "tech": "Freebsd",
-    "published": "2026-04-22T03:16:01.213"
-  },
-  {
-    "id": "CVE-2026-6386",
-    "description": "In order to apply a particular protection key to an address range, the kernel must update the corresponding page table entries.  The subroutine which handled this failed to take into account the presence of 1GB largepage mappings created using the shm_create_largepage(3) interface.  In particular, it would always treat a page directory page entry as pointing to another page table page.\n\nThe bug can be abused by an unprivileged user to cause pmap_pkru_update_range() to treat userspace memory as a page table page, and thus overwrite memory to which the application would otherwise not have access.",
-    "severity": "Medium",
-    "tech": "Freebsd",
-    "published": "2026-04-22T03:16:01.313"
-  },
-  {
-    "id": "CVE-2026-6392",
-    "description": "Tanium addressed an information disclosure vulnerability in Threat Response.",
-    "severity": "Low",
-    "tech": "Threat response",
-    "published": "2026-04-22T03:16:01.420"
-  },
-  {
-    "id": "CVE-2026-6408",
-    "description": "Tanium addressed an information disclosure vulnerability in Tanium Server.",
-    "severity": "Low",
-    "tech": "Server",
-    "published": "2026-04-22T03:16:01.540"
-  },
-  {
-    "id": "CVE-2026-6416",
-    "description": "Tanium addressed an uncontrolled resource consumption vulnerability in Interact.",
-    "severity": "Low",
-    "tech": "Interact",
-    "published": "2026-04-22T03:16:01.643"
-  },
-  {
     "id": "CVE-2026-6833",
     "description": "The a+HRD developed by aEnrich has a SQL Injection vulnerability, allowing authenticated remote attackers to inject arbitrary SQL commands to read database contents.",
     "severity": "Medium",
@@ -37873,7 +37565,7 @@
     "id": "CVE-2026-45803",
     "description": "`gh` is GitHub’s official command line tool. From 1.6.0 to before 2.92.0, a security vulnerability has been identified in GitHub CLI that could allow terminal escape sequence injection when users view GitHub Actions workflow logs using gh run view --log or gh run view --log-failed. The vulnerability stems from the way GitHub CLI handles raw Actions log output. The gh run view --log and gh run view --log-failed commands stream workflow log lines to stdout or the configured pager without sanitizing terminal control sequences. An attacker who can influence GitHub Actions log content, for example via a PR triggered workflow, can embed escape sequences that are replayed in the user's terminal when they inspect the run. Depending on the victim's terminal emulator, injected sequences could change the window title, manipulate on screen content, or in some terminal emulators (such as screen) potentially execute arbitrary commands. This vulnerability is fixed in 2.92.0.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Cli",
     "published": "2026-05-15T16:16:15.280"
   },
   {
@@ -40001,7 +39693,7 @@
     "id": "CVE-2026-42822",
     "description": "Improper authentication in Azure Local Disconnected Operations allows an unauthorized attacker to elevate privileges over a network.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Azure local",
     "published": "2026-05-18T18:17:34.500"
   },
   {
@@ -40210,15 +39902,15 @@
   {
     "id": "CVE-2026-32312",
     "description": "GLPI is a free asset and IT management software package. In versions 11.0.0 through 11.0.6, an authenticated user with forms READ permission can export the structure of unauthorized forms. This issue has been fixed in version 11.0.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Glpi",
     "published": "2026-05-19T00:16:37.283"
   },
   {
     "id": "CVE-2026-32323",
     "description": "Mullvad VPN is a VPN client app for desktop and mobile. When using macOS with versions 2026.1 and below, Mullvad VPN may allow local privilege escalation during installation or upgrade. The installer package executes binaries from /Applications/Mullvad VPN.app without verifying if the bundle is attacker-controlled or that the path is the legitimate Mullvad application. A user in the admin group can pre-place a crafted application bundle at that location and may be able to achieve code execution as root. Since the issue only affected the installer, there is no immediate need for users to update if they are already running an older version. This issue has been fixed in version 2026.2-beta1.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Mullvad vpn",
     "published": "2026-05-19T02:16:14.367"
   },
   {
@@ -44413,5 +44105,54 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-05-21T22:16:52.053"
+  },
+  {
+    "id": "CVE-2026-5297",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-21T23:16:45.873"
+  },
+  {
+    "id": "CVE-2026-33000",
+    "description": "A malicious actor with access to the network and high privileges could exploit an Improper Input Validation vulnerability found in UniFi OS devices to execute a Command Injection.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-22T02:16:33.933"
+  },
+  {
+    "id": "CVE-2026-34908",
+    "description": "A malicious actor with access to the network could exploit an Improper Access Control vulnerability found in UniFi OS devices to make unauthorized changes to the system.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-22T02:16:34.240"
+  },
+  {
+    "id": "CVE-2026-34909",
+    "description": "A malicious actor with access to the network could exploit a Path Traversal vulnerability found in UniFi OS devices to access files on the underlying system that could be manipulated to access an underlying account.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-22T02:16:34.390"
+  },
+  {
+    "id": "CVE-2026-34910",
+    "description": "A malicious actor with access to the network could exploit an Improper Input Validation vulnerability found in UniFi OS devices to execute a Command Injection.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-22T02:16:34.527"
+  },
+  {
+    "id": "CVE-2026-34911",
+    "description": "A malicious actor with access to the network and low privileges could exploit a Path Traversal vulnerability found in UniFi OS devices to access files on the underlying system that could be manipulated to obtain sensitive information.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-22T02:16:34.667"
+  },
+  {
+    "id": "CVE-2026-9264",
+    "description": "A cross-site scripting (XSS) vulnerability in SketchUp 2026's Dynamic Components feature allows remote code execution and local file exfiltration through maliciously crafted SKP files. The vulnerability stems from improper input sanitization in the component options window, enabling attackers to execute arbitrary system commands and read local files without user interaction by exploiting an embedded Internet Explorer 11 browser.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-22T02:16:35.073"
   }
 ]
