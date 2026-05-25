@@ -47,6 +47,13 @@
 - [x] **Minimalist Formatting:** 전체 서비스 날짜 형식을 연도 제외 `M.D` 형태로 간결화
 - [x] **Project Cleanup:** 사용되지 않는 더미 파일(`leaderboard.json`) 및 레거시 주석 정리
 
+## ✅ Phase 9: Live Threat Pulse Robustness & Hybrid Fetching (Completed)
+- [x] NVD API 전파 지연(24~48시간) 해결을 위한 수집 윈도우 확대 (24시간 ➡️ 72시간)
+- [x] `fetch-pulse.mjs` 내 파일 무조건 덮어쓰기 버그 해결을 위한 0건 수집 시 방어적 예외 처리 도입
+- [x] Static Export 환경 대응을 위한 `public/data/pulse.json` 실시간 데이터 파이프라인 전환
+- [x] `dashboard-client.tsx` 내 브라우저 동적 Fetching(Hybrid Fetching) 기법 적용 및 UI 텍스트 동기화
+- [x] `PRD.md` 및 `Tasks.md` 등 제품 문서 데이터 아키텍처 사양 갱신
+
 ## 🚀 Future Roadmap (Next Steps)
 - [ ] **Data Quality:** CPE/CWE 매핑 로직 정교화 (엣지 케이스 처리)
 - [ ] **UX Detail:** 대시보드 데이터 로딩 상태 애니메이션(Skeleton UI) 강화
@@ -54,4 +61,4 @@
 - [ ] **Automation:** GitHub Actions 배포 실패 시 알림 시스템 구축
 
 ---
-*Last Updated: 2026-05-10*
+*Last Updated: 2026-05-26*

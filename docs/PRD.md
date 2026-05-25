@@ -11,7 +11,7 @@ VULNOX는 최신 보안 취약점(CVE) 정보를 실시간으로 시각화하고
 ## 3. 핵심 기능 (Core Features)
 
 ### 🚀 Live Threat Pulse (Dashboard)
-*   **Today's Pulse Feed:** 지난 24시간 내에 발행된 모든 CVE 데이터를 실시간으로 수집하여 제공합니다.
+*   **Emerging Pulse Feed:** 최근 72시간 내에 발행 및 NVD 시스템 분석이 완료된 모든 CVE 데이터를 실시간으로 수집하여 제공하며, NVD 전파 지연을 해결하기 위해 브라우저에서 동적으로 실시간 로딩(Hybrid Fetching)합니다.
 *   **Trend Activity Exploration:** 'Hot Tech Targets'를 클릭하면 최근 30일간의 해당 기술에 대한 모든 취약점 내역(전수 데이터)을 즉시 조회할 수 있습니다.
 *   **Interactive UX:** 
     *   **Arrow Pagination:** 헤더 내 `< >` 버튼을 통한 직관적인 페이지 이동 지원.
@@ -47,7 +47,7 @@ VULNOX는 최신 보안 취약점(CVE) 정보를 실시간으로 시각화하고
 *   **Deployment:** Static Export 기반 서버리스 아키텍처
 
 ## 5. 데이터 아키텍처 (Data Architecture)
-*   `data/pulse.json`: 최근 24시간 전수 데이터.
+*   `public/data/pulse.json` 및 `data/pulse.json`: 최근 72시간 동안 발행 완료된 위협 정보 전수 데이터 (public 디렉토리에 위치하여 정적 배포 환경에서도 실시간 데이터를 빌드 없이 즉시 브라우저로 가져올 수 있음).
 *   `data/analytics.json`: 최근 30일 통계 분석 데이터.
 *   `data/trends.json`: 최근 30일간의 모든 취약점 원본 데이터.
 *   `data/vulnerabilities_kev.json`: CISA 공식 피드와 NVD 데이터를 통합한 핵심 취약점 데이터 (All-Star & Leaderboard 공용).

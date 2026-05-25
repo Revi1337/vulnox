@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Activity, ShieldAlert, Zap, BarChart3, TrendingUp, Clock, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -16,6 +16,24 @@ export function DashboardClient({
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
   const [hoveredTech, setHoveredTech] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pulseList, setPulseList] = useState<any[]>(pulseData);
+
+  useEffect(() => {
+    async function fetchLivePulse() {
+      try {
+        const res = await fetch("/data/pulse.json");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setPulseList(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to dynamically fetch live pulse data:", err);
+      }
+    }
+    fetchLivePulse();
+  }, []);
   const pageSize = 10;
 
   if (!analyticsData) return <div>Loading...</div>;
@@ -40,7 +58,7 @@ export function DashboardClient({
 
   const filteredItems = selectedTech
     ? trendsData.filter(v => v.tech.toLowerCase().includes(selectedTech.toLowerCase()))
-    : pulseData;
+    : pulseList;
 
   const totalPages = Math.ceil(filteredItems.length / pageSize);
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -71,10 +89,10 @@ export function DashboardClient({
             <div className="p-2 bg-ember-cta/10 rounded-lg">
               <Zap className="w-5 h-5 text-ember-cta" />
             </div>
-            <span className="text-sm text-fog-text">Today's Pulse</span>
+            <span className="text-sm text-fog-text">Emerging Pulse</span>
           </div>
-          <div className="text-3xl font-light text-cloud-white mb-1">{pulseData.length}</div>
-          <div className="text-xs text-ash-text">Identified in Last 24 Hours</div>
+          <div className="text-3xl font-light text-cloud-white mb-1">{pulseList.length}</div>
+          <div className="text-xs text-ash-text">Identified in Last 72 Hours</div>
         </div>
 
         <div className="bg-elevated-surface rounded-2xl border border-border-smoke p-6 shadow-sm md:col-span-2">
@@ -158,7 +176,7 @@ export function DashboardClient({
               <h3 className="text-xl font-medium text-cloud-white flex items-center gap-3">
                 {selectedTech ? <TrendingUp className="w-5 h-5 text-electric-current" /> : <Clock className="w-5 h-5 text-ember-cta" />}
                 <span className="truncate max-w-[350px]">
-                  {selectedTech ? `30-Day Activity: ${selectedTech}` : "Today's Pulse Feed"}
+                  {selectedTech ? `30-Day Activity: ${selectedTech}` : "Emerging Pulse Feed"}
                 </span>
               </h3>
 
@@ -183,7 +201,7 @@ export function DashboardClient({
                   </div>
                 )}
                 <span className="text-xs font-bold text-fog-text bg-muted-shell/20 px-3 py-1.5 rounded-full border border-border-smoke uppercase tracking-wider whitespace-nowrap">
-                  {selectedTech ? `${filteredItems.length} incidents` : "24H Pulse"}
+                  {selectedTech ? `${filteredItems.length} incidents` : "Emerging Pulse"}
                 </span>
               </div>
             </div>
@@ -195,7 +213,7 @@ export function DashboardClient({
                   className="flex items-center gap-1.5 text-xs font-medium text-electric-current hover:text-cloud-white transition-colors w-fit group/back px-1"
                 >
                   <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover/back:-translate-x-0.5" />
-                  Back to Today's Pulse
+                  Back to Emerging Pulse
                 </button>
               ) : (
                 <div className="flex items-center gap-3 px-1">
