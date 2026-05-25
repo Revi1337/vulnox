@@ -16,6 +16,13 @@ export interface Vulnerability {
   isRansomware?: boolean;
 }
 
+export interface Analytics {
+  lastUpdated: string;
+  sampleSize: number;
+  severityDistribution: Record<string, number>;
+  topTechnologies: { name: string; count: number }[];
+}
+
 export function getKevVulnerabilities(): Vulnerability[] {
   try {
     const dataPath = path.join(process.cwd(), 'data', 'vulnerabilities_kev.json');
@@ -40,33 +47,36 @@ export function getVulnerabilityById(id: string): Vulnerability | undefined {
   return all.find(v => v.id === id);
 }
 
-export function getPulseVulnerabilities(): any[] {
+export function getPulseVulnerabilities(): Vulnerability[] {
   try {
     const dataPath = path.join(process.cwd(), 'data', 'pulse.json');
     const fileContents = fs.readFileSync(dataPath, 'utf8');
-    return JSON.parse(fileContents);
+    return JSON.parse(fileContents) as Vulnerability[];
   } catch (error) {
+    console.error('Failed to read pulse vulnerabilities data', error);
     return [];
   }
 }
 
-export function getTrendsVulnerabilities(): any[] {
+export function getTrendsVulnerabilities(): Vulnerability[] {
   try {
     const dataPath = path.join(process.cwd(), 'data', 'trends.json');
     if (!fs.existsSync(dataPath)) return [];
     const fileContents = fs.readFileSync(dataPath, 'utf8');
-    return JSON.parse(fileContents);
+    return JSON.parse(fileContents) as Vulnerability[];
   } catch (error) {
+    console.error('Failed to read trends vulnerabilities data', error);
     return [];
   }
 }
 
-export function getAnalytics(): any {
+export function getAnalytics(): Analytics | null {
   try {
     const dataPath = path.join(process.cwd(), 'data', 'analytics.json');
     const fileContents = fs.readFileSync(dataPath, 'utf8');
-    return JSON.parse(fileContents);
+    return JSON.parse(fileContents) as Analytics;
   } catch (error) {
+    console.error('Failed to read analytics data', error);
     return null;
   }
 }
