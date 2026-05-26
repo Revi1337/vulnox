@@ -23,7 +23,7 @@ export function StatsGrid({ analyticsData, pulseCount }: StatsGridProps) {
           </div>
           <span className="text-sm text-fog-text">Last 30 Days</span>
         </div>
-        <div className="text-3xl font-light text-cloud-white mb-1">
+        <div className="text-3xl font-medium text-cloud-white mb-1">
           {analyticsData.sampleSize}
         </div>
         <div className="text-xs text-ash-text">New Vulnerabilities Analyzed</div>
@@ -37,7 +37,7 @@ export function StatsGrid({ analyticsData, pulseCount }: StatsGridProps) {
           </div>
           <span className="text-sm text-fog-text">Emerging Pulse</span>
         </div>
-        <div className="text-3xl font-light text-cloud-white mb-1">
+        <div className="text-3xl font-medium text-cloud-white mb-1">
           {pulseCount}
         </div>
         <div className="text-xs text-ash-text">Identified in Last 72 Hours</div>

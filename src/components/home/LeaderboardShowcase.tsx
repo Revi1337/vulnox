@@ -7,7 +7,7 @@ import { TextReveal } from "@/components/ui/TextReveal";
 
 function TiltCard({ children, className = "" }: { children: React.ReactNode, className?: string }) {
   return (
-    <div className={`glass-panel ${className}`}>
+    <div className={`glass-panel floating-element preserve-3d ${className}`}>
       {children}
     </div>
   );
@@ -46,14 +46,14 @@ export function LeaderboardShowcase() {
             </span>
           </div>
 
-          <h2 className="text-[40px] md:text-[52px] font-light text-cloud-white leading-tight mb-8">
+          <h2 className="text-[40px] md:text-[52px] font-bold text-cloud-white leading-tight mb-8">
             <TextReveal text="The Annual" /> <br />
             <span className="text-amber-500 italic">
               <TextReveal text="Threat Leaderboard." />
             </span>
           </h2>
 
-          <p className="text-ash-text text-lg leading-relaxed font-light mb-10 max-w-lg">
+          <p className="text-ash-text text-lg leading-relaxed font-medium mb-10 max-w-lg">
             Explore the definitive ranking of history&apos;s most impactful security flaws. Our Hall
             of Fame uses a weighted analysis of active exploitation, CVSS severity, and documented
             ransomware impact to crown the &apos;Threat of the Year&apos;.

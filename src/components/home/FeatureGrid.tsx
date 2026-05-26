@@ -87,13 +87,13 @@ export function FeatureGrid() {
       >
         {/* Today's Pulse */}
         <motion.div variants={cardVariants} className="h-full">
-          <SpotlightCard className="p-10 h-full group">
+          <SpotlightCard className="p-10 h-full group floating-element preserve-3d">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-electric-current/10 rounded-xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(7,122,199,0.2)]">
                 <Zap className="w-6 h-6 text-electric-current drop-shadow-[0_0_8px_rgba(7,122,199,0.8)]" />
               </div>
-              <h3 className="text-xl font-medium text-cloud-white mb-4">Today&apos;s Pulse</h3>
-              <p className="text-ash-text leading-relaxed font-light">
+              <h3 className="text-xl font-bold text-cloud-white mb-4">Today&apos;s Pulse</h3>
+              <p className="text-ash-text leading-relaxed font-medium">
                 Real-time monitoring of newly discovered vulnerabilities across the globe. Updated every 2
                 hours with full NVD technical insights.
               </p>
@@ -103,13 +103,13 @@ export function FeatureGrid() {
 
         {/* All-Star Gallery */}
         <motion.div variants={cardVariants} className="h-full">
-          <SpotlightCard className="p-10 h-full group">
+          <SpotlightCard className="p-10 h-full group floating-element preserve-3d">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-ember-scorch/10 rounded-xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(255,73,44,0.2)]">
                 <Trophy className="w-6 h-6 text-ember-scorch drop-shadow-[0_0_8px_rgba(255,73,44,0.8)]" />
               </div>
-              <h3 className="text-xl font-medium text-cloud-white mb-4">All-Star Gallery</h3>
-              <p className="text-ash-text leading-relaxed font-light">
+              <h3 className="text-xl font-bold text-cloud-white mb-4">All-Star Gallery</h3>
+              <p className="text-ash-text leading-relaxed font-medium">
                 A curated collection of history&apos;s most critical vulnerabilities. Sourced from the
                 CISA KEV catalog for verified impact analysis.
               </p>
@@ -119,13 +119,13 @@ export function FeatureGrid() {
 
         {/* Threat Analytics */}
         <motion.div variants={cardVariants} className="h-full">
-          <SpotlightCard className="p-10 h-full group">
+          <SpotlightCard className="p-10 h-full group floating-element preserve-3d">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
                 <BarChart3 className="w-6 h-6 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
               </div>
-              <h3 className="text-xl font-medium text-cloud-white mb-4">Threat Analytics</h3>
-              <p className="text-ash-text leading-relaxed font-light">
+              <h3 className="text-xl font-bold text-cloud-white mb-4">Threat Analytics</h3>
+              <p className="text-ash-text leading-relaxed font-medium">
                 Visual insights into global trends. Identify which technologies are under attack and
                 monitor severity distributions in real-time.
               </p>

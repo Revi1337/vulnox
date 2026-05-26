@@ -12,7 +12,7 @@ export function getRankStyles(index: number) {
   switch (index) {
     case 0:
       return {
-        bg: "bg-gradient-to-br from-[#10b981]/20 to-transparent",
+        bg: "bg-elevated-surface bg-gradient-to-br from-[#10b981]/10 to-transparent",
         border: "border-[#10b981]/30",
         text: "text-[#10b981]",
         label: "Green Rank",
@@ -20,7 +20,7 @@ export function getRankStyles(index: number) {
       };
     case 1:
       return {
-        bg: "bg-gradient-to-br from-[#f97316]/10 to-transparent",
+        bg: "bg-elevated-surface bg-gradient-to-br from-[#f97316]/5 to-transparent",
         border: "border-[#f97316]/20",
         text: "text-[#f97316]",
         label: "Orange Rank",
@@ -28,7 +28,7 @@ export function getRankStyles(index: number) {
       };
     case 2:
       return {
-        bg: "bg-gradient-to-br from-[#8b5cf6]/10 to-transparent",
+        bg: "bg-elevated-surface bg-gradient-to-br from-[#8b5cf6]/5 to-transparent",
         border: "border-[#8b5cf6]/20",
         text: "text-[#8b5cf6]",
         label: "Purple Rank",
@@ -36,7 +36,7 @@ export function getRankStyles(index: number) {
       };
     default:
       return {
-        bg: "bg-elevated-surface/50",
+        bg: "bg-elevated-surface",
         border: "border-border-smoke/50",
         text: "text-fog-text",
         label: `Rank #${index + 1}`,
@@ -58,7 +58,7 @@ export function LeaderboardCard({ v, idx }: LeaderboardCardProps) {
         {idx === 0 ? (
           <Trophy className="w-6 h-6 text-[#10b981] mb-1" />
         ) : (
-          <span className={`text-2xl font-light ${styles.text}`}>#{idx + 1}</span>
+          <span className={`text-2xl font-medium ${styles.text}`}>#{idx + 1}</span>
         )}
         <span className="text-[8px] uppercase tracking-widest text-fog-text font-bold">
           {styles.label}
@@ -69,7 +69,7 @@ export function LeaderboardCard({ v, idx }: LeaderboardCardProps) {
       <div className="flex-1 min-w-0">
         <div className="mb-4">
           <h3
-            className="text-2xl font-light text-cloud-white group-hover:text-electric-current transition-colors truncate max-w-full mb-2"
+            className="text-2xl font-medium text-cloud-white group-hover:text-electric-current transition-colors truncate max-w-full mb-2"
             title={v.title || v.id}
           >
             <span className="text-ash-text mr-3 text-xl opacity-60">[{v.id}]</span>

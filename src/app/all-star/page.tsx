@@ -13,10 +13,11 @@ export default function AllStarPage() {
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-20">
       <div className="mb-12">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6 text-xs text-amber-500 uppercase font-medium tracking-wider">
-          🌟 All-Star Collection
+        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-elevated-surface border border-border-smoke shadow-sm mb-6">
+          <span className="text-[13px]">🌟</span>
+          <span className="text-[11px] text-cloud-white font-medium tracking-widest uppercase">All-Star Collection</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-light text-cloud-white mb-4 tracking-tight">
+        <h1 className="text-4xl md:text-5xl font-medium text-cloud-white mb-4 tracking-tight">
           The All-Star Vulnerability Gallery
         </h1>
         <p className="text-lg text-ash-text max-w-2xl leading-relaxed">

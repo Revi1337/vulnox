@@ -30,14 +30,17 @@ export function HeroSection() {
         animate="visible"
         className="flex-1 flex flex-col items-start z-10 relative"
       >
-        <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-electric-current/10 border border-electric-current/20 mb-14 glass-panel">
-          <span className="w-2 h-2 rounded-full bg-electric-current animate-pulse shadow-[0_0_10px_rgba(7,122,199,0.8)]" />
-          <span className="text-[10px] text-electric-current tracking-[0.1em] uppercase font-bold">
+        <motion.div variants={itemVariants} className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-elevated-surface border border-border-smoke shadow-sm mb-14 glass-panel">
+          <div className="relative flex items-center justify-center w-4 h-4">
+            <div className="absolute inset-0 rounded-full bg-electric-current/20 animate-ping" style={{ animationDuration: '3s' }} />
+            <div className="relative w-2 h-2 rounded-full bg-electric-current shadow-[0_0_8px_rgba(7,122,199,0.8)]" />
+          </div>
+          <span className="text-[11px] text-cloud-white font-medium tracking-widest uppercase">
             Live Threat Feed Active
           </span>
         </motion.div>
 
-        <h1 className="text-[48px] md:text-[64px] font-light leading-[0.88] tracking-[-0.02em] text-cloud-white mb-10 max-w-xl">
+        <h1 className="text-[48px] md:text-[64px] font-bold leading-[0.88] tracking-[-0.02em] text-cloud-white mb-10 max-w-xl">
           <TextReveal text="Precision Threat Intelligence." />
           <br />
           <span className="text-ash-text text-[40px] md:text-[52px]">
@@ -45,7 +48,7 @@ export function HeroSection() {
           </span>
         </h1>
 
-        <motion.p variants={itemVariants} className="text-lg md:text-xl text-ash-text mb-12 max-w-[540px] leading-relaxed font-light">
+        <motion.p variants={itemVariants} className="text-lg md:text-xl text-ash-text mb-12 max-w-[540px] leading-relaxed font-medium">
           Monitor emerging security pulses as they break and explore a curated gallery of
           history&apos;s most critical, actively exploited vulnerabilities.
         </motion.p>
@@ -53,14 +56,14 @@ export function HeroSection() {
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto">
           <Link
             href="/catalog"
-            className="btn-shine w-full sm:w-auto bg-ember-gradient text-cloud-white px-10 py-4 rounded-[8px] font-medium transition-all shadow-sm flex items-center justify-center gap-3 group"
+            className="btn-shine w-full sm:w-auto whitespace-nowrap bg-ember-gradient text-cloud-white px-10 py-3 rounded-[8px] font-medium transition-all shadow-sm flex items-center justify-center gap-3 group"
           >
             Explore Live Pulse{" "}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
             href="/all-star"
-            className="glass-panel w-full sm:w-auto px-10 py-4 rounded-[8px] text-cloud-white font-medium hover:bg-cloud-white/5 transition-all flex items-center justify-center gap-3 !border-border-smoke/50 dark:!border-cloud-white/20"
+            className="glass-panel w-full sm:w-auto whitespace-nowrap px-10 py-3 rounded-[8px] text-cloud-white font-medium hover:bg-cloud-white/5 transition-all flex items-center justify-center gap-3 !border-border-smoke/50 dark:!border-cloud-white/20"
           >
             <Trophy className="w-5 h-5 text-ember-scorch" /> All-Star Gallery
           </Link>
@@ -100,7 +103,7 @@ export function HeroSection() {
           className="absolute inset-0 bg-ember-gradient blur-[120px] rounded-full" 
         />
 
-        <div className="relative z-10 w-full max-w-[450px] aspect-square glass-panel rounded-[32px] !border-border-smoke/50 dark:!border-cloud-white/20 !bg-elevated-surface/70 dark:!bg-elevated-surface/30 flex items-center justify-center group overflow-hidden shadow-2xl dark:shadow-[0_0_40px_rgba(107,33,239,0.15)]">
+        <div className="relative z-10 w-full max-w-[450px] aspect-square glass-panel rounded-[32px] !border-border-smoke/50 dark:!border-cloud-white/20 !bg-elevated-surface/70 dark:!bg-elevated-surface/30 flex items-center justify-center group overflow-hidden shadow-2xl dark:shadow-[0_0_40px_rgba(107,33,239,0.15)] floating-element preserve-3d">
           {/* Glowing lines background effect */}
           <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-700">
             <div className="absolute top-0 left-1/4 w-[1px] h-full bg-gradient-to-b from-transparent via-electric-current to-transparent" />
@@ -117,7 +120,7 @@ export function HeroSection() {
               <span className="text-[10px] text-cloud-white/60 tracking-[0.2em] uppercase font-bold">
                 Threat Intelligence
               </span>
-              <span className="text-xl font-light text-cloud-white">Global Pulse Dashboard</span>
+              <span className="text-xl font-bold text-cloud-white">Global Pulse Dashboard</span>
             </div>
           </div>
 

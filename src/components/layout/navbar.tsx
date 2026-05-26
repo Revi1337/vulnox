@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Shield } from "lucide-react";
-import { ThemeToggle } from "./theme-toggle";
+
 
 export function Navbar() {
   return (
@@ -22,7 +22,6 @@ export function Navbar() {
           <Link href="/leaderboard" className="text-sm text-ash-text hover:text-cloud-white transition-colors">
             Hall of Fame
           </Link>
-          <ThemeToggle />
         </div>
       </div>
     </nav>

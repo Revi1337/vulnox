@@ -16,12 +16,12 @@ export default function NotFound() {
         </div>
         
         {/* Typographical Heading */}
-        <h1 className="text-4xl md:text-5xl font-light text-cloud-white mb-4 tracking-tight">
+        <h1 className="text-4xl md:text-5xl font-medium text-cloud-white mb-4 tracking-tight">
           404 - Threat Vector Lost
         </h1>
         
         {/* Description */}
-        <p className="text-sm md:text-base text-ash-text mb-8 leading-relaxed font-light">
+        <p className="text-sm md:text-base text-ash-text mb-8 leading-relaxed font-medium">
           The intelligence vector you are trying to intercept does not exist, has been relocated, or is classified under a higher clearance level.
         </p>
         

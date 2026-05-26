@@ -4,7 +4,7 @@
 VULNOX는 최신 보안 취약점(CVE) 정보를 실시간으로 시각화하고, 역사적으로 중요한 취약점들을 큐레이션하여 제공하는 프리미엄 보안 대시보드입니다. 사용자가 복잡한 보안 데이터를 직관적으로 이해하고 탐색할 수 있도록 고도의 UX 디자인을 적용합니다.
 
 ## 2. 디자인 철학 (Design Philosophy)
-*   **Premium Dark Aesthetics:** 깊이 있는 다크 모드를 기본으로 하며, Glassmorphism과 미세한 Glow 효과를 통해 현대적이고 고급스러운 인터페이스를 제공합니다.
+*   **Pure Premium Dark Aesthetics:** 깊이 있는 다크 모드 전용(Light 모드 제거)으로 설계되었으며, Glassmorphism과 미세한 Glow 효과, Framer Motion 기반의 동적 애니메이션을 통해 현대적이고 압도적인 고급스러움을 제공합니다.
 *   **Geomanist Typography:** 300(Light) 웨이트를 활용한 극도로 정제된 타이포그래피를 지향합니다.
 *   **Minimalist Data Formatting:** 정보 과부하를 줄이기 위해 날짜 형식을 간결한 `M.D` (예: 4.29) 형태로 표준화합니다.
 
