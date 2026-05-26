@@ -47,11 +47,10 @@ export function LeaderboardClient({ data }: { data: Vulnerability[] }) {
             <button
               key={year}
               onClick={() => setSelectedYear(year)}
-              className={`px-6 py-2.5 rounded-full border text-sm font-medium transition-all duration-300 ${
-                selectedYear === year
+              className={`px-6 py-2.5 rounded-full border text-sm font-medium transition-all duration-300 ${selectedYear === year
                   ? "bg-cloud-white text-void-base border-cloud-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
                   : "bg-elevated-surface text-fog-text border-border-smoke hover:border-ash-text"
-              }`}
+                }`}
             >
               {year}
             </button>
@@ -65,21 +64,19 @@ export function LeaderboardClient({ data }: { data: Vulnerability[] }) {
           <div className="flex bg-void-base/50 p-1 rounded-xl border border-border-smoke/30 w-fit">
             <button
               onClick={() => setSortMode("impact")}
-              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
-                sortMode === "impact"
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${sortMode === "impact"
                   ? "bg-muted-shell text-cloud-white shadow-lg"
                   : "text-fog-text hover:text-ash-text"
-              }`}
+                }`}
             >
               Impact-First
             </button>
             <button
               onClick={() => setSortMode("severity")}
-              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
-                sortMode === "severity"
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${sortMode === "severity"
                   ? "bg-muted-shell text-cloud-white shadow-lg"
                   : "text-fog-text hover:text-ash-text"
-              }`}
+                }`}
             >
               Severity-First
             </button>
