@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Star, Medal, Trophy } from "lucide-react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { motion, useMotionValue, useTransform, Variants } from "framer-motion";
 import { TextReveal } from "@/components/ui/TextReveal";
 
 function TiltCard({ children, className = "" }: { children: React.ReactNode, className?: string }) {
@@ -43,7 +43,7 @@ function TiltCard({ children, className = "" }: { children: React.ReactNode, cla
   );
 }
 
-const listVariants = {
+const listVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -51,7 +51,7 @@ const listVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, x: -20 },
   visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 100, damping: 12 } }
 };

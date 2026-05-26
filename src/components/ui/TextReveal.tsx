@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import React from "react";
 
 interface TextRevealProps {
@@ -11,7 +11,7 @@ interface TextRevealProps {
 export function TextReveal({ text, className }: TextRevealProps) {
   const words = text.split(" ");
 
-  const container = {
+  const container: Variants = {
     hidden: { opacity: 0 },
     visible: (i = 1) => ({
       opacity: 1,
@@ -19,7 +19,7 @@ export function TextReveal({ text, className }: TextRevealProps) {
     }),
   };
 
-  const child = {
+  const child: Variants = {
     visible: {
       opacity: 1,
       y: 0,
