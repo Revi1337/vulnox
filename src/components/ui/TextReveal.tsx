@@ -42,7 +42,7 @@ export function TextReveal({ text, className }: TextRevealProps) {
 
   return (
     <motion.div
-      style={{ overflow: "hidden", display: "inline-flex", flexWrap: "wrap", gap: "0.25em" }}
+      style={{ overflow: "hidden", display: "inline-flex", flexWrap: "wrap", gap: "0.25em", paddingBottom: "0.2em", marginBottom: "-0.2em" }}
       variants={container}
       initial="hidden"
       whileInView="visible"

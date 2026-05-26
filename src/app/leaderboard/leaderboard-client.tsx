@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { type Vulnerability } from "@/lib/vulnerabilities";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, ShieldAlert, Zap } from "lucide-react";
+import { ShieldAlert, Zap } from "lucide-react";
 import { groupAndSortByYear, getSortedLeaderboard } from "@/lib/leaderboard";
 import { LeaderboardCard } from "@/components/leaderboard/LeaderboardCard";
 

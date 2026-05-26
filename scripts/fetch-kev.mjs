@@ -10,7 +10,7 @@ const NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0";
 const CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
 const CWE_DICT_URL = "https://raw.githubusercontent.com/OWASP/cwe-sdk-javascript/master/raw/cwe-dictionary.json";
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 
 async function fetchKEV() {
   console.log("🚀 Starting CISA KEV (All-Star) Data Consolidation...");

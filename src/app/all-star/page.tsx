@@ -20,7 +20,7 @@ export default function AllStarPage() {
           The All-Star Vulnerability Gallery
         </h1>
         <p className="text-lg text-ash-text max-w-2xl leading-relaxed">
-          A curated showcase of history's most impactful and actively exploited security threats. 
+          A curated showcase of history&apos;s most impactful and actively exploited security threats. 
           Sourced directly from the CISA KEV catalog, this gallery highlights the vulnerabilities 
           that defined the cybersecurity landscape.
         </p>

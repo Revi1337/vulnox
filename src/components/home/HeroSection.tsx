@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowRight, Trophy, ShieldAlert } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import { TextReveal } from "@/components/ui/TextReveal";
-import { MagneticButton } from "@/components/ui/MagneticButton";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -52,23 +51,19 @@ export function HeroSection() {
         </motion.p>
 
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto">
-          <MagneticButton>
-            <Link
-              href="/catalog"
-              className="btn-shine w-full sm:w-auto bg-ember-gradient text-cloud-white px-10 py-4 rounded-[8px] font-medium transition-all shadow-sm flex items-center justify-center gap-3 group"
-            >
-              Explore Live Pulse{" "}
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </MagneticButton>
-          <MagneticButton>
-            <Link
-              href="/all-star"
-              className="glass-panel w-full sm:w-auto px-10 py-4 rounded-[8px] text-cloud-white font-medium hover:bg-cloud-white/5 transition-all flex items-center justify-center gap-3"
-            >
-              <Trophy className="w-5 h-5 text-ember-scorch" /> All-Star Gallery
-            </Link>
-          </MagneticButton>
+          <Link
+            href="/catalog"
+            className="btn-shine w-full sm:w-auto bg-ember-gradient text-cloud-white px-10 py-4 rounded-[8px] font-medium transition-all shadow-sm flex items-center justify-center gap-3 group"
+          >
+            Explore Live Pulse{" "}
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <Link
+            href="/all-star"
+            className="glass-panel w-full sm:w-auto px-10 py-4 rounded-[8px] text-cloud-white font-medium hover:bg-cloud-white/5 transition-all flex items-center justify-center gap-3 !border-border-smoke/50 dark:!border-cloud-white/20"
+          >
+            <Trophy className="w-5 h-5 text-ember-scorch" /> All-Star Gallery
+          </Link>
         </motion.div>
       </motion.div>
 
@@ -80,10 +75,32 @@ export function HeroSection() {
         className="flex-1 relative w-full aspect-square md:h-[600px] flex items-center justify-center"
       >
         {/* Animated Mesh Gradient Background */}
-        <div className="absolute inset-0 bg-electric-gradient opacity-20 blur-[100px] rounded-full mix-blend-screen animate-mesh-rotate" />
-        <div className="absolute inset-0 bg-ember-gradient opacity-10 blur-[120px] rounded-full mix-blend-screen animate-mesh-rotate" style={{ animationDirection: 'reverse', animationDuration: '25s' }} />
+        <motion.div 
+          animate={{ 
+            scale: [0.8, 1.2, 0.8],
+            opacity: [0.15, 0.35, 0.15]
+          }}
+          transition={{ 
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute inset-0 bg-electric-gradient blur-[100px] rounded-full" 
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1.1, 0.85, 1.1],
+            opacity: [0.1, 0.25, 0.1]
+          }}
+          transition={{ 
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute inset-0 bg-ember-gradient blur-[120px] rounded-full" 
+        />
 
-        <div className="relative z-10 w-full max-w-[450px] aspect-square glass-panel rounded-[32px] border-cloud-white/10 flex items-center justify-center group overflow-hidden shadow-2xl">
+        <div className="relative z-10 w-full max-w-[450px] aspect-square glass-panel rounded-[32px] !border-border-smoke/50 dark:!border-cloud-white/20 !bg-elevated-surface/70 dark:!bg-elevated-surface/30 flex items-center justify-center group overflow-hidden shadow-2xl dark:shadow-[0_0_40px_rgba(107,33,239,0.15)]">
           {/* Glowing lines background effect */}
           <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-700">
             <div className="absolute top-0 left-1/4 w-[1px] h-full bg-gradient-to-b from-transparent via-electric-current to-transparent" />

@@ -19,13 +19,13 @@ export function Footer() {
             <p className="text-sm text-fog-text mb-6 leading-relaxed">
               Precision-curated intelligence for high-impact security vulnerabilities. Powered by NVD API 2.0 & CISA KEV Data.
             </p>
-            <div className="flex items-center gap-4">
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="text-ash-text hover:text-cloud-white transition-colors text-sm font-medium">
+            <div className="flex items-center gap-6">
+              <a href="https://github.com/Revi1337/vulnox" target="_blank" rel="noreferrer" className="text-ash-text hover:text-cloud-white transition-colors text-sm font-medium">
                 GitHub
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noreferrer" className="text-ash-text hover:text-cloud-white transition-colors text-sm font-medium">
-                Twitter
-              </a>
+              <p className="text-xs text-fog-text">
+                © {new Date().getFullYear()} VULNOX Intelligence. All rights reserved.
+              </p>
             </div>
           </div>
           <div>
@@ -43,9 +43,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="pt-8 border-t border-border-smoke flex flex-col md:flex-row items-center justify-between">
-          <p className="text-xs text-fog-text">© {new Date().getFullYear()} VULNOX Intelligence. All rights reserved.</p>
-        </div>
+
       </div>
     </footer>
   );

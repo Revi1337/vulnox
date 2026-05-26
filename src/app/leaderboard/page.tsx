@@ -21,7 +21,7 @@ export default function LeaderboardPage() {
           Hall of Fame: Annual Leaderboard
         </h1>
         <p className="text-lg text-ash-text max-w-2xl leading-relaxed">
-          A definitive ranking of history's most critical and routinely exploited vulnerabilities. 
+          A definitive ranking of history&apos;s most critical and routinely exploited vulnerabilities. 
           Sourced from the CISA KEV catalog and ranked by technical severity.
         </p>
       </div>
