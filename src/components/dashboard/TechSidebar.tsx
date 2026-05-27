@@ -29,11 +29,11 @@ export function TechSidebar({
             onMouseEnter={() => onHoverTech(tech.name)}
             onMouseLeave={() => onHoverTech(null)}
             onClick={() => onTechClick(tech.name)}
-            className={`p-4 rounded-xl border transition-all text-left flex items-center justify-between ${
+            className={`p-4 rounded-xl border transition-all duration-300 text-left flex items-center justify-between ${
               selectedTech === tech.name
-                ? "bg-electric-current/10 border-electric-current shadow-[0_0_15px_rgba(7,122,199,0.1)]"
+                ? "bg-electric-current/20 border-electric-current shadow-[0_0_20px_rgba(7,122,199,0.4)] ring-1 ring-electric-current scale-[1.02]"
                 : hoveredTech === tech.name
-                ? "bg-muted-shell/40 border-border-smoke"
+                ? "bg-muted-shell/40 border-border-smoke translate-x-1"
                 : "bg-elevated-surface border-transparent"
             }`}
           >

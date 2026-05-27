@@ -66,6 +66,9 @@ async function fetchPulse() {
     }
 
     if (allPulse.length > 0) {
+      // Sort by published date descending (latest first)
+      allPulse.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime());
+
       // 1. Write to public/data/pulse.json (for client-side runtime fetching)
       const publicDataDir = path.join(__dirname, '..', 'public', 'data');
       if (!fs.existsSync(publicDataDir)) {
