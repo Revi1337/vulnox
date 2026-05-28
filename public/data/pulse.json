@@ -1,5 +1,362 @@
 [
   {
+    "id": "CVE-2026-47270",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.0, pam_usb is a PAM module loaded into the host process (sudo, login, GDM, GNOME Shell). Display managers such as GDM run multiple concurrent authentication threads. Three functions used by the deny_remote feature called the non-reentrant strtok(), which stores state in a single global pointer. If two authentications race, one thread's strtok() call can overwrite the other's in-progress tokenisation pointer, causing incorrect parsing of the tmux session data or the /proc environ scan that backs the remote-session detection logic. Additionally, pusb_tmux_get_client_tty() passed the raw pointer returned by getenv(TMUX) directly to strtok(). getenv() returns a pointer into the live process environment block; strtok() inserts NUL bytes into that block, permanently corrupting the TMUX variable for subsequent code running in the same process. In long-lived display managers this affects all future authentications in that process. The combined effect can cause deny_remote=true to return an incorrect decision for a remote session, or an incorrect decision for a local session, depending on thread interleaving. This vulnerability is fixed in 0.9.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:18.950"
+  },
+  {
+    "id": "CVE-2026-47269",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.0,  pam_usb's deny_remote feature checks utmpx ut_addr_v6 to detect whether an authentication request originates from a remote session. The outer guard was if (utent->ut_addr_v6[0] != 0), which only tests the first 32-bit word of the 128-bit address field. IPv4-mapped IPv6 addresses (::ffff:x.x.x.x) store the IPv4 address in ut_addr_v6[3] with ut_addr_v6[0] == 0. On systems where the SSH daemon listens on :: (IPv6 wildcard) with AddressFamily any -- common on Ubuntu and Debian -- incoming IPv4 connections are recorded in utmpx as IPv4-mapped IPv6 addresses. The outer check evaluates to false, the remote-detection block is skipped entirely, and the session is treated as local. deny_remote=true does not block the authentication. An attacker with physical access to a registered USB device can authenticate over SSH on an affected system as if they were sitting at a local terminal, bypassing the deny_remote restriction. This vulnerability is fixed in 0.9.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:18.810"
+  },
+  {
+    "id": "CVE-2026-45137",
+    "description": "Anchor is a framework providing several convenient developer tools for writing Solana programs. From 1.0.0 to before 1.0.2, an logic error causes anchor programs to accept any program id when requiring the system program id, causing false assumptions resulting in potential arbitrary cpi in programs that invoke system program instructions. In the TryFrom<&'a AccountInfo<'a>> implementation for Program<'a, T>, the id of T is compared with Pubkey::default() to check whether anchor should allow any executable account, or a specific account, because when no T is supplied, T defaults to (), which implements Id::id() by returning Pubkey::default(). This results in T = () and T = System (which has Pubkey::default() as the id) having the same behavior, both allow any executable account. Programs built with anchor assume that the anchor runtime verifies passed in programs of type Program<'a, System> are in fact the system program. This false assumption can lead to arbitrary CPI or payment bypassing when programs try making CPI calls to the system program using the passed in system program due to the fact that the attacker can pass in any program instead of the system program.  This vulnerability is fixed in 1.0.2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:18.670"
+  },
+  {
+    "id": "CVE-2026-45136",
+    "description": "claude-code-cache-fix is a cache optimization proxy for Claude Code. From 3.5.0 to before 3.5.2, tools/quota-statusline.sh (introduced in v3.5.0) interpolates Claude Code's hook stdin payload directly into a Python triple-quoted string literal. A ''' byte sequence in any user-controlled field of the payload closes the literal early and lets following bytes execute as Python in the user's Claude Code process. This vulnerability is fixed in 3.5.2.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:18.523"
+  },
+  {
+    "id": "CVE-2026-44713",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.8.7, src/tmux.c reads the user's $TMUX environment variable, splits it on commas, and interpolates the socket-path component directly into a shell command passed to popen(). Because the value is placed inside double-quotes without sanitisation, any value containing \" terminates the quoted string and injects arbitrary shell syntax. popen() runs as root inside the PAM stack. This vulnerability is fixed in 0.8.7.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:18.363"
+  },
+  {
+    "id": "CVE-2026-44712",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.8.7, a crafted UUID such as $(id>/tmp/rce) in the config causes root RCE when pamusb-conf --reset-pads is run. A USB device with a crafted filesystem UUID (some controllers allow this) can inject the payload at --add-device time. Also, userName from the XML config is passed to os.system() in pamusb-agent, which invokes a shell. This vulnerability is fixed in 0.8.7.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:18.213"
+  },
+  {
+    "id": "CVE-2026-44711",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.8.7, symlink attacks on pad directory and pad files enable authentication bypass and root file corruption. This vulnerability is fixed in 0.8.7.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:18.073"
+  },
+  {
+    "id": "CVE-2026-44710",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.8.7, src/device.c passed the return values of udisks_drive_get_serial(), udisks_drive_get_vendor(), and udisks_drive_get_model() directly to strcmp() without NULL checks. The GIO/UDisks API documentation states these accessors can return NULL for devices that do not expose the corresponding field. Passing NULL to strcmp() is undefined behaviour (typically a SIGSEGV). This vulnerability is fixed in 0.8.7.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:17.947"
+  },
+  {
+    "id": "CVE-2026-44709",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.8.7, pamusb-pinentry reads the PINENTRY_FALLBACK_APP environment variable and executes it directly without any validation. Any process that can set environment variables before pamusb-pinentry is invoked can point PINENTRY_FALLBACK_APP at an arbitrary binary or script and have it executed with the privileges of the pam_usb tool chain. This vulnerability is fixed in 0.8.7.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:17.807"
+  },
+  {
+    "id": "CVE-2026-44660",
+    "description": "UltraJSON is a fast JSON encoder and decoder written in pure C with bindings for Python 3.7+. Prior to 5.12.1, when ujson.dump() writes to a file-like object and the write operation raises an exception, the serialized JSON string object is not decremented, leaking memory. Each failed write operation leaks the full size of the serialized payload. This vulnerability is fixed in 5.12.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:17.650"
+  },
+  {
+    "id": "CVE-2026-21785",
+    "description": "A misconfigured Content Security Policy (CSP) in HCL BigFix Remote Control Server WebUI (versions 10.1.0.0442 and earlier) fails to define directives without fallbacks, allowing attackers to bypass intended security restrictions and load unauthorized resources.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T21:16:17.327"
+  },
+  {
+    "id": "CVE-2026-9759",
+    "description": "ROHC protocol dissector crash in Wireshark 4.6.0 to 4.6.5 and 4.4.0 to 4.4.15 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:46.797"
+  },
+  {
+    "id": "CVE-2026-8364",
+    "description": "Gladinet Triofox Cloud Server Agent Access Service (GladServerAgentService.exe) listens on TCP port 7878 and processes remote HTTP messages with URL paths starting with /resources, /status, /sysinfo, /woshome, /Settings, /schedule, or /DavCache.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:43.333"
+  },
+  {
+    "id": "CVE-2026-8363",
+    "description": "A stack-based buffer overflow condition exists in WOSDeviceDropFolder.dll when processing a long URL path starting with /resources:",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:43.190"
+  },
+  {
+    "id": "CVE-2026-8362",
+    "description": "A stack-based buffer overflow condition exists in WOSDefaultHttpModule.dll when processing a long URL path starting with /woshome",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:42.993"
+  },
+  {
+    "id": "CVE-2026-8361",
+    "description": "A path traversal vulnerability exists in WOSDefaultHttpModule.dll when processing a URL path starting with /woshome",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:42.853"
+  },
+  {
+    "id": "CVE-2026-8360",
+    "description": "Function calls to WOSCommonUtil.dll!WOSSysInfoGetDeviceInterface() in various DLLs (i.e., WOSProfileMgrModule.dll, WOSWebDavModule.dll) can return a NULL pointer (i.e., when no user is logged into the Triofox Server Agent Management Console).  The returned NULL pointer is not checked before being dereferenced.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:42.713"
+  },
+  {
+    "id": "CVE-2026-8359",
+    "description": "When processing a request with a URL path starting with /status or /sysinfo, WOSHttpStatusModule.dll is to be loaded to handle such URL patterns. The WOSBin_LoadHttpModule function in the dll would be called to set up a \"module\" object for that module. However, WOSHttpStatusModule.dll is not present in the installation. As a result, a function pointer to WOSBin_LoadHttpModule (which would have been in the export table in WOSHttpStatusModule.dll) is set to NULL, resulting in calling a function at address 0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:42.590"
+  },
+  {
+    "id": "CVE-2026-49009",
+    "description": "Northern.tech Mender Server v4.1.0, v4.0.1 and below, and fixed in v4.1.1 and v4.0.2 allows Directory Traversal.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:41.930"
+  },
+  {
+    "id": "CVE-2026-48792",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.1, src/evdev.c silently ignores EACCES errors when opening /dev/input/event* nodes, causing pusb_has_virtual_input_device() to return 0 (no virtual devices found) even when every open() call failed due to insufficient permissions. The caller in src/local.c cannot distinguish a clean absence of virtual devices from a permission-denied scan, and acts on the false negative by continuing authentication without denying. This vulnerability is fixed in 0.9.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:41.077"
+  },
+  {
+    "id": "CVE-2026-48066",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.1, src/log.c contains a process-wide static pointer that is written on every PAM invocation with the address of a stack-local variable. This violates the PAM re-entrancy requirement and creates a data race when the PAM stack is invoked concurrently from multiple threads. This vulnerability is fixed in 0.9.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:40.543"
+  },
+  {
+    "id": "CVE-2026-48065",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.1, src/conf.c allocates heap memory proportional to n_devices, a count derived from libxml2 XPath evaluation of the config file, without first enforcing an upper bound. On 32-bit targets (armv7l, i686 -- both listed in the project Makefile), the multiplication n_devices * sizeof(t_pusb_device) wraps around size_t, causing xmalloc() to receive a very small size. Because xmalloc() only calls abort() on NULL return, a small-but-non-NULL allocation is accepted, and subsequent array writes overflow the heap. This vulnerability is fixed in 0.9.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:40.380"
+  },
+  {
+    "id": "CVE-2026-48064",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.1, when a PAM service is configured with deny_remote=false in pam_usb (commonly done for display managers such as gdm-password or lightdm to bypass process/TTY heuristics for local sessions), the PAM_RHOST check in pusb_do_auth() is also skipped. PAM_RHOST is set by remote daemons (sshd, XDMCP servers) to identify the remote client address. Because the check is gated inside if (opts.deny_remote), a genuine remote XDMCP connection reaches the USB device authentication step instead of being rejected. This vulnerability is fixed in 0.9.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:40.230"
+  },
+  {
+    "id": "CVE-2026-47274",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.0, multiple pam_usb helper tools resolved external binaries through the PATH environment variable rather than using absolute paths. An attacker who can influence the process environment during PAM authentication or tool execution could substitute malicious binaries. The affected tools are pamusb-check (src/tmux.c), pamusb-conf (tools/pamusb-conf), and pamusb-keyring-unlock-gnome (tools/pamusb-keyring-unlock-gnome). This vulnerability is fixed in 0.9.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:40.013"
+  },
+  {
+    "id": "CVE-2026-47273",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.0, pam_usb builds XPath expressions from user-supplied identifiers (PAM username, service name) and device-supplied identifiers (USB device serial, model, vendor) to query /etc/pamusb.conf. These identifiers were not validated for XPath metacharacters, allowing injection of arbitrary XPath predicates. This vulnerability is fixed in 0.9.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:39.880"
+  },
+  {
+    "id": "CVE-2026-47272",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.0, the pusb_pad_compare() function in src/pad.c only verified that the user-side pad (~/.pamusb/device.pad) could be read, but did not enforce that the system-side pad (the pad file on the USB device) was also present and readable. If the user-side pad was deleted or unreadable, the function returned a failure that was treated as non-fatal in certain code paths, allowing authentication to succeed without the USB device being verified. A local user can delete their own ~/.pamusb/device.pad to remove the USB device requirement and authenticate without the physical device. This vulnerability is fixed in 0.9.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:39.747"
+  },
+  {
+    "id": "CVE-2026-47271",
+    "description": "pam_usb provides hardware authentication for Linux using ordinary removable media. Prior to 0.9.0, src/mem.c implemented out-of-memory guards for xmalloc(), xrealloc(), and xstrdup() using assert(data != NULL). The C standard specifies that all assert() expressions are compiled out when NDEBUG is defined at build time. NDEBUG is commonly defined in release and packaging builds (Debian, Fedora, Arch package flags all define it via -DNDEBUG in CFLAGS). With the guard removed, xmalloc/xrealloc/xstrdup silently return NULL on allocation failure. Every caller in the codebase dereferences the return value without a NULL check -- this is the intended design, as the guard was supposed to abort before the dereference. With the guard gone, any allocation failure causes a NULL pointer dereference, crashing the PAM module. A crash in a PAM module loaded by sudo or login causes authentication to fail for the duration of the crash, creating a local denial-of-service condition. An attacker who can induce memory pressure at authentication time can lock all users out of sudo and login. This vulnerability is fixed in 0.9.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:39.580"
+  },
+  {
+    "id": "CVE-2026-47161",
+    "description": "RELATE is a web-based courseware package. Prior to commit d66ba5659b459bf1ba56b7109b5f9ecf197cbefb, RELATE LMS configures its Celery workers to accept and deserialize untrusted 'pickle' data. An attacker who can reach the message broker can execute arbitrary commands on the host server. Combined with missing network isolation in the code execution sandbox, this allows an authenticated student to achieve full Remote Code Execution (RCE) on the host system. Commit d66ba5659b459bf1ba56b7109b5f9ecf197cbefb fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:39.420"
+  },
+  {
+    "id": "CVE-2026-45134",
+    "description": "LangSmith Client SDKs provide SDK's for interacting with the LangSmith platform. Prior to LangSmith SDK Python 0.8.0 and JS/TS 0.6.0, the LangSmith SDK's prompt pull methods (pull_prompt / pull_prompt_commit in Python, pullPrompt / pullPromptCommit in JS/TS) fetch and deserialize prompt manifests from the LangSmith Hub. These manifests may contain serialized LangChain objects and model configuration that affect runtime behavior. When pulling a public prompt by owner/name identifier, the manifest content is controlled by an external party, but prior versions of the SDK did not distinguish this from pulling a prompt within the caller's own organization. This vulnerability is fixed in LangSmith SDK Python 0.8.0 and JS/TS 0.6.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:38.697"
+  },
+  {
+    "id": "CVE-2026-45108",
+    "description": "Himmelblau is an interoperability suite for Microsoft Azure Entra ID and Intune. From 2.0.0 to before 3.1.5 and 2.3.11, Himmelblau contained an authentication bypass vulnerability in the Device Authorization Grant (DAG) flow that allowed a user within the same Entra ID domain to obtain a local Unix session as another user by providing their own valid credentials. The vulnerability existed in the token_validate function, which validated domain aliases for legitimate multi-domain scenarios but failed to verify that the local part (username) of the authenticated user's UPN matched the requested account username. The function only compared domains, not the complete usernames. This vulnerability is fixed in 3.1.5 and 2.3.11.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:38.550"
+  },
+  {
+    "id": "CVE-2026-45104",
+    "description": "MapServer is a system for developing web-based GIS applications. From 6.4.0 to before 8.6.3, msSLDParseUserStyle always calls _SLDApplyRuleValues(psRule, psLayer, 1); for any <Rule> carrying <ElseFilter/> — it assumes msSLDParseRule added one class. When the rule has no symbolizer (a structurally valid SLD), msSLDParseRule adds zero, and _SLDApplyRuleValues ends up indexing _class[-1], resulting in a NULL pointer dereference. A 200-byte well-formed SLD via the WMS SLD_BODY= parameter is enough to trigger this, no auth required. This vulnerability is fixed in 8.6.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:38.407"
+  },
+  {
+    "id": "CVE-2026-45102",
+    "description": "OneUptime is an open-source monitoring and observability platform. Prior to 10.0.98, OneUptime uses the Node.js' vm module as an isolation primitive. This API was not designed for that and can be escaped via error objects and infinite recursion. This vulnerability is fixed in 10.0.98.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:38.250"
+  },
+  {
+    "id": "CVE-2026-44888",
+    "description": "Pi.Alert is a WIFI / LAN intruder detector with web service monitoring. Prior to 2026-05-07, Pi.Alert's SaveConfigFile() endpoint writes user-supplied numeric config values (e.g., SMTP_PORT) directly into\npialert.conf without validation. Since pialert.conf is loaded via Python's exec() every 3–5 minutes by the\nbackground cron process, an attacker can inject arbitrary Python code and achieve unauthenticated OS-level RCE. On\ndefault installations (PIALERT_WEB_PROTECTION = False), no credentials are required. This vulnerability is fixed in 2026-05-07.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:38.040"
+  },
+  {
+    "id": "CVE-2026-44887",
+    "description": "Pi.Alert is a WIFI / LAN intruder detector with web service monitoring. Prior to 2026-05-07, Pi.Alert's web-based configuration editor allows arbitrary Python code to be injected into pialert.conf. Since the background scan daemon loads this file via Python's exec(), injected code executes as the daemon process. With web protection disabled (the default configuration), no authentication is required, making this an unauthenticated Remote Code Execution vulnerability. This vulnerability is fixed in 2026-05-07.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:37.900"
+  },
+  {
+    "id": "CVE-2026-44886",
+    "description": "Pi.Alert is a WIFI / LAN intruder detector with web service monitoring. From 2024-06-29 to before 2026-05-07, the web application endpoint is vulnerable to SQL injection. The /pialert/php/server/devices.php route accepts requests from unauthenticated users when the action URL parameter is set to getDevicesTotals. The scansource URL parameter is then injected in a SQL query. This vulnerability is fixed in 2026-05-07.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:37.767"
+  },
+  {
+    "id": "CVE-2026-44724",
+    "description": "systeminformation is a System and OS information library for node.js. From 4.17.0 to 5.31.5, on Linux, systeminformation is vulnerable to command injection in networkInterfaces() when an active NetworkManager connection profile name contains shell metacharacters. The vulnerable value is obtained internally from real nmcli device status output. The library sanitizes the network interface name before using it in shell commands, but it does not apply equivalent sanitization to the parsed NetworkManager connection profile name. That unsanitized connectionName is then interpolated into three shell command strings executed through execSync(). This vulnerability is fixed in 5.31.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:37.617"
+  },
+  {
+    "id": "CVE-2026-44681",
+    "description": "Authlib is a Python library which builds OAuth and OpenID Connect servers. Prior to 1.6.12 and 1.7.1, an unauthenticated open redirect in Authlib's OpenIDImplicitGrant and OpenIDHybridGrant authorization endpoint lets a remote attacker cause the authorization server to issue an HTTP 302 to an attacker-chosen URL by submitting an authorization request that omits the openid scope. This vulnerability is fixed in 1.6.12 and 1.7.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:37.463"
+  },
+  {
+    "id": "CVE-2026-44590",
+    "description": "Sherlock hunts down social media accounts by username across social networks. Prior to 0.16.1, the GitHub Actions workflow validate_modified_targets.yml is vulnerable to command injection via the pull_request_target trigger. Any GitHub user can execute arbitrary commands on the CI runner and exfiltrate the GITHUB_TOKEN by opening a pull request. No approval, review, or merge is required. This vulnerability is fixed in 0.16.1.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:37.293"
+  },
+  {
+    "id": "CVE-2026-42877",
+    "description": "FacturaScripts is an open source accounting and invoicing software. In 2025.92 and earlier, a stored Cross-Site Scripting (XSS) vulnerability exists in the product search modal of sales (Core/Lib/AjaxForms/SalesModalHTML.php) and purchases documents (Core/Lib/AjaxForms/PurchasesModalHTML.php). An authenticated user with access to the warehouse module can create a product with a malicious reference that executes arbitrary JavaScript in the browser of any other user who opens the product search modal inside an invoice, order, or delivery note.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:36.673"
+  },
+  {
+    "id": "CVE-2026-42197",
+    "description": "RELATE is a web-based courseware package. Versions prior to commit 555f0efb1c5bd7531c07cd73724d7e566a81f620 have a stored cross-site scripting vulnerability that allows any enrolled student to execute arbitrary JavaScript in an administrator's browser session, potentially leading to full admin account takeover. The `get_user()` method in `ParticipationAdmin` renders user-controlled input using `mark_safe` combined with Python's % string formatting. This bypasses Django\\'s automatic HTML escaping entirely. The value returned by `get_full_name` is derived directly from the `first_name`  and `last_name` fields of the User model. These fields are freely editable by any authenticated user through the profile page (`/profile/`) with no sanitization applied. When an admin views the Participation list in the Django admin panel, the unsanitized value is rendered directly into the HTML response, causing the injected script to execute in the admin's browser. Commit 555f0efb1c5bd7531c07cd73724d7e566a81f620 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:36.260"
+  },
+  {
+    "id": "CVE-2026-33552",
+    "description": "Northern.tech Mender Enterprise Server before 4.1.1 has Incorrect Access Control.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-05-27T20:16:35.947"
+  },
+  {
+    "id": "CVE-2026-8716",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 12.7 before 18.10.7, 18.11 before 18.11.4, and 19.0 before 19.0.1 that under certain conditions could have allowed an authenticated user to access CI data from a different ref type than intended.",
+    "severity": "Medium",
+    "tech": "Gitlab",
+    "published": "2026-05-27T19:16:25.097"
+  },
+  {
+    "id": "CVE-2026-6713",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.2 before 18.10.7, 18.11 before 18.11.4, and 19.0 before 19.0.1 that under certain conditions could have allowed an unauthorized user to enumerate private projects due to incorrect authorization checks.",
+    "severity": "Medium",
+    "tech": "Gitlab",
+    "published": "2026-05-27T19:16:24.640"
+  },
+  {
+    "id": "CVE-2026-5296",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.7 before 18.10.7, 18.11 before 18.11.4, and 19.0 before 19.0.1 that when foundational flows were enabled at the group level, could have allowed an authenticated user with developer-role permissions to bypass flow restrictions under certain conditions.",
+    "severity": "Medium",
+    "tech": "Gitlab",
+    "published": "2026-05-27T19:16:24.450"
+  },
+  {
+    "id": "CVE-2026-4868",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.8 before 18.10.7, 18.11 before 18.11.4, and 19.0 before 19.0.1 that, under certain conditions, could have allowed an authenticated user to cause specific Duo AI workflows to run under another user's identity due to improper user identity resolution when triggering Duo AI workflow runners.",
+    "severity": "High",
+    "tech": "Gitlab",
+    "published": "2026-05-27T19:16:24.317"
+  },
+  {
+    "id": "CVE-2026-45046",
+    "description": "Gryph provides a security layer for AI coding agents. Prior to 0.7.0, Gryph implements logging levels that determine what content is logged to a local sqlite database. The README incorrectly mentions that the default log level is minimal while it is standard. Source code review shows sensitive file-write content remains in the stored payload as ContentPreview, OldString, or NewString at the default standard logging level and at full. This leads to logging of potentially sensitive file content in the local sqlite database, violating Gryphs sensitive file filter and log level contracts. This vulnerability is fixed in 0.7.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T19:16:21.793"
+  },
+  {
+    "id": "CVE-2026-44635",
+    "description": "Kysely is a type-safe TypeScript SQL query builder. From 0.26.0 to 0.28.16, DefaultQueryCompiler.visitJSONPathLeg does not escape JSON-path metacharacters (., [, ], *, **, ?). When attacker-controlled input flows into eb.ref(col, '->$').key(input) or .at(input) — including type-safe code where the JSON column is shaped like Record<string, T> so K extends string is the inferred type — every dot becomes a path-leg separator, letting an attacker traverse from the intended key into sibling and child fields the developer never meant to expose. The result is read access (and, in update statements, write access) to JSON sub-fields outside the intended scope across MySQL, PostgreSQL ->$/->>$, and SQLite. This vulnerability is fixed in 0.28.17.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-27T19:16:20.947"
+  },
+  {
+    "id": "CVE-2026-42879",
+    "description": "FacturaScripts is an open source accounting and invoicing software. In 2025.81 and earlier, an authenticated unrestricted file upload vulnerability exists in FacturaScripts' product image upload functionality. An attacker with valid credentials can upload a PHP file disguised as a GIF image (using a GIF89a header), bypassing MIME type validation. The file is stored with its original extension, including executable extensions such as .php. The vulnerability exists the addImageAction() method of Core/Lib/ExtendedController/ProductImagesTrait.php.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T19:16:18.173"
+  },
+  {
+    "id": "CVE-2026-42878",
+    "description": "FacturaScripts is an open source accounting and invoicing software. Prior to v2026, an unauthenticated information disclosure vulnerability in the Installer controller allows any remote attacker to trigger phpinfo() on a fresh FacturaScripts deployment by requesting /?phpinfo=TRUE, exposing full PHP configuration, server environment variables (including any database credentials, API keys, or application secrets set as env vars), filesystem paths, and loaded extensions without being authenticated. This vulnerability is fixed in v2026.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-27T19:16:17.763"
+  },
+  {
+    "id": "CVE-2026-2601",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 11.5 before 18.10.7, 18.11 before 18.11.4, and 19.0 before 19.0.1 that under certain conditions could have allowed an authenticated user with developer-role permissions to access sensitive deployment data on projects due to improper authorization checks.",
+    "severity": "Medium",
+    "tech": "Gitlab",
+    "published": "2026-05-27T19:16:16.000"
+  },
+  {
+    "id": "CVE-2026-1402",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.1 before 18.10.7, 18.11 before 18.11.4, and 19.0 before 19.0.1 that under certain conditions could have allowed an authenticated user to cause denial of service due to insufficient validation.",
+    "severity": "Medium",
+    "tech": "Gitlab",
+    "published": "2026-05-27T19:16:15.577"
+  },
+  {
     "id": "CVE-2026-5509",
     "description": "An authenticated command injection vulnerability exists in the Archer BE450 v1 and BE7200 v1 router that allows an administrator to execute arbitrary system commands through the web management interface. After successfully authenticating to the admin interface, an attacker can leverage the browser’s developer console by supplying a crafted input that is passed to backend system commands without adequate sanitization. \n\nSuccessful exploitation enables execution of arbitrary commands with elevated privileges on the device, which may allow the attacker to start unauthorized services, modify system configuration, or otherwise fully compromise the router’s operating environment.",
     "severity": "Unknown",
@@ -479,14 +836,14 @@
     "id": "CVE-2026-42083",
     "description": "free5GC is an open-source implementation of the 5G core network. Prior to 4.2.2, PCF Npcf_SMPolicyControl missing authentication middleware allows unauthenticated access to SM policy handlers and disclosure of subscriber SUPI. In NewServer(), the smPolicyGroup route group is created and routes are applied without attaching the router authorization middleware. In contrast, other PCF service groups such as Npcf_PolicyAuthorization do attach RouterAuthorizationCheck before route registration. Because the middleware is missing, requests to the  /npcf-smpolicycontrol/v1/sm-policies, /npcf-smpolicycontrol/v1/sm-policies/{smPolicyId}, /npcf-smpolicycontrol/v1/sm-policies/{smPolicyId}/update, and /npcf-smpolicycontrol/v1/sm-policies/{smPolicyId}/delete endpoints can reach business logic even when no valid OAuth token is provided. This vulnerability is fixed in 4.2.2.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Free5gc",
     "published": "2026-05-27T17:16:35.327"
   },
   {
     "id": "CVE-2026-42082",
     "description": "free5GC is an open-source implementation of the 5G core network. Prior to 4.2.2, the AMF in Free5GC does not enforce the concurrent security procedure rules defined in 3GPP TS 33.501 §6.9.5.1. The AMF does not check for ongoing N2 handover procedures before initiating a NAS Security Mode Command, and vice versa. This can lead to mismatches between NAS and AS security contexts in the network and the UE. This vulnerability is fixed in 4.2.2.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Free5gc",
     "published": "2026-05-27T17:16:35.180"
   },
   {
@@ -3748,42 +4105,42 @@
     "id": "CVE-2024-47272",
     "description": "Incorrect authorization vulnerability in IO Module functionality in Synology Surveillance Station before 9.2.2-11575 and 9.2.2-9575 allows remote authenticated users with administrator privileges to limited file write via unspecified vectors.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Surveillance station",
     "published": "2026-05-27T09:16:26.100"
   },
   {
     "id": "CVE-2024-47271",
     "description": "Insufficiently protected credentials vulnerability in IPSpeaker component in Synology Surveillance Station before 9.2.2-11575 and 9.2.2-9575 allows remote authenticated users with administrator privileges to obtain sensitive information via unspecified vectors.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surveillance station",
     "published": "2026-05-27T09:16:25.987"
   },
   {
     "id": "CVE-2024-47270",
     "description": "Improper preservation of permissions vulnerability in Archiving Push functionality in Synology Surveillance Station before 9.2.2-11575 and 9.2.2-9575 allows remote authenticated users with administrator privileges to limited file write via unspecified vectors.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Surveillance station",
     "published": "2026-05-27T09:16:25.867"
   },
   {
     "id": "CVE-2024-47269",
     "description": "Cleartext transmission of sensitive information vulnerability in Export Key functionality in Synology Surveillance Station before 9.2.2-11575 and 9.2.2-9575 allows remote authenticated users with administrator privileges to obtain sensitive information via unspecified vectors.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surveillance station",
     "published": "2026-05-27T09:16:25.740"
   },
   {
     "id": "CVE-2024-47268",
     "description": "Missing authorization vulnerability in AddOns functionality in Synology Surveillance Station before 9.2.2-11575 and 9.2.2-9575 allows remote authenticated users with administrator privileges to obtain sensitive information via unspecified vectors.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surveillance station",
     "published": "2026-05-27T09:16:25.620"
   },
   {
     "id": "CVE-2024-47267",
     "description": "Improper limitation of a pathname to a restricted directory ('Path Traversal') vulnerability in Archiving Pull functionality in Synology Surveillance Station before 9.2.2-11575 and 9.2.2-9575 allows remote authenticated users with administrator privileges to limited file write via unspecified vectors.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Surveillance station",
     "published": "2026-05-27T09:16:25.483"
   },
   {
@@ -5589,14 +5946,14 @@
     "id": "CVE-2026-48902",
     "description": "The password and username reset features created plain http links for https connections if the \"Force SSL\" flag wasn't explicitly set.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Joomla\\!",
     "published": "2026-05-26T17:16:54.970"
   },
   {
     "id": "CVE-2026-48901",
     "description": "The InputFilter::getInstance() method omitted a security sensitive parameter from the instance cache key.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Joomla\\!",
     "published": "2026-05-26T17:16:54.880"
   },
   {
@@ -5623,22 +5980,22 @@
   {
     "id": "CVE-2026-48897",
     "description": "Insufficient state checks lead to a vector that allows to bypass 2FA checks.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Joomla\\!",
     "published": "2026-05-26T17:16:54.333"
   },
   {
     "id": "CVE-2026-48896",
     "description": "Insufficient state checks lead to a vector that allows to bypass 2FA checks.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Joomla\\!",
     "published": "2026-05-26T17:16:54.213"
   },
   {
     "id": "CVE-2026-48864",
     "description": "A flaw was found in libsolv. This heap buffer overflow occurs during the decompression of attacker-controlled compressed data within `.solv` files due to insufficient input validation. An attacker can provide a specially crafted `.solv` file, which, when processed by a vulnerable application, can lead to out-of-bounds memory access. This could result in information disclosure, alteration of program execution, or a denial of service.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Libsolv",
     "published": "2026-05-26T17:16:54.050"
   },
   {
@@ -5764,7 +6121,7 @@
     "id": "CVE-2026-44723",
     "description": "Vowpal Wabbit is a machine learning system. The workflow .github/workflows/python_checks.yml embeds ${{ github.event.pull_request.title }} directly inside double-quoted bash strings in four separate steps across four jobs, each passing it as a CLI argument to the Python test script run_tests_model_gen_and_load.py. The shell interprets the expanded string before invoking Python, allowing an attacker to break out of the quotes and execute arbitrary commands on the runner. The pull_request trigger fires on PRs targeting any branch (branches: ['*']), with no additional access gate. This vulnerability is fixed by the 998e390e80a7e8192d7849b7784bc113dbd190ad commit.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Vowpal wabbit",
     "published": "2026-05-26T17:16:46.680"
   },
   {
@@ -5805,8 +6162,8 @@
   {
     "id": "CVE-2026-40384",
     "description": "An improper validation of the search parameter of the com_media files API endpoint leads to a path traversal vulnerability.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Joomla\\!",
     "published": "2026-05-26T17:16:39.503"
   },
   {
@@ -5819,8 +6176,8 @@
   {
     "id": "CVE-2026-35223",
     "description": "An improper access check allows unauthorized access to com_config webservice endpoints.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Joomla\\!",
     "published": "2026-05-26T17:16:36.080"
   },
   {
@@ -6289,14 +6646,14 @@
     "id": "CVE-2026-25713",
     "description": "MediaArea MediaInfoLib ID3v2 parsing heap buffer overflow vulnerability",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Mediainfolib",
     "published": "2026-05-26T09:16:19.533"
   },
   {
     "id": "CVE-2026-25104",
     "description": "MediaArea MediaInfoLib LXF parsing heap-based buffer overflow vulnerability",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Mediainfolib",
     "published": "2026-05-26T09:16:19.397"
   },
   {
@@ -6331,14 +6688,14 @@
     "id": "CVE-2026-44469",
     "description": "The affected product extracts installation files to a temporary directory with incorrect default permissions during administrative installation. A low-privileged local attacker can exploit a TOCTOU race condition with a practical time window to replace verified files with malicious ones before installation, resulting in local privilege escalation.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Development system",
     "published": "2026-05-26T08:16:22.137"
   },
   {
     "id": "CVE-2026-44468",
     "description": "The affected product creates a directory with insecure default permissions during administrative installation. This allows a low-privileged local attacker to modify a temporary file defining the components to be installed, enabling local privilege escalation by forcing the deployment of arbitrary components.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Development system",
     "published": "2026-05-26T08:16:21.990"
   },
   {
@@ -7059,7 +7416,7 @@
     "id": "CVE-2026-42797",
     "description": "Exposure of Sensitive Information Through Data Queries vulnerability in Apache Syncope.\n\nAn administrator with adequate entitlements for Derived Schemas can create a malicious JEXL expression which allows any administrator with sufficient entitlements for User read to access User-related security-sensitive information.\n\nThis issue affects Apache Syncope: 3.0 through 3.0.16, 4.0 through 4.0.5, 4.1.0.\n\nUsers are recommended to upgrade to version 4.0.6 / 4.1.1, which fix this issue by further restricting the JEXL expression definition.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Syncope",
     "published": "2026-05-25T16:16:20.390"
   },
   {
@@ -7101,7 +7458,7 @@
     "id": "CVE-2026-9078",
     "description": "Firefox for iOS displayed specially crafted right-to-left (RTL) and internationalized domain names (IDNs) incorrectly in link preview UI surfaces. A crafted RTL hostname could visually reorder portions of the displayed domain, causing attacker-controlled sites to appear as trusted origins. This vulnerability was fixed in Firefox for iOS 151.1.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-05-25T15:16:22.970"
   },
   {
@@ -7121,8 +7478,8 @@
   {
     "id": "CVE-2026-47075",
     "description": "Improper Neutralization of CRLF Sequences vulnerability in benoitc hackney allows HTTP Request Splitting. hackney does not percent-encode carriage return (\\r) or line feed (\\n) characters in the URL query component before constructing the HTTP/1.1 request target. Characters outside the grammar defined in RFC 3986 Section 3.4 must be percent-encoded, but hackney_url:make_url/3 passes the query binary directly without validation or escaping. An attacker who can control all or part of a URL passed to hackney can inject raw CRLF sequences into the query string, which are then sent as HTTP line breaks in the request target. This enables injection of arbitrary HTTP headers or splitting of the HTTP request.\n\nThis issue affects hackney: from 0 before 4.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Hackney",
     "published": "2026-05-25T15:16:22.550"
   },
   {
@@ -7135,8 +7492,8 @@
   {
     "id": "CVE-2026-47072",
     "description": "Improper Neutralization of CRLF Sequences ('CRLF Injection') vulnerability in benoitc hackney allows HTTP Request/Response Splitting. The WebSocket upgrade code in src/hackney_ws.erl copies the host, path, headers (ExtraHeaders), and protocols options from the caller-supplied opts map into the internal #ws_data{} record in init/1 and then splices them verbatim into the raw HTTP/1.1 upgrade request by binary concatenation in do_handshake/1. No CRLF or NUL stripping is performed at any of these four injection sites. An attacker who controls any of these options — for example by forwarding URL components or header values from untrusted input into hackney_ws:start_link/1 — can inject arbitrary HTTP headers into the outbound WebSocket upgrade request, leading to header injection, credential spoofing toward the upstream server, log and cache poisoning, or request smuggling via intermediary proxies.\n\nThis issue affects hackney: from 2.0.0 before 4.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Hackney",
     "published": "2026-05-25T15:16:22.280"
   },
   {
@@ -7908,47 +8265,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-05-24T22:16:16.017"
-  },
-  {
-    "id": "CVE-2026-9398",
-    "description": "A security vulnerability has been detected in Besen BS20 EV Charging Station up to 20260426. This affects an unknown part of the component BLE/WiFi. Such manipulation leads to authentication bypass by capture-replay. The attack must be carried out from within the local network. Attacks of this nature are highly complex. It is indicated that the exploitability is difficult. The original disclosure mentions, that \"[t]hese vulnerabilities have been reported to Besen and we have received their acknowlegement that they are reviewing this as of April 2026.\"",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-05-24T21:16:32.923"
-  },
-  {
-    "id": "CVE-2026-9397",
-    "description": "A weakness has been identified in Besen BS20 EV Charging Station up to 20260426. Affected by this issue is some unknown functionality of the component OTA Update Installation Handler. This manipulation causes improper authorization. The attack is possible to be carried out remotely. A high degree of complexity is needed for the attack. The exploitation is known to be difficult. The original disclosure mentions, that \"[t]hese vulnerabilities have been reported to Besen and we have received their acknowlegement that they are reviewing this as of April 2026.\"",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-24T21:16:32.767"
-  },
-  {
-    "id": "CVE-2026-9396",
-    "description": "A security flaw has been discovered in Besen BS20 EV Charging Station up to 20260426. Affected by this vulnerability is an unknown functionality of the component Firmware Version Check. The manipulation results in improper restriction of rendered ui layers. The attack can be executed remotely. A high complexity level is associated with this attack. The exploitation appears to be difficult. The original disclosure mentions, that \"[t]hese vulnerabilities have been reported to Besen and we have received their acknowlegement that they are reviewing this as of April 2026.\"",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-05-24T21:16:32.603"
-  },
-  {
-    "id": "CVE-2026-9395",
-    "description": "A vulnerability was identified in Besen BS20 EV Charging Station up to 20260426. Affected is an unknown function of the component BLE/UDP. The manipulation leads to insufficiently protected credentials. The attack needs to be initiated within the local network. The original disclosure mentions, that \"[t]hese vulnerabilities have been reported to Besen and we have received their acknowlegement that they are reviewing this as of April 2026.\"",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-05-24T20:16:44.020"
-  },
-  {
-    "id": "CVE-2026-9394",
-    "description": "A vulnerability was determined in Besen BS20 EV Charging Station up to 20260426. This impacts an unknown function of the component Bluetooth Low Energy Handler. Executing a manipulation can lead to weak password requirements. The attack needs to be done within the local network. This attack is characterized by high complexity. The exploitability is said to be difficult. The original disclosure mentions, that \"[t]hese vulnerabilities have been reported to Besen and we have received their acknowlegement that they are reviewing this as of April 2026.\"",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-05-24T20:16:43.837"
-  },
-  {
-    "id": "CVE-2026-9393",
-    "description": "A vulnerability was found in H3C Magic B0 up to 100R002. This affects the function Edit_BasicSSID_5G of the file /goform/aspForm. Performing a manipulation of the argument param results in buffer overflow. The attack may be initiated remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-24T19:16:22.597"
   }
 ]
