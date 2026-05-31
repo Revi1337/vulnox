@@ -1,187 +1,5 @@
 [
   {
-    "id": "CVE-2026-37525",
-    "description": "AGL app-framework-binder (afb-daemon) through v19.90.0 contains a privilege escalation vulnerability in the supervision Do command. The on_supervision_call function in src/afb-supervision.c explicitly nullifies the request credentials by calling afb_context_change_cred(&xreq->context, NULL) before dispatching an attacker-controlled API call via xapi->itf->call(xapi->closure, xreq). The NULL propagation chain through afb-context.c:110 (context->credentials = afb_cred_addref(NULL)) and afb-cred.c:163 (returns NULL when cred is NULL) confirms that credentials are zeroed before the target API executes. The attacker controls both api and verb parameters via JSON input, allowing execution of any registered API with a NULL credential context. APIs that rely on context->credentials for authorization decisions may fail open when receiving NULL credentials, enabling privilege escalation. This vulnerability was introduced in commit abbb4599f0b921c6f434b6bd02bcfb277eecf745 on 2018-02-14.",
-    "severity": "High",
-    "tech": "Automotive grade linux",
-    "published": "2026-05-01T17:16:22.270"
-  },
-  {
-    "id": "CVE-2026-37526",
-    "description": "AGL app-framework-binder (afb-daemon) through v19.90.0 allows any local process to execute privileged supervision commands (Exit, Do, Sclose, Config, Trace, Debug, Token, slist) without authentication via the abstract Unix socket @urn:AGL:afs:supervision:socket. The on_supervision_call function in src/afb-supervision.c dispatches all 8 commands without any credential verification. The abstract socket has no DAC protection, as acknowledged in the official CAUTION comment in src/afs-supervision.h. This allows a low-privileged local process to kill the daemon (DoS via Exit command), execute arbitrary API calls (via Do command), close arbitrary user sessions (via Sclose command), or leak the entire global configuration (via Config command). The vulnerability was introduced in commit b8c9d5de384efcfa53ebdb3f0053d7b3723777e1 on 2017-06-29.",
-    "severity": "High",
-    "tech": "Automotive grade linux",
-    "published": "2026-05-01T17:16:22.440"
-  },
-  {
-    "id": "CVE-2026-37530",
-    "description": "AGL agl-service-can-low-level thru 17.1.12 contains a stack buffer overflow in the uds-c library. The send_diagnostic_request function in uds.c allocates a 6-byte stack buffer (MAX_DIAGNOSTIC_PAYLOAD_SIZE=6) but copies up to 7 bytes (MAX_UDS_REQUEST_PAYLOAD_LENGTH=7) via memcpy at an offset of 1+pid_length (2-3 bytes), resulting in 1-4 bytes of controlled stack overflow. The payload_length field (uint8_t) has no bounds check against the destination buffer. On 32-bit ARM automotive ECUs without stack canaries, this can lead to return address overwrite and RCE.",
-    "severity": "High",
-    "tech": "Automotive grade linux",
-    "published": "2026-05-01T17:16:22.603"
-  },
-  {
-    "id": "CVE-2026-37531",
-    "description": "AGL app-framework-main thru 17.1.12 contains a Zip Slip path traversal vulnerability (CWE-22) combined with a TOCTOU race condition (CWE-367) in the widget installation flow. The is_valid_filename function in wgtpkg-zip.c validates ZIP entry names but does not check for dot notation directory traversal sequences it only blocks absolute paths. The zread extraction function uses openat(workdirfd, filename, O_CREAT) which resolves dot notation values relative to the work directory, allowing files to be written anywhere on the filesystem. Critically, in function install_widget in file wgtpkg-install.c, extraction via zread occurs BEFORE signature verification via check_all_signatures. Even if signature verification fails, the error cleanup (remove_workdir) only deletes the temporary work directory files written outside via path traversal persist permanently.",
-    "severity": "Critical",
-    "tech": "Automotive grade linux",
-    "published": "2026-05-01T17:16:22.720"
-  },
-  {
-    "id": "CVE-2026-37532",
-    "description": "AGL agl-service-can-low-level thru 17.1.12 contains a heap buffer over-read in the isotp-c library. In isotp_continue_receive (receive.c:87-89), the payload_length for a Single Frame is extracted from a 4-bit nibble in the CAN frame data, yielding values 0-15. However, a standard CAN frame is only 8 bytes, with payload starting at data[1] (7 bytes available). When payload_length exceeds the available data (e.g., nibble=15 but only 7 payload bytes exist), memcpy(message.payload, &data[1], payload_length) reads up to 8 bytes past the end of the data buffer.",
-    "severity": "High",
-    "tech": "Automotive grade linux",
-    "published": "2026-05-01T17:16:22.897"
-  },
-  {
-    "id": "CVE-2026-37534",
-    "description": "Integer underflow vulnerability in Open-SAE-J1939 thru commit b6caf884df46435e539b1ecbf92b6c29b345bdfe (2025-11-30) in SAE_J1939_Read_Transport_Protocol_Data_Transfer,allows attackers to write to arbitrary memory via crafted sequence number from the CAN frame.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:23.073"
-  },
-  {
-    "id": "CVE-2026-37535",
-    "description": "openxc/isotp-c thru commit 5a5d19245f65189202719321facd49ce6f5d46ac (2021-08-09) contains an out-of-bounds read in the ISO-TP Single Frame receive handler, where the 4-bit payload length nibble is used directly as the memcpy size without validating it against the actual CAN data length. A malicious CAN frame with an oversized length nibble can cause memory reads beyond the buffer, allowing attackers to cause a denial of service, or gain sensitive information.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:23.210"
-  },
-  {
-    "id": "CVE-2026-37536",
-    "description": "miaofng/uds-c commit e506334e270d77b20c0bc259ac6c7d8c9b702b7a (2016-10-05) contains a stack buffer overflow in send_diagnostic_request. A 6-byte stack buffer (MAX_DIAGNOSTIC_PAYLOAD_SIZE=6) receives memcpy at offset 1+pid_length with payload_length bytes. MAX_UDS_REQUEST_PAYLOAD_LENGTH=7, so 1+2+7=10 exceeds buffer by 4 bytes. No bounds check on payload_length before memcpy.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:23.373"
-  },
-  {
-    "id": "CVE-2026-37537",
-    "description": "collin80/Open-SAE-J1939 thru commit 744024d4306bc387857dfce439558336806acb06 (2023-03-08) contains an integer underflow leading to out-of-bounds write in Transport Protocol Data Transfer handling. At line 23: uint8_t index = data[0] - 1. When data[0] (sequence number from CAN frame) is 0, index underflows to 255. Subsequent write at tp_dt->data[255*7 + i-1] reaches offset 1791, exceeding the MAX_TP_DT buffer (1785 bytes) by 6 bytes.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:23.550"
-  },
-  {
-    "id": "CVE-2026-37538",
-    "description": "Buffer overflow vulnerability in socketcand 0.4.2 in file socketcand.c in function main allows attackers to cause a denial of service or other unspecified impacts via crafted bus_name.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:23.687"
-  },
-  {
-    "id": "CVE-2026-37539",
-    "description": "Buffer overflow vulnerability in cannelloni v2.0.0 in CAN frame parsing in parser.cpp in function parseCANFrame, and decoder.cpp in function decodeFrame allowing remote attackers to cause a denial of service (crash) or possibly execute arbitrary code via crafted CAN FD frames.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:23.803"
-  },
-  {
-    "id": "CVE-2026-37540",
-    "description": "OpenAMP v2025.10.0 ELF loader contains an integer overflow vulnerability in firmware image parsing. In elf_loader.c, it performs multiplication of two attacker-controlled 16-bit values from the ELF header without overflow checking. On 32-bit embedded systems (STM32MP1, Zynq, i.MX), large values can cause the product to wrap around to a small value.",
-    "severity": "High",
-    "tech": "Openamp",
-    "published": "2026-05-01T17:16:23.933"
-  },
-  {
-    "id": "CVE-2026-37541",
-    "description": "Buffer overflow vulnerability in Open Vehicle Monitoring System 3 (OVMS3) 3.3.005. In canformat_gvret.cpp, the length field in GVRET binary data is not properly validated, allowing remote attackers to cause a denial of service or possibly execute arbitrary code via crafted GVRET frames.",
-    "severity": "Critical",
-    "tech": "Open vehicle monitoring system firmware",
-    "published": "2026-05-01T17:16:24.083"
-  },
-  {
-    "id": "CVE-2026-42467",
-    "description": "An issue was discovered in Open-SAE-J1939 thru commit b6caf884df46435e539b1ecbf92b6c29b345bdfe (2025-11-30) in SAE_J1939_Read_Binary_Data_Transfer_DM16 causing a denial of service via crafted CAN frame on the J1939 bus.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:25.027"
-  },
-  {
-    "id": "CVE-2026-42468",
-    "description": "Buffer overflow vulnerability in Open Vehicle Monitoring System 3 (OVMS3) 3.3.005. In canformat_pcap.cpp , the parser's phdr.len field is not properly validated, allowing remote attackers to cause a denial of service or possibly execute arbitrary code via crafted PCAP input.",
-    "severity": "High",
-    "tech": "Open vehicle monitoring system firmware",
-    "published": "2026-05-01T17:16:25.150"
-  },
-  {
-    "id": "CVE-2026-42469",
-    "description": "Buffer overflow vulnerability in Open Vehicle Monitoring System 3 (OVMS3) 3.3.005. In canformat_canswitch.cpp the parser does not properly validate a CANswitch DLC value, allowing remote attackers to cause a denial of service or possibly execute arbitrary code via crafted CANswitch frames.",
-    "severity": "High",
-    "tech": "Open vehicle monitoring system firmware",
-    "published": "2026-05-01T17:16:25.260"
-  },
-  {
-    "id": "CVE-2026-42485",
-    "description": "AGL agl-service-can-low-level contains a stack buffer overflow in the uds-c library. The send_diagnostic_request function in uds.c allocates a 6-byte stack buffer (MAX_DIAGNOSTIC_PAYLOAD_SIZE=6) but copies up to 7 bytes (MAX_UDS_REQUEST_PAYLOAD_LENGTH=7) via memcpy at an offset of 1+pid_length (2-3 bytes), resulting in 1-4 bytes of controlled stack overflow. The payload_length field (uint8_t) has no bounds check against the destination buffer. On 32-bit ARM automotive ECUs without stack canaries, this can lead to return address overwrite and RCE.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T17:16:25.377"
-  },
-  {
-    "id": "CVE-2026-7587",
-    "description": "A vulnerability has been found in Open5GS up to 2.7.7. This vulnerability affects the function amf_nsmf_pdusession_handle_update_sm_context of the file /src/amf/nsmf-handler.c of the component AMF. The manipulation leads to denial of service. It is possible to initiate the attack remotely. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Open5gs",
-    "published": "2026-05-01T17:16:25.633"
-  },
-  {
-    "id": "CVE-2025-63547",
-    "description": "An issue in Eprosima Micro-XREC-DDS Agent v.3.0.1 allows a remote attacker to cause a denial of service via a crafted packet to the MTU length field",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T18:16:13.310"
-  },
-  {
-    "id": "CVE-2025-63548",
-    "description": "An issue in Eprosima Micro-XREC-DDS Agent v.3.0.1 allows a remote attacker to cause a denial of service via a packet specially crafted to bear a non-valid value in any Boolean field.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T18:16:13.477"
-  },
-  {
-    "id": "CVE-2025-69606",
-    "description": "Cross-Site Scripting (XSS) vulnerability was discovered in the GSVoIP web panel version 2.0.90. The `msg` parameter in the `/painel/gateways.php/error` endpoint does not properly sanitize user-supplied input, allowing attackers to inject arbitrary JavaScript into the HTML response. A remote attacker can exploit this vulnerability by sending a crafted URL to a victim, leading to unauthorized script execution, session hijacking, phishing, or other client-side attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-01T18:16:13.607"
-  },
-  {
-    "id": "CVE-2026-21996",
-    "description": "An unprivileged attacker can reliably trigger a crash of the dtrace process with a malicious ELF binary due to an integer Divide-by-Zero in Pbuild_file_symtab()",
-    "severity": "Low",
-    "tech": "Linux",
-    "published": "2026-05-01T18:16:13.750"
-  },
-  {
-    "id": "CVE-2026-26461",
-    "description": "A Command Injection vulnerability in the web management interface in Aver PTC320UV2 0.1.0000.65 allows an unauthenticated attacker to execute arbitrary commands via a crafted web request.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-01T18:16:14.307"
-  },
-  {
-    "id": "CVE-2026-35233",
-    "description": "An unprivileged attacker can craft a user-space process with a malicious ELF binary containing an out-of-range sh_link field. When root-level dtrace attaches to -- or instruments -- that process (via dtrace -p , pid probes, or USDT), the ELF parser reads heap memory beyond the allocated section cache array without any bounds check. This results in an uninitialized/out-of-bounds heap read that can cause a NULL pointer dereference crash of the dtrace process (DoS), or -- depending on heap layout -- a read-then-use of a garbage pointer controlled by adjacent allocations, providing a foothold toward further exploitation in a privileged context.",
-    "severity": "Medium",
-    "tech": "Linux",
-    "published": "2026-05-01T18:16:14.647"
-  },
-  {
-    "id": "CVE-2026-37457",
-    "description": "An off-by-one out-of-bounds write vulnerability in the bgp_flowspec_op_decode() function (bgpd/bgp_flowspec_util.c) of FRRouting (FRR) stable/10.0 allows attackers to cause a Denial of Service (DoS) via supplying a crafted FlowSpec component.",
-    "severity": "High",
-    "tech": "Frrouting",
-    "published": "2026-05-01T18:16:14.770"
-  },
-  {
-    "id": "CVE-2026-7588",
-    "description": "A vulnerability was found in ggerve coding-standards-mcp. This issue affects the function get_style_guide/get_best_practices of the file server.py. The manipulation of the argument Language results in path traversal. It is possible to launch the attack remotely. The exploit has been made public and could be used. This product takes the approach of rolling releases to provide continious delivery. Therefore, version details for affected and updated releases are not available. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-01T18:16:16.300"
-  },
-  {
     "id": "CVE-2025-52347",
     "description": "An issue in the component DirectIo64.sys of PassMark BurnInTest v11.0 Build 1011, OSForensics v11.1 Build 1007, and PerformanceTest v11.1 Build 1004 allows attackers to access kernel memory and escalate privileges via a crafted IOCTL 0x8011E044 call.",
     "severity": "High",
@@ -47297,5 +47115,26 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-05-31T16:16:41.537"
+  },
+  {
+    "id": "CVE-2026-10192",
+    "description": "A vulnerability was identified in Tenda W12 3.0.0.7(4763). The affected element is the function set_local_time_0 of the file /bin/httpd. Such manipulation of the argument Time leads to stack-based buffer overflow. The attack can be launched remotely. The exploit is publicly available and might be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-31T17:16:30.753"
+  },
+  {
+    "id": "CVE-2026-10193",
+    "description": "A security flaw has been discovered in OFCMS up to 1.1.3. The impacted element is the function Query of the file ofcms-admin\\src\\main\\java\\com\\ofsoft\\cms\\admin\\controller\\ComnController.java of the component ComnController. Performing a manipulation of the argument system.user.query results in sql injection. The attack may be initiated remotely. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-31T17:16:31.417"
+  },
+  {
+    "id": "CVE-2026-10194",
+    "description": "A weakness has been identified in OFFIS DCMTK 3.7.0. This affects the function DcmQueryRetrieveIndexDatabaseHandle::deleteOldestImages of the file dcmqrdb/libsrc/dcmqrdbi.cc of the component dcmqrscp. Executing a manipulation can lead to heap-based buffer overflow. The attack may be launched remotely. This patch is called 0f78a4ef6f645ea5530166e445e5436a5de58e75. A patch should be applied to remediate this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-31T17:16:31.577"
   }
 ]
