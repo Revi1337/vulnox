@@ -1,5 +1,61 @@
 [
   {
+    "id": "CVE-2026-46242",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\neventpoll: fix ep_remove struct eventpoll / struct file UAF\n\nep_remove() (via ep_remove_file()) cleared file->f_ep under\nfile->f_lock but then kept using @file inside the critical section\n(is_file_epoll(), hlist_del_rcu() through the head, spin_unlock).\nA concurrent __fput() taking the eventpoll_release() fastpath in\nthat window observed the transient NULL, skipped\neventpoll_release_file() and ran to f_op->release / file_free().\n\nFor the epoll-watches-epoll case, f_op->release is\nep_eventpoll_release() -> ep_clear_and_put() -> ep_free(), which\nkfree()s the watched struct eventpoll. Its embedded ->refs\nhlist_head is exactly where epi->fllink.pprev points, so the\nsubsequent hlist_del_rcu()'s \"*pprev = next\" scribbles into freed\nkmalloc-192 memory.\n\nIn addition, struct file is SLAB_TYPESAFE_BY_RCU, so the slot\nbacking @file could be recycled by alloc_empty_file() --\nreinitializing f_lock and f_ep -- while ep_remove() is still\nnominally inside that lock. The upshot is an attacker-controllable\nkmem_cache_free() against the wrong slab cache.\n\nPin @file via epi_fget() at the top of ep_remove() and gate the\ncritical section on the pin succeeding. With the pin held @file\ncannot reach refcount zero, which holds __fput() off and\ntransitively keeps the watched struct eventpoll alive across the\nhlist_del_rcu() and the f_lock use, closing both UAFs.\n\nIf the pin fails @file has already reached refcount zero and its\n__fput() is in flight. Because we bailed before clearing f_ep,\nthat path takes the eventpoll_release() slow path into\neventpoll_release_file() and blocks on ep->mtx until the waiter\nside's ep_clear_and_put() drops it. The bailed epi's share of\nep->refcount stays intact, so the trailing ep_refcount_dec_and_test()\nin ep_clear_and_put() cannot free the eventpoll out from under\neventpoll_release_file(); the orphaned epi is then cleaned up\nthere.\n\nA successful pin also proves we are not racing\neventpoll_release_file() on this epi, so drop the now-redundant\nre-check of epi->dying under f_lock. The cheap lockless\nREAD_ONCE(epi->dying) fast-path bailout stays.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-05-30T13:16:21.980"
+  },
+  {
+    "id": "CVE-2026-10117",
+    "description": "A weakness has been identified in Open5GS up to 2.7.7. This issue affects the function ogs_pool_id_calloc in the library /lib/sbi/nghttp2-server.c. Executing a manipulation can lead to denial of service. The attack may be launched remotely. The exploit has been made available to the public and could be used for attacks. It is best practice to apply a patch to resolve this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-30T13:16:20.870"
+  },
+  {
+    "id": "CVE-2026-10116",
+    "description": "A security flaw has been discovered in Open5GS up to 2.7.7. This vulnerability affects the function ogs_sbi_xact_add in the library /lib/core/ogs-timer.c of the component ue-authentications Endpoint. Performing a manipulation results in denial of service. The attack may be initiated remotely. The exploit has been released to the public and may be used for attacks. Applying a patch is the recommended action to fix this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-30T12:16:23.080"
+  },
+  {
+    "id": "CVE-2026-10115",
+    "description": "A vulnerability was identified in Open5GS up to 2.7.7. This affects an unknown part in the library lib/sbi/nnrf-handler.c of the component Shared NF-profile Parser. Such manipulation leads to denial of service. The attack can be launched remotely. The exploit is publicly available and might be used. It is advisable to implement a patch to correct this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-30T11:17:05.807"
+  },
+  {
+    "id": "CVE-2026-10114",
+    "description": "A vulnerability was determined in Open5GS up to 2.7.7. Affected by this issue is the function handle_scp_info in the library lib/sbi/nnrf-handler.c of the component Shared NF-profile Parser. This manipulation causes out-of-bounds write. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized. To fix this issue, it is recommended to deploy a patch.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-30T11:17:05.510"
+  },
+  {
+    "id": "CVE-2026-9757",
+    "description": "The GEO my WP plugin for WordPress is vulnerable to SQL Injection via the 'swlatlng' and 'nelatlng' parameters in all versions up to, and including, 4.5.5 The parameters are read from $_SERVER['QUERY_STRING'] via parse_str() (bypassing WordPress's wp_magic_quotes protection, which only covers $_POST/$_GET/$_COOKIE/$_REQUEST), then each is split on ',' via explode() and the resulting fragments are interpolated directly into a SQL BETWEEN clause in gmw_get_locations_within_boundaries_sql() without is_numeric() validation, (float) casting, esc_sql(), or $wpdb->prepare(). This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. Exploitation requires the site to host the Posts Locator search-results shortcode (`[gmw form=\"results\" form_id=N]`) on a public page and to have at least one published post with an associated gmw_location row.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-30T10:16:23.980"
+  },
+  {
+    "id": "CVE-2026-7465",
+    "description": "The Spectra Gutenberg Blocks – Website Builder for the Block Editor plugin for WordPress is vulnerable to Remote Code Execution in all versions up to, and including, 2.19.25. This makes it possible for authenticated attackers, with Contributor-level access and above, to execute code on the server. Exploitation requires a two-block payload embedded in post content: the first block registers a fake uagb/-prefixed block type with an attacker-specified render_callback, and the second block of the same fake type triggers invocation of that callback via call_user_func() during sequential block rendering in the same page request.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-30T10:16:23.860"
+  },
+  {
+    "id": "CVE-2026-7459",
+    "description": "The Simple History – Track, Log, and Audit WordPress Changes plugin for WordPress is vulnerable to authenticated (Subscriber+) account takeover in all versions up to, and including, 5.26.0 via the event reaction endpoints (react_to_event() / unreact_to_event()). The endpoints register get_items_permissions_check() as their permission_callback, which only verifies the requester is logged in and does not enforce the per-logger capability checks normally applied by Log_Query. As a result, a Subscriber-level user can POST to /wp-json/simple-history/v1/events/<id>/react with the _fields=context query parameter and read the full context of any Simple History event — including SimpleUserLogger entries that record the full password-reset email body (reset URL with the reset key) for any user. The attacker triggers a password reset for an administrator via the lost-password form, brute-forces recent event IDs through the reaction endpoint to read the resulting user_requested_password_reset_link event, extracts the reset key from context.message, and completes the password reset to take over the administrator account. Exploitation requires an administrator to have first enabled the experimental features option (simple_history_experimental_features_enabled), which is not the default.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-05-30T10:16:22.610"
+  },
+  {
     "id": "CVE-2026-10113",
     "description": "A vulnerability was found in Open5GS up to 2.7.7. Affected by this vulnerability is an unknown functionality in the library lib/sbi/nnrf-handler.c of the component Shared NF-profile Parser. The manipulation results in denial of service. It is possible to launch the attack remotely. The exploit has been made public and could be used. A patch should be applied to remediate this issue.",
     "severity": "Medium",
@@ -9154,369 +9210,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-05-27T14:16:40.600"
-  },
-  {
-    "id": "CVE-2026-9689",
-    "description": "A flaw was found in Keycloak, an open-source identity and access management solution. When a client application is configured to accept broad redirect Uniform Resource Identifiers (URIs), a remote attacker can manipulate the authentication process by crafting a special web address. If a user clicks this link, the client application might incorrectly prioritize attacker-controlled information over legitimate data. This vulnerability, known as HTTP parameter pollution, could allow an attacker to bypass security measures or gain unauthorized access to resources.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T12:17:15.513"
-  },
-  {
-    "id": "CVE-2026-48906",
-    "description": "The vulnerability in the Tassos Framework Plugin allows users to delete arbitrary files on the affected sites.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:24.713"
-  },
-  {
-    "id": "CVE-2026-45846",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbareudp: fix NULL pointer dereference in bareudp_fill_metadata_dst()\n\nbareudp_fill_metadata_dst() passes bareudp->sock to\nudp_tunnel6_dst_lookup() in the IPv6 path without a NULL check.\nThe socket is only created in bareudp_open() and NULLed in\nbareudp_stop(), so calling this function while the device is down\ntriggers a NULL dereference via sock->sk.\n\n BUG: kernel NULL pointer dereference, address: 0000000000000018\n RIP: 0010:udp_tunnel6_dst_lookup (net/ipv6/ip6_udp_tunnel.c:160)\n Call Trace:\n  <TASK>\n  bareudp_fill_metadata_dst (drivers/net/bareudp.c:532)\n  do_execute_actions (net/openvswitch/actions.c:901)\n  ovs_execute_actions (net/openvswitch/actions.c:1589)\n  ovs_packet_cmd_execute (net/openvswitch/datapath.c:700)\n  genl_family_rcv_msg_doit (net/netlink/genetlink.c:1114)\n  genl_rcv_msg (net/netlink/genetlink.c:1209)\n  netlink_rcv_skb (net/netlink/af_netlink.c:2550)\n  </TASK>\n\nAdd a NULL check returning -ESHUTDOWN, consistent with the xmit paths\nin the same driver.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:24.083"
-  },
-  {
-    "id": "CVE-2026-45845",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/sched: taprio: fix NULL pointer dereference in class dump\n\nWhen a TAPRIO child qdisc is deleted via RTM_DELQDISC, taprio_graft()\nis called with new == NULL and stores NULL into q->qdiscs[cl - 1].\nSubsequent RTM_GETTCLASS dump operations walk all classes via\ntaprio_walk() and call taprio_dump_class(), which calls taprio_leaf()\nreturning the NULL pointer, then dereferences it to read child->handle,\ncausing a kernel NULL pointer dereference.\n\nThe bug is reachable with namespace-scoped CAP_NET_ADMIN on any kernel\nwith CONFIG_NET_SCH_TAPRIO enabled. On systems with unprivileged user\nnamespaces enabled, an unprivileged local user can trigger a kernel\npanic by creating a taprio qdisc inside a new network namespace,\ngrafting an explicit child qdisc, deleting it, and requesting a class\ndump. The RTM_GETTCLASS dump itself requires no capability.\n\n Oops: general protection fault, probably for non-canonical address 0xdffffc0000000007: 0000 [#1] SMP KASAN NOPTI\n KASAN: null-ptr-deref in range [0x0000000000000038-0x000000000000003f]\n RIP: 0010:taprio_dump_class (net/sched/sch_taprio.c:2478)\n Call Trace:\n  <TASK>\n  tc_fill_tclass (net/sched/sch_api.c:1966)\n  qdisc_class_dump (net/sched/sch_api.c:2326)\n  taprio_walk (net/sched/sch_taprio.c:2514)\n  tc_dump_tclass_qdisc (net/sched/sch_api.c:2352)\n  tc_dump_tclass_root (net/sched/sch_api.c:2370)\n  tc_dump_tclass (net/sched/sch_api.c:2431)\n  rtnl_dumpit (net/core/rtnetlink.c:6864)\n  netlink_dump (net/netlink/af_netlink.c:2325)\n  rtnetlink_rcv_msg (net/core/rtnetlink.c:6959)\n  netlink_rcv_skb (net/netlink/af_netlink.c:2550)\n  </TASK>\n\nFix this by substituting &noop_qdisc when new is NULL in\ntaprio_graft(), a common pattern used by other qdiscs (e.g.,\nmultiq_graft()) to ensure the q->qdiscs[] slots are never NULL.\nThis makes control-plane dump paths safe without requiring individual\nNULL checks.\n\nSince the data-plane paths (taprio_enqueue and taprio_dequeue_from_txq)\npreviously had explicit NULL guards that would drop/skip the packet\ncleanly, update those checks to test for &noop_qdisc instead. Without\nthis, packets would reach taprio_enqueue_one() which increments the root\nqdisc's qlen and backlog before calling the child's enqueue; noop_qdisc\ndrops the packet but those counters are never rolled back, permanently\ninflating the root qdisc's statistics.\n\nAfter this change *old can be a valid qdisc, NULL, or &noop_qdisc.\nOnly call qdisc_put(*old) in the first case to avoid decreasing\nnoop_qdisc's refcount, which was never increased.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.960"
-  },
-  {
-    "id": "CVE-2026-45844",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: arp_tables: fix IEEE1394 ARP payload parsing\n\nWeiming Shi says:\n\n\"arp_packet_match() unconditionally parses the ARP payload assuming two\nhardware addresses are present (source and target). However,\nIPv4-over-IEEE1394 ARP (RFC 2734) omits the target hardware address\nfield, and arp_hdr_len() already accounts for this by returning a\nshorter length for ARPHRD_IEEE1394 devices.\n\nAs a result, on IEEE1394 interfaces arp_packet_match() advances past a\nnonexistent target hardware address and reads the wrong bytes for both\nthe target device address comparison and the target IP address. This\ncauses arptables rules to match against garbage data, leading to\nincorrect filtering decisions: packets that should be accepted may be\ndropped and vice versa.\n\nThe ARP stack in net/ipv4/arp.c (arp_create and arp_process) already\nhandles this correctly by skipping the target hardware address for\nARPHRD_IEEE1394. Apply the same pattern to arp_packet_match().\"\n\nMangle the original patch to always return 0 (no match) in case user\nmatches on the target hardware address which is never present in\nIEEE1394.\n\nNote that this returns 0 (no match) for either normal and inverse match\nbecause matching in the target hardware address in ARPHRD_IEEE1394 has\nnever been supported by arptables. This is intentional, matching on the\ntarget hardware address should never evaluate true for ARPHRD_IEEE1394.\n\nMoreover, adjust arpt_mangle to drop the packet too as AI suggests:\n\nIn arpt_mangle, the logic assumes a standard ARP layout. Because\nIEEE1394 (FireWire) omits the target hardware address, the linear\npointer arithmetic miscalculates the offset for the target IP address.\nThis causes mangling operations to write to the wrong location, leading\nto packet corruption. To ensure safety, this patch drops packets\n(NF_DROP) when mangling is requested for these fields on IEEE1394\ndevices, as the current implementation cannot correctly map the FireWire\nARP payload.\n\nThis omits both mangling target hardware and IP address. Even if IP\naddress mangling should be possible in IEEE1394, this would require\nto adjust arpt_mangle offset calculation, which has never been\nsupported.\n\nBased on patch from Weiming Shi <bestswngs@gmail.com>.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.847"
-  },
-  {
-    "id": "CVE-2026-45843",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nslip: bound decode() reads against the compressed packet length\n\nslhc_uncompress() parses a VJ-compressed TCP header by advancing a\npointer through the packet via decode() and pull16(). Neither helper\nbounds-checks against isize, and decode() masks its return with\n& 0xffff so it can never return the -1 that callers test for -- those\nerror paths are dead code.\n\nA short compressed frame whose change byte requests optional fields\nlets decode() read past the end of the packet. The over-read bytes\nare folded into the cached cstate and reflected into subsequent\nreconstructed packets.\n\nMake decode() and pull16() take the packet end pointer and return -1\nwhen exhausted. Add a bounds check before the TCP-checksum read.\nThe existing == -1 tests now do what they were always meant to.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.743"
-  },
-  {
-    "id": "CVE-2026-45842",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nslip: reject VJ receive packets on instances with no rstate array\n\nslhc_init() accepts rslots == 0 as a valid configuration, with the\ndocumented meaning of 'no receive compression'. In that case the\nallocation loop in slhc_init() is skipped, so comp->rstate stays\nNULL and comp->rslot_limit stays 0 (from the kzalloc of struct\nslcompress).\n\nThe receive helpers do not defend against that configuration.\nslhc_uncompress() dereferences comp->rstate[x] when the VJ header\ncarries an explicit connection ID, and slhc_remember() later assigns\ncs = &comp->rstate[...] after only comparing the packet's slot number\nto comp->rslot_limit. Because rslot_limit is 0, slot 0 passes the\nrange check, and the code dereferences a NULL rstate.\n\nThe configuration is reachable in-tree through PPP. PPPIOCSMAXCID\nstores its argument in a signed int, and (val >> 16) uses arithmetic\nshift. Passing 0xffff0000 therefore sign-extends to -1, so val2 + 1\nis 0 and ppp_generic.c ends up calling slhc_init(0, 1). Because\n/dev/ppp open is gated by ns_capable(CAP_NET_ADMIN), the whole path\nis reachable from an unprivileged user namespace. Once the malformed\nVJ state is installed, any inbound VJ-compressed or VJ-uncompressed\nframe that selects slot 0 crashes the kernel in softirq context:\n\n Oops: general protection fault, probably for non-canonical\n       address 0xdffffc0000000000: 0000 [#1] SMP KASAN NOPTI\n KASAN: null-ptr-deref in range [0x0000000000000000-0x0000000000000007]\n RIP: 0010:slhc_uncompress (drivers/net/slip/slhc.c:519)\n Call Trace:\n  <TASK>\n  ppp_receive_nonmp_frame (drivers/net/ppp/ppp_generic.c:2466)\n  ppp_input (drivers/net/ppp/ppp_generic.c:2359)\n  ppp_async_process (drivers/net/ppp/ppp_async.c:492)\n  tasklet_action_common (kernel/softirq.c:926)\n  handle_softirqs (kernel/softirq.c:623)\n  run_ksoftirqd (kernel/softirq.c:1055)\n  smpboot_thread_fn (kernel/smpboot.c:160)\n  kthread (kernel/kthread.c:436)\n  ret_from_fork (arch/x86/kernel/process.c:164)\n  </TASK>\n\nReject the receive side on such instances instead of touching rstate.\nslhc_uncompress() falls through to its existing 'bad' label, which\nbumps sls_i_error and enters the toss state. slhc_remember() mirrors\nthat with an explicit sls_i_error increment followed by slhc_toss();\nthe sls_i_runt counter is not used here because a missing rstate is\nan internal configuration state, not a runt packet.\n\nThe transmit path is unaffected: the only in-tree caller that picks\nrslots from userspace (ppp_generic.c) still supplies tslots >= 1, and\nslip.c always calls slhc_init(16, 16), so comp->tstate remains valid\nand slhc_compress() continues to work.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.600"
-  },
-  {
-    "id": "CVE-2026-45841",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nfnetlink_osf: fix divide-by-zero in OSF_WSS_MODULO\n\nnf_osf_match_one() computes ctx->window % f->wss.val in the\nOSF_WSS_MODULO branch with no guard for f->wss.val == 0. A\nCAP_NET_ADMIN user can add such a fingerprint via nfnetlink; a\nsubsequent matching TCP SYN divides by zero and panics the kernel.\n\nReject the bogus fingerprint in nfnl_osf_add_callback() above the\nper-option for-loop. f->wss is per-fingerprint, not per-option, so\nthe check must run regardless of f->opt_num (including 0). Also\nreject wss.wc >= OSF_WSS_MAX; nf_osf_match_one() already treats that\nas \"should not happen\".\n\nCrash:\n Oops: divide error: 0000 [#1] SMP KASAN NOPTI\n RIP: 0010:nf_osf_match_one (net/netfilter/nfnetlink_osf.c:98)\n Call Trace:\n <IRQ>\n  nf_osf_match (net/netfilter/nfnetlink_osf.c:220)\n  xt_osf_match_packet (net/netfilter/xt_osf.c:32)\n  ipt_do_table (net/ipv4/netfilter/ip_tables.c:348)\n  nf_hook_slow (net/netfilter/core.c:622)\n  ip_local_deliver (net/ipv4/ip_input.c:265)\n  ip_rcv (include/linux/skbuff.h:1162)\n  __netif_receive_skb_one_core (net/core/dev.c:6181)\n  process_backlog (net/core/dev.c:6642)\n  __napi_poll (net/core/dev.c:7710)\n  net_rx_action (net/core/dev.c:7945)\n  handle_softirqs (kernel/softirq.c:622)",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.493"
-  },
-  {
-    "id": "CVE-2026-45840",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nopenvswitch: cap upcall PID array size and pre-size vport replies\n\nThe vport netlink reply helpers allocate a fixed-size skb with\nnlmsg_new(NLMSG_DEFAULT_SIZE, ...) but serialize the full upcall PID\narray via ovs_vport_get_upcall_portids().  Since\novs_vport_set_upcall_portids() accepts any non-zero multiple of\nsizeof(u32) with no upper bound, a CAP_NET_ADMIN user can install a PID\narray large enough to overflow the reply buffer, causing nla_put() to\nfail with -EMSGSIZE and hitting BUG_ON(err < 0).  On systems with\nunprivileged user namespaces enabled (e.g., Ubuntu default), this is\nreachable via unshare -Urn since OVS vport mutation operations use\nGENL_UNS_ADMIN_PERM.\n\n kernel BUG at net/openvswitch/datapath.c:2414!\n Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI\n CPU: 1 UID: 0 PID: 65 Comm: poc Not tainted 7.0.0-rc7-00195-geb216e422044 #1\n RIP: 0010:ovs_vport_cmd_set+0x34c/0x400\n Call Trace:\n  <TASK>\n  genl_family_rcv_msg_doit (net/netlink/genetlink.c:1116)\n  genl_rcv_msg (net/netlink/genetlink.c:1194)\n  netlink_rcv_skb (net/netlink/af_netlink.c:2550)\n  genl_rcv (net/netlink/genetlink.c:1219)\n  netlink_unicast (net/netlink/af_netlink.c:1344)\n  netlink_sendmsg (net/netlink/af_netlink.c:1894)\n  __sys_sendto (net/socket.c:2206)\n  __x64_sys_sendto (net/socket.c:2209)\n  do_syscall_64 (arch/x86/entry/syscall_64.c:63)\n  entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:130)\n  </TASK>\n Kernel panic - not syncing: Fatal exception\n\nReject attempts to set more PIDs than nr_cpu_ids in\novs_vport_set_upcall_portids(), and pre-compute the worst-case reply\nsize in ovs_vport_cmd_msg_size() based on that bound, similar to the\nexisting ovs_dp_cmd_msg_size().  nr_cpu_ids matches the cap already\nused by the per-CPU dispatch configuration on the datapath side\n(ovs_dp_cmd_fill_info() serialises at most nr_cpu_ids PIDs), so the\ntwo sides stay consistent.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.363"
-  },
-  {
-    "id": "CVE-2026-45839",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: reject negative CO-RE accessor indices in bpf_core_parse_spec()\n\nCO-RE accessor strings are colon-separated indices that describe a path\nfrom a root BTF type to a target field, e.g. \"0:1:2\" walks through\nnested struct members. bpf_core_parse_spec() parses each component with\nsscanf(\"%d\"), so negative values like -1 are silently accepted.  The\nsubsequent bounds checks (access_idx >= btf_vlen(t)) only guard the\nupper bound and always pass for negative values because C integer\npromotion converts the __u16 btf_vlen result to int, making the\ncomparison (int)(-1) >= (int)(N) false for any positive N.\n\nWhen -1 reaches btf_member_bit_offset() it gets cast to u32 0xffffffff,\nproducing an out-of-bounds read far past the members array.  A crafted\nBPF program with a negative CO-RE accessor on any struct that exists in\nvmlinux BTF (e.g. task_struct) crashes the kernel deterministically\nduring BPF_PROG_LOAD on any system with CONFIG_DEBUG_INFO_BTF=y\n(default on major distributions).  The bug is reachable with CAP_BPF:\n\n BUG: unable to handle page fault for address: ffffed11818b6626\n #PF: supervisor read access in kernel mode\n #PF: error_code(0x0000) - not-present page\n Oops: Oops: 0000 [#1] SMP KASAN NOPTI\n CPU: 0 UID: 0 PID: 85 Comm: poc Not tainted 7.0.0-rc6 #18 PREEMPT(full)\n RIP: 0010:bpf_core_parse_spec (tools/lib/bpf/relo_core.c:354)\n RAX: 00000000ffffffff\n Call Trace:\n  <TASK>\n  bpf_core_calc_relo_insn (tools/lib/bpf/relo_core.c:1321)\n  bpf_core_apply (kernel/bpf/btf.c:9507)\n  check_core_relo (kernel/bpf/verifier.c:19475)\n  bpf_check (kernel/bpf/verifier.c:26031)\n  bpf_prog_load (kernel/bpf/syscall.c:3089)\n  __sys_bpf (kernel/bpf/syscall.c:6228)\n  </TASK>\n\nCO-RE accessor indices are inherently non-negative (struct member index,\narray element index, or enumerator index), so reject them immediately\nafter parsing.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.247"
-  },
-  {
-    "id": "CVE-2026-45838",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: fix end-of-list detection in cgroup_storage_get_next_key()\n\nlist_next_entry() never returns NULL -- when the current element is the\nlast entry it wraps to the list head via container_of(). The subsequent\nNULL check is therefore dead code and get_next_key() never returns\n-ENOENT for the last element, instead reading storage->key from a bogus\npointer that aliases internal map fields and copying the result to\nuserspace.\n\nReplace it with list_entry_is_head() so the function correctly returns\n-ENOENT when there are no more entries.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.130"
-  },
-  {
-    "id": "CVE-2026-45837",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: Fix use-after-free in arena_vm_close on fork\n\narena_vm_open() only bumps vml->mmap_count but never registers the\nchild VMA in arena->vma_list. The vml->vma always points at the\nparent VMA, so after parent munmap the pointer dangles. If the child\nthen calls bpf_arena_free_pages(), zap_pages() reads the stale\nvml->vma triggering use-after-free.\n\nFix this by preventing the arena VMA from being inherited across\nfork with VM_DONTCOPY, and preventing VMA splits via the may_split\ncallback.\n\nAlso reject mremap with a .mremap callback returning -EINVAL. A\nsame-size mremap(MREMAP_FIXED) on the full arena VMA reaches\ncopy_vma() through the following path:\n\n  check_prep_vma()       - returns 0 early: new_len == old_len\n                           skips VM_DONTEXPAND check\n  prep_move_vma()        - vm_start == old_addr and\n                           vm_end == old_addr + old_len\n                           so may_split is never called\n  move_vma()\n    copy_vma_and_data()\n      copy_vma()\n        vm_area_dup()    - copies vm_private_data (vml pointer)\n        vm_ops->open()   - bumps vml->mmap_count\n      vm_ops->mremap()   - returns -EINVAL, rollback unmaps new VMA\n\nThe refcount ensures the rollback's arena_vm_close does not free\nthe vml shared with the original VMA.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:23.020"
-  },
-  {
-    "id": "CVE-2026-42762",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in e4jvikwp VikBooking Hotel Booking Engine & PMS vikbooking allows DOM-Based XSS.This issue affects VikBooking Hotel Booking Engine & PMS: from n/a through <= 1.8.9.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:22.897"
-  },
-  {
-    "id": "CVE-2026-42761",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in RealMag777 Active Products Tables for WooCommerce profit-products-tables-for-woocommerce allows Blind SQL Injection.This issue affects Active Products Tables for WooCommerce: from n/a through <= 1.0.9.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:22.763"
-  },
-  {
-    "id": "CVE-2026-42760",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in revmakx Backup and Staging by WP Time Capsule wp-time-capsule allows Password Recovery Exploitation.This issue affects Backup and Staging by WP Time Capsule: from n/a through <= 1.22.25.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:22.650"
-  },
-  {
-    "id": "CVE-2026-42759",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Timo Affiliate Super Assistent amazonsimpleadmin allows Stored XSS.This issue affects Affiliate Super Assistent: from n/a through <= 1.10.1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:22.500"
-  },
-  {
-    "id": "CVE-2026-42758",
-    "description": "Incorrect Privilege Assignment vulnerability in Saleswonder Team: Tobias WebinarIgnition webinar-ignition allows Privilege Escalation.This issue affects WebinarIgnition: from n/a through < 4.08.253.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:22.330"
-  },
-  {
-    "id": "CVE-2026-42757",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Saleswonder Team: Tobias WebinarIgnition webinar-ignition allows Path Traversal.This issue affects WebinarIgnition: from n/a through < 4.08.253.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:22.217"
-  },
-  {
-    "id": "CVE-2026-42756",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Ludwig You QuickWebP &#8211; Compress / Optimize Images &amp; Convert WebP | SEO Friendly quickwebp allows Path Traversal.This issue affects QuickWebP &#8211; Compress / Optimize Images &amp; Convert WebP | SEO Friendly: from n/a through <= 3.2.7.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:22.100"
-  },
-  {
-    "id": "CVE-2026-42755",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in RealMag777 TableOn posts-table-filterable allows Blind SQL Injection.This issue affects TableOn: from n/a through <= 1.0.5.1.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.990"
-  },
-  {
-    "id": "CVE-2026-42754",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in phbernard Favicon favicon-by-realfavicongenerator allows Reflected XSS.This issue affects Favicon: from n/a through <= 1.3.46.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.873"
-  },
-  {
-    "id": "CVE-2026-42753",
-    "description": "Missing Authorization vulnerability in WC Lovers WCFM Membership wc-multivendor-membership allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects WCFM Membership: from n/a through <= 2.11.10.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.760"
-  },
-  {
-    "id": "CVE-2026-42751",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in wpdevelop Booking Manager booking-manager allows Stored XSS.This issue affects Booking Manager: from n/a through <= 2.1.18.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.643"
-  },
-  {
-    "id": "CVE-2026-42750",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Nexcess WPComplete wpcomplete allows Stored XSS.This issue affects WPComplete: from n/a through <= 2.9.5.4.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.530"
-  },
-  {
-    "id": "CVE-2026-42749",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Themeisle Disable Comments for Any Post Types (Remove comments) comments-plus allows Password Recovery Exploitation.This issue affects Disable Comments for Any Post Types (Remove comments): from n/a through <= 1.3.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.413"
-  },
-  {
-    "id": "CVE-2026-42748",
-    "description": "Unrestricted Upload of File with Dangerous Type vulnerability in WPify WPify Woo Czech wpify-woo allows Upload a Web Shell to a Web Server.This issue affects WPify Woo Czech: from n/a through <= 5.4.1.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.290"
-  },
-  {
-    "id": "CVE-2026-42747",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in hassantafreshi Easy Form Builder easy-form-builder allows Blind SQL Injection.This issue affects Easy Form Builder: from n/a through <= 4.0.6.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.173"
-  },
-  {
-    "id": "CVE-2026-42746",
-    "description": "Insertion of Sensitive Information Into Sent Data vulnerability in ZAYTECH Smart Online Order for Clover clover-online-orders allows Retrieve Embedded Sensitive Data.This issue affects Smart Online Order for Clover: from n/a through <= 1.6.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:21.057"
-  },
-  {
-    "id": "CVE-2026-42745",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in ZAYTECH Smart Online Order for Clover clover-online-orders allows Authentication Bypass.This issue affects Smart Online Order for Clover: from n/a through <= 1.6.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.940"
-  },
-  {
-    "id": "CVE-2026-42744",
-    "description": "Improper Validation of Specified Quantity in Input vulnerability in Ads by WPQuads Ads by WPQuads quick-adsense-reloaded allows Manipulating Hidden Fields.This issue affects Ads by WPQuads: from n/a through <= 3.0.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.827"
-  },
-  {
-    "id": "CVE-2026-42740",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in tainacan Tainacan tainacan allows Blind SQL Injection.This issue affects Tainacan: from n/a through <= 1.0.3.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.700"
-  },
-  {
-    "id": "CVE-2026-42739",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in IniLerm Advanced IP Blocker advanced-ip-blocker allows DOM-Based XSS.This issue affects Advanced IP Blocker: from n/a through <= 8.10.7.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.583"
-  },
-  {
-    "id": "CVE-2026-42738",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in ZAYTECH Smart Online Order for Clover clover-online-orders allows Stored XSS.This issue affects Smart Online Order for Clover: from n/a through <= 1.6.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.470"
-  },
-  {
-    "id": "CVE-2026-42737",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in e4jvikwp VikBooking Hotel Booking Engine & PMS vikbooking allows Path Traversal.This issue affects VikBooking Hotel Booking Engine & PMS: from n/a through <= 1.8.9.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.350"
-  },
-  {
-    "id": "CVE-2026-42736",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in wordplus BP Better Messages bp-better-messages allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects BP Better Messages: from n/a through <= 2.14.16.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.233"
-  },
-  {
-    "id": "CVE-2026-42735",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Iqonic Design KiviCare kivicare-clinic-management-system allows Password Recovery Exploitation.This issue affects KiviCare: from n/a through <= 4.3.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:20.117"
-  },
-  {
-    "id": "CVE-2026-42734",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Dylan Kuhn  Geo Mashup geo-mashup allows Reflected XSS.This issue affects  Geo Mashup: from n/a through <= 1.13.19.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.997"
-  },
-  {
-    "id": "CVE-2026-42733",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in RealMag777 WPCS currency-switcher allows DOM-Based XSS.This issue affects WPCS: from n/a through <= 1.3.1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.877"
-  },
-  {
-    "id": "CVE-2026-42732",
-    "description": "Improper Validation of Specified Quantity in Input vulnerability in Ads by WPQuads Ads by WPQuads quick-adsense-reloaded allows Input Data Manipulation.This issue affects Ads by WPQuads: from n/a through <= 3.0.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.717"
-  },
-  {
-    "id": "CVE-2026-42731",
-    "description": "Incorrect Privilege Assignment vulnerability in miniOrange miniorange otp verification miniorange-otp-verification allows Privilege Escalation.This issue affects miniorange otp verification: from n/a through <= 5.4.9.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.600"
-  },
-  {
-    "id": "CVE-2026-42730",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in Stylemix MasterStudy LMS masterstudy-lms-learning-management-system allows Blind SQL Injection.This issue affects MasterStudy LMS: from n/a through <= 3.7.29.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.413"
-  },
-  {
-    "id": "CVE-2026-42729",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Property Hive PropertyHive propertyhive allows DOM-Based XSS.This issue affects PropertyHive: from n/a through <= 2.2.2.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.297"
-  },
-  {
-    "id": "CVE-2026-42728",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in HT Plugins HT Contact Form 7 ht-contactform allows Stored XSS.This issue affects HT Contact Form 7: from n/a through <= 2.8.2.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.180"
-  },
-  {
-    "id": "CVE-2026-42727",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in RealMag777 Active Products Tables for WooCommerce profit-products-tables-for-woocommerce allows Blind SQL Injection.This issue affects Active Products Tables for WooCommerce: from n/a through <= 1.0.8.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:19.060"
-  },
-  {
-    "id": "CVE-2026-42726",
-    "description": "Missing Authorization vulnerability in Strategy11 Team AWP Classifieds another-wordpress-classifieds-plugin allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects AWP Classifieds: from n/a through <= 4.4.5.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:18.950"
-  },
-  {
-    "id": "CVE-2026-42725",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in WP Wham Checkout Files Upload for WooCommerce checkout-files-upload-woocommerce allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects Checkout Files Upload for WooCommerce: from n/a through <= 2.2.5.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:18.827"
-  },
-  {
-    "id": "CVE-2026-3349",
-    "description": "The MinhNhut Link Gateway plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'url' parameter on the redirect page in all versions up to, and including, 3.6.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:18.593"
-  },
-  {
-    "id": "CVE-2026-3348",
-    "description": "The MinhNhut Link Gateway plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's settings (Description, Title, and other fields) in all versions up to, and including, 3.6.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with Administrator-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses the redirect page. This only affects multi-site installations and installations where unfiltered_html has been disabled.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:18.470"
-  },
-  {
-    "id": "CVE-2026-3012",
-    "description": "A flaw was found in Samba’s certificate auto-enrollment Group Policy handling. When certificate auto-enrollment is enabled, Samba may retrieve a CA certificate over an unencrypted HTTP connection and install it into the local trust store without proper verification. An attacker with the ability to intercept or redirect network traffic could exploit this behavior to supply a malicious certificate authority certificate, potentially allowing interception or spoofing of trusted communications.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:18.357"
-  },
-  {
-    "id": "CVE-2026-2288",
-    "description": "The myLinksDump plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'link_title' parameter in all versions up to, and including, 1.6 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:17.993"
-  },
-  {
-    "id": "CVE-2026-2280",
-    "description": "The rexCrawler plugin for WordPress is vulnerable to Stored Cross-Site Scripting via admin settings in all versions up to, and including, 1.0.15 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with administrator-level permissions and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This only affects multi-site installations and installations where unfiltered_html has been disabled.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:17.873"
-  },
-  {
-    "id": "CVE-2025-0898",
-    "description": "The Xpro Elementor Addons - Pro plugin for WordPress is vulnerable to Arbitrary File Reading in all versions up to, and including, 1.4.7 via the Draw SVG widget. This makes it possible for authenticated attackers, with Contributor-level access and above, to read the contents of arbitrary files on the server, which can contain sensitive information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-27T11:16:16.633"
   }
 ]
