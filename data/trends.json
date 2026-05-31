@@ -1,96 +1,5 @@
 [
   {
-    "id": "CVE-2025-12993",
-    "description": "Rejected reason: ** REJECT ** DO NOT USE THIS CANDIDATE NUMBER. ConsultIDs: CVE-2025-67968. Reason: This candidate is a reservation duplicate of CVE-2025-67968. Notes: All CVE users should reference CVE-2025-67968 instead of this candidate. All references and descriptions in this candidate have been removed to prevent accidental usage.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:16.313"
-  },
-  {
-    "id": "CVE-2026-39804",
-    "description": "Allocation of Resources Without Limits or Throttling vulnerability in mtrudel bandit allows unauthenticated remote denial of service via memory exhaustion when WebSocket permessage-deflate compression is enabled.\n\n'Elixir.Bandit.WebSocket.PerMessageDeflate':inflate/2 in lib/bandit/websocket/permessage_deflate.ex calls :zlib.inflate/2 with no output-size cap, then materializes the entire decompressed payload as a single binary via IO.iodata_to_binary/1. The websocket_options.max_frame_size option only bounds the on-the-wire (compressed) frame size, not the decompressed output. A high-ratio compressed frame (e.g. uniform data at ~1024:1 ratio) can stay well under any wire-size limit while forcing GiB-scale heap allocations in the connection process before any application code runs.\n\nAn unauthenticated attacker who can open a WebSocket connection can send a single such frame to exhaust the BEAM node's memory and trigger an OOM kill.\n\nThis vulnerability requires both Bandit's server-level websocket_options.compress and the per-upgrade compress: true option passed to WebSockAdapter.upgrade/4 to be enabled. Stock Phoenix and LiveView applications are not affected as they default to compress: false.\n\nThis issue affects bandit: from 0.5.9 before 1.11.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:16.853"
-  },
-  {
-    "id": "CVE-2026-39805",
-    "description": "Inconsistent Interpretation of HTTP Requests vulnerability in mtrudel bandit allows HTTP request smuggling via duplicate Content-Length headers.\n\n'Elixir.Bandit.Headers':get_content_length/1 in lib/bandit/headers.ex uses List.keyfind/3, which returns only the first matching header. When a request contains two Content-Length headers with different values, Bandit silently accepts it, uses the first value to read the body, and dispatches the remaining bytes as a second pipelined request on the same keep-alive connection. RFC 9112 §6.3 requires recipients to treat this as an unrecoverable framing error.\n\nWhen Bandit sits behind a proxy that picks the last Content-Length value and forwards the request rather than rejecting it, an unauthenticated attacker can smuggle requests past edge WAF rules, path-based ACLs, rate limiting, and audit logging.\n\nThis issue affects bandit: before 1.11.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:17.037"
-  },
-  {
-    "id": "CVE-2026-39807",
-    "description": "Reliance on Untrusted Inputs in a Security Decision vulnerability in mtrudel bandit allows unauthenticated transport-state spoofing on plaintext HTTP connections.\n\n'Elixir.Bandit.Pipeline':determine_scheme/2 in lib/bandit/pipeline.ex returns the client-supplied URI scheme verbatim, ignoring the transport's secure? flag. HTTP/1.1 absolute-form request targets (e.g. GET https://victim/path HTTP/1.1) and the HTTP/2 :scheme pseudo-header are both attacker-controlled strings that flow through this function. Over a plaintext TCP connection, a client can declare https and Bandit will set conn.scheme = :https even though no TLS was negotiated.\n\nDownstream Plug consumers that branch on conn.scheme are silently misled: Plug.SSL's already-secure branch skips its HTTP→HTTPS redirect, cookies emitted with secure: true are sent over plaintext, audit logs record requests as having arrived over HTTPS, and CSRF/SameSite gating may make incorrect decisions.\n\nThis issue affects bandit: from 1.0.0 before 1.11.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:17.180"
-  },
-  {
-    "id": "CVE-2026-42786",
-    "description": "Allocation of Resources Without Limits or Throttling vulnerability in mtrudel bandit allows unauthenticated remote denial of service via memory exhaustion.\n\nThe fragment reassembly path in 'Elixir.Bandit.WebSocket.Connection':handle_frame/3 in lib/bandit/websocket/connection.ex appends every incoming Continuation{fin: false} frame's payload to a per-connection iolist with no cumulative size cap. The existing max_frame_size option only bounds individual frames; a peer that streams an unbounded number of continuation frames without ever setting fin=1 grows BEAM heap linearly until the OS or a supervisor kills the process.\n\nBecause the accumulation happens before WebSock.handle_in/2 is called, the application has no opportunity to interpose a size check. Phoenix Channels and LiveView both run over WebSock on Bandit, so a stock Phoenix application exposes this surface as soon as it accepts socket connections.\n\nThis issue affects bandit: from 0.5.0 before 1.11.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:17.347"
-  },
-  {
-    "id": "CVE-2026-42788",
-    "description": "Allocation of Resources Without Limits or Throttling vulnerability in mtrudel bandit allows unauthenticated memory exhaustion via oversized HTTP/2 frames.\n\n'Elixir.Bandit.HTTP2.Frame':deserialize/2 in lib/bandit/http2/frame.ex checks the SETTINGS_MAX_FRAME_SIZE limit only after pattern-matching payload::binary-size(length), which requires the entire frame body to be present in memory before either the accept or reject clause can fire. A peer that announces a frame length up to the 24-bit maximum (~16 MiB) causes the server to buffer that entire body before the size guard is evaluated, regardless of the max_frame_size negotiated during the HTTP/2 handshake (default 16 KiB per RFC 9113).\n\nAn unauthenticated attacker holding many concurrent connections can force the server to buffer far more memory than the negotiated frame size limit should permit, leading to memory pressure and potential denial of service.\n\nThis issue affects bandit: from 0.3.6 before 1.11.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:17.500"
-  },
-  {
-    "id": "CVE-2026-7593",
-    "description": "A security vulnerability has been detected in Sunwood-ai-labs command-executor-mcp-server up to 0.1.0. This impacts the function execute_command of the file src/index.ts of the component MCP Interface. The manipulation leads to os command injection. Remote exploitation of the attack is possible. The exploit has been disclosed publicly and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:17.787"
-  },
-  {
-    "id": "CVE-2026-7594",
-    "description": "A vulnerability was detected in Flux159 mcp-game-asset-gen 0.1.0. Affected is the function image_to_3d_async of the file src/index.ts of the component MCP Interface. The manipulation of the argument statusFile results in path traversal. The attack can be executed remotely. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:17.960"
-  },
-  {
-    "id": "CVE-2026-7595",
-    "description": "A flaw has been found in nextlevelbuilder ui-ux-pro-max-skill up to 2.5.0. Affected by this vulnerability is the function _format_plugins of the file .claude/skills/ui-styling/scripts/tailwind_config_gen.py of the component Tailwind Config Generator. This manipulation causes code injection. The attack is possible to be carried out remotely. The exploit has been published and may be used. The project was informed of the problem early through a pull request but has not reacted yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:18.130"
-  },
-  {
-    "id": "CVE-2026-7596",
-    "description": "A vulnerability has been found in nextlevelbuilder ui-ux-pro-max-skill up to 2.5.0. Affected by this issue is the function data.get of the file .claude/skills/design-system/scripts/generate-slide.py of the component Slide Generator. Such manipulation leads to cross site scripting. The attack may be performed from remote. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through a pull request but has not reacted yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-01T21:16:18.300"
-  },
-  {
-    "id": "CVE-2026-7597",
-    "description": "A vulnerability was found in mem0ai mem0 up to 1.0.11. This affects the function pickle.load/pickle.dump of the file mem0/vector_stores/faiss.py. Performing a manipulation results in deserialization. It is possible to initiate the attack remotely. The exploit has been made public and could be used. The patch is named 62dca096f9236010ca15fea9ba369ba740b86b7a. Applying a patch is the recommended action to fix this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-01T22:16:16.713"
-  },
-  {
-    "id": "CVE-2026-7598",
-    "description": "A security vulnerability has been detected in libssh2 up to 1.11.1. The impacted element is the function userauth_password of the file src/userauth.c. Such manipulation of the argument username_len/password_len leads to integer overflow. The attack may be launched remotely. The name of the patch is 256d04b60d80bf1190e96b0ad1e91b2174d744b1. A patch should be applied to remediate this issue.",
-    "severity": "High",
-    "tech": "Libssh2",
-    "published": "2026-05-01T22:16:16.947"
-  },
-  {
-    "id": "CVE-2026-7599",
-    "description": "A vulnerability was detected in Dayoooun hwpx-mcp 0.2.0. This affects the function save_document/export_to_text/export_to_html of the file mcp-server/src/index.ts of the component MCP Interface. Performing a manipulation of the argument output_path results in path traversal. Remote exploitation of the attack is possible. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-01T22:16:17.127"
-  },
-  {
     "id": "CVE-2026-7600",
     "description": "A flaw has been found in ArtMin96 yii2-mcp-server 1.0.2. This impacts the function yii_command_help/yii_execute_command of the file src/index.ts of the component MCP Interface. Executing a manipulation can lead to os command injection. The attack can be executed remotely. The exploit has been published and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
     "severity": "Medium",
@@ -47094,5 +47003,19 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-05-31T20:16:30.813"
+  },
+  {
+    "id": "CVE-2026-10197",
+    "description": "A vulnerability was detected in Assimp up to 6.0.4. Affected is the function glTF2Importer::ImportEmbeddedTextures in the library code/AssetLib/glTF2/glTF2Importer.cpp of the component TF File Handler. The manipulation results in null pointer dereference. The attack is only possible with local access. The exploit is now public and may be used. It is advisable to implement a patch to correct this issue. The pull request to fix this issue awaits acceptance.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-05-31T22:16:54.150"
+  },
+  {
+    "id": "CVE-2026-48210",
+    "description": "An improper default configuration in OTRS 2026.3.1 causes ticket article forwarding actions to enforce the “Is visible for customer” flag by default and prevent users from disabling it via the UI. This leads to unintended exposure of internal ticket information to the External Frontend\n\nThis issue affects OTRS 2026.3.1",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-05-31T22:16:55.133"
   }
 ]
