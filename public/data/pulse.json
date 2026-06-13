@@ -1,5 +1,103 @@
 [
   {
+    "id": "CVE-2026-54361",
+    "description": "MISP contained multiple mass assignment vulnerabilities in the handling of collections, tag collections, event delegations, and shadow attributes. Several controller actions accepted user-supplied fields that should have remained server-controlled, including record identifiers and ownership-related fields such as id, org_id, orgc_id, and user_id.\n\nAn authenticated attacker with access to the affected endpoints could craft requests containing protected fields in order to alter object ownership, redirect an update to another record, overwrite existing event delegation requests, or modify shadow attribute proposals belonging to another organization. This could result in unauthorized modification of MISP objects and, depending on object visibility and sharing configuration, unauthorized access to or transfer of sensitive threat intelligence data.\n\nThe issue was fixed by explicitly pinning ownership and identity fields to their stored values during edit operations and by removing user-supplied primary keys from create-only save paths.\n\nAffected components:\n\n  *  CollectionsController::edit()\n  *  EventDelegationsController::delegateEvent()\n  *  ShadowAttributesController::edit()\n  *  TagCollectionsController::edit()915\n  *  TagCollectionsController::editWithTags()\n\n\nAttack requirements:\nThe attacker must be authenticated and able to reach the affected MISP endpoints. No user interaction is required.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:48.110"
+  },
+  {
+    "id": "CVE-2026-54360",
+    "description": "A mass assignment vulnerability exists in MISP’s sharing group creation endpoint. When creating a new sharing group, the controller did not remove a user-supplied id field before saving the submitted data. In CakePHP, supplying a primary key in the save data can cause a create() followed by save() operation to update an existing record instead of creating a new one.\n\nAn authenticated user with permission to add sharing groups could therefore submit the identifier of an existing sharing group and modify that sharing group without passing the normal edit access-control checks. This may allow the attacker to take over or alter sharing groups they do not otherwise have access to, potentially affecting the confidentiality and integrity of information shared through those groups.\n\nAffected component:\napp/Controller/SharingGroupsController.php, add() action",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:47.980"
+  },
+  {
+    "id": "CVE-2026-54359",
+    "description": "MISP contains an insecure default configuration in which the Security.check_sec_fetch_site_header control is disabled. When this setting is disabled, state-changing requests such as POST, PUT, or AJAX requests are not restricted based on the browser-provided Sec-Fetch-Site header. A remote unauthenticated attacker could craft a malicious web page that causes an authenticated MISP user’s browser to issue cross-site requests to MISP automation endpoints. If successful, the forged requests may be processed with the privileges of the victim user, potentially allowing unauthorized modification of MISP data or configuration. Enabling Security.check_sec_fetch_site_header mitigates this issue, although operators of multi-homed MISP deployments should validate the setting before enforcing it.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:47.843"
+  },
+  {
+    "id": "CVE-2026-54358",
+    "description": "An incorrect authorization vulnerability in MISP allows an organization administrator to target site administrator accounts belonging to the same organization through the administrative email functionality. The affected code restricted organization administrators to users within their own organization, but did not exclude accounts assigned a site administrator role from recipient queries. As a result, an organization administrator could perform privileged account-management actions, such as initiating a password reset workflow, against a higher-privileged site administrator account in the same organization.\n\nSuccessful exploitation may allow an authenticated organization administrator to interfere with or potentially take over a site administrator account, resulting in privilege escalation and full compromise of the MISP instance’s confidentiality, integrity, and availability.\n\nAttack prerequisites:\nThe attacker must be authenticated as an organization administrator in the same organization as a site administrator account.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:47.720"
+  },
+  {
+    "id": "CVE-2026-54357",
+    "description": "An improper authorization vulnerability in MISP allowed an authenticated organization administrator to access or modify user settings belonging to site administrator accounts within the same organization. The affected access-control checks scoped administrative actions by organization membership but did not exclude higher-privileged site administrator users. As a result, an organization administrator could potentially view or alter site administrator user settings and related login profile information, crossing the intended privilege boundary between organization administration and site-wide administration.\n\nThe patch hardens the ACL logic by excluding site administrator accounts from organization administrator–managed user sets, adding explicit authorization failure when a target user is not administrable, and ensuring user setting and login profile operations fail closed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:47.583"
+  },
+  {
+    "id": "CVE-2026-54055",
+    "description": "Kitty is a cross-platform GPU based terminal. In versions prior to 0.47.2, a local privilege escalation vulnerability exists in kitty's file transmission protocol where a child process running in the terminal can write to arbitrary files on the filesystem by exploiting a TOCTOU (Time-of-Check-Time-of-Use) race condition between symlink validation and file creation. The `os.open()` call used to create files does not use `O_NOFOLLOW`, allowing an attacker to create a symlink between the initial stat check and the actual file open, causing the write to follow the symlink to an arbitrary destination. Version 0.47.2 fixes the issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:47.450"
+  },
+  {
+    "id": "CVE-2026-50552",
+    "description": "Koel is a free, open-source music streaming solution. Prior to version 9.7.1, Koel contains a Server-Side Request Forgery (SSRF) vulnerability in the radio station creation endpoint (POST /api/radio/stations). The url field validation rules are declared without the bail keyword, so the HasAudioContentType rule — which issues HTTP requests to the supplied URL — still executes even after the SafeUrl rule has rejected the URL as pointing to a private/reserved address. Any authenticated, non-admin user can therefore coerce the server into making HEAD/GET requests to arbitrary internal hosts. This issue has been patched in version 9.7.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:47.080"
+  },
+  {
+    "id": "CVE-2026-50287",
+    "description": "AgenticMail gives AI agents real email addresses and phone numbers. Prior to version 0.9.27, @agenticmail/mcp exposes a Streamable HTTP transport when started with --http or MCP_HTTP=1. In that mode, the /mcp endpoint accepts requests without any HTTP authentication layer. A remote client can initialize a session and call tools directly. This issue has been patched in version 0.9.27.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:46.940"
+  },
+  {
+    "id": "CVE-2026-47260",
+    "description": "Koel is a free, open-source music streaming solution. Prior to version 9.3.5, Koel validates the podcast feed URL via the SafeUrl rule (DNS resolution + public IP check), but the individual episode <enclosure url=\"...\"> values extracted from the RSS XML are stored directly into the database without any SSRF validation. When a user plays an episode, the server downloads the full HTTP response from the unvalidated enclosure URL via Http::sink()->get() and streams it back to the user, enabling full-read SSRF against internal services. This issue has been patched in version 9.3.5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:46.320"
+  },
+  {
+    "id": "CVE-2026-43872",
+    "description": "Actual is an open-source personal finance application. Prior to version 26.5.0, several endpoints are affected by a path traversal vulnerability. Version 26.5.0 fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:45.897"
+  },
+  {
+    "id": "CVE-2026-42890",
+    "description": "Actual is an open-source personal finance application. In the macOS desktop application version 25.x (built on Electron 39.2.7), the ELECTRON_RUN_AS_NODE fuse is not disabled, allowing an attacker who can place a file on disk or control command-line arguments to invoke the signed Actual.app binary with the ELECTRON_RUN_AS_NODE=1 environment variable set. This converts the application into a Node.js REPL capable of executing arbitrary code that inherits the application's entitlements and code signature, bypassing macOS Gatekeeper review. Version 26.5.0 patches the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:45.580"
+  },
+  {
+    "id": "CVE-2026-42851",
+    "description": "Kitty is a cross-platform GPU based terminal. In versions prior to 0.47.0, a program able to write bytes to a kitty terminal — a remote SSH peer, a downloaded file viewed with `cat`, a log line, an email body rendered in `less`, an issue body in a TUI, etc. — can cause kitty to execute attacker-supplied Python inside the running kitty process, with the user's full privileges. There is no approval prompt, no remote-control permission requirement, no shell-integration interaction, no clipboard touch, and no editor interaction. Version 0.47.0 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:45.420"
+  },
+  {
+    "id": "CVE-2026-42850",
+    "description": "Kitty is a cross-platform GPU based terminal. In versions prior to 0.47.0, it is possible to inject commands within the subshell through kitty error. A special escape code will make kitty return an error, this error is not escaped and will be correctly echoed back to the terminal with CRLF, as such it will be run by the shell in use. To exploit this bug, the victim must use a netcat or a similar program to connect to the attacker, or else listening for someone to connect. Once this condition is set, an attacker could pwn the computer of the victim using a special kitty's escape code that will run a command in the shell in use. Version 04.7.0 fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:45.283"
+  },
+  {
+    "id": "CVE-2026-42604",
+    "description": "Actual is a local-first personal finance tool. The `POST /openid/config` endpoint in Actual Budget's sync-server versions <= 26.4.0 exposes the full OpenID Connect configuration—including the OAuth2 `client_secret`—to any caller who knows the bootstrap password. The endpoint also lacks authentication and rate limiting, making the bootstrap password brute-forceable. Version 26.5.0 fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-12T20:16:45.140"
+  },
+  {
     "id": "CVE-2026-53726",
     "description": "Parse Server is an open source backend that can be deployed to any infrastructure that can run Node.js. Prior to versions 8.6.80 and 9.9.1-alpha.6, a relation query using the $relatedTo operator could read the membership of a Relation field even when that field was hidden from the requesting client by protectedFields, and even when the object owning the relation was not readable by the client under its ACL or class-level permissions. The request requires only the public API credentials that Parse clients normally carry — no user session, master key, or Cloud Code is needed. As a result, an unauthenticated client who knows or obtains the owning object's objectId could enumerate the objects linked through a protected relation, or combine the operator with an objectId constraint to use it as a membership oracle — confirming whether a specific object is linked to a private parent. This affects applications that rely on protectedFields or object ACLs to keep Relation membership confidential, such as private group memberships, block lists, or account-to-resource associations. This issue has been patched in versions 8.6.80 and 9.9.1-alpha.6.",
     "severity": "Unknown",
@@ -5136,110 +5234,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-09T21:17:03.153"
-  },
-  {
-    "id": "CVE-2026-6445",
-    "description": "A flaw exists in FlashArray Purity where insufficient filtering of certain data paths could expose sensitive information to an authenticated user with low privileges.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-09T20:17:02.800"
-  },
-  {
-    "id": "CVE-2026-6444",
-    "description": "A flaw exists in the FlashArray Purity management interface where an authenticated low-privileged user may, under specific conditions, access functionality beyond their assigned privileges.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-09T20:17:02.643"
-  },
-  {
-    "id": "CVE-2026-48306",
-    "description": "Substance3D - Sampler versions 6.0.0 and earlier are affected by an out-of-bounds write vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "High",
-    "tech": "Substance 3d sampler",
-    "published": "2026-06-09T20:17:02.233"
-  },
-  {
-    "id": "CVE-2026-48305",
-    "description": "Substance3D - Sampler versions 6.0.0 and earlier are affected by an out-of-bounds write vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "High",
-    "tech": "Substance 3d sampler",
-    "published": "2026-06-09T20:17:01.597"
-  },
-  {
-    "id": "CVE-2026-47910",
-    "description": "Dreamweaver Desktop versions 21.7 and earlier are affected by an Incorrect Authorization vulnerability that could lead to arbitrary file system read. An attacker could exploit this vulnerability to access sensitive files and directories outside the intended access scope. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
-    "severity": "Medium",
-    "tech": "Dreamweaver",
-    "published": "2026-06-09T20:17:00.177"
-  },
-  {
-    "id": "CVE-2026-47909",
-    "description": "Dreamweaver Desktop versions 21.7 and earlier are affected by an Improper Input Validation vulnerability that could lead to arbitrary file system read. An attacker could exploit this vulnerability to access sensitive files and directories outside the intended access scope. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
-    "severity": "Medium",
-    "tech": "Dreamweaver",
-    "published": "2026-06-09T20:17:00.050"
-  },
-  {
-    "id": "CVE-2026-47908",
-    "description": "Dreamweaver Desktop versions 21.7 and earlier are affected by an Access of Uninitialized Pointer vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "High",
-    "tech": "Dreamweaver",
-    "published": "2026-06-09T20:16:59.920"
-  },
-  {
-    "id": "CVE-2026-47907",
-    "description": "Dreamweaver Desktop versions 21.7 and earlier are affected by an Improper Access Control vulnerability that could lead to arbitrary file system read. An attacker could exploit this vulnerability to access sensitive files and directories outside the intended access scope. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
-    "severity": "High",
-    "tech": "Dreamweaver",
-    "published": "2026-06-09T20:16:59.803"
-  },
-  {
-    "id": "CVE-2026-47906",
-    "description": "Dreamweaver Desktop versions 21.7 and earlier are affected by a Dependency on Vulnerable Third-Party Component vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
-    "severity": "High",
-    "tech": "Dreamweaver",
-    "published": "2026-06-09T20:16:59.687"
-  },
-  {
-    "id": "CVE-2026-47106",
-    "description": "Ellucian Banner Self-Service before the April T2 release (2025-04-23) contains a stored cross-site scripting vulnerability in the course search functionality that allows authenticated Banner ERP users to inject malicious payloads into faculty and course fields by exploiting missing HTML encoding during DOM insertion. An attacker with Banner ERP write access can store malicious JavaScript in fields such as faculty displayName, emailAddress, subjectDescription, or courseTitle; these values are subsequently served unsanitized by the unauthenticated getFacultyMeetingTimes API endpoint, causing arbitrary script execution in the browser of any user who views the affected course's meeting times.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-09T20:16:59.403"
-  },
-  {
-    "id": "CVE-2026-34710",
-    "description": "Substance3D - Sampler versions 6.0.0 and earlier are affected by an out-of-bounds write vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "High",
-    "tech": "Substance 3d sampler",
-    "published": "2026-06-09T20:16:39.770"
-  },
-  {
-    "id": "CVE-2026-34709",
-    "description": "Substance3D - Sampler versions 6.0.0 and earlier are affected by an out-of-bounds write vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "High",
-    "tech": "Substance 3d sampler",
-    "published": "2026-06-09T20:16:39.633"
-  },
-  {
-    "id": "CVE-2026-32856",
-    "description": "Ellucian Banner Self-Service before the April T2 release (2025-04-23) contains a reflected cross-site scripting vulnerability that allows unauthenticated attackers to execute arbitrary JavaScript in a victim's browser by injecting unsanitized input through the toDateFormat request parameter in the dateConverter endpoint. Attackers can craft a malicious URL targeting the unauthenticated dateConverter endpoint to steal session cookies or perform other malicious actions in the context of the victim's browser session.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-09T20:16:34.363"
-  },
-  {
-    "id": "CVE-2026-11824",
-    "description": "SQLite before 3.53.2 contains a heap-based buffer overflow vulnerability in the FTS5 full-text search extension that allows attackers to cause a crash or execute arbitrary code by supplying a crafted database with malicious continuation page metadata specifying a szLeaf value smaller than 4. Attackers can trigger an integer underflow in fts5ChunkIterate() causing an inflated remaining byte count during FTS5 MATCH query processing, leading to a heap buffer overflow of attacker-controlled data in applications compiled with SQLITE_ENABLE_FTS5.",
-    "severity": "High",
-    "tech": "Sqlite",
-    "published": "2026-06-09T20:16:32.300"
-  },
-  {
-    "id": "CVE-2026-11822",
-    "description": "SQLite before 3.53.2 contains memory corruption vulnerabilities in the FTS5 full-text search extension that allow attackers to cause process crashes, memory exhaustion, or arbitrary code execution by supplying a crafted database with malformed FTS5 page data. Attackers can trigger an out-of-bounds read in fts5LeafSeek() via an attacker-controlled loop bound and a heap buffer overflow write in fts5ChunkIterate() through a crafted continuation page causing an integer underflow, exploitable when an FTS5 MATCH query is executed against the malicious database.",
-    "severity": "High",
-    "tech": "Sqlite",
-    "published": "2026-06-09T20:16:32.150"
   }
 ]
