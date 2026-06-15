@@ -1,5 +1,47 @@
 [
   {
+    "id": "CVE-2026-54413",
+    "description": "driftregion iso14229 through 0.9.0 contains an integer underflow and downstream out-of-bounds read in the Handle_0x27_SecurityAccess() function in iso14229.c that allows a remote unauthenticated attacker to crash a UDS server and potentially read memory past the receive buffer by sending a single-byte 0x27 SecurityAccess request that follows any earlier well-formed 0x27 message. The handler reads the SecurityAccess subFunction from recv_buf[1] without first checking that recv_len is at least 2, then computes the key-data length as the unsigned subtraction (uint16_t)(recv_len - UDS_0X27_REQ_BASE_LEN); when recv_len equals 1 the result underflows to 65535 and is passed as args.len to the application's SecAccessValidateKey or SecAccessRequestSeed callback, which typically iterates or copies that many bytes from the 4-KB receive buffer. Every other UDS sub-function handler in the library (0x10, 0x11, 0x14, 0x19, 0x22, 0x23, 0x28, and others) performs an explicit recv_len lower-bound check before indexing; Handle_0x27_SecurityAccess is the sole outlier. The vulnerable handler reaches over CAN bus, OBD-II, ISO-TP, and DoIP transports and is exposed in the default diagnostic session without prior authentication; deployments on automotive ECUs, industrial controllers, and IoT devices that ship iso14229 as their UDS server are affected.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-14T18:17:20.943"
+  },
+  {
+    "id": "CVE-2026-54412",
+    "description": "LiamBindle MQTT-C through version 1.1.6 contains a heap-based out-of-bounds read and integer underflow in the mqtt_unpack_publish_response() function in src/mqtt.c that allows a remote unauthenticated attacker controlling an MQTT broker - or able to inject MQTT traffic into an unencrypted session - to crash a subscribed MQTT-C client and potentially disclose adjacent heap memory by sending a single crafted PUBLISH packet. The function validates only that the fixed-header remaining_length is at least 4, then reads the 16-bit topic_name_size field from the broker-controlled packet and advances the parse pointer by that value without verifying that topic_name_size plus the surrounding overhead fits within remaining_length; it subsequently computes application_message_size as remaining_length - topic_name_size - 2 (QoS 0) or - 4 (QoS greater than 0) in unsigned arithmetic, producing an integer underflow that is then passed to memmove(). A PUBLISH packet with topic_name_size = 0xFFFF and remaining_length = 7 advances the parse pointer 65535 bytes past the receive buffer (out-of-bounds read) and causes an application_message_size near 2^32, crashing the process when the resulting memmove() is executed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-14T18:17:20.750"
+  },
+  {
+    "id": "CVE-2026-54411",
+    "description": "Linux-PAM through 1.7.2 contains an observable timing discrepancy (CWE-208) in the pam_userdb module's plaintext-password comparison path in modules/pam_userdb/pam_userdb.c that allows a local or network-adjacent attacker able to repeatedly drive authentication through a calling service to recover the plaintext password of a target account by measuring response-timing differences. The comparison uses strncmp() (or strncasecmp() when PAM_ICASE_ARG is set) preceded by a length-equality check, so the time to reject a candidate depends on the index of the first differing byte and on whether the candidate's length matches the stored password, leaking the password length and individual prefix bytes. The vulnerable path is reached when the administrator configures pam_userdb with crypt=none, with an unrecognized crypt method, or without a crypt= argument, causing the module to store and compare credentials in plaintext.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-14T18:17:20.587"
+  },
+  {
+    "id": "CVE-2026-54410",
+    "description": "nanoMODBUS through v1.23.0 contains an off-by-one buffer overflow in the recv_msg_header() function of the Modbus/TCP server that allows remote unauthenticated attackers to write one attacker-controlled byte past the end of the 260-byte receive buffer by sending a crafted MBAP frame whose Length field is set to 255. The overflow corrupts the adjacent buffer-index field of the nanoMODBUS state structure, resulting in denial of service through invalid memory accesses and, on bare-metal and RTOS targets without memory protection, one-byte information disclosure and writes to unintended register addresses on the Write Multiple Registers (FC16) handler path.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-14T18:17:20.330"
+  },
+  {
+    "id": "CVE-2026-11527",
+    "description": "Config::IniFiles versions before 3.001000 for Perl allow OS command injection and file overwrite via a 2-arg open() of the -file argument in _make_filehandle.\n\nConfig::IniFiles::_make_filehandle opens a filename argument with Perl's 2-arg open(), so a filename that begins or ends with a pipe (\"| cmd\", \"cmd |\") or begins with a redirect (\"> path\", \">> path\") is run as a command or redirect rather than opened as a file. The helper is the open path behind the documented -file argument: new(-file => $thing) reaches it through ReadConfig. An in-memory scalar reference (-file => \\$text) does not open a path and is unaffected.\n\nAny caller that forwards untrusted input to the -file argument can run an arbitrary command or truncate a file under the process UID.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-14T12:16:23.357"
+  },
+  {
+    "id": "CVE-2026-11526",
+    "description": "GD versions before 2.86 for Perl allow OS command injection and file overwrite via a 2-arg open() of filename arguments in _make_filehandle.\n\nGD::Image::_make_filehandle opens a filename argument with Perl's 2-arg open(), so a filename that begins or ends with a pipe (\"| cmd\", \"cmd |\") or begins with a redirect (\"> path\", \">> path\") is run as a command or redirect rather than opened as a file. _make_filehandle is the single open path behind every filename-accepting constructor (new, newFromPng, newFromJpeg, and the rest); the in-memory *Data variants do not open a path and are unaffected.\n\nAny caller that forwards untrusted input to one of these constructors as a pathname can run an arbitrary command or truncate a file under the process UID.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-14T12:16:22.403"
+  },
+  {
     "id": "CVE-2025-15546",
     "description": "The Iptanus File Upload WordPress plugin before 5.1.7 does not implement proper file handling when the duplicatepolicy setting is configured to \"maintain both.\" Due to a Time-of-Check to Time-of-Use (TOCTOU) race condition between the file existence check and the actual file write operation, an authenticated attacker can overwrite files uploaded by other users.",
     "severity": "Unknown",
@@ -114,14 +156,14 @@
   {
     "id": "CVE-2026-9062",
     "description": "The Store Locator WordPress plugin before 1.6.9 does not validate a parameter before using it in a file path, allowing high-privileged users such as administrators to read arbitrary `.php` files from the server, including configuration files that contain database credentials and authentication keys.",
-    "severity": "Unknown",
+    "severity": "Low",
     "tech": "Unknown",
     "published": "2026-06-13T07:16:14.757"
   },
   {
     "id": "CVE-2026-9061",
     "description": "The Store Locator WordPress plugin before 1.6.9 does not sanitize and escape store logo metadata before storing it and outputting it on the Store Locator WordPress plugin before 1.6.9 admin page, allowing high-privileged users such as administrators to perform Stored Cross-Site Scripting attacks even when the `unfiltered_html` capability is disallowed (e.g. in a multisite network).",
-    "severity": "Unknown",
+    "severity": "Low",
     "tech": "Unknown",
     "published": "2026-06-13T07:16:14.370"
   },
@@ -506,7 +548,7 @@
   {
     "id": "CVE-2026-41157",
     "description": "A web page that contains unusual WebGPU content loaded into the GPU GLES render process and can trigger an out-of-bound write in the GPU user-space driver, leading to memory corruption and possible browser/GPU process crash.\n\n\n\nThe software computes a required memory size from untrusted input, but integer overflow can produce a value smaller than needed. Subsequent write operations may then occur past the intended memory boundary, corrupting adjacent memory and causing process instability or termination.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-12T22:16:50.583"
   },
@@ -1578,7 +1620,7 @@
     "id": "CVE-2026-54133",
     "description": "jmespath.php allows users to use JMESPath, software for declaratively specifying how to extract elements from a JSON document, in PHP applications with PHP data structures. Versions prior to 2.9.1 can generate and execute attacker-controlled PHP code when `JmesPath\\CompilerRuntime` is used with an attacker-controlled JMESPath expression. The compiler emits parsed JMESPath function names into generated PHP source without sufficient escaping. A crafted expression can cause the generated cache file to contain executable attacker-controlled PHP, which is then loaded by the compiler runtime. The issue is patched in `2.9.1` and later. As a workaround, disable `JP_PHP_COMPILE` and do not use `JmesPath\\CompilerRuntime` with attacker-controlled expressions. Use the default `AstRuntime` for untrusted expressions. Applications that must continue accepting untrusted JMESPath expressions before upgrading should ensure those expressions are never evaluated by the compiler runtime.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Jmespath",
     "published": "2026-06-12T15:16:31.890"
   },
   {
@@ -1766,36 +1808,36 @@
   {
     "id": "CVE-2026-49993",
     "description": "Nuxt is an open-source web development framework for Vue.js. In @nuxt/rspack-builder and @nuxt/webpack-builder from versions 3.15.4 to before 3.21.7 and 4.0.0 to before 4.4.7, there is an incomplete fix for GHSA-6m52-m754-pw2g. Source code may still be stolen during dev when using the webpack / rspack builder if the dev server is bound to a non-loopback address (e.g. nuxt dev --host) and the developer opens a malicious site on the same network. This issue has been patched in versions 3.21.7 and 4.4.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Nuxt\\/rspack-builder",
     "published": "2026-06-12T14:16:32.650"
   },
   {
     "id": "CVE-2026-47200",
     "description": "Nuxt is an open-source web development framework for Vue.js. In Nuxt versions 3.11.0 to before 3.21.6 and 4.0.0-alpha.1 to before 4.4.6 and @nuxt/nitro-server versions 3.20.0 to before 3.21.6 and 4.0.0-alpha.1 to before 4.4.6, when experimental.componentIslands is enabled (default in Nuxt 4), any .server.vue file under pages/ is automatically registered as a server island under the key page_<routeName> and exposed via the /__nuxt_island/:name endpoint. Until this fix, requests through that endpoint rendered the page component directly via the SSR renderer without instantiating Vue Router, which meant route middleware declared on the page (including definePageMeta({ middleware })) did not run. This issue has been patched in versions 3.21.6 and 4.4.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Nuxt",
     "published": "2026-06-12T14:16:32.137"
   },
   {
     "id": "CVE-2026-46342",
     "description": "Nuxt is an open-source web development framework for Vue.js. In Nuxt versions 3.1.0 to before 3.21.6 and 4.0.0-alpha.1 to before 4.4.6 and @nuxt/nitro-server versions 3.20.0 to before 3.21.6 and 4.0.0-alpha.1 to before 4.4.6, the /__nuxt_island/* endpoint accepts attacker-controlled props query/body parameters and renders any island component without verifying that the URL-resident hash (<Name>_<hashId>.json) was actually issued for those inputs by <NuxtIsland>. The hash is computed and embedded client-side but never validated server-side, so the same path can return materially different responses depending on the query. This issue has been patched in versions 3.21.6 and 4.4.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Nuxt",
     "published": "2026-06-12T14:16:31.590"
   },
   {
     "id": "CVE-2026-45670",
     "description": "Nuxt is an open-source web development framework for Vue.js. In @nuxt/rspack-builder and @nuxt/webpack-builder versions 3.15.4 to before 3.21.6, and 4.0.0-alpha.1 to before 4.4.6, there is an incomplete fix for GHSA-4gf7-ff8x-hq99. Source code may be stolen during dev when using the webpack / rspack builder if the dev server is bound to a non-loopback address (e.g. nuxt dev --host) and the developer opens a malicious site on the same network. This issue has been patched in versions 3.21.6 and 4.4.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Nuxt\\/rspack-builder",
     "published": "2026-06-12T14:16:31.443"
   },
   {
     "id": "CVE-2026-45669",
     "description": "Nuxt is an open-source web development framework for Vue.js. From versions 3.4.3 to before 3.21.6 and 4.0.0-alpha.1 to before 4.4.6, navigateTo() with external: true generates a server-side HTML redirect body containing a <meta http-equiv=\"refresh\"> tag. The destination URL is only sanitized by replacing \" with %22, leaving <, >, &, and ' unencoded. An attacker who can influence the URL passed to navigateTo(url, { external: true }) can break out of the content=\"…\" attribute and inject arbitrary HTML/JavaScript that executes under the application's origin. This issue has been patched in versions 3.21.6 and 4.4.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Nuxt",
     "published": "2026-06-12T14:16:31.297"
   },
   {
@@ -1948,15 +1990,15 @@
   {
     "id": "CVE-2026-50628",
     "description": "A logic error in OAuthRequestFilter rejects legitimate requests originating from the bound IP address, while blindly allowing requests from any other IP address. Enabling this\n\nsecurity feature inadvertently creates an inverse security check. Users are recommended to upgrade to versions 4.2.2 or 4.1.7, which fixes this issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Cxf",
     "published": "2026-06-12T10:16:22.710"
   },
   {
     "id": "CVE-2026-50627",
     "description": "The JwtAccessTokenValidator class in Apache CXF fails to validate the 'aud' (Audience) claims of incoming JWT access tokens. This allows a JWT issued for one Resource Server to be successfully replayed against a completely different Resource Server, leading to Token Confusion/Routing attacks. Users are recommended to upgrade to versions 4.2.2 or 4.1.7, which fixes this issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Cxf",
     "published": "2026-06-12T10:16:22.587"
   },
   {
@@ -1969,8 +2011,8 @@
   {
     "id": "CVE-2026-49875",
     "description": "Apache CXF's EndpointReferenceUtils and W3CMultiSchemaFactory classes construct a SAXParserFactory without the necessary JAXP hardening configurations, enabling out-of-band (OOB) \nexternal entity resolution. Users are recommended to upgrade to versions 4.2.2 or 4.1.7, which fix this issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Cxf",
     "published": "2026-06-12T10:16:22.340"
   },
   {
@@ -2354,8 +2396,8 @@
   {
     "id": "CVE-2026-12026",
     "description": "Out of bounds read in Video in Google Chrome on ChromeOS prior to 149.0.7827.115 allowed a remote attacker who had compromised the renderer process to obtain potentially sensitive information from process memory via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Chrome",
     "published": "2026-06-11T22:16:55.147"
   },
   {
@@ -2683,22 +2725,22 @@
   {
     "id": "CVE-2026-52860",
     "description": "Vim is an open source, command line text editor. Prior to version 9.2.0597, Vim's Python omni-completion executes reconstructed function and class definitions from the current buffer with exec() as part of populating the completion dictionary. Python evaluates function default values, parameter annotations, and class base expressions at definition time, so a hostile buffer can execute attacker-controlled Python expressions during omni-completion. The existing g:pythoncomplete_allow_import mitigation (GHSA-52mc-rq6p-rc7c) does not cover this path, because the attacker-controlled code is not a harvested import/from statement. This issue has been patched in version 9.2.0597.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Vim",
     "published": "2026-06-11T19:16:47.773"
   },
   {
     "id": "CVE-2026-52859",
     "description": "Vim is an open source, command line text editor. Prior to version 9.2.0565, the update_snapshot() function in src/terminal.c copies the visible terminal screen into the scrollback buffer when a snapshot is taken. For each screen cell it walks the cell's chars[] array with no upper bound, stopping only when it encounters a NUL terminator. When a cell legitimately fills all VTERM_MAX_CHARS_PER_CELL (6) slots — a base character plus five combining marks — the bundled libvterm returns the array without a terminating NUL, so the loop reads past the fixed six-element array and appends the out-of-bounds values to a buffer reserved for only six characters. A program whose output is rendered inside a :terminal window can trigger this with a short byte sequence and no Vim scripting, leading to a crash. This issue has been patched in version 9.2.0565.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Vim",
     "published": "2026-06-11T19:16:47.627"
   },
   {
     "id": "CVE-2026-52858",
     "description": "Vim is an open source, command line text editor. Prior to version 9.2.0561, the Python omni-completion script in python3complete.vim for Vim with the +python3 interpreter enabled (and the legacy pythoncomplete.vim for builds with the +python interpreter) executes the import and from statements found in the current buffer through Python's import machinery. Because the buffer's working directory is on sys.path, opening a hostile .py file with a sibling Python package and invoking omni-completion runs that package's top-level code as the editing user. This issue has been patched in version 9.2.0561.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Vim",
     "published": "2026-06-11T19:16:47.487"
   },
   {
@@ -2802,8 +2844,8 @@
   {
     "id": "CVE-2026-47167",
     "description": "Vim is an open source, command line text editor. Prior to version 9.2.0496, a code injection vulnerability exists in s:stepmatch() in the cucumber filetype plugin (runtime/ftplugin/cucumber.vim) on Vim builds with +ruby support. Step-definition patterns read from .rb files under the repository's features/*/ or stories/*/ directories are embedded into a Ruby Kernel.eval argument without sufficient escaping, allowing a crafted pattern in an attacker-controlled repository to execute arbitrary Ruby (and through it arbitrary shell commands) when the user invokes a step-jump mapping ([d, ]d). This issue has been patched in version 9.2.0496.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Vim",
     "published": "2026-06-11T19:16:44.560"
   },
   {
@@ -2866,7 +2908,7 @@
     "id": "CVE-2025-46313",
     "description": "A logging issue was addressed with improved data redaction. This issue is fixed in macOS Tahoe 26.1. An app may be able to access sensitive user data.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Macos",
     "published": "2026-06-11T19:16:34.603"
   },
   {
@@ -2894,7 +2936,7 @@
     "id": "CVE-2025-43278",
     "description": "This issue was addressed with improved handling of symlinks. This issue is fixed in macOS Sequoia 15.4. An app may be able to access protected user data.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Macos",
     "published": "2026-06-11T19:16:33.393"
   },
   {
@@ -2936,420 +2978,7 @@
     "id": "CVE-2025-24165",
     "description": "A permissions issue was addressed with additional restrictions. This issue is fixed in macOS Sequoia 15.4, macOS Sonoma 14.7.5, macOS Ventura 13.7.5. An app may be able to cause unexpected system termination.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Macos",
     "published": "2026-06-11T19:16:26.260"
-  },
-  {
-    "id": "CVE-2026-49261",
-    "description": "MariaDB server is a community developed fork of MySQL server. Versions 10.6.1 through 10.6.26, 10.11.1 through 10.11.17, 11.4.1 through 11.4.11, 11.8.1 through 11.8.7, and 12.3.1 with  `wsrep_notify_cmd` enabled would execute shell commands embedded in the name of the joiner node. This is fixed in 10.6.27, 10.11.18, 11.4.12, 11.8.8, and 12.3.2. As a workaround, anyone who cannot upgrade now should disable `wsrep_notify_cmd`.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-11T18:16:26.553"
-  },
-  {
-    "id": "CVE-2026-48546",
-    "description": "KanaDojo before 0.1.18 contains a sandbox escape vulnerability that allows an attacker to execute arbitrary code by exploiting the explicit passing of the global require function into a Node.js vm.runInNewContext() sandbox context in the issue-auto-respond.yml workflow. Attackers can submit a pull request modifying messages.cjs to import arbitrary Node.js modules, bypassing sandbox restrictions and achieving remote code execution with full GitHub Actions runner privileges including access to AUTOMATION_PR_TOKEN.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T18:16:26.390"
-  },
-  {
-    "id": "CVE-2026-47157",
-    "description": "aiograpi is an asynchronous Instagram API for Python. aiograpi versions before 0.9.10 accepted server-supplied signup challenge paths and used them to build request URLs before validating that the paths were relative Instagram API paths. If an attacker can influence a challenge response, for example through a local network, DNS, or proxy compromise, challenge handling requests could be sent outside the intended Instagram host with the client's existing session headers. Version 0.9.10 validates challenge paths before building URLs, solving captcha challenges, or submitting phone/SMS challenge forms.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T18:16:26.237"
-  },
-  {
-    "id": "CVE-2026-46698",
-    "description": "Fediverse Embeds embeds fediverse posts on WordPress sites. Prior to version 1.5.9, Fediverse Embeds registered the unauthenticated AJAX action wp_ajax_nopriv_ftf_get_site_info (includes/Site_Info.php) that verified a nonce ftf-fediverse-embeds-nonce and then called file_get_html($site_url) on the attacker-supplied URL. The same nonce was enqueued onto every public page containing a fediverse embed (via includes/Enqueue_Assets.php lines 41-46 + includes/Helpers.php lines 64-83), so the nonce gate was not an authentication boundary; any visitor of a public post with an embed could grab it and reuse it. This issue has been patched in version 1.5.9.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T18:16:26.093"
-  },
-  {
-    "id": "CVE-2026-46697",
-    "description": "Fediverse Embeds embeds fediverse posts on WordPress sites. Prior to version 1.5.8, Fediverse Embeds registered an unauthenticated REST route ftf/media-proxy (includes/Media_Proxy.php) with permission_callback => __return_true that accepted a base64-encoded URL and forwarded it to wp_remote_get($url) without enforcing any allowlist. The plugin's source contained a comment block explicitly acknowledging that the request should be validated against allowed fediverse domains, but in 1.5.7 the validation only set a local $can_download_media flag that was never read. The full response body was echoed back to the caller, so this was a full-read SSRF / open proxy reachable by any anonymous visitor. This issue has been patched in version 1.5.8.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T18:16:25.957"
-  },
-  {
-    "id": "CVE-2026-3329",
-    "description": "A remote unauthenticated attacker may be able to conduct credential-guessing attacks against user accounts in Sonatype Nexus Repository via authentication endpoints.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T18:16:25.343"
-  },
-  {
-    "id": "CVE-2026-11986",
-    "description": "A flaw was found in the admin-ui-ext component of Keycloak, which provides extended administrative user interface capabilities. The issue occurs because certain bulk role-removal endpoints fail to perform granular permission checks when deleting role mappings. This allows a delegated administrator with limited permissions to remove highly privileged roles from other users or groups, potentially disrupting administrative access control.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T18:16:25.033"
-  },
-  {
-    "id": "CVE-2026-49982",
-    "description": "tmp is a temporary file and directory creator for node.js. In version 0.2.6, the _assertPath guard added to tmp rejects only string values that contain the substring ... It is bypassed when prefix, postfix, or template is supplied as a non-string value (Array, Buffer, or any object) whose includes('..') returns falsy but whose stringification still contains ../. The value flows through Array.prototype.join/String coercion inside _generateTmpName and path.join(tmpDir, opts.dir, name), producing a final path that escapes tmpdir and creates a file or directory at an attacker-controlled location with the host process's privileges. This affects any application that forwards untrusted request data (a common pattern is JSON body fields or qs-parsed bracket-array query strings such as ?prefix[]=...) into tmp.file, tmp.fileSync, tmp.dir, tmp.dirSync, tmp.tmpName, or tmp.tmpNameSync without explicit type coercion. This vulnerability is fixed in 0.2.7.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T17:16:35.227"
-  },
-  {
-    "id": "CVE-2026-44705",
-    "description": "tmp is a temporary file and directory creator for node.js. Prior to 0.2.6, the tmp npm package contains a path traversal vulnerability that allows escaping the intended temporary directory when untrusted data flows into the prefix, postfix, or dir options. By embedding traversal sequences (e.g., ../) or path separators in these parameters, attackers can cause files to be created outside the configured temporary base directory at attacker-controlled locations with the privileges of the running process. This vulnerability affects applications that pass user-controlled data to tmp's file/directory creation functions without proper input sanitization. This vulnerability is fixed in 0.2.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T17:16:33.853"
-  },
-  {
-    "id": "CVE-2026-44496",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. Axios versions before 0.32.0 on the 0.x line and before 1.16.0 on the 1.x line build a regular expression from the configured XSRF cookie name without escaping regex metacharacters. In standard browser environments, an attacker who can influence the cookie name passed to axios can cause expensive regex backtracking while axios reads document.cookie. The practical impact is client-side availability degradation, such as freezing the affected browser tab while axios prepares a request. The issue does not affect ordinary Node.js HTTP adapter usage, React Native, or web workers, where axios does not read document.cookie. This vulnerability is fixed in 0.32.0 and 1.16.0.",
-    "severity": "High",
-    "tech": "Axios",
-    "published": "2026-06-11T17:16:33.590"
-  },
-  {
-    "id": "CVE-2026-44495",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. From 0.19.0 to before 0.31.1 and 1.15.2, Axios contains prototype-pollution gadgets in request config processing. If another vulnerability in the same JavaScript process has already polluted Object.prototype.transformResponse, affected Axios versions may treat that inherited value as request configuration or as an option validator. Axios does not itself create the prototype pollution. Exploitability requires a separate prototype-pollution vulnerability or equivalent attacker control over Object.prototype before Axios creates a request. This vulnerability is fixed in 0.31.1 and 1.15.2.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T17:16:33.450"
-  },
-  {
-    "id": "CVE-2026-44494",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. From 1.0.0 to before 1.16.0, the Axios library is vulnerable to a Prototype Pollution \"Gadget\" attack that allows any Object.prototype pollution in the application's dependency tree to be escalated into a full Man-in-the-Middle (MITM) attack — intercepting, reading, and modifying all HTTP traffic including authentication credentials. The HTTP adapter at lib/adapters/http.js:670 reads config.proxy via standard property access, which traverses the prototype chain. Because proxy is not present in Axios defaults, the merged config object has no own proxy property, making it trivially injectable via prototype pollution. Once injected, setProxy() routes all HTTP requests through the attacker's proxy server. This vulnerability is fixed in 1.16.0.",
-    "severity": "High",
-    "tech": "Axios",
-    "published": "2026-06-11T17:16:33.313"
-  },
-  {
-    "id": "CVE-2026-44492",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. Prior to 0.32.0 and 1.16.0, Axios does not normalise IPv4-mapped IPv6 addresses. When NO_PROXY lists an IPv4 address such as 127.0.0.1 or 169.254.169.254, a request URL using the IPv4-mapped IPv6 form (::ffff:7f00:1, ::ffff:a9fe:a9fe) still routes through the configured proxy. Node.js resolves these addresses to the underlying IPv4 host, so the request reaches the internal service via the proxy rather than being blocked. This vulnerability is fixed in 0.32.0 and 1.16.0.",
-    "severity": "High",
-    "tech": "Axios",
-    "published": "2026-06-11T17:16:33.167"
-  },
-  {
-    "id": "CVE-2026-44490",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. Prior to 0.32.0 and 1.16.0, axios exposes two read-side prototype-pollution gadgets. When Object.prototype is polluted by an upstream dependency in the same process (e.g. lodash _.merge / CVE-2018-16487), axios silently picks up the polluted values. (1) lib/utils.js line 406 builds merge()'s accumulator as result = {}, so result[targetKey] (line 414) walks Object.prototype and the polluted bucket's own keys are copied into the merged headers and ride out on the wire. (2) lib/core/mergeConfig.js line 26 builds the hasOwnProperty descriptor as a plain-object literal. Object.defineProperty reads descriptor.get/descriptor.set via the prototype chain, so a polluted Object.prototype.get or Object.prototype.set makes the call throw TypeError synchronously on every axios request. This vulnerability is fixed in 0.32.0 and 1.16.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T17:16:33.027"
-  },
-  {
-    "id": "CVE-2026-44489",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. From 1.15.2 to before 1.16.0, nested objects created by utils.merge() (e.g., config.proxy) are still constructed as plain {} with Object.prototype in their chain. The setProxy() function at lib/adapters/http.js:209-223 reads proxy.username, proxy.password, and proxy.auth without hasOwnProperty checks. When Object.prototype.username is polluted, setProxy() constructs a Proxy-Authorization header with attacker-controlled credentials and injects it into every proxied HTTP request. This vulnerability is fixed in 1.16.0.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-06-11T17:16:32.883"
-  },
-  {
-    "id": "CVE-2026-44488",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. Axios versions 1.7.0 through 1.15.x did not enforce configured request and response size limits when requests were sent with the fetch adapter. Applications that selected adapter: 'fetch', or ran in environments where axios resolved to the fetch adapter, could receive or send bodies larger than maxContentLength or maxBodyLength despite those limits being explicitly configured. This can cause resource exhaustion in server-side usage when a malicious or compromised server returns an oversized response, when an attacker can supply a large data: URL, or when an application forwards attacker-controlled request bodies through axios while relying on maxBodyLength as a boundary. This vulnerability is fixed in 0.32.0 and 1.16.0.",
-    "severity": "High",
-    "tech": "Axios",
-    "published": "2026-06-11T17:16:32.750"
-  },
-  {
-    "id": "CVE-2026-44487",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. Prior to 0.32.0 and 1.16.0, Axios’s Node.js HTTP adapter may forward a Proxy-Authorization header to a redirected origin during specific proxy-to-direct redirect flows. This affects Node.js usage, where an initial HTTP request is sent through an authenticated HTTP proxy, redirects are followed, and the redirected URL is no longer proxied. Under affected redirect shapes, the final origin can receive the proxy credential that was intended only for the outbound proxy. This vulnerability is fixed in 0.32.0 and 1.16.0.",
-    "severity": "High",
-    "tech": "Axios",
-    "published": "2026-06-11T17:16:32.607"
-  },
-  {
-    "id": "CVE-2026-44486",
-    "description": "Axios is a promise based HTTP client for the browser and Node.js. Prior to 0.32.0 and 1.16.0, Axios’ Node.js HTTP adapter can leak proxy credentials to a redirect target in affected versions. When a request is sent through an authenticated proxy, Axios may add a Proxy-Authorization header. If Axios then follows a redirect and the redirected request is no longer sent through that proxy, the stale Proxy-Authorization header can remain on the redirected request and be sent to the redirect target. This affects Node.js's use of Axios with automatic redirects enabled and an authenticated proxy configuration. Browser adapters are not affected. This vulnerability is fixed in 0.32.0 and 1.16.0.",
-    "severity": "High",
-    "tech": "Axios",
-    "published": "2026-06-11T17:16:32.450"
-  },
-  {
-    "id": "CVE-2026-11945",
-    "description": "PostgreSQL Anonymizer contains a vulnerability that allows a user to gain superuser privileges by creating a JSON document and placing malicious code inside a particular key-value pair. If a superuser calls the import_database_rules() or import_roles_rules() functions, the malicious code is executed with superuser privileges. The problem is resolved in PostgreSQL Anonymizer 3.1.1 and further versions",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T17:16:31.837"
-  },
-  {
-    "id": "CVE-2026-9648",
-    "description": "The crypton-x509-validation Haskell library fails to enforce X.509 NameConstraints, allowing TLS clients to accept certificates whose Subject Alternative Names fall outside the issuing CA’s permitted subtrees. This oversight enables an attacker who compromises a name-constrained sub-CA to impersonate domains beyond its intended scope.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:25.503"
-  },
-  {
-    "id": "CVE-2026-7870",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a user to gain elevated privileges due to an unqualified library call. A malicious actor could cause user-controlled code to run with administrator privilege.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:25.220"
-  },
-  {
-    "id": "CVE-2026-7787",
-    "description": "IBM Langflow OSS 1.0.0 through 1.9.1 could allow an authenticated user to read or modify sensitive information by bypassing authentication using insecure direct object references.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:25.090"
-  },
-  {
-    "id": "CVE-2026-53777",
-    "description": "Perry before 0.5.1159 contains a path traversal vulnerability that allows a malicious build server to write arbitrary content to any location writable by the running process by supplying unsanitized path components in the artifact_name field of ArtifactReady WebSocket messages. Attackers controlling the server URL can deliver traversal payloads through the artifact_name or download_path fields, causing the client to overwrite sensitive files or expose arbitrary local files to an attacker-accessible location.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:24.873"
-  },
-  {
-    "id": "CVE-2026-4096",
-    "description": "IBM DevOps Plan 3.0.0 through 3.0.6 is vulnerable to HTTP header injection, caused by improper validation of input by the HOST headers. This could allow an attacker to conduct various attacks against the vulnerable system, including cross-site scripting, cache poisoning or session hijacking",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:24.140"
-  },
-  {
-    "id": "CVE-2026-3341",
-    "description": "IBM Langflow Desktop 1.0.0 through 1.9.2 IBM Langflow is vulnerable to server-side request forgery (SSRF). This may allow an authenticated attacker to send unauthorized requests from the system, potentially leading to network enumeration or facilitating other attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:22.770"
-  },
-  {
-    "id": "CVE-2026-11839",
-    "description": "Unrestricted upload of file with dangerous type vulnerability in Başarsoft Information Technologies Inc. Rotaban allows Upload a Web Shell to a Web Server.\n\nThis issue affects Rotaban: from V2026.06.002 before V2026.06.003.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:22.497"
-  },
-  {
-    "id": "CVE-2024-45636",
-    "description": "IBM Security QRadar EDR 3.12 through 3.12.24 stores user credentials in plain text which can be read by a local privileged user.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T16:16:21.357"
-  },
-  {
-    "id": "CVE-2026-8406",
-    "description": "openSIS Classic 9.3 contains an insecure direct object reference vulnerability in the messaging module. Any authenticated user with access to the messaging module can request sent-message details from modules/messaging/SentMail.php by supplying an arbitrary mail_id value.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T14:16:32.930"
-  },
-  {
-    "id": "CVE-2026-6338",
-    "description": "A HTTP request smuggling and desynchronization vulnerability affects Kong Gateway Enterprise 3.4, 3.10, 3.11, 3.12, 3.13, and 3.14 series. The vulnerability is caused by a parsing flaw in Kong’s HTTP request processing pipeline when handling untrusted HTTP/1.1 traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T14:16:32.553"
-  },
-  {
-    "id": "CVE-2026-53723",
-    "description": "Guzzle Services provides an implementation of the Guzzle Command library that uses Guzzle service descriptions to describe web services, serialize requests, and parse responses into easy to use model structures. Versions prior ro 1.5.4 do not safely serialize scalar XML element values containing the CDATA terminator `]]>`. The XML request serializer writes values containing `<`, `>`, or `&` with `XMLWriter::writeCData($value)`. If attacker-controlled input contains `]]>`, the CDATA section closes early and the remainder is interpreted as XML markup. This is an outgoing request-body integrity issue, not a response parsing issue. The attacker does not need to control the service description or schema. Users are affected when all of the following are true: the application uses `guzzlehttp/guzzle-services` to serialize outgoing requests; a request parameter or `additionalParameters` schema uses `location: xml`; the value is serialized as XML element text, not an XML attribute; the value can contain attacker-controlled, user-controlled, tenant-controlled, or otherwise untrusted input; the value is not constrained by a safe `enum`, `pattern`, or custom filter that excludes `]]>`; and the downstream service parses the generated XML structurally and may act on unexpected, duplicated, or injected elements. Applications that serialize untrusted input into `location: xml` request parameters can emit XML containing attacker-controlled elements outside the intended text node. Depending on the receiving service, this can alter operation semantics, smuggle privileged fields, bypass modeled parameter boundaries, or create conflicting duplicated elements. Fixed service descriptions are sufficient if they contain an XML element parameter populated from attacker-controlled input. Users are not directly affected if they only use Guzzle Services to deserialize HTTP response bodies. Response XML parsing uses the response XML location visitor and does not invoke the vulnerable request XML serializer. Response bodies matter only in a second-order flow, such as parsing attacker-controlled response XML, storing or forwarding a parsed string value, and later using it as a `location: xml` request parameter. The issue is patched in `1.5.3` and later by safely splitting embedded CDATA terminators before serialization. The fix preserves the original scalar value as XML text and prevents injected nodes. As a workaround, constrain attacker-controlled XML element values with a strict `enum`, `pattern`, or custom filter that excludes `]]>`, or avoid serializing untrusted data into `location: xml` element text until patched. Where appropriate for the service schema, XML attributes are not affected because they are written with XMLWriter attribute APIs rather than CDATA sections. To determine whether action is needed, search service descriptions for request parameters using `location: xml`, including operation `parameters` and `additionalParameters`. Response-only `models` are not directly affected unless parsed values are reused for request serialization. For object and array parameters, review nested scalar properties because leaf element values can still be affected.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T14:16:31.403"
-  },
-  {
-    "id": "CVE-2026-53661",
-    "description": "Boruta is a standalone authorization server that aims to implement OAuth 2.0 and Openid Connect up to decentralized identity specifications. Prior to version 0.9.1, boruta session cookies and the identity “remember me” cookie were set without the Secure attribute. In deployments where users could reach the same Boruta origin over plaintext HTTP, browsers could send these cookies over an unencrypted connection. An attacker able to observe or intercept that network traffic could recover a valid session or remember-me cookie and reuse it to impersonate the affected user. Affected components include boruta_web, boruta_identity, and boruta_admin. The affected cookies include the shared session cookie, defaulting to _boruta_web_key, and the identity remember-me cookie, defaulting to `_boruta_identity_web_user_remember_me`. The issue is fixed in commit 18691c655164635066aa113003a3cd87f6ed11cd, released as part of version 0.9.1. The patch sets `secure: true` and `same_site: \"Lax\"` on configured session cookies for boruta_web, boruta_identity, and boruta_admin, and sets `secure: true` on the identity remember-me cookie. Until upgrading to a release containing the fix: terminate or reject plaintext HTTP before requests reach Boruta; enforce HTTPS-only access at the reverse proxy or load balancer; enable HSTS for Boruta domains; if cookie exposure is suspected, rotate SECRET_KEY_BASE and BORUTA_SESSION_COOKIE_SIGNING_SALT, then require users to authenticate again. Upgrade to a version containing commit 18691c655164635066aa113003a3cd87f6ed11cd, or apply the patch manually. After deploying the fix, verify that Boruta session and remember-me cookies include the Secure attribute in browser developer tools or with an HTTP response inspection tool.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T14:16:31.213"
-  },
-  {
-    "id": "CVE-2026-38581",
-    "description": "SQL Injection vulnerability in damasac thaipalliative_lte through version 3.0 allows remote attackers to execute arbitrary SQL commands via the idFormMain parameter to /substudy/ezform.php (line 14) and the id parameter (line 49). The parameters are concatenated directly into SQL queries without sanitization or parameterized statements.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-11T14:16:27.123"
-  },
-  {
-    "id": "CVE-2026-11816",
-    "description": "Keras versions prior to 3.14.0 are vulnerable to a path traversal issue in the archive extraction utilities located in `keras/src/utils/file_utils.py`. The functions `filter_safe_tarinfos()` and `filter_safe_zipinfos()` validate archive member paths against the process current working directory (CWD) instead of the actual extraction destination. When the process runs with CWD set to `/`, which is common in Docker containers, CI/CD runners, and Jupyter environments, the validation boundary becomes the filesystem root, allowing traversal paths to bypass the security check. Additionally, the zip filter contains a bug that causes an `AttributeError` when a blocked entry is encountered, leading to incomplete extraction. Furthermore, Python 3.11 installations lack the `filter=\"data\"` safety net, leaving them entirely reliant on the flawed CWD-based filter. Exploitation of this vulnerability can result in arbitrary file writes outside the intended extraction directory, enabling attackers to overwrite configuration files, inject malicious code, or corrupt machine learning datasets and pipelines.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T14:16:26.557"
-  },
-  {
-    "id": "CVE-2026-10847",
-    "description": "A local privilege escalation vulnerability exists in Check Point Identity Agent Full for Windows OS. An authenticated local user may be able to execute arbitrary code with SYSTEM privileges due to improper handling of executable resolution during the log collection process. Successful exploitation could allow an attacker to gain elevated privileges on the affected Windows endpoint.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-11T14:16:26.060"
-  },
-  {
-    "id": "CVE-2026-7852",
-    "description": "Unrestricted upload of file with dangerous type vulnerability in Limatek System Inc. LimRAD NAC allows Remote Code Inclusion.\n\nThis issue affects LimRAD NAC: before 5.5.7.3.9.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-11T13:16:37.460"
-  },
-  {
-    "id": "CVE-2026-49214",
-    "description": "guzzlehttp/psr7 is a PSR-7 HTTP message library implementation in PHP. Versions prior to 2.10.2 did not reject ASCII control characters, whitespace, or DEL in first-party URI host components. A vulnerable flow is: First, an application accepts a user-controlled URL. Second, the URL is used to construct a PSR-7 `Uri` or `Request`. Third, the host component contains CRLF or another header-unsafe character. Fourth, the host is copied into the PSR-7 `Host` header when no explicit `Host` header is provided. Finally, the request is serialized or sent by an HTTP client that does not independently reject the malformed host. In that flow, an attacker can cause the serialized request to contain additional attacker-controlled header lines. For example, a host containing `\"\\r\\nX-Injected: yes\"` can cause the generated `Host` header to span multiple HTTP header lines. Applications are affected when they use user-controlled URLs for outbound HTTP requests, URL forwarding, proxying, crawling, webhook delivery, or similar request-dispatch flows. In deployments involving HTTP/1.1 connection reuse, proxies, gateways, or load balancers, this malformed request may also contribute to request smuggling or cache poisoning, depending on how downstream components parse the request. The issue is patched in `2.10.2` and later. `1.x` is end-of-life and will not receive a patch. As a workaround, validate and reject all untrusted URI strings before constructing PSR-7 `Uri` or `Request` instances. Reject input containing ASCII control characters, whitespace, or DEL, including CRLF, tab, space, NUL, or DEL characters. Applications that forward requests should also ensure the final HTTP client or serializer rejects invalid URI and header data before writing requests to the network.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T13:16:33.300"
-  },
-  {
-    "id": "CVE-2026-48998",
-    "description": "guzzlehttp/psr7 is a PSR-7 HTTP message library implementation in PHP. Versions prior to 2.10.2 contain improper Host header validation when parsing raw HTTP request messages and when deriving a server request URI from server variables. An attacker can provide a malformed Host header containing URI authority delimiters, such as `trusted.example@evil.example`. When the Host value is used to construct a URI, the malformed value can be reinterpreted as URI userinfo and host. This can cause the PSR-7 request URI host to differ from the original Host header value. Applications are affected if they parse attacker-controlled raw HTTP requests with `GuzzleHttp\\Psr7\\Message::parseRequest()` or the legacy 1.x `GuzzleHttp\\Psr7\\parse_request()` function, or if they build server requests from attacker-controlled server variables, then rely on the resulting URI host for routing, allow-list checks, or forwarding decisions. In affected forwarding or gateway scenarios, this may cause requests or credentials to be sent to an unintended host. The issue is patched in `2.10.2`. `1.x` is end-of-life and will not receive a patch. Some workarounds are available. Validate the `Host` header as `uri-host [ \":\" port ]` before calling `Message::parseRequest()` or legacy `parse_request()` on untrusted HTTP request data, or before deriving routing and forwarding decisions from a parsed request URI. Reject Host values containing userinfo, path, query, or fragment delimiters.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T13:16:33.133"
-  },
-  {
-    "id": "CVE-2026-11956",
-    "description": "A vulnerability was determined in TwiN gatus 5.36.0. Impacted is the function setSessionCookie of the file security/oidc.go of the component OIDC Session Cookie Handler. Executing a manipulation can lead to sensitive cookie without secure attribute. The attack can be launched remotely. This attack is characterized by high complexity. The exploitability is considered difficult. The reported GitHub issue was closed with the label \"not planned\".",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-06-11T13:16:32.237"
-  },
-  {
-    "id": "CVE-2026-11561",
-    "description": "Improper neutralization of special elements used in an expression language statement ('expression language injection') vulnerability in Soagen Informatics Technologies Software and Consulting Inc. Apinizer allows Code Injection.\n\nThis issue affects Apinizer: from 2026.04.0 before 2026.04.6.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-11T13:16:32.017"
-  },
-  {
-    "id": "CVE-2026-9694",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 15.9 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions, could have allowed an unauthenticated user to impersonate the GitLab Support Bot and inject arbitrary content via a specially crafted Service Desk email reply due to improper neutralization in email template processing.",
-    "severity": "Low",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:33.110"
-  },
-  {
-    "id": "CVE-2026-9204",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.10 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user to read arbitrary files from the Gitaly server and access internal network resources during repository import, due to insufficient validation of secondary URLs.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:32.983"
-  },
-  {
-    "id": "CVE-2026-8589",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 13.1.4 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user to add unauthorized email addresses to a targeted user's account due to improper sanitization of user-supplied input in certain group setting fields.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:32.860"
-  },
-  {
-    "id": "CVE-2026-8464",
-    "description": "Golem OEE MES is vulnerable to an unauthenticated path traversal flaw. This vulnerability allows an attacker in the same local network to read arbitrary files from the server's operating system by manipulating HTTP request paths.\nThis issue has been fixed in version 11.6.0",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:32.717"
-  },
-  {
-    "id": "CVE-2026-7250",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 12.10 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an unauthenticated user to cause denial of service due to improper input validation in the API request parsing middleware.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:32.587"
-  },
-  {
-    "id": "CVE-2026-6976",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 15.9 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to hide changes from merge request diff views due to improper input handling of file names.",
-    "severity": "Low",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:32.467"
-  },
-  {
-    "id": "CVE-2026-6552",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 15.5 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user with group Owner role to take over another group member's GitLab account due to improper authorization in the Group SAML identity management functionality.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:32.347"
-  },
-  {
-    "id": "CVE-2026-6277",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 13.9 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user with Security Manager-role permissions to manage project security configuration even when the relevant feature was in a disabled state, due to incorrect authorization enforcement.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:32.217"
-  },
-  {
-    "id": "CVE-2026-6269",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 15.10 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to modify hidden merge requests due to incorrect authorization enforcements.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:32.090"
-  },
-  {
-    "id": "CVE-2026-53912",
-    "description": "Cerebrate before version 1.37 exposed credential material from self-registration requests. The self-registration workflow stored the registrant’s hashed password in the inbox message data payload. This payload was returned unredacted through inbox index and view responses, including HTML, JSON, and CSV outputs, and could also be written unredacted into audit log entries for the inbox message.\n\nAn authenticated user with sufficient privileges to access inbox entries or related audit logs could retrieve password hashes associated with pending self-registration requests. Although the exposed value is a password hash rather than a plaintext password, disclosure of password hashes may enable offline password-cracking attempts and could increase risk where users reuse passwords across systems.\n\nCerebrate 1.37 fixes the issue by redacting sensitive password and authkey fields from inbox display/API output and recursively redacting those fields from JSON values written to audit logs, while leaving the stored registration payload intact for account creation processing.\n\n\n\nAffected component: Inbox self-registration request handling and audit logging\n\nFixed version: Cerebrate 1.37",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:31.960"
-  },
-  {
-    "id": "CVE-2026-53423",
-    "description": "Allocation of Resources Without Limits or Throttling vulnerability in membraneframework membrane_mp4_plugin allows unauthenticated denial-of-service via BEAM atom table exhaustion.\n\nThe MP4 box header parser converts each 4-byte box name to an atom using String.to_atom/1 without validation. 'Elixir.Membrane.MP4.Container.Header':parse_box_name/1 in lib/membrane_mp4/container/header.ex interns every box name encountered while 'Elixir.Membrane.MP4.Container.Header':parse/1 walks the input. BEAM atoms are never garbage-collected, so each unique attacker-controlled 4-byte name is a permanent allocation. A crafted MP4 of approximately 8 MB containing roughly 1.1 million boxes with distinct non-standard names exhausts the atom table (default ceiling around 1,048,576 atoms), aborting the entire BEAM node and taking down all applications running on it.\n\nThis issue affects membrane_mp4_plugin from 0.3.0 before 0.36.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:31.810"
-  },
-  {
-    "id": "CVE-2026-4764",
-    "description": "A Missing Authorization vulnerability in the playbook import functionality in Dialogflow CX on Google Cloud Platform allows an authenticated user with specific roles to escalate privileges and potentially take over a GCP project using a maliciously crafted playbook import.\n\n\nThis vulnerability was patched on 15 March 2026, and no customer action is needed.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:31.620"
-  },
-  {
-    "id": "CVE-2026-3553",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 12.0 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user to access confidential issue details due to incorrect authorization checks.",
-    "severity": "Low",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:31.380"
-  },
-  {
-    "id": "CVE-2026-1500",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.10 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user to cause denial of service due to uncontrolled resource consumption when processing a specially crafted file upload.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:31.073"
-  },
-  {
-    "id": "CVE-2026-10733",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.0 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that could have allowed an authenticated user to cause denial of service on the CI/CD Catalog page due to improper sanitization.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:30.950"
-  },
-  {
-    "id": "CVE-2026-10087",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.1 before 18.10.8, 18.11 before 18.11.5, and 19.0 before 19.0.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to execute arbitrary client-side code on behalf of a targeted user due to improper input sanitization in the Analytics Dashboard.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-06-11T12:16:30.820"
-  },
-  {
-    "id": "CVE-2023-32959",
-    "description": "Missing Authorization vulnerability in Sparkle WP MetroStore metrostore allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects MetroStore: from n/a through 1.3.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:29.873"
-  },
-  {
-    "id": "CVE-2023-25969",
-    "description": "Missing Authorization vulnerability in ThemeHunk Contact Form & Lead Form Elementor Builder allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects Contact Form & Lead Form Elementor Builder: from n/a through 1.8.4.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:29.740"
-  },
-  {
-    "id": "CVE-2022-47150",
-    "description": "Cross-Site request forgery (CSRF) vulnerability in weDevs WooCommerce Conversion Tracking allows Cross Site Request Forgery.\n\nThis issue affects WooCommerce Conversion Tracking: from n/a through 2.0.10.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:29.607"
-  },
-  {
-    "id": "CVE-2022-45813",
-    "description": "Missing Authorization vulnerability in BeRocket Advanced AJAX Product Filters allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects Advanced AJAX Product Filters: from n/a through 1.6.3.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-11T12:16:28.563"
   }
 ]
