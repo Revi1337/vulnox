@@ -1,33 +1,5 @@
 [
   {
-    "id": "CVE-2026-6050",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-16T23:16:50.577"
-  },
-  {
-    "id": "CVE-2026-8723",
-    "description": "### Summary\n\n\n\n`qs.stringify` throws `TypeError` when called with `arrayFormat: 'comma'` and `encodeValuesOnly: true` on an array containing `null` or `undefined`. The throw is synchronous and not handled by any of qs's null-related options (`skipNulls`, `strictNullHandling`).\n\n\n\n### Details\n\n\n\nIn the comma + `encodeValuesOnly` branch, `lib/stringify.js:145` mapped the array through the raw encoder before joining:\n\n\n\n```js\n\n\n\nobj = utils.maybeMap(obj, encoder);\n\n\n\n```\n\n\n\n`utils.encode` (`lib/utils.js:195`) reads `str.length` with no null guard, so a `null` or `undefined` element throws `TypeError`. `skipNulls` and `strictNullHandling` are both checked in the per-element loop below this line and never get a chance to run.\n\n\n\nSame class of bug as the filter-array path fixed in 0c180a4. The vulnerable shape of the comma + `encodeValuesOnly` branch was introduced in 4c4b23d (\"encode comma values more consistently\", PR #463, 2023-01-19), first released in v6.11.1.\n\n\n\n#### PoC\n\n\n\n```js\n\n\n\nconst qs = require('qs');\n\n\n\nqs.stringify({ a: [null, 'b'] },      { arrayFormat: 'comma', encodeValuesOnly: true });\n\n\n\nqs.stringify({ a: [undefined, 'b'] }, { arrayFormat: 'comma', encodeValuesOnly: true });\n\n\n\nqs.stringify({ a: [null] },           { arrayFormat: 'comma', encodeValuesOnly: true });\n\n\n\n// TypeError: Cannot read properties of null (reading 'length')\n\n\n\n//     at encode (lib/utils.js:195:13)\n\n\n\n//     at Object.maybeMap (lib/utils.js:322:37)\n\n\n\n//     at stringify (lib/stringify.js:145:25)\n\n\n\n```\n\n\n\n#### Fix\n\n\n\n`lib/stringify.js:145`, applied in 21f80b3 on `main` and released as v6.15.2:\n\n\n\n```diff\n\n\n\n- obj = utils.maybeMap(obj, encoder);\n\n\n\n+ obj = utils.maybeMap(obj, function (v) {\n\n\n\n+     return v == null ? v : encoder(v);\n\n\n\n+ });\n\n\n\n```\n\n\n\n`null` and `undefined` now pass through `maybeMap` unchanged and reach the `join(',')` step as-is. For `{ a: [null, 'b'] }` this produces `a=,b`, matching the non-`encodeValuesOnly` comma path (which already joins before encoding and produces `a=%2Cb` for the same input). Single-element `[null]` arrays still collapse via the existing `obj.join(',') || null` and remain subject to `skipNulls` / `strictNullHandling` in the main loop.\n\n\n\n### Affected versions\n\n\n\n`>=6.11.1 <6.15.2` — fixed in v6.15.2.\n\n\n\nThe vulnerable code shape was introduced in 4c4b23d and first shipped in v6.11.1. Earlier versions — including all of 6.7.x, 6.8.x, 6.9.x, 6.10.x, and 6.11.0 — implemented the comma + `encodeValuesOnly` path differently (joining before encoding) and are not affected. Empirically verified across released versions.\n\n\n\n### Impact\n\n\n\nApplication code that calls `qs.stringify` with both `arrayFormat: 'comma'` and `encodeValuesOnly: true` (both non-default) on input that may contain a `null` or `undefined` array element will throw synchronously instead of producing a query string. In a typical Node.js HTTP framework (Express, Fastify, Koa, hapi) the sync throw is caught by the framework's error boundary and the affected request returns a 500; the worker process does not exit and subsequent requests are unaffected. The \"kills the worker process\" framing applies only to call sites outside a request-handler error boundary (background jobs, startup paths, stream pipelines) or to deployments with framework error handling explicitly disabled.\n\n\n\nThe vulnerable input is a `null` or `undefined` entry inside an array; this is reachable from JSON request bodies or from application code constructing arrays from user input, but not from standard HTML form submissions (which produce strings or omitted fields, not literal `null`).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-17T00:16:21.233"
-  },
-  {
-    "id": "CVE-2026-8724",
-    "description": "A security flaw has been discovered in Dataease 2.10.20. Impacted is the function SqlparserUtils.transFilter of the file SqlparserUtils.java of the component Data Dashboard. The manipulation results in sql injection. The attack may be launched remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure.",
-    "severity": "Medium",
-    "tech": "Dataease",
-    "published": "2026-05-17T02:16:45.127"
-  },
-  {
-    "id": "CVE-2026-8725",
-    "description": "A weakness has been identified in CoreWorxLab CAAL up to 1.6.0. The affected element is an unknown function of the file src/caal/webhooks.py of the component test-hass Endpoint. This manipulation causes server-side request forgery. Remote exploitation of the attack is possible. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-17T02:16:45.487"
-  },
-  {
     "id": "CVE-2026-8719",
     "description": "The AI Engine – The Chatbot, AI Framework & MCP for WordPress plugin for WordPress is vulnerable to Privilege Escalation in version 3.4.9. This is due to missing WordPress capability enforcement in the MCP OAuth bearer-token authorization path, where any valid OAuth token causes MCP access to be granted without verifying administrator privileges. This makes it possible for authenticated (Subscriber+) attackers to invoke admin-level MCP tools and escalate privileges to Administrator.",
     "severity": "High",
@@ -12855,287 +12827,287 @@
     "id": "CVE-2026-45944",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu/vt-d: Clear Present bit before tearing down context entry\n\nWhen tearing down a context entry, the current implementation zeros the\nentire 128-bit entry using multiple 64-bit writes. This creates a window\nwhere the hardware can fetch a \"torn\" entry — where some fields are\nalready zeroed while the 'Present' bit is still set — leading to\nunpredictable behavior or spurious faults.\n\nWhile x86 provides strong write ordering, the compiler may reorder writes\nto the two 64-bit halves of the context entry. Even without compiler\nreordering, the hardware fetch is not guaranteed to be atomic with\nrespect to multiple CPU writes.\n\nAlign with the \"Guidance to Software for Invalidations\" in the VT-d spec\n(Section 6.5.3.3) by implementing the recommended ownership handshake:\n\n1. Clear only the 'Present' (P) bit of the context entry first to\n   signal the transition of ownership from hardware to software.\n2. Use dma_wmb() to ensure the cleared bit is visible to the IOMMU.\n3. Perform the required cache and context-cache invalidation to ensure\n   hardware no longer has cached references to the entry.\n4. Fully zero out the entry only after the invalidation is complete.\n\nAlso, add a dma_wmb() to context_set_present() to ensure the entry\nis fully initialized before the 'Present' bit becomes visible.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:10.677"
   },
   {
     "id": "CVE-2026-45945",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu/vt-d: Fix race condition during PASID entry replacement\n\nThe Intel VT-d PASID table entry is 512 bits (64 bytes). When replacing\nan active PASID entry (e.g., during domain replacement), the current\nimplementation calculates a new entry on the stack and copies it to the\ntable using a single structure assignment.\n\n        struct pasid_entry *pte, new_pte;\n\n        pte = intel_pasid_get_entry(dev, pasid);\n        pasid_pte_config_first_level(iommu, &new_pte, ...);\n        *pte = new_pte;\n\nBecause the hardware may fetch the 512-bit PASID entry in multiple\n128-bit chunks, updating the entire entry while it is active (Present\nbit set) risks a \"torn\" read. In this scenario, the IOMMU hardware\ncould observe an inconsistent state — partially new data and partially\nold data — leading to unpredictable behavior or spurious faults.\n\nFix this by removing the unsafe \"replace\" helpers and following the\n\"clear-then-update\" flow, which ensures the Present bit is cleared and\nthe required invalidation handshake is completed before the new\nconfiguration is applied.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:10.790"
   },
   {
     "id": "CVE-2026-45946",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\npower: supply: ab8500: Fix use-after-free in power_supply_changed()\n\nUsing the `devm_` variant for requesting IRQ _before_ the `devm_`\nvariant for allocating/registering the `power_supply` handle, means that\nthe `power_supply` handle will be deallocated/unregistered _before_ the\ninterrupt handler (since `devm_` naturally deallocates in reverse\nallocation order). This means that during removal, there is a race\ncondition where an interrupt can fire just _after_ the `power_supply`\nhandle has been freed, *but* just _before_ the corresponding\nunregistration of the IRQ handler has run.\n\nThis will lead to the IRQ handler calling `power_supply_changed()` with\na freed `power_supply` handle. Which usually crashes the system or\notherwise silently corrupts the memory...\n\nNote that there is a similar situation which can also happen during\n`probe()`; the possibility of an interrupt firing _before_ registering\nthe `power_supply` handle. This would then lead to the nasty situation\nof using the `power_supply` handle *uninitialized* in\n`power_supply_changed()`.\n\nCommit 1c1f13a006ed (\"power: supply: ab8500: Move to componentized\nbinding\") introduced this issue during a refactorization. Fix this racy\nuse-after-free by making sure the IRQ is requested _after_ the\nregistration of the `power_supply` handle.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:10.900"
   },
   {
     "id": "CVE-2026-45947",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amdgpu: Fix memory leak in amdgpu_acpi_enumerate_xcc()\n\nIn amdgpu_acpi_enumerate_xcc(), if amdgpu_acpi_dev_init() returns -ENOMEM,\nthe function returns directly without releasing the allocated xcc_info,\nresulting in a memory leak.\n\nFix this by ensuring that xcc_info is properly freed in the error paths.\n\nCompile tested only. Issue found using a prototype static analysis tool\nand code review.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.040"
   },
   {
     "id": "CVE-2026-45948",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\next4: fix memory leak in ext4_ext_shift_extents()\n\nIn ext4_ext_shift_extents(), if the extent is NULL in the while loop, the\nfunction returns immediately without releasing the path obtained via\next4_find_extent(), leading to a memory leak.\n\nFix this by jumping to the out label to ensure the path is properly\nreleased.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.157"
   },
   {
     "id": "CVE-2026-45949",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nhwrng: core - use RCU and work_struct to fix race condition\n\nCurrently, hwrng_fill is not cleared until the hwrng_fillfn() thread\nexits. Since hwrng_unregister() reads hwrng_fill outside the rng_mutex\nlock, a concurrent hwrng_unregister() may call kthread_stop() again on\nthe same task.\n\nAdditionally, if hwrng_unregister() is called immediately after\nhwrng_register(), the stopped thread may have never been executed. Thus,\nhwrng_fill remains dirty even after hwrng_unregister() returns. In this\ncase, subsequent calls to hwrng_register() will fail to start new\nthreads, and hwrng_unregister() will call kthread_stop() on the same\nfreed task. In both cases, a use-after-free occurs:\n\nrefcount_t: addition on 0; use-after-free.\nWARNING: ... at lib/refcount.c:25 refcount_warn_saturate+0xec/0x1c0\nCall Trace:\n kthread_stop+0x181/0x360\n hwrng_unregister+0x288/0x380\n virtrng_remove+0xe3/0x200\n\nThis patch fixes the race by protecting the global hwrng_fill pointer\ninside the rng_mutex lock, so that hwrng_fillfn() thread is stopped only\nonce, and calls to kthread_run() and kthread_stop() are serialized\nwith the lock held.\n\nTo avoid deadlock in hwrng_fillfn() while being stopped with the lock\nheld, we convert current_rng to RCU, so that get_current_rng() can read\ncurrent_rng without holding the lock. To remove the lock from put_rng(),\nwe also delay the actual cleanup into a work_struct.\n\nSince get_current_rng() no longer returns ERR_PTR values, the IS_ERR()\nchecks are removed from its callers.\n\nWith hwrng_fill protected by the rng_mutex lock, hwrng_fillfn() can no\nlonger clear hwrng_fill itself. Therefore, if hwrng_fillfn() returns\ndirectly after current_rng is dropped, kthread_stop() would be called on\na freed task_struct later. To fix this, hwrng_fillfn() calls schedule()\nnow to keep the task alive until being stopped. The kthread_stop() call\nis also moved from hwrng_unregister() to drop_current_rng(), ensuring\nkthread_stop() is called on all possible paths where current_rng becomes\nNULL, so that the thread would not wait forever.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.327"
   },
   {
     "id": "CVE-2026-45950",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: starfive - Fix memory leak in starfive_aes_aead_do_one_req()\n\nThe starfive_aes_aead_do_one_req() function allocates rctx->adata with\nkzalloc() but fails to free it if sg_copy_to_buffer() or\nstarfive_aes_hw_init() fails, which lead to memory leaks.\n\nSince rctx->adata is unconditionally freed after the write_adata\noperations, ensure consistent cleanup by freeing the allocation in these\nearlier error paths as well.\n\nCompile tested only. Issue found using a prototype static analysis tool\nand code review.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.483"
   },
   {
     "id": "CVE-2026-45951",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: Fix a potential use-after-free of BTF object\n\nRefcounting in the check_pseudo_btf_id() function is incorrect:\nthe __check_pseudo_btf_id() function might get called with a zero\nrefcounted btf. Fix this, and patch related code accordingly.\n\nv3: rephrase a comment (AI)\nv2: fix a refcount leak introduced in v1 (AI)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.613"
   },
   {
     "id": "CVE-2026-45952",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\neth: fbnic: Add validation for MTU changes\n\nIncreasing the MTU beyond the HDS threshold causes the hardware to\nfragment packets across multiple buffers. If a single-buffer XDP program\nis attached, the driver will drop all multi-frag frames. While we can't\nprevent a remote sender from sending non-TCP packets larger than the MTU,\nthis will prevent users from inadvertently breaking new TCP streams.\n\nTraditionally, drivers supported XDP with MTU less than 4Kb\n(packet per page). Fbnic currently prevents attaching XDP when MTU is too high.\nBut it does not prevent increasing MTU after XDP is attached.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.713"
   },
   {
     "id": "CVE-2026-45953",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmd/raid5: fix IO hang with degraded array with llbitmap\n\nWhen llbitmap bit state is still unwritten, any new write should force\nrcw, as bitmap_ops->blocks_synced() is checked in handle_stripe_dirtying().\nHowever, later the same check is missing in need_this_block(), causing\nstripe to deadloop during handling because handle_stripe() will decide\nto go to handle_stripe_fill(), meanwhile need_this_block() always return\n0 and nothing is handled.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.813"
   },
   {
     "id": "CVE-2026-45954",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfbdev: au1200fb: Fix a memory leak in au1200fb_drv_probe()\n\nIn au1200fb_drv_probe(), when platform_get_irq fails(), it directly\nreturns from the function with an error code, which causes a memory\nleak.\n\nReplace it with a goto label to ensure proper cleanup.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:11.917"
   },
   {
     "id": "CVE-2026-45955",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmd/md-llbitmap: fix percpu_ref not resurrected on suspend timeout\n\nWhen llbitmap_suspend_timeout() times out waiting for percpu_ref to\nbecome zero, it returns -ETIMEDOUT without resurrecting the percpu_ref.\nThe caller (md_llbitmap_daemon_fn) then continues to the next page\nwithout calling llbitmap_resume(), leaving the percpu_ref in a killed\nstate permanently.\n\nFix this by resurrecting the percpu_ref before returning the error,\nensuring the page control structure remains usable for subsequent\noperations.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.050"
   },
   {
     "id": "CVE-2026-45956",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/exynos: vidi: use priv->vidi_dev for ctx lookup in vidi_connection_ioctl()\n\nvidi_connection_ioctl() retrieves the driver_data from drm_dev->dev to\nobtain a struct vidi_context pointer. However, drm_dev->dev is the\nexynos-drm master device, and the driver_data contained therein is not\nthe vidi component device, but a completely different device.\n\nThis can lead to various bugs, ranging from null pointer dereferences and\ngarbage value accesses to, in unlucky cases, out-of-bounds errors,\nuse-after-free errors, and more.\n\nTo resolve this issue, we need to store/delete the vidi device pointer in\nexynos_drm_private->vidi_dev during bind/unbind, and then read this\nexynos_drm_private->vidi_dev within ioctl() to obtain the correct\nstruct vidi_context pointer.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.157"
   },
   {
     "id": "CVE-2026-45957",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nrcu: Fix rcu_read_unlock() deadloop due to softirq\n\nCommit 5f5fa7ea89dc (\"rcu: Don't use negative nesting depth in\n__rcu_read_unlock()\") removes the recursion-protection code from\n__rcu_read_unlock(). Therefore, we could invoke the deadloop in\nraise_softirq_irqoff() with ftrace enabled as follows:\n\nWARNING: CPU: 0 PID: 0 at kernel/trace/trace.c:3021 __ftrace_trace_stack.constprop.0+0x172/0x180\nModules linked in: my_irq_work(O)\nCPU: 0 UID: 0 PID: 0 Comm: swapper/0 Tainted: G O 6.18.0-rc7-dirty #23 PREEMPT(full)\nTainted: [O]=OOT_MODULE\nHardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.15.0-1 04/01/2014\nRIP: 0010:__ftrace_trace_stack.constprop.0+0x172/0x180\nRSP: 0018:ffffc900000034a8 EFLAGS: 00010002\nRAX: 0000000000000000 RBX: 0000000000000004 RCX: 0000000000000000\nRDX: 0000000000000003 RSI: ffffffff826d7b87 RDI: ffffffff826e9329\nRBP: 0000000000090009 R08: 0000000000000005 R09: ffffffff82afbc4c\nR10: 0000000000000008 R11: 0000000000011d7a R12: 0000000000000000\nR13: ffff888003874100 R14: 0000000000000003 R15: ffff8880038c1054\nFS:  0000000000000000(0000) GS:ffff8880fa8ea000(0000) knlGS:0000000000000000\nCS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\nCR2: 000055b31fa7f540 CR3: 00000000078f4005 CR4: 0000000000770ef0\nPKRU: 55555554\nCall Trace:\n <IRQ>\n trace_buffer_unlock_commit_regs+0x6d/0x220\n trace_event_buffer_commit+0x5c/0x260\n trace_event_raw_event_softirq+0x47/0x80\n raise_softirq_irqoff+0x6e/0xa0\n rcu_read_unlock_special+0xb1/0x160\n unwind_next_frame+0x203/0x9b0\n __unwind_start+0x15d/0x1c0\n arch_stack_walk+0x62/0xf0\n stack_trace_save+0x48/0x70\n __ftrace_trace_stack.constprop.0+0x144/0x180\n trace_buffer_unlock_commit_regs+0x6d/0x220\n trace_event_buffer_commit+0x5c/0x260\n trace_event_raw_event_softirq+0x47/0x80\n raise_softirq_irqoff+0x6e/0xa0\n rcu_read_unlock_special+0xb1/0x160\n unwind_next_frame+0x203/0x9b0\n __unwind_start+0x15d/0x1c0\n arch_stack_walk+0x62/0xf0\n stack_trace_save+0x48/0x70\n __ftrace_trace_stack.constprop.0+0x144/0x180\n trace_buffer_unlock_commit_regs+0x6d/0x220\n trace_event_buffer_commit+0x5c/0x260\n trace_event_raw_event_softirq+0x47/0x80\n raise_softirq_irqoff+0x6e/0xa0\n rcu_read_unlock_special+0xb1/0x160\n unwind_next_frame+0x203/0x9b0\n __unwind_start+0x15d/0x1c0\n arch_stack_walk+0x62/0xf0\n stack_trace_save+0x48/0x70\n __ftrace_trace_stack.constprop.0+0x144/0x180\n trace_buffer_unlock_commit_regs+0x6d/0x220\n trace_event_buffer_commit+0x5c/0x260\n trace_event_raw_event_softirq+0x47/0x80\n raise_softirq_irqoff+0x6e/0xa0\n rcu_read_unlock_special+0xb1/0x160\n __is_insn_slot_addr+0x54/0x70\n kernel_text_address+0x48/0xc0\n __kernel_text_address+0xd/0x40\n unwind_get_return_address+0x1e/0x40\n arch_stack_walk+0x9c/0xf0\n stack_trace_save+0x48/0x70\n __ftrace_trace_stack.constprop.0+0x144/0x180\n trace_buffer_unlock_commit_regs+0x6d/0x220\n trace_event_buffer_commit+0x5c/0x260\n trace_event_raw_event_softirq+0x47/0x80\n __raise_softirq_irqoff+0x61/0x80\n __flush_smp_call_function_queue+0x115/0x420\n __sysvec_call_function_single+0x17/0xb0\n sysvec_call_function_single+0x8c/0xc0\n </IRQ>\n\nCommit b41642c87716 (\"rcu: Fix rcu_read_unlock() deadloop due to IRQ work\")\nfixed the infinite loop in rcu_read_unlock_special() for IRQ work by\nsetting a flag before calling irq_work_queue_on(). We fix this issue by\nsetting the same flag before calling raise_softirq_irqoff() and rename the\nflag to defer_qs_pending for more common.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.280"
   },
   {
     "id": "CVE-2026-45958",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/exynos: vidi: fix to avoid directly dereferencing user pointer\n\nIn vidi_connection_ioctl(), vidi->edid(user pointer) is directly\ndereferenced in the kernel.\n\nThis allows arbitrary kernel memory access from the user space, so instead\nof directly accessing the user pointer in the kernel, we should modify it\nto copy edid to kernel memory using copy_from_user() and use it.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.417"
   },
   {
     "id": "CVE-2026-45959",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: ccp - Fix a crash due to incorrect cleanup usage of kfree\n\nAnnotating a local pointer variable, which will be assigned with the\nkmalloc-family functions, with the `__cleanup(kfree)` attribute will\nmake the address of the local variable, rather than the address returned\nby kmalloc, passed to kfree directly and lead to a crash due to invalid\ndeallocation of stack address. According to other places in the repo,\nthe correct usage should be `__free(kfree)`. The code coincidentally\ncompiled because the parameter type `void *` of kfree is compatible with\nthe desired type `struct { ... } **`.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.543"
   },
   {
     "id": "CVE-2026-45960",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nhfsplus: return error when node already exists in hfs_bnode_create\n\nWhen hfs_bnode_create() finds that a node is already hashed (which should\nnot happen in normal operation), it currently returns the existing node\nwithout incrementing its reference count. This causes a reference count\ninconsistency that leads to a kernel panic when the node is later freed\nin hfs_bnode_put():\n\n    kernel BUG at fs/hfsplus/bnode.c:676!\n    BUG_ON(!atomic_read(&node->refcnt))\n\nThis scenario can occur when hfs_bmap_alloc() attempts to allocate a node\nthat is already in use (e.g., when node 0's bitmap bit is incorrectly\nunset), or due to filesystem corruption.\n\nReturning an existing node from a create path is not normal operation.\n\nFix this by returning ERR_PTR(-EEXIST) instead of the node when it's\nalready hashed. This properly signals the error condition to callers,\nwhich already check for IS_ERR() return values.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.650"
   },
   {
     "id": "CVE-2026-45961",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ngfs2: fix memory leaks in gfs2_fill_super error path\n\nFix two memory leaks in the gfs2_fill_super() error handling path when\ntransitioning a filesystem to read-write mode fails.\n\nFirst leak: kthread objects (thread_struct, task_struct, etc.)\nWhen gfs2_freeze_lock_shared() fails after init_threads() succeeds, the\ncreated kernel threads (logd and quotad) are never destroyed. This\noccurs because the fail_per_node label doesn't call\ngfs2_destroy_threads().\n\nSecond leak: quota bitmap buffer (8192 bytes)\nWhen gfs2_make_fs_rw() fails after gfs2_quota_init() succeeds but\nbefore other operations complete, the allocated quota bitmap is never\nfreed.\n\nThe fix moves thread cleanup to the fail_per_node label to handle all\nerror paths uniformly. gfs2_destroy_threads() is safe to call\nunconditionally as it checks for NULL pointers. Quota cleanup is added\nin gfs2_make_fs_rw() to properly handle the withdrawal case where\nquota initialization succeeds but the filesystem is then withdrawn.\n\nThread leak backtrace (gfs2_freeze_lock_shared failure):\n  unreferenced object 0xffff88801d7bca80 (size 4480):\n    copy_process+0x3a1/0x4670 kernel/fork.c:2422\n    kernel_clone+0xf3/0x6e0 kernel/fork.c:2779\n    kthread_create_on_node+0x100/0x150 kernel/kthread.c:478\n    init_threads+0xab/0x350 fs/gfs2/ops_fstype.c:611\n    gfs2_fill_super+0xe5c/0x1240 fs/gfs2/ops_fstype.c:1265\n\nQuota leak backtrace (gfs2_make_fs_rw failure):\n  unreferenced object 0xffff88812de7c000 (size 8192):\n    gfs2_quota_init+0xe5/0x820 fs/gfs2/quota.c:1409\n    gfs2_make_fs_rw+0x7a/0xe0 fs/gfs2/super.c:149\n    gfs2_fill_super+0xfbb/0x1240 fs/gfs2/ops_fstype.c:1275",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.783"
   },
   {
     "id": "CVE-2026-45962",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nublk: Validate SQE128 flag before accessing the cmd\n\nublk_ctrl_cmd_dump() accesses (header *)sqe->cmd before\nIO_URING_F_SQE128 flag check. This could cause out of boundary memory\naccess.\n\nMove the SQE128 flag check earlier in ublk_ctrl_uring_cmd() to return\n-EINVAL immediately if the flag is not set.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:12.917"
   },
   {
     "id": "CVE-2026-45963",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nASoC: nau8821: Cancel delayed work on component remove\n\nAttempting to unload the driver while a jack detection work is pending\nwould likely crash the kernel when it is eventually scheduled for\nexecution:\n\n[ 1984.896308] BUG: unable to handle page fault for address: ffffffffc10c2a20\n[...]\n[ 1984.896388] Hardware name: Valve Jupiter/Jupiter, BIOS F7A0131 01/30/2024\n[ 1984.896396] Workqueue: events nau8821_jdet_work [snd_soc_nau8821]\n[ 1984.896414] RIP: 0010:__mutex_lock+0x9f/0x11d0\n[...]\n[ 1984.896504] Call Trace:\n[ 1984.896511]  <TASK>\n[ 1984.896524]  ? snd_soc_dapm_disable_pin+0x26/0x60 [snd_soc_core]\n[ 1984.896572]  ? snd_soc_dapm_disable_pin+0x26/0x60 [snd_soc_core]\n[ 1984.896596]  snd_soc_dapm_disable_pin+0x26/0x60 [snd_soc_core]\n[ 1984.896622]  nau8821_jdet_work+0xeb/0x1e0 [snd_soc_nau8821]\n[ 1984.896636]  process_one_work+0x211/0x590\n[ 1984.896649]  ? srso_return_thunk+0x5/0x5f\n[ 1984.896670]  worker_thread+0x1cd/0x3a0\n\nCancel unscheduled jdet_work or wait for its execution to finish before\nthe component driver gets removed.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.047"
   },
   {
     "id": "CVE-2026-45964",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nSUNRPC: fix gss_auth kref leak in gss_alloc_msg error path\n\nCommit 5940d1cf9f42 (\"SUNRPC: Rebalance a kref in auth_gss.c\") added\na kref_get(&gss_auth->kref) call to balance the gss_put_auth() done\nin gss_release_msg(), but forgot to add a corresponding kref_put()\non the error path when kstrdup_const() fails.\n\nIf service_name is non-NULL and kstrdup_const() fails, the function\njumps to err_put_pipe_version which calls put_pipe_version() and\nkfree(gss_msg), but never releases the gss_auth reference. This leads\nto a kref leak where the gss_auth structure is never freed.\n\nAdd a forward declaration for gss_free_callback() and call kref_put()\nin the err_put_pipe_version error path to properly release the\nreference taken earlier.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.177"
   },
   {
     "id": "CVE-2026-45965",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\napparmor: fix invalid deref of rawdata when export_binary is unset\n\nIf the export_binary parameter is disabled on runtime, profiles that\nwere loaded before that will still have their rawdata stored in\napparmorfs, with a symbolic link to the rawdata on the policy\ndirectory. When one of those profiles are replaced, the rawdata is set\nto NULL, but when trying to resolve the symbolic links to rawdata for\nthat profile, it will try to dereference profile->rawdata->name when\nprofile->rawdata is now NULL causing an oops. Fix it by checking if\nrawdata is set.\n\n[  168.653080] BUG: kernel NULL pointer dereference, address: 0000000000000088\n[  168.657420] #PF: supervisor read access in kernel mode\n[  168.660619] #PF: error_code(0x0000) - not-present page\n[  168.663613] PGD 0 P4D 0\n[  168.665450] Oops: Oops: 0000 [#1] SMP NOPTI\n[  168.667836] CPU: 1 UID: 0 PID: 1729 Comm: ls Not tainted 6.19.0-rc7+ #3 PREEMPT(voluntary)\n[  168.672308] Hardware name: QEMU Ubuntu 24.04 PC (i440FX + PIIX, 1996), BIOS 1.16.3-debian-1.16.3-2 04/01/2014\n[  168.679327] RIP: 0010:rawdata_get_link_base.isra.0+0x23/0x330\n[  168.682768] Code: 90 90 90 90 90 90 90 0f 1f 44 00 00 55 48 89 e5 41 57 41 56 41 55 41 54 53 48 83 ec 18 48 89 55 d0 48 85 ff 0f 84 e3 01 00 00 <48> 83 3c 25 88 00 00 00 00 0f 84 d4 01 00 00 49 89 f6 49 89 cc e8\n[  168.689818] RSP: 0018:ffffcdcb8200fb80 EFLAGS: 00010282\n[  168.690871] RAX: ffffffffaee74ec0 RBX: 0000000000000000 RCX: ffffffffb0120158\n[  168.692251] RDX: ffffcdcb8200fbe0 RSI: ffff88c187c9fa80 RDI: ffff88c186c98a80\n[  168.693593] RBP: ffffcdcb8200fbc0 R08: 0000000000000000 R09: 0000000000000000\n[  168.694941] R10: 0000000000000000 R11: 0000000000000000 R12: ffff88c186c98a80\n[  168.696289] R13: 00007fff005aaa20 R14: 0000000000000080 R15: ffff88c188f4fce0\n[  168.697637] FS:  0000790e81c58280(0000) GS:ffff88c20a957000(0000) knlGS:0000000000000000\n[  168.699227] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n[  168.700349] CR2: 0000000000000088 CR3: 000000012fd3e000 CR4: 0000000000350ef0\n[  168.701696] Call Trace:\n[  168.702325]  <TASK>\n[  168.702995]  rawdata_get_link_data+0x1c/0x30\n[  168.704145]  vfs_readlink+0xd4/0x160\n[  168.705152]  do_readlinkat+0x114/0x180\n[  168.706214]  __x64_sys_readlink+0x1e/0x30\n[  168.708653]  x64_sys_call+0x1d77/0x26b0\n[  168.709525]  do_syscall_64+0x81/0x500\n[  168.710348]  ? do_statx+0x72/0xb0\n[  168.711109]  ? putname+0x3e/0x80\n[  168.711845]  ? __x64_sys_statx+0xb7/0x100\n[  168.712711]  ? x64_sys_call+0x10fc/0x26b0\n[  168.713577]  ? do_syscall_64+0xbf/0x500\n[  168.714412]  ? do_user_addr_fault+0x1d2/0x8d0\n[  168.715404]  ? irqentry_exit+0xb2/0x740\n[  168.716359]  ? exc_page_fault+0x90/0x1b0\n[  168.717307]  entry_SYSCALL_64_after_hwframe+0x76/0x7e",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.307"
   },
   {
     "id": "CVE-2026-45966",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\napparmor: fix NULL pointer dereference in __unix_needs_revalidation\n\nWhen receiving file descriptors via SCM_RIGHTS, both the socket pointer\nand the socket's sk pointer can be NULL during socket setup or teardown,\ncausing NULL pointer dereferences in __unix_needs_revalidation().\n\nThis is a regression in AppArmor 5.0.0 (kernel 6.17+) where the new\n__unix_needs_revalidation() function was added without proper NULL checks.\n\nThe crash manifests as:\n  BUG: kernel NULL pointer dereference, address: 0x0000000000000018\n  RIP: aa_file_perm+0xb7/0x3b0 (or +0xbe/0x3b0, +0xc0/0x3e0)\n  Call Trace:\n   apparmor_file_receive+0x42/0x80\n   security_file_receive+0x2e/0x50\n   receive_fd+0x1d/0xf0\n   scm_detach_fds+0xad/0x1c0\n\nThe function dereferences sock->sk->sk_family without checking if either\nsock or sock->sk is NULL first.\n\nAdd NULL checks for both sock and sock->sk before accessing sk_family.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.460"
   },
   {
     "id": "CVE-2026-45967",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: Return proper address for non-zero offsets in insn array\n\nThe map_direct_value_addr() function of the instruction\narray map incorrectly adds offset to the resulting address.\nThis is a bug, because later the resolve_pseudo_ldimm64()\nfunction adds the offset. Fix it. Corresponding selftests\nare added in a consequent commit.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.567"
   },
   {
     "id": "CVE-2026-45968",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncpuidle: Skip governor when only one idle state is available\n\nOn certain platforms (PowerNV systems without a power-mgt DT node),\ncpuidle may register only a single idle state. In cases where that\nsingle state is a polling state (state 0), the ladder governor may\nincorrectly treat state 1 as the first usable state and pass an\nout-of-bounds index. This can lead to a NULL enter callback being\ninvoked, ultimately resulting in a system crash.\n\n[   13.342636] cpuidle-powernv : Only Snooze is available\n[   13.351854] Faulting instruction address: 0x00000000\n[   13.376489] NIP [0000000000000000] 0x0\n[   13.378351] LR  [c000000001e01974] cpuidle_enter_state+0x2c4/0x668\n\nFix this by adding a bail-out in cpuidle_select() that returns state 0\ndirectly when state_count <= 1, bypassing the governor and keeping the\ntick running.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.670"
   },
   {
     "id": "CVE-2026-45969",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nHID: playstation: Add missing check for input_ff_create_memless\n\nThe ps_gamepad_create() function calls input_ff_create_memless()\nwithout verifying its return value,  which can lead to incorrect\nbehavior or potential crashes when FF effects are triggered.\n\nAdd a check for the return value of input_ff_create_memless().",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.800"
   },
   {
     "id": "CVE-2026-45970",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbonding: alb: fix UAF in rlb_arp_recv during bond up/down\n\nThe ALB RX path may access rx_hashtbl concurrently with bond\nteardown. During rapid bond up/down cycles, rlb_deinitialize()\nfrees rx_hashtbl while RX handlers are still running, leading\nto a null pointer dereference detected by KASAN.\n\nHowever, the root cause is that rlb_arp_recv() can still be accessed\nafter setting recv_probe to NULL, which is actually a use-after-free\n(UAF) issue. That is the reason for using the referenced commit in the\nFixes tag.\n\n[  214.174138] Oops: general protection fault, probably for non-canonical address 0xdffffc000000001d: 0000 [#1] SMP KASAN PTI\n[  214.186478] KASAN: null-ptr-deref in range [0x00000000000000e8-0x00000000000000ef]\n[  214.194933] CPU: 30 UID: 0 PID: 2375 Comm: ping Kdump: loaded Not tainted 6.19.0-rc8+ #2 PREEMPT(voluntary)\n[  214.205907] Hardware name: Dell Inc. PowerEdge R730/0WCJNT, BIOS 2.14.0 01/14/2022\n[  214.214357] RIP: 0010:rlb_arp_recv+0x505/0xab0 [bonding]\n[  214.220320] Code: 0f 85 2b 05 00 00 48 b8 00 00 00 00 00 fc ff df 40 0f b6 ed 48 c1 e5 06 49 03 ad 78 01 00 00 48 8d 7d 28 48 89 fa 48 c1 ea 03 <0f> b6\n 04 02 84 c0 74 06 0f 8e 12 05 00 00 80 7d 28 00 0f 84 8c 00\n[  214.241280] RSP: 0018:ffffc900073d8870 EFLAGS: 00010206\n[  214.247116] RAX: dffffc0000000000 RBX: ffff888168556822 RCX: ffff88816855681e\n[  214.255082] RDX: 000000000000001d RSI: dffffc0000000000 RDI: 00000000000000e8\n[  214.263048] RBP: 00000000000000c0 R08: 0000000000000002 R09: ffffed11192021c8\n[  214.271013] R10: ffff8888c9010e43 R11: 0000000000000001 R12: 1ffff92000e7b119\n[  214.278978] R13: ffff8888c9010e00 R14: ffff888168556822 R15: ffff888168556810\n[  214.286943] FS:  00007f85d2d9cb80(0000) GS:ffff88886ccb3000(0000) knlGS:0000000000000000\n[  214.295966] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n[  214.302380] CR2: 00007f0d047b5e34 CR3: 00000008a1c2e002 CR4: 00000000001726f0\n[  214.310347] Call Trace:\n[  214.313070]  <IRQ>\n[  214.315318]  ? __pfx_rlb_arp_recv+0x10/0x10 [bonding]\n[  214.320975]  bond_handle_frame+0x166/0xb60 [bonding]\n[  214.326537]  ? __pfx_bond_handle_frame+0x10/0x10 [bonding]\n[  214.332680]  __netif_receive_skb_core.constprop.0+0x576/0x2710\n[  214.339199]  ? __pfx_arp_process+0x10/0x10\n[  214.343775]  ? sched_balance_find_src_group+0x98/0x630\n[  214.349513]  ? __pfx___netif_receive_skb_core.constprop.0+0x10/0x10\n[  214.356513]  ? arp_rcv+0x307/0x690\n[  214.360311]  ? __pfx_arp_rcv+0x10/0x10\n[  214.364499]  ? __lock_acquire+0x58c/0xbd0\n[  214.368975]  __netif_receive_skb_one_core+0xae/0x1b0\n[  214.374518]  ? __pfx___netif_receive_skb_one_core+0x10/0x10\n[  214.380743]  ? lock_acquire+0x10b/0x140\n[  214.385026]  process_backlog+0x3f1/0x13a0\n[  214.389502]  ? process_backlog+0x3aa/0x13a0\n[  214.394174]  __napi_poll.constprop.0+0x9f/0x370\n[  214.399233]  net_rx_action+0x8c1/0xe60\n[  214.403423]  ? __pfx_net_rx_action+0x10/0x10\n[  214.408193]  ? lock_acquire.part.0+0xbd/0x260\n[  214.413058]  ? sched_clock_cpu+0x6c/0x540\n[  214.417540]  ? mark_held_locks+0x40/0x70\n[  214.421920]  handle_softirqs+0x1fd/0x860\n[  214.426302]  ? __pfx_handle_softirqs+0x10/0x10\n[  214.431264]  ? __neigh_event_send+0x2d6/0xf50\n[  214.436131]  do_softirq+0xb1/0xf0\n[  214.439830]  </IRQ>\n\nThe issue is reproducible by repeatedly running\nip link set bond0 up/down while receiving ARP messages, where\nrlb_arp_recv() can race with rlb_deinitialize() and dereference\na freed rx_hashtbl entry.\n\nFix this by setting recv_probe to NULL and then calling\nsynchronize_net() to wait for any concurrent RX processing to finish.\nThis ensures that no RX handler can access rx_hashtbl after it is freed\nin bond_alb_deinitialize().",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:13.920"
   },
   {
     "id": "CVE-2026-45971",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: Limit bpf program signature size\n\nPractical BPF signatures are significantly smaller than\nKMALLOC_MAX_CACHE_SIZE\n\nAllowing larger sizes opens the door for abuse by passing excessive\nsize values and forcing the kernel into expensive allocation paths (via\nkmalloc_large or vmalloc).",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.073"
   },
   {
     "id": "CVE-2026-45972",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsmb: client: fix potential UAF and double free in smb2_open_file()\n\nZero out @err_iov and @err_buftype before retrying SMB2_open() to\nprevent an UAF bug if @data != NULL, otherwise a double free.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.173"
   },
   {
     "id": "CVE-2026-45973",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nRDMA/mlx5: Fix UMR hang in LAG error state unload\n\nDuring firmware reset in LAG mode, a race condition causes the driver\nto hang indefinitely while waiting for UMR completion during device\nunload. See [1].\n\nIn LAG mode the bond device is only registered on the master, so it\nnever sees sys_error events from the slave.\nDuring firmware reset this causes UMR waits to hang forever on unload\nas the slave is dead but the master hasn't entered error state yet, so\nUMR posts succeed but completions never arrive.\n\nFix this by adding a sys_error notifier that gets registered before\nMLX5_IB_STAGE_IB_REG and stays alive until after ib_unregister_device().\nThis ensures error events reach the bond device throughout teardown.\n\n[1]\nCall Trace:\n __schedule+0x2bd/0x760\n schedule+0x37/0xa0\n schedule_preempt_disabled+0xa/0x10\n __mutex_lock.isra.6+0x2b5/0x4a0\n __mlx5_ib_dereg_mr+0x606/0x870 [mlx5_ib]\n ? __xa_erase+0x4a/0xa0\n ? _cond_resched+0x15/0x30\n ? wait_for_completion+0x31/0x100\n ib_dereg_mr_user+0x48/0xc0 [ib_core]\n ? rdmacg_uncharge_hierarchy+0xa0/0x100\n destroy_hw_idr_uobject+0x20/0x50 [ib_uverbs]\n uverbs_destroy_uobject+0x37/0x150 [ib_uverbs]\n __uverbs_cleanup_ufile+0xda/0x140 [ib_uverbs]\n uverbs_destroy_ufile_hw+0x3a/0xf0 [ib_uverbs]\n ib_uverbs_remove_one+0xc3/0x140 [ib_uverbs]\n remove_client_context+0x8b/0xd0 [ib_core]\n disable_device+0x8c/0x130 [ib_core]\n __ib_unregister_device+0x10d/0x180 [ib_core]\n ib_unregister_device+0x21/0x30 [ib_core]\n __mlx5_ib_remove+0x1e4/0x1f0 [mlx5_ib]\n auxiliary_bus_remove+0x1e/0x30\n device_release_driver_internal+0x103/0x1f0\n bus_remove_device+0xf7/0x170\n device_del+0x181/0x410\n mlx5_rescan_drivers_locked.part.10+0xa9/0x1d0 [mlx5_core]\n mlx5_disable_lag+0x253/0x260 [mlx5_core]\n mlx5_lag_disable_change+0x89/0xc0 [mlx5_core]\n mlx5_eswitch_disable+0x67/0xa0 [mlx5_core]\n mlx5_unload+0x15/0xd0 [mlx5_core]\n mlx5_unload_one+0x71/0xc0 [mlx5_core]\n mlx5_sync_reset_reload_work+0x83/0x100 [mlx5_core]\n process_one_work+0x1a7/0x360\n worker_thread+0x30/0x390\n ? create_worker+0x1a0/0x1a0\n kthread+0x116/0x130\n ? kthread_flush_work_fn+0x10/0x10\n ret_from_fork+0x22/0x40",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.293"
   },
   {
     "id": "CVE-2026-45974",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbtrfs: fix invalid leaf access in btrfs_quota_enable() if ref key not found\n\nIf btrfs_search_slot_for_read() returns 1, it means we did not find any\nkey greater than or equals to the key we asked for, meaning we have\nreached the end of the tree and therefore the path is not valid. If\nthis happens we need to break out of the loop and stop, instead of\ncontinuing and accessing an invalid path.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.430"
   },
   {
     "id": "CVE-2026-45975",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nublk: use READ_ONCE() to read struct ublksrv_ctrl_cmd\n\nstruct ublksrv_ctrl_cmd is part of the io_uring_sqe, which may lie in\nuserspace-mapped memory. It's racy to access its fields with normal\nloads, as userspace may write to them concurrently. Use READ_ONCE() to\ncopy the ublksrv_ctrl_cmd from the io_uring_sqe to the stack. Use the\nlocal copy in place of the one in the io_uring_sqe.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.590"
   },
   {
     "id": "CVE-2026-45976",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amdgpu: Fix memory leak in amdgpu_ras_init()\n\nWhen amdgpu_nbio_ras_sw_init() fails in amdgpu_ras_init(), the function\nreturns directly without freeing the allocated con structure, leading\nto a memory leak.\n\nFix this by jumping to the release_con label to properly clean up the\nallocated memory before returning the error code.\n\nCompile tested only. Issue found using a prototype static analysis tool\nand code review.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.700"
   },
   {
     "id": "CVE-2026-45977",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfbnic: close fw_log race between users and teardown\n\nFixes a theoretical race on fw_log between the teardown path and fw_log\nwrite functions.\n\nfw_log is written inside fbnic_fw_log_write() and can be reached from\nthe mailbox handler fbnic_fw_msix_intr(), but fw_log is freed before\nIRQ/MBX teardown during cleanup, resulting in a potential data race of\ndereferencing a freed/null variable.\n\nPossible Interleaving Scenario:\n  CPU0: fbnic_fw_msix_intr() // Entry\n          fbnic_fw_log_write()\n            if (fbnic_fw_log_ready())   // true\n            ... preempt ...\n  CPU1: fbnic_remove() // Entry\n          fbnic_fw_log_free()\n            vfree(log->data_start);\n            log->data_start = NULL;\n  CPU0: continues, walks log->entries or writes to log->data_start\n\nThe initialization also has an incorrect order problem, as the fw_log\nis currently allocated after MBX setup during initialization.\nFix the problems by adjusting the synchronization order to put\ninitialization in place before the mailbox is enabled, and not cleared\nuntil after the mailbox has been disabled.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.800"
   },
   {
     "id": "CVE-2026-45978",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nstaging: greybus: lights: avoid NULL deref\n\ngb_lights_light_config() stores channel_count before allocating the\nchannels array. If kcalloc() fails, gb_lights_release() iterates the\nnon-zero count and dereferences light->channels, which is NULL.\n\nAllocate channels first and only then publish channels_count so the\ncleanup path can't walk a NULL pointer.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:14.903"
   },
   {
     "id": "CVE-2026-45979",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amdgpu: clean up the amdgpu_cs_parser_bos\n\nIn low memory conditions, kmalloc can fail. In such conditions\nunlock the mutex for a clean exit.\n\nWe do not need to amdgpu_bo_list_put as it's been handled in the\namdgpu_cs_parser_fini.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:15.023"
   },
   {
     "id": "CVE-2026-45980",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\naccel/amdxdna: Stop job scheduling across aie2_release_resource()\n\nRunning jobs on a hardware context while it is in the process of\nreleasing resources can lead to use-after-free and crashes.\n\nFix this by stopping job scheduling before calling\naie2_release_resource() and restarting it after the release completes.\nAdditionally, aie2_sched_job_run() now checks whether the hardware\ncontext is still active.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:15.130"
   },
   {
     "id": "CVE-2026-45981",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ns390/cio: Fix device lifecycle handling in css_alloc_subchannel()\n\n`css_alloc_subchannel()` calls `device_initialize()` before setting up\nthe DMA masks. If `dma_set_coherent_mask()` or `dma_set_mask()` fails,\nthe error path frees the subchannel structure directly, bypassing\nthe device model reference counting.\n\nOnce `device_initialize()` has been called, the embedded struct device\nmust be released via `put_device()`, allowing the release callback to\nfree the container structure.\n\nFix the error path by dropping the initial device reference with\n`put_device()` instead of calling `kfree()` directly.\n\nThis ensures correct device lifetime handling and avoids potential\nuse-after-free or double-free issues.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:15.233"
   },
   {
     "id": "CVE-2026-45982",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nACPICA: Fix NULL pointer dereference in acpi_ev_address_space_dispatch()\n\nCover a missed execution path with a new check.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:15.383"
   },
   {
     "id": "CVE-2026-45983",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnfsd: never defer requests during idmap lookup\n\nDuring v4 request compound arg decoding, some ops (e.g. SETATTR)\ncan trigger idmap lookup upcalls. When those upcall responses get\ndelayed beyond the allowed time limit, cache_check() will mark the\nrequest for deferral and cause it to be dropped.\n\nThis prevents nfs4svc_encode_compoundres from being executed, and\nthus the session slot flag NFSD4_SLOT_INUSE never gets cleared.\nSubsequent client requests will fail with NFSERR_JUKEBOX, given\nthat the slot will be marked as in-use, making the SEQUENCE op\nfail.\n\nFix this by making sure that the RQ_USEDEFERRAL flag is always\nclear during nfs4svc_decode_compoundargs(), since no v4 request\nshould ever be deferred.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:15.500"
   },
   {
     "id": "CVE-2026-45984",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ngfs2: Fix use-after-free in iomap inline data write path\n\nThe inline data buffer head (dibh) is being released prematurely in\ngfs2_iomap_begin() via release_metapath() while iomap->inline_data\nstill points to dibh->b_data. This causes a use-after-free when\niomap_write_end_inline() later attempts to write to the inline data\narea.\n\nThe bug sequence:\n1. gfs2_iomap_begin() calls gfs2_meta_inode_buffer() to read inode\n   metadata into dibh\n2. Sets iomap->inline_data = dibh->b_data + sizeof(struct gfs2_dinode)\n3. Calls release_metapath() which calls brelse(dibh), dropping refcount\n   to 0\n4. kswapd reclaims the page (~39ms later in the syzbot report)\n5. iomap_write_end_inline() tries to memcpy() to iomap->inline_data\n6. KASAN detects use-after-free write to freed memory\n\nFix by storing dibh in iomap->private and incrementing its refcount\nwith get_bh() in gfs2_iomap_begin(). The buffer is then properly\nreleased in gfs2_iomap_end() after the inline write completes,\nensuring the page stays alive for the entire iomap operation.\n\nNote: A C reproducer is not available for this issue. The fix is based\non analysis of the KASAN report and code review showing the buffer head\nis freed before use.\n\n[agruenba: Take buffer head reference in gfs2_iomap_begin() to avoid\nleaks in gfs2_iomap_get() and gfs2_iomap_alloc().]",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:15.640"
   },
   {
@@ -13659,36 +13631,36 @@
   {
     "id": "CVE-2026-46059",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: nSVM: Always use NextRIP as vmcb02's NextRIP after first L2 VMRUN\n\nFor guests with NRIPS disabled, L1 does not provide NextRIP when running\nan L2 with an injected soft interrupt, instead it advances the current RIP\nbefore running it. KVM uses the current RIP as the NextRIP in vmcb02 to\nemulate a CPU without NRIPS.\n\nHowever, after L2 runs the first time, NextRIP will be updated by the CPU\nand/or KVM, and the current RIP is no longer the correct value to use in\nvmcb02.  Hence, after save/restore, use the current RIP if and only if a\nnested run is pending, otherwise use NextRIP.  Give soft_int_next_rip the\nsame treatment, as it's the same logic, just for a narrower use case.\n\n[sean: give soft_int_next_rip the same treatment]",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:25.650"
   },
   {
     "id": "CVE-2026-46060",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: qat - fix IRQ cleanup on 6xxx probe failure\n\nWhen adf_dev_up() partially completes and then fails, the IRQ\nhandlers registered during adf_isr_resource_alloc() are not detached\nbefore the MSI-X vectors are released.\n\nSince the device is enabled with pcim_enable_device(), calling\npci_alloc_irq_vectors() internally registers pcim_msi_release() as a\ndevres action. On probe failure, devres runs pcim_msi_release() which\ncalls pci_free_irq_vectors(), tearing down the MSI-X vectors while IRQ\nhandlers (for example 'qat0-bundle0') are still attached. This causes\nremove_proc_entry() warnings:\n\n    [   22.163964] remove_proc_entry: removing non-empty directory 'irq/143', leaking at least 'qat0-bundle0'\n\nMoving the devm_add_action_or_reset() before adf_dev_up() does not solve\nthe problem since devres runs in LIFO order and pcim_msi_release(),\nregistered later inside adf_dev_up(), would still fire before\nadf_device_down().\n\nFix by calling adf_dev_down() explicitly when adf_dev_up() fails, to\nproperly free IRQ handlers before devres releases the MSI-X vectors.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:25.757"
   },
   {
     "id": "CVE-2026-46061",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\njbd2: fix deadlock in jbd2_journal_cancel_revoke()\n\nCommit f76d4c28a46a (\"fs/jbd2: use sleeping version of\n__find_get_block()\") changed jbd2_journal_cancel_revoke() to use\n__find_get_block_nonatomic() which holds the folio lock instead of\ni_private_lock. This breaks the lock ordering (folio -> buffer) and\ncauses an ABBA deadlock when the filesystem blocksize < pagesize:\n\n     T1                                T2\next4_mkdir()\n ext4_init_new_dir()\n  ext4_append()\n   ext4_getblk()\n    lock_buffer()    <- A\n                                   sync_blockdev()\n                                    blkdev_writepages()\n                                     writeback_iter()\n                                      writeback_get_folio()\n                                       folio_lock()   <- B\n     ext4_journal_get_create_access()\n      jbd2_journal_cancel_revoke()\n       __find_get_block_nonatomic()\n        folio_lock()  <- B\n                                     block_write_full_folio()\n                                      lock_buffer()   <- A\n\nThis can occasionally cause generic/013 to hang.\n\nFix by only calling __find_get_block_nonatomic() when the passed\nbuffer_head doesn't belong to the bdev, which is the only case that we\nneed to look up its bdev alias. Otherwise, the lookup is redundant since\nthe found buffer_head is equal to the one we passed in.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:25.883"
   },
   {
     "id": "CVE-2026-46062",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nntfs3: fix integer overflow in run_unpack() volume boundary check\n\nThe volume boundary check `lcn + len > sbi->used.bitmap.nbits` uses raw\naddition which can wrap around for large lcn and len values, bypassing\nthe validation.  Use check_add_overflow() as is already done for the\nadjacent prev_lcn + dlcn and vcn64 + len checks added by commit\n3ac37e100385 (\"ntfs3: Fix integer overflow in run_unpack()\").\n\nFound by fuzzing with a source-patched harness (LibAFL + QEMU).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:26.063"
   },
   {
     "id": "CVE-2026-46063",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nx86/shstk: Prevent deadlock during shstk sigreturn\n\nDuring sigreturn the shadow stack signal frame is popped. The kernel does\nthis by reading the shadow stack using normal read accesses. When it can't\nassume the memory is shadow stack, it takes extra steps to makes sure it is\nreading actual shadow stack memory and not other normal readable memory. It\ndoes this by holding the mmap read lock while doing the access and checking\nthe flags of the VMA.\n\nUnfortunately that is not safe. If the read of the shadow stack sigframe\nhits a page fault, the fault handler will try to recursively grab another\nmmap read lock. This normally works ok, but if a writer on another CPU is\nalso waiting, the second read lock could fail and cause a deadlock.\n\nFix this by not holding mmap lock during the read access to userspace.\n\nInstead use mmap_lock_speculate_...() to watch for changes between dropping\nmmap lock and the userspace access. Retry if anything grabbed an mmap write\nlock in between and could have changed the VMA.\n\nThese mmap_lock_speculate_...() helpers use mm::mm_lock_seq, which is only\navailable when PER_VMA_LOCK is configured. So make X86_USER_SHADOW_STACK\ndepend on it. On x86, PER_VMA_LOCK is a default configuration for SMP\nkernels. So drop support for the other configs under the assumption that\nthe !SMP shadow stack user base does not exist.\n\nCurrently there is a check that skips the lookup work when the SSP can be\nassumed to be on a shadow stack. While reorganizing the function, remove\nthe optimization to make the tricky code flows more common, such that\nissues like this cannot escape detection for so long.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:26.480"
   },
   {
@@ -24880,8 +24852,8 @@
   {
     "id": "CVE-2026-10611",
     "description": "An authentication bypass vulnerability exists in MISP when LDAP mixed authentication is enabled with OTP enforcement. In deployments configured with LdapAuth.mixedAuth=true and Security.require_otp=true, users authenticated through an authentication plugin, such as LDAP, may have their authenticated session established during the application beforeFilter phase before the normal login flow enforces the OTP challenge.\n\n\n\nAs a result, an attacker with valid primary authentication credentials could bypass the required OTP step by authenticating through the plugin-backed login flow and then directly accessing another application URL instead of completing the OTP verification page. This allows access to the application as the affected user without providing a valid TOTP, HOTP, or email OTP code.\n\n\n\nThe issue affects configurations where plugin-based authentication is enabled and OTP is expected to be mandatory. The fix ensures that OTP requirements are checked immediately after plugin authentication and before the user session is established, redirecting users to the appropriate OTP challenge when required.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Misp",
     "published": "2026-06-02T14:16:44.867"
   },
   {
@@ -36774,14 +36746,14 @@
     "id": "CVE-2026-42767",
     "description": "Issue summary: An attacker-controlled CMP (Certificate Management Protocol)\nserver could trigger a NULL pointer dereference in a CMP client application.\n\nImpact summary: A NULL pointer dereference causes a crash of the\napplication and a Denial of Service.\n\nAn attacker controlling a CMP server (or acting as a man-in-the-middle) could\ncraft a CMP response containing a CRMF (Certificate Request Message Format)\nCertRepMessage with an EncryptedValue structure where the symmAlg field\nhas an algorithm OID but no parameters field. When the OpenSSL CMP client\nprocesses this response, the NULL dereference occurs, causing a crash of\nthe CMP client.\n\nApplications that process untrusted CMP/CRMF messages may be affected.\n\nThe FIPS modules in 4.0, 3.6, 3.5, 3.4, and 3.0 are not affected by this\nissue, as the affected code is outside the OpenSSL FIPS module boundary.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:08.093"
   },
   {
     "id": "CVE-2026-42768",
     "description": "Issue summary: The CMS_decrypt and PKCS7_decrypt functions are vulnerable to\nBleichenbacher-style attack when an attacker is able to provide the CMS or\nS/MIME messages and observe the error code and/or decryption output.\n\nImpact summary: The Bleichenbacher-style attack allows an attacker to use the\nvictim's vulnerable application as a way to decrypt or sign messages with the\nvictim's private RSA key.\n\nThe attack is possible in 2 variants.\n\n1. The decryption API (CMS_decrypt(), PKCS7_decrypt()) is used without\nproviding the recipient certificate. In this case OpenSSL iterates over every\nKeyTransRecipientInfo (KTRI) without stopping at the first success.\n\nAn attacker who authors a message with two KTRI entries — the first one\nwrapping a real CEK under the victim's public key, the second with an\narbitrary probe ciphertext — obtains opportunity to iterate the 2nd KTRI to\nget a valid PKCS#1 v1.5 padding if the error code of the application is\navailable.\n\nThat is a Bleichenbacher oracle (Bleichenbacher, CRYPTO '98): an\nadaptive-chosen-ciphertext side channel from which the attacker decrypts any\nRSA ciphertext to the victim's key or forges any PKCS#1 v1.5 signature under\nit.\n\n2. When the decryption API (CMS_decrypt(), PKCS7_decrypt()) is provided with\nthe recipient certificate, and the recipient is not found, a random\nkey is substituted.\n\nAn attacker who authors a message and is able to compare both error code and\nthe result of the decryption, can mount a Bleichenbacher oracle.\n\nWe are not aware of any applications that provide a remote attacker\nan opportunity to mount an attack described in these scenarios. We consider\nthe existence of such application very unlikely, and for this reason this\nCVE has been evaluated as Low severity.\n\nTo avoid these attacks, when RSA PKCS#1 v1.5 Key Transport is in use, the\ninvoked EVP_PKEY_decrypt() will use the implicit rejection mechanism described\nin draft-irtf-cfrg-rsa-guidance. In previous OpenSSL releases the implicit\nrejection was explicitly disabled.\n\nThe implicit rejection mechanism always returns a plaintext value,\nthe symmetric key. This result is deterministic for the ciphertext and the\nprivate key.  The length of the decryption result can happen to match the\nlength of the key of the symmetric cipher that was used for the content\nencryption. When a certificate is not provided, the last RecipientInfo\nproducing a key that looks valid will be used. It may cause getting garbage\ncontent on decryption. As a proper way to deal with this a recipient\ncertificate has to be provided to identify the particular RecipientInfo for\ndecryption.\n\nThe FIPS modules in 4.0, 3.6, 3.5, and 3.4 are not affected by this issue, as\nCMS and S/MIME processing happens outside the OpenSSL FIPS module boundary.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:08.223"
   },
   {
@@ -36795,14 +36767,14 @@
     "id": "CVE-2026-42770",
     "description": "Issue summary: When EVP_PKEY_derive_set_peer() is called with a DHX (X9.42)\npeer key, the peer key is not properly checked for the subgroup membership.\n\nImpact summary: A malicious peer which presents an X9.42 key carrying the\nvictim's p and g parameters, a forged q = r (a small prime factor of the\ncofactor (p−1)/q_local), and a public value Y of order r can recover the\nvictim's private key after a small number of key exchange attempts.\n\nWhen EVP_PKEY_derive_set_peer() is called with a DHX (X9.42) peer key, the\nsubgroup membership check Y^q ≡ 1 (mod p) is performed using the peer's\nown q parameter, not the local key's q. The peer's domain parameters are\nthen matched against the domain parameters of the private key, but the value\nof q is not compared.\n\nA malicious peer who presents an X9.42 key carrying the victim's p, g,\na forged q = r (a small prime factor of the cofactor), and a public\nvalue Y of order r passes all checks. The shared secret then takes only\nr distinct values, leaking priv mod r. Repeating for each small-prime\nfactor of the cofactor and combining via CRT recovers the full private\nkey (Lim–Lee / small-subgroup-confinement attack).\n\nThe realistic attack surface is narrow: principally CMP deployments with\nlong-lived RA/CA DHX keys and bespoke enterprise or government applications\nusing X9.42 DHX static keys with interactive protocols and therefore this\nissue was assigned Low severity.\n\nThe FIPS modules in 4.0, 3.6, 3.5, 3.4, and 3.0 are affected by this\nissue.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:08.523"
   },
   {
     "id": "CVE-2026-42771",
     "description": "Issue summary: When the X509_VERIFY_PARAM_set1_email is called by an\napplication to validate a crafted e-mail address, such as during S/MIME\nmessage validation, an out of bounds read can happen.\n\nImpact summary: This out of bounds read will not directly exfiltrate\nthe data read to the attacker so the most likely result is a crash and\na Denial of Service.\n\nAn internal helper function called from X509_VERIFY_PARAM_[set|add]_email()\nused a wrong length when validating the local part of an email address.\nThis could cause the 64 octet limit on the local part of an email address\nto be not enforced, or cause an out of bound read and potentially a crash.\n\nThe bug is reachable via S-MIME validation with a crafted From: address\nsupplied in an email message that can potentially cause a crash.\n\nNo FIPS modules are affected by this issue as the affected code is outside\nthe OpenSSL FIPS module boundary.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:08.663"
   },
   {
@@ -37257,21 +37229,21 @@
     "id": "CVE-2026-45445",
     "description": "Issue summary: When an application drives an AES-OCB context through the\npublic EVP_Cipher() one-shot interface, the application-supplied\ninitialisation vector (IV) is silently discarded.\n\nImpact summary: Every message encrypted under the same key uses the\nsame effective nonce regardless of the IV supplied by the caller,\nresulting in (key, nonce) reuse and loss of confidentiality.  If the\nsame code path is used to compute the authentication tag, the tag\ndepends only on the (key, IV) pair and not on the plaintext or\nciphertext, allowing universal forgery of arbitrary ciphertext from a\nsingle captured message.\n\nOpenSSL provides two ways to drive a cipher: the documented streaming\ninterface (EVP_CipherUpdate / EVP_CipherFinal_ex) and a lower-level\none-shot, EVP_Cipher(), whose documentation explicitly recommends\nagainst use by applications in favour of EVP_CipherUpdate() and\nEVP_CipherFinal_ex().  The OCB provider's streaming handler flushes\nthe application-supplied IV into the OCB context before processing\ndata; the one-shot handler did not.  Every call to EVP_Cipher() on an\nAES-OCB context therefore ran with the all-zero key-derived offset\nstate left by cipher initialisation, regardless of the caller's IV.\n\nIf EVP_EncryptFinal_ex() is subsequently used to obtain the\nauthentication tag, the deferred IV setup runs at that point and\nclears the running checksum that should have been accumulated over the\nplaintext.  The resulting tag is a function of (key, IV) only and\nverifies against any ciphertext produced under the same (key, IV)\npair.\n\nThe OpenSSL SSL/TLS implementation is not affected: AES-OCB is not a\nTLS cipher suite, and libssl does not call EVP_Cipher() in any case.\nApplications that drive AES-OCB through the documented streaming AEAD\nAPI (EVP_CipherUpdate / EVP_CipherFinal_ex) are not affected.  Only\napplications that combine the AES-OCB cipher with the EVP_Cipher()\none-shot API are vulnerable.\n\nThe FIPS modules in 4.0, 3.6, 3.5, 3.4 and 3.0 are not affected by\nthis issue, as AES-OCB is outside the OpenSSL FIPS module boundary.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:18.993"
   },
   {
     "id": "CVE-2026-45446",
     "description": "Issue summary: The implementations of AES-SIV (RFC 5297) and AES-GCM-SIV\n(RFC 8452) mishandle the authentication of AAD (Additional Authenticated\nData) with an empty ciphertext allowing a forgery of such messages.\n\nImpact summary: An attacker can forge empty messages with arbitrary AAD\nto the victim's application using these ciphers.\n\nAES-SIV (RFC 5297) and AES-GCM-SIV (RFC 8452) are nonce-misuse-resistant AEAD\nmodes: they accept a key, nonce, optional AAD (bytes that are authenticated\nbut not encrypted), and plaintext, and produces ciphertext plus a 16-byte\ntag. On decrypt, `EVP_DecryptFinal_ex()` is documented to return success only\nif the tag is verified succesfully.\n\nIn OpenSSL's provider implementation of these ciphers, the expected tag is\ncomputed only when decryption function is invoked with non-empty data.\nIf the caller supplies AAD and then calls `EVP_DecryptFinal_ex()` without\ninvocation of the ciphertext update, which can happen when the received\nciphertext length is zero, the tag is never recalculated and still holds its\nall-zeros value.\n\nWhen AES-GCM-SIV is used, an attacker who sends arbitrary AAD, empty\nciphertext, and all-zeros tag passes authentication under any key they do not\nknow, single-shot. When AES-SIV is used, for mounting the attack it's\nnecessary for the application to reuse the decryption context without\nresetting the key.\n\nAES-SIV is implemented since OpenSSL 3.0. AES-GCM-SIV is implemented since\nOpenSSL 3.2.\n\nNo protocols implemented in OpenSSL itself (TLS/CMS/PKCS7/HPKE/QUIC) support\neither AES-GCM-SIV or AES-SIV. To mount an attack, the applications must\nimplement their own protocol and use the EVP interface. Also they must skip the\nciphertext update when a message with an empty ciphertext arrives.\n\nThe FIPS modules in 4.0, 3.6, 3.5, 3.4, and 3.0 are not affected by this\nissue, as these algorithms are not FIPS approved and the affected code is\noutside the OpenSSL FIPS module boundary.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:19.137"
   },
   {
     "id": "CVE-2026-45447",
     "description": "Issue summary: A specially crafted PKCS#7 or S/MIME signed message could\ntrigger a use-after-free during PKCS#7 signature verification.\n\nImpact summary: A use-after-free may result in process crashes, heap\ncorruption, or potentially remote code execution.\n\nWhen processing a PKCS#7 or S/MIME signed message, if the SignedData\ndigestAlgorithms field is present as an empty ASN.1 SET, OpenSSL may\nincorrectly free a caller-owned BIO during PKCS7_verify(). A subsequent\nuse of the BIO by the calling application results in a use-after-free\ncondition.\n\nIn the common case this occurs when the application later calls\nBIO_free() on the BIO originally passed to PKCS7_verify(). Depending\non allocator behavior and application-specific BIO usage patterns, this\nmay result in a crash or other memory corruption. In some application\ncontexts this may potentially be exploitable for remote code execution.\n\nApplications that process PKCS#7 or S/MIME signed messages using OpenSSL\nPKCS#7 APIs may be affected. Applications using the CMS APIs for this\nprocessing are not affected.\n\nThe FIPS modules in 4.0, 3.6, 3.5, 3.4, and 3.0 are not affected by this\nissue, as the affected code is outside the OpenSSL FIPS module boundary.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:19.277"
   },
   {
@@ -38629,14 +38601,14 @@
     "id": "CVE-2026-7383",
     "description": "Issue summary: A signed integer overflow when sizing the destination\nbuffer for Unicode output in ASN1_mbstring_ncopy() can lead to a heap\nbuffer overflow.\n\nImpact summary: A heap buffer overflow may lead to a crash or possibly\nattacker controlled code execution or other undefined behaviour.\n\nIn ASN1_mbstring_copy() and ASN1_mbstring_ncopy() the destination\nsize for Unicode output is computed in a signed int: by left shift\nof the input character count for BMPSTRING (UTF-16) and\nUNIVERSALSTRING (UTF-32), and by summing per-character byte counts\nfor UTF8STRING. The calculation overflows when the input reaches\naround 2^30 characters. In the worst case (UNIVERSALSTRING at 2^30\ncharacters) the size wraps to zero, OPENSSL_malloc(1) is called, and\nthe subsequent character copy writes several gigabytes past the\none-byte allocation.\n\nX.509 certificate processing routes through ASN1_STRING_set_by_NID(),\nwhose DIRSTRING_TYPE mask excludes UNIVERSALSTRING and whose per-NID\nsize limits cap the input length; no network protocol or\ncertificate-handling path in OpenSSL exercises the overflow.\nTriggering the bug requires an application that calls\nASN1_mbstring_copy() or ASN1_mbstring_ncopy() directly, or registers\na custom string type via ASN1_STRING_TABLE_add(), with\nattacker-controlled input on the order of half a gigabyte or more.\nFor these reasons this issue was assigned Low severity.\n\nThe FIPS modules in 4.0, 3.6, 3.5, 3.4 and 3.0 are not affected by\nthis issue, as the affected code is outside the OpenSSL FIPS module\nboundary.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:50.337"
   },
   {
     "id": "CVE-2026-9076",
     "description": "Issue summary: When CMS password-based decryption (RFC 3211 / PWRI key unwrap)\nprocesses attacker-supplied CMS data, an attacker-chosen stream-mode KEK\ncipher can trigger a heap out-of-bounds read in kek_unwrap_key().\n\nImpact summary: A heap buffer over-read may trigger a crash which leads to\nDenial of Service for an application if the input buffer ends at a memory\npage boundary and the following page is unmapped. There is no information\ndisclosure as the over-read bytes are not revealed to the attacker.\n\nThe key unwrapping function performs a check-byte test as specified in the\nRFC that reads 7 bytes from a heap allocation that is based on the wrapped\nkey length from the message. There is a minimum length check based on the\nblock length of the wrapping cipher. However the cipher is selected from\nan OID carried in the attacker's PWRI keyEncryptionAlgorithm with no\nrequirement that the cipher be a block cipher. When an attacker selects\na stream-mode cipher the guard will be ineffective and the allocated buffer\ncontaining the unwrapped key can be too small to fit the check-bytes\nspecified in the RFC and a buffer over-read can happen.\n\nApplications calling CMS_decrypt() or CMS_decrypt_set1_password()\n(equivalently openssl cms -decrypt -pwri_password ...) on untrusted CMS\ndata are vulnerable to this issue. No password knowledge is required: the\nover-read happens during the unwrap attempt before any authentication\nsucceeds.\n\nThe over-read is limited to a few bytes and is not written to output, so\nthere is no information disclosure. Triggering a crash requires the\nallocation to border unmapped memory, which is unlikely with the normal\nallocator.\n\nThe FIPS modules are not affected by this issue.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openssl",
     "published": "2026-06-09T17:17:50.997"
   },
   {
@@ -44012,7 +43984,7 @@
     "id": "CVE-2026-46690",
     "description": "unbounded_spsc is an \"unbounded\" extension of bounded_spsc_queue. In versions 0.2.0 and prior, sender::send pointer-as-value transmute causes OOB read and fake-Arc drop under TX/RX race. At time of publication, there are no publicly available patches.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Unbounded-spsc",
     "published": "2026-06-12T16:16:29.197"
   },
   {
@@ -45090,140 +45062,140 @@
     "id": "CVE-2026-53820",
     "description": "OpenClaw before 2026.5.12 contains an exec denylist bypass vulnerability in the bundle MCP loopback session-spawn path that allows authenticated callers to bypass intended command restrictions. Attackers can reach the affected bundled MCP session-spawn path to start sessions with broader command reach than intended.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:53.027"
   },
   {
     "id": "CVE-2026-53821",
     "description": "OpenClaw before 2026.5.18 accepts WebSocket client-declared operator scopes before binding to server-approved pairing or trusted-proxy authorization baseline. Unpaired or restricted trusted-proxy Control UI clients can obtain cached operator.admin authority on live WebSocket connections to execute admin-gated Gateway RPCs.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:53.173"
   },
   {
     "id": "CVE-2026-53822",
     "description": "OpenClaw before 2026.5.18 contains a command injection vulnerability where shell wrapper argv could change between approval and execution. Attackers can rebuild command arguments after allowlist approval to execute unapproved command shapes, potentially bypassing security controls.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:53.317"
   },
   {
     "id": "CVE-2026-53823",
     "description": "OpenClaw before 2026.5.3 contains a privilege escalation vulnerability in the allowFrom feature that binds to mutable Slack display names. Attackers with Slack account access can change display name metadata to match policy entries, potentially gaining unauthorized agent access intended for other identities.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:53.463"
   },
   {
     "id": "CVE-2026-53824",
     "description": "OpenClaw before 2026.4.24 contains a token revocation vulnerability allowing callers with revoked slash tokens to continue executing commands during monitor refresh windows. Attackers can exploit stale token acceptance to invoke slash command behavior briefly after token revocation, potentially executing unauthorized actions depending on operator configuration.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:53.613"
   },
   {
     "id": "CVE-2026-53825",
     "description": "OpenClaw before 2026.4.7 contains an arbitrary file read vulnerability in the memory-wiki ingest feature that allows authenticated Gateway operators with operator.write scope to read local files outside intended ingest sources. Attackers with operator.write access can specify arbitrary local file paths to import file content into wiki memory, bypassing access restrictions.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:53.767"
   },
   {
     "id": "CVE-2026-53826",
     "description": "OpenClaw before 2026.4.26 contains an information disclosure vulnerability in sandboxed session spawning that exposes the real workspace path to child prompts. Attackers can exploit this by spawning child sessions from sandboxed parents to reveal host workspace location or related memory context to child models.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:53.913"
   },
   {
     "id": "CVE-2026-53827",
     "description": "OpenClaw before 2026.5.2 contains a credential exposure vulnerability in message.action forwarding that allows model-controlled metadata to forward action payloads with Gateway credentials to attacker-supplied loopback URLs. Remote attackers can intercept Gateway tokens and action payloads by providing malicious loopback targets through model-controlled action metadata.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:54.060"
   },
   {
     "id": "CVE-2026-53828",
     "description": "OpenClaw before 2026.5.6 contains an authorization bypass vulnerability in native command handling that allows authenticated senders to execute owner-only commands without proper policy enforcement. Attackers can trigger native command handling to bypass the configured owner-command access control, potentially executing privileged commands from unauthorized users.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:54.203"
   },
   {
     "id": "CVE-2026-53829",
     "description": "OpenClaw before 2026.5.18 contains an approval display truncation vulnerability allowing authenticated users to hide command suffixes from approvers. Attackers can submit oversized exec commands with benign prefixes and malicious suffixes to execute unauthorized operations after approval.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:54.347"
   },
   {
     "id": "CVE-2026-53830",
     "description": "OpenClaw before 2026.4.22 contains a webhook secret revocation bypass vulnerability allowing callers with old Slack and Zalo webhook secrets to remain active after secrets.reload. Attackers can exploit the stale-secret window to deliver webhook events after operator-expected secret revocation, potentially accepting previous credentials.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:54.490"
   },
   {
     "id": "CVE-2026-53831",
     "description": "OpenClaw before 2026.5.18 contains a policy enforcement vulnerability in system.run safe-bin allowlist validation that allows shell expansion to modify command interpretation on POSIX nodes. Authenticated operators can exploit shell metacharacters in approved commands to read unintended node-local files and expose sensitive configuration data.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:54.643"
   },
   {
     "id": "CVE-2026-53832",
     "description": "OpenClaw before 2026.5.18 contains an identity header validation vulnerability allowing local same-host callers to forge trusted-proxy identity headers. Attackers with access to the proxy-facing Gateway port can supply forged identity headers to assume operator identity and potentially escalate privileges.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:54.790"
   },
   {
     "id": "CVE-2026-53833",
     "description": "OpenClaw before 2026.4.29 contains an authorization bypass vulnerability in the QQBot streaming command that allows authenticated senders to mutate configuration without explicit allowFrom restrictions. Attackers can modify QQBot streaming configuration outside intended admin policy by reaching the affected command without non-wildcard allowlist entry requirements.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:54.947"
   },
   {
     "id": "CVE-2026-53834",
     "description": "OpenClaw before 2026.4.27 contains an authorization bypass vulnerability in QQBot pre-dispatch slash commands that allows authenticated senders to skip allowFrom policy checks. Attackers can invoke slash commands before configured access control policies are applied, potentially triggering command handling from blocked senders depending on operator configuration.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:55.090"
   },
   {
     "id": "CVE-2026-53835",
     "description": "OpenClaw before 2026.5.6 contains a configuration enforcement bypass vulnerability in Feishu dynamic-agent bindings that allows authenticated senders to create or update bindings without honoring configured config-write controls. Attackers can exploit this by leveraging the dynamic-agent binding feature to change sender-agent binding state beyond intended policy, potentially enabling unauthorized binding modifications.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:55.237"
   },
   {
     "id": "CVE-2026-53836",
     "description": "OpenClaw before 2026.5.12 contains an allowlist bypass vulnerability in PowerShell encoded-command handling that allows attackers to execute encoded commands using abbreviated flag aliases not recognized by the allowlist parser. Remote authenticated operators can bypass execution allowlist checks by using unrecognized encoded-command alias forms to execute arbitrary PowerShell content.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:55.413"
   },
   {
     "id": "CVE-2026-53837",
     "description": "OpenClaw before 2026.5.6 contains an improper access control vulnerability in Mattermost event handlers that fails to validate channel type metadata. Attackers can bypass intended DM policy decisions by sending crafted Mattermost events missing channel type information to process restricted content.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:55.567"
   },
   {
     "id": "CVE-2026-53838",
     "description": "OpenClaw before 2026.5.27 contains a state mutation vulnerability in node pairing reconnection that allows paired nodes to confuse approval scope decisions. Attackers can exploit reconnection logic to restore or present broader node authority than intended, potentially bypassing approval restrictions.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:55.723"
   },
   {
     "id": "CVE-2026-53839",
     "description": "OpenClaw before 2026.5.7 contains a hostname validation vulnerability in retry endpoint checks that allows matching hostname prefixes instead of exact hostnames. Attackers can exploit this by crafting a hostname prefix resembling a trusted host to send authentication material to untrusted endpoints.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-06-12T22:16:55.863"
   },
   {
@@ -48319,5 +48291,138 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-15T22:16:18.553"
+  },
+  {
+    "id": "CVE-2026-12205",
+    "description": "Crypt::DSA versions before 1.21 for Perl reused the nonce across signatures, leading to private-key recovery.\n\nCrypt::DSA::sign caches the per-signature nonce material in the Key object without ever clearing it.\n\nThe first sign() on a Key object picks a nonce, and every later sign() on that same object reuses it, producing an identical \"r\".\n\nKeys used to sign more than once with an affected version should be considered compromised.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-15T23:16:43.150"
+  },
+  {
+    "id": "CVE-2026-48599",
+    "description": "Authorization Bypass Through User-Controlled Key vulnerability in elixir-grpc grpc allows authenticated attackers to access or modify resources belonging to other users by smuggling a conflicting value for any path-bound field via the query string or request body.\n\nIn 'Elixir.GRPC.Server.Transcode':map_request/5 (lib/grpc/server/transcode.ex), all three clauses use Map.merge/2 with path bindings as the first argument, giving them the lowest merge precedence. A request such as GET /users/me/profile?user_id=victim (or a POST with {\"user_id\": \"victim\"} when body: \"*\") yields a decoded protobuf struct where the path-bound field carries the attacker-supplied value rather than the router-extracted value. Any handler that uses the path-bound field for authorization, multi-tenancy scoping, or ownership checks is silently bypassed.\n\nThis issue affects grpc from 0.8.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-15T23:16:45.377"
+  },
+  {
+    "id": "CVE-2026-48723",
+    "description": "The browserstack-cypress-cli is BrowserStack's CLI which allows users to run Cypress tests on BrowserStack. Versions prior to 1.36.4 are vulnerable to OS command injection via the cypress_config_file configuration parameter. In readCypressConfigUtil.js, the loadJsFile() function constructs a shell command by interpolating the user-controlled cypress_config_filepath value into a template literal, then executes it via child_process.execSync(). Shell metacharacters in the config path (specifically \" and ;) allow breaking out of the quoted argument and injecting arbitrary commands. This issue has been fixed in version 1.36.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-15T23:16:45.520"
+  },
+  {
+    "id": "CVE-2026-48853",
+    "description": "Deserialization of Untrusted Data and Allocation of Resources Without Limits or Throttling vulnerabilities in elixir-grpc grpc allow unauthenticated attackers to crash the BEAM node via atom table exhaustion and, when a decoded term flows into a call site that invokes it, achieve remote code execution on the server.\n\n'Elixir.GRPC.Codec.Erlpack':decode/2 (lib/grpc/codec/erlpack.ex) calls :erlang.binary_to_term/1 on the raw gRPC message body without the :safe option, no size bound, and no type guard. Any unauthenticated peer that sends a request with Content-Type: application/grpc+erlpack can send a crafted payload that mints arbitrary new atoms (which are never garbage-collected, exhausting the bounded atom table and crashing the VM) or that encodes a fun term which, if applied anywhere downstream, executes attacker-controlled code inside the server process.\n\nThis issue affects grpc from 0.4.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-15T23:16:45.663"
+  },
+  {
+    "id": "CVE-2026-48854",
+    "description": "Allocation of Resources Without Limits or Throttling vulnerability in elixir-grpc grpc allows unauthenticated attackers to exhaust the BEAM's memory and crash the server by streaming a large or slow-trickle unary request body.\n\n'Elixir.GRPC.Server.Adapters.Cowboy.Handler':read_full_body/3 (lib/grpc/server/adapters/cowboy/handler.ex) accumulates every received chunk into a single growing binary with no size cap. Additionally, when the client omits the grpc-timeout header, the per-chunk read timeout resolves to :infinity, allowing a slow-trickle client to keep the connection alive indefinitely while memory grows. A single connection is sufficient to exhaust server memory and crash the node.\n\nThis issue affects grpc from 0.3.1 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-15T23:16:45.813"
+  },
+  {
+    "id": "CVE-2026-53430",
+    "description": "Improper Handling of Highly Compressed Data (Data Amplification) vulnerability in elixir-grpc grpc (GRPC.Compressor.Gzip, GRPC.Message modules) allows a denial of service via a gzip decompression bomb.\n\nThis vulnerability is associated with program files lib/grpc/compressor/gzip.ex, lib/grpc/message.ex and program routines 'Elixir.GRPC.Compressor.Gzip':decompress/1, 'Elixir.GRPC.Message':from_data/2.\n\n'Elixir.GRPC.Compressor.Gzip':decompress/1 calls :zlib.gunzip/1 directly on attacker-controlled bytes with no decompressed-size limit, ratio check, or incremental decoding. Because this module is the registered gzip GRPC.Compressor implementation, it is invoked automatically whenever an incoming gRPC frame carries the grpc-encoding: gzip header. :zlib.gunzip/1 allocates the entire decompressed result as a single binary, so a small highly compressible payload (for example a few kilobytes of zeros, which gzip compresses at roughly 1000:1) expands to multiple gigabytes inside a single call. The max_receive_message_length limit is enforced only against the already-decompressed message, so it provides no protection. An unauthenticated remote peer can send a single crafted frame to exhaust the BEAM node's heap and trigger an out-of-memory kill.\n\nThis issue affects grpc: from 0.4.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-15T23:16:46.363"
+  },
+  {
+    "id": "CVE-2026-9258",
+    "description": "Improper validation of SSH host keys in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T00:16:35.460"
+  },
+  {
+    "id": "CVE-2026-9259",
+    "description": "Improper validation of server certificates in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T00:16:35.623"
+  },
+  {
+    "id": "CVE-2026-9260",
+    "description": "Use of hard-coded cryptographic keys in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T00:16:35.757"
+  },
+  {
+    "id": "CVE-2026-9261",
+    "description": "Use of weak SSH cryptographic algorithms in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T00:16:35.887"
+  },
+  {
+    "id": "CVE-2026-9262",
+    "description": "Use of a non-secure protocol as the default FTP configuration in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T00:16:36.020"
+  },
+  {
+    "id": "CVE-2026-12161",
+    "description": "Improper input validation in the SSH Elevate Shell feature in \nDevolutions Remote Desktop Manager 2026.2.7 allows an authenticated user\n with permission to create or modify a shared SSH entry to execute \narbitrary commands on a remote SSH host using stored elevation \ncredentials via a crafted alternate username and user interaction with \nthe Elevate Shell action.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T01:16:22.950"
+  },
+  {
+    "id": "CVE-2026-12162",
+    "description": "Improper host validation in the social login autofill feature in \nDevolutions Remote Desktop Manager 2026.2.8 allows an attacker to \ndisclose stored social login credentials via a crafted web entry \npointing to a provider lookalike domain.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T01:16:23.937"
+  },
+  {
+    "id": "CVE-2026-1764",
+    "description": "A flaw was found in GNOME localsearch (previously known as tracker-miners) MP3 Extractor. When processing specially crafted MP3 files containing ID3v2.4 tags, a missing bounds check in the `extract_performers_tags` function can lead to a heap buffer overflow. This vulnerability allows a remote attacker to cause a Denial of Service (DoS) by triggering a read of unmapped memory. In some cases, it could also lead to information disclosure by reading visible heap data.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T02:16:17.103"
+  },
+  {
+    "id": "CVE-2026-1765",
+    "description": "A flaw was found in the `tracker-extract-mp3` component of GNOME localsearch (previously known as tracker-miners). This vulnerability, a heap buffer overflow, occurs when processing specially crafted MP3 files. A remote attacker could exploit this by providing a malicious MP3 file, leading to a Denial of Service (DoS) where the application crashes. It may also potentially expose sensitive information from the system's memory.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T02:16:18.170"
+  },
+  {
+    "id": "CVE-2026-1766",
+    "description": "A flaw was found in GNOME localsearch (previously known as tracker-miners) MP3 Extractor, specifically within the tracker-extract-mp3 component. This heap buffer overflow vulnerability occurs when processing specially crafted MP3 files containing malformed ID3v2.3 COMM (Comment) tags. An attacker could exploit this by providing a malicious MP3 file, leading to a denial of service (DoS), which causes an application crash, and potentially disclosing sensitive information from the heap memory.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T02:16:18.313"
+  },
+  {
+    "id": "CVE-2026-1767",
+    "description": "A flaw was found in the GNOME localsearch (previously known as tracker-miners) MP3 Extractor `tracker-extract-mp3` component. A remote attacker could exploit this heap buffer overflow vulnerability by providing a specially crafted MP3 file containing malformed ID3 tags. This incorrect length calculation during the parsing of performer tags can lead to a read beyond the allocated buffer, potentially causing a Denial of Service (DoS) due to a crash or enabling information disclosure.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T02:16:18.447"
+  },
+  {
+    "id": "CVE-2026-42014",
+    "description": "A flaw was found in GnuTLS. The `gnutls_pkcs11_token_set_pin` function, used for changing the Security Officer PIN, can lead to a use-after-free vulnerability. This occurs when an attacker attempts to change the PIN with a NULL old PIN for a token that lacks a protected authentication path.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T02:16:19.140"
+  },
+  {
+    "id": "CVE-2026-7273",
+    "description": "A stack-based buffer overflow vulnerability in the CGI program of Zyxel GS1900-48HPv2 firmware versions through 2.90(ABTQ.1)C0 could allow a LAN-based, unauthenticated attacker to exploit the flaw and potentially execute OS commands via a crafted HTTP request.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T03:16:13.557"
   }
 ]
