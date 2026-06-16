@@ -1,26 +1,5 @@
 [
   {
-    "id": "CVE-2026-46720",
-    "description": "Net::Statsd::Tiny versions before 0.3.8 for Perl allowed metric injections.\n\nThe metric names and set values were not checked for newlines, colons or pipes. Metrics generated from untrusted sources could inject additional statsd metrics.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-17T18:16:27.397"
-  },
-  {
-    "id": "CVE-2026-8507",
-    "description": "Crypt::OpenSSL::PKCS12 versions through 1.94 for Perl have out-of-bounds (OOB) write flaws.\n\nWhen parsing a PKCS12 file, with a >= 1 GiB OCTET STRING (or BIT STRING) attribute on a SAFEBAG, via info() or info_as_hash(), a heap out-of-bounds write would be triggered with remote-code-execution potential (RCE) due to a signed integer overflow in the size calculation passed to Renew().",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-17T19:16:24.590"
-  },
-  {
-    "id": "CVE-2026-8721",
-    "description": "Crypt::OpenSSL::PKCS12 versions through 1.94 for Perl truncates passwords with embedded NULLs.\n\nPassword parameters in PKCS12.xs are declared char *, which routes through Perl's default typemap to SvPV_nolen.  The Perl length is discarded.\n\nThe C code (or OpenSSL internally) calls strlen() on the buffer.  Any password byte at or after the first NULL is silently dropped. Binary / KDF-derived / HMAC-derived passwords lose entropy without any warnings.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-17T19:16:25.310"
-  },
-  {
     "id": "CVE-2026-8764",
     "description": "A security vulnerability has been detected in H3C Magic B3 up to 100R002. This affects the function UpdateWanParams of the file /goform/aspForm. Such manipulation of the argument param leads to buffer overflow. The attack may be performed from remote. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
     "severity": "High",
@@ -5512,7 +5491,7 @@
     "id": "CVE-2026-9256",
     "description": "NGINX Plus and NGINX Open Source have a vulnerability in the ngx_http_rewrite_module module. This vulnerability exists when a rewrite directive uses a regex pattern with distinct, overlapping Perl-Compatible Regular Expression (PCRE) captures (for example, ^/((.*))$) and a replacement string that references multiple such captures (for example, $1$2) in a redirect or arguments context. An unauthenticated attacker along with conditions beyond their control can exploit this vulnerability by sending crafted HTTP requests. This may cause a heap buffer overflow in the NGINX worker process leading to a restart. Additionally, attackers can execute code on systems with Address Space Layout Randomization (ASLR) disabled or when the attacker can bypass ASLR. \n\n\nNote: Software versions which have reached End of Technical Support (EoTS) are not evaluated.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Nginx open source",
     "published": "2026-05-22T15:16:27.073"
   },
   {
@@ -13078,43 +13057,43 @@
   {
     "id": "CVE-2026-46030",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nEDAC/versalnet: Fix device_node leak in mc_probe()\n\nof_parse_phandle() returns a device_node reference that must be released with\nof_node_put(). The original code never freed r5_core_node on any exit path,\ncausing a memory leak.\n\nFix this by using the automatic cleanup attribute __free(device_node) which\nensures of_node_put() is called when the variable goes out of scope.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:21.913"
   },
   {
     "id": "CVE-2026-46031",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: ks8851: Reinstate disabling of BHs around IRQ handler\n\nIf the driver executes ks8851_irq() AND a TX packet has been sent, then\nthe driver enables TX queue via netif_wake_queue() which schedules TX\nsoftirq to queue packets for this device.\n\nIf CONFIG_PREEMPT_RT=y is set AND a packet has also been received by\nthe MAC, then ks8851_rx_pkts() calls netdev_alloc_skb_ip_align() to\nallocate SKBs for the received packets. If netdev_alloc_skb_ip_align()\nis called with BH enabled, then local_bh_enable() at the end of\nnetdev_alloc_skb_ip_align() will trigger the pending softirq processing,\nwhich may ultimately call the .xmit callback ks8851_start_xmit_par().\nThe ks8851_start_xmit_par() will try to lock struct ks8851_net_par\n.lock spinlock, which is already locked by ks8851_irq() from which\nks8851_start_xmit_par() was called. This leads to a deadlock, which\nis reported by the kernel, including a trace listed below.\n\nIf CONFIG_PREEMPT_RT is not set, then since commit 0913ec336a6c0\n(\"net: ks8851: Fix deadlock with the SPI chip variant\") the deadlock\ncan also be triggered without received packet in the RX FIFO. The\npending softirqs will be processed on return from\nspin_unlock_bh(&ks->statelock) in ks8851_irq(), which triggers the\ndeadlock as well.\n\nFix the problem by disabling BH around critical sections, including the\nIRQ handler, thus preventing the net_tx_action() softirq from triggering\nduring these critical sections. The net_tx_action() softirq is triggered\nonce BH are re-enabled and at the end of the IRQ handler, once all the\nother IRQ handler actions have been completed.\n\n __schedule from schedule_rtlock+0x1c/0x34\n schedule_rtlock from rtlock_slowlock_locked+0x548/0x904\n rtlock_slowlock_locked from rt_spin_lock+0x60/0x9c\n rt_spin_lock from ks8851_start_xmit_par+0x74/0x1a8\n ks8851_start_xmit_par from netdev_start_xmit+0x20/0x44\n netdev_start_xmit from dev_hard_start_xmit+0xd0/0x188\n dev_hard_start_xmit from sch_direct_xmit+0xb8/0x25c\n sch_direct_xmit from __qdisc_run+0x1f8/0x4ec\n __qdisc_run from qdisc_run+0x1c/0x28\n qdisc_run from net_tx_action+0x1f0/0x268\n net_tx_action from handle_softirqs+0x1a4/0x270\n handle_softirqs from __local_bh_enable_ip+0xcc/0xe0\n __local_bh_enable_ip from __alloc_skb+0xd8/0x128\n __alloc_skb from __netdev_alloc_skb+0x3c/0x19c\n __netdev_alloc_skb from ks8851_irq+0x388/0x4d4\n ks8851_irq from irq_thread_fn+0x24/0x64\n irq_thread_fn from irq_thread+0x178/0x28c\n irq_thread from kthread+0x12c/0x138\n kthread from ret_from_fork+0x14/0x28",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:22.057"
   },
   {
     "id": "CVE-2026-46032",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: nSVM: Triple fault if restore host CR3 fails on nested #VMEXIT\n\nIf loading L1's CR3 fails on a nested #VMEXIT, nested_svm_vmexit()\nreturns an error code that is ignored by most callers, and continues to\nrun L1 with corrupted state. A sane recovery is not possible in this\ncase, and HW behavior is to cause a shutdown. Inject a triple fault\ninstead, and do not return early from nested_svm_vmexit(). Continue\ncleaning up the vCPU state (e.g. clear pending exceptions), to handle\nthe failure as gracefully as possible.\n\nFrom the APM:\n\n  Upon #VMEXIT, the processor performs the following actions in order to\n  return to the host execution context:\n\n  ...\n\n  if (illegal host state loaded, or exception while loading host state)\n      shutdown\n  else\n      execute first host instruction following the VMRUN\n\nRemove the return value of nested_svm_vmexit(), which is mostly\nunchecked anyway.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:22.190"
   },
   {
     "id": "CVE-2026-46033",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: authencesn - reject short ahash digests during instance creation\n\nauthencesn requires either a zero authsize or an authsize of at least\n4 bytes because the ESN encrypt/decrypt paths always move 4 bytes of\nhigh-order sequence number data at the end of the authenticated data.\n\nWhile crypto_authenc_esn_setauthsize() already rejects explicit\nnon-zero authsizes in the range 1..3, crypto_authenc_esn_create()\nstill copied auth->digestsize into inst->alg.maxauthsize without\nvalidating it.  The AEAD core then initialized the tfm's default\nauthsize from that value.\n\nAs a result, selecting an ahash with digest size 1..3, such as\ncbcmac(cipher_null), exposed authencesn instances whose default\nauthsize was invalid even though setauthsize() would have rejected the\nsame value.  AF_ALG could then trigger the ESN tail handling with a\ntoo-short tag and hit an out-of-bounds access.\n\nReject authencesn instances whose ahash digest size is in the invalid\nnon-zero range 1..3 so that no tfm can inherit an unsupported default\nauthsize.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:22.313"
   },
   {
     "id": "CVE-2026-46034",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nvfio/cdx: Fix NULL pointer dereference in interrupt trigger path\n\nAdd validation to ensure MSI is configured before accessing cdx_irqs\narray in vfio_cdx_set_msi_trigger(). Without this check, userspace\ncan trigger a NULL pointer dereference by calling VFIO_DEVICE_SET_IRQS\nwith VFIO_IRQ_SET_DATA_BOOL or VFIO_IRQ_SET_DATA_NONE flags before\never setting up interrupts via VFIO_IRQ_SET_DATA_EVENTFD.\n\nThe vfio_cdx_msi_enable() function allocates the cdx_irqs array and\nsets config_msi to 1 only when called through the EVENTFD path. The\ntrigger loop (for DATA_BOOL/DATA_NONE) assumed this had already been\ndone, but there was no enforcement of this call ordering.\n\nThis matches the protection used in the PCI VFIO driver where\nvfio_pci_set_msi_trigger() checks irq_is() before the trigger loop.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:22.463"
   },
   {
     "id": "CVE-2026-46035",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm/page_alloc: return NULL early from alloc_frozen_pages_nolock() in NMI on UP\n\nOn UP kernels (!CONFIG_SMP), spin_trylock() is a no-op that\nunconditionally succeeds even when the lock is already held. As a\nresult, alloc_frozen_pages_nolock() called from NMI context can\nre-enter rmqueue() and acquire the zone lock that the interrupted\ncontext is already holding, corrupting the freelists.\n\nWith CONFIG_DEBUG_SPINLOCK on UP, the following BUG is triggered with\nthe slub_kunit test module:\n\n  BUG: spinlock trylock failure on UP on CPU#0, kunit_try_catch/243\n  [...]\n  Call Trace:\n   <NMI>\n   dump_stack_lvl+0x3f/0x60\n   do_raw_spin_trylock+0x41/0x50\n   _raw_spin_trylock+0x24/0x50\n   rmqueue.isra.0+0x2a9/0xa70\n   get_page_from_freelist+0xeb/0x450\n   alloc_frozen_pages_nolock_noprof+0x111/0x1e0\n   allocate_slab+0x42a/0x500\n   ___slab_alloc+0xa7/0x4c0\n   kmalloc_nolock_noprof+0x164/0x310\n   [...]\n   </NMI>\n\nFix this by returning NULL early when invoked from NMI on a UP kernel.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-05-27T14:17:22.617"
   },
   {
@@ -31069,7 +31048,7 @@
     "id": "CVE-2026-50589",
     "description": "In OpenStack Ironic 32 before 37.0.0, an unauthenticated malicious user could submit a crafted JSON string to some endpoints on the API or JSON-RPC service and effect a service crash.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Ironic",
     "published": "2026-06-05T00:17:09.213"
   },
   {
@@ -31978,8 +31957,8 @@
   {
     "id": "CVE-2026-11420",
     "description": "Two path traversal vulnerabilities in the Network Installation Service (NIS) of Altium Enterprise Server allow an unauthenticated network attacker to write arbitrary files to any writable location on the server filesystem and to read package archive files from the server. No authentication, session, or credentials are required.\n\n\n\n\nBecause content-controlled files can be written to web-accessible directories, or used to overwrite application binaries or configuration files, exploitation can be escalated to remote code execution in the context of the service account, and can disclose deployment package contents. Altium 365 cloud deployments are not affected, as the Network Installation Service is not part of the cloud offering.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "On-prem enterprise server",
     "published": "2026-06-05T20:17:29.350"
   },
   {
@@ -36555,7 +36534,7 @@
   },
   {
     "id": "CVE-2026-42915",
-    "description": "Incorrect calculation of buffer size in Windows TCP/IP allows an authorized attacker to deny service over an adjacent network.",
+    "description": "Incorrect calculation of buffer size in Windows VMSwitch allows an authorized attacker to deny service over an adjacent network.",
     "severity": "Medium",
     "tech": "Windows 10 21h2",
     "published": "2026-06-09T17:17:11.780"
@@ -38299,15 +38278,15 @@
   {
     "id": "CVE-2026-0466",
     "description": "Improper access control in AMD uProf may allow a local attacker with user privileges to write to the kernel-shared memory section, potentially resulting in crash or denial of service.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Uprof",
     "published": "2026-06-09T18:16:33.993"
   },
   {
     "id": "CVE-2026-28237",
     "description": "Unrestricted resource allocation in AMD uProf may be exploitable to consume excessive system resources, potentially leading to a loss of availability.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Uprof",
     "published": "2026-06-09T18:16:37.897"
   },
   {
@@ -39518,7 +39497,7 @@
     "id": "CVE-2026-41695",
     "description": "Spring Data Commons applications may be vulnerable to denial of service through resource exhaustion when attacker-controlled property path strings are passed to MappingContext property path resolution.\n\nAffected versions:\nSpring Data Commons 4.0.0 through 4.0.5; 3.5.0 through 3.5.11; 3.4.0 through 3.4.14.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Spring data commons",
     "published": "2026-06-10T00:16:50.683"
   },
   {
@@ -39553,7 +39532,7 @@
     "id": "CVE-2026-41711",
     "description": "Applications using Spring Data Commons may be vulnerable to a Denial of Service (DoS) attack leading to a StackOverflowException when parsing Sort parameters.\n\nAffected versions:\nSpring Data Commons 4.0.0 through 4.0.5; 3.5.0 through 3.5.11; 3.4.0 through 3.4.14; 3.3.0 through 3.3.16; 3.2.0 through 3.2.15; 3.1.0 through 3.1.14; 3.0.0 through 3.0.15; 2.7.0 through 2.7.19.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Spring data commons",
     "published": "2026-06-10T00:16:51.337"
   },
   {
@@ -39567,7 +39546,7 @@
     "id": "CVE-2026-41716",
     "description": "Spring Data's internal property-lookup cache accepts and permanently retains attacker-supplied strings as cache keys, allowing heap exhaustion through repeated requests.\n\nAffected versions:\nSpring Data Commons 2.7.0 through 2.7.19; 3.3.0 through 3.3.16; 3.4.0 through 3.4.14; 3.5.0 through 3.5.11; 4.0.0 through 4.0.5.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Spring data commons",
     "published": "2026-06-10T00:16:51.567"
   },
   {
@@ -39588,7 +39567,7 @@
     "id": "CVE-2026-41721",
     "description": "Spring Data Commons contains a vulnerability that can lead to a Denial of Service (DoS) condition if Spring Data Web Support is enabled in conjunction with a Controller method using @ProjectedPayload, when an attacker sends a specially crafted HTTP request that causes the application to allocate lots of memory.\n\nAffected versions:\nSpring Data Commons 4.0.0 through 4.0.5; 3.5.0 through 3.5.11; 3.4.0 through 3.4.14; 3.3.0 through 3.3.16; 3.2.0 through 3.2.15; 3.1.0 through 3.1.14; 3.0.0 through 3.0.15; 2.7.0 through 2.7.19.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Spring data commons",
     "published": "2026-06-10T00:16:51.917"
   },
   {
@@ -43585,7 +43564,7 @@
     "id": "CVE-2026-44967",
     "description": "OpenTelemetry-cpp is the C++ implementation of OpenTelemetry. Prior to release 1.27.0, the OTLP HTTP exporters (traces/metrics/logs) read the full HTTP response into an in-memory vector of bytes without a size cap. This is exploitable for memory exhaustion when the configured collector endpoint is attacker-controlled (or a network attacker can MITM the exporter connection). This vulnerability is fixed in opentelemetry-cpp release 1.27.0.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Opentelemetry",
     "published": "2026-06-12T16:16:27.973"
   },
   {
@@ -43934,29 +43913,29 @@
   {
     "id": "CVE-2026-44170",
     "description": "MariaDB server is a community developed fork of MySQL server. From versions 10.6.1 to before 10.6.26, 10.11.1 to before 10.11.17, 11.4.1 to before 11.4.11, 11.8.1 to before 11.8.7, and 12.3.1, MariaDB on WIndows with installed CONNECT engine and enabled REST support interpolated table HTTP attribute into the curl command line without proper sanitizing. This allows the user to execute shell commands on the server. This issue has been patched in versions 10.6.26, 10.11.17, 11.4.11, 11.8.7, and 12.3.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Mariadb",
     "published": "2026-06-12T18:16:33.853"
   },
   {
     "id": "CVE-2026-44171",
     "description": "MariaDB server is a community developed fork of MySQL server. From versions 10.6.1 to before 10.6.26, 10.11.1 to before 10.11.17, 11.4.1 to before 11.4.11, 11.8.1 to before 11.8.7, and 12.3.1, mbstream did not check for /../ in the path when unpacking the archive. A proper backup can never contain such paths, but a specially crafted archive could have caused mbstream to create files outside of the target-dir path. This issue has been patched in versions 10.6.26, 10.11.17, 11.4.11, 11.8.7, and 12.3.2.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Mariadb",
     "published": "2026-06-12T18:16:33.983"
   },
   {
     "id": "CVE-2026-44172",
     "description": "MariaDB server is a community developed fork of MySQL server. In versions 3.3.18 and 3.4.8, an application that was taking non-validated user input, escaping it with mysql_real_escape_string() and sending it to the database using text protocol and big5 character set was vulnerable to SQL injections, even though mysql_real_escape_string() was supposed to prevent them. This issue has been patched in versions 3.3.19 and 3.4.9.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Mariadb",
     "published": "2026-06-12T18:16:34.123"
   },
   {
     "id": "CVE-2026-44173",
     "description": "MariaDB server is a community developed fork of MySQL server. From versions 10.6.1 to before 10.6.26, 10.11.1 to before 10.11.17, 11.4.1 to before 11.4.11, 11.8.1 to before 11.8.7, and 12.3.1, MariaDB allowed SELECT ... INTO OUTFILE and SELECT ... INTO DUMPFILE without verifying the FILE privilege if the FROM clause contained only subqueries. This issue has been patched in versions 10.6.26, 10.11.17, 11.4.11, 11.8.7, and 12.3.2.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Mariadb",
     "published": "2026-06-12T18:16:34.257"
   },
   {
@@ -43991,14 +43970,14 @@
     "id": "CVE-2026-48163",
     "description": "MariaDB server is a community developed fork of MySQL server. From versions 10.6.1 to before 10.6.27, 10.11.1 to before 10.11.18, 11.4.1 to before 11.4.12, 11.8.1 to before 11.8.8, and 12.3.1, during the SST the donor node is interpolating parameters that the joiner sent into the command line. Not all parameters were properly validated which could allow a malicious joiner to execute arbitrary shell commands on the donor side via the rsync SST method. This issue has been patched in versions 10.6.27, 10.11.18, 11.4.12, 11.8.8, and 12.3.2.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Mariadb",
     "published": "2026-06-12T18:16:35.037"
   },
   {
     "id": "CVE-2026-48165",
     "description": "MariaDB server is a community developed fork of MySQL server. From versions 10.6.1 to before 10.6.27, 10.11.1 to before 10.11.18, 11.4.1 to before 11.4.12, 11.8.1 to before 11.8.8, and 12.3.1, a high-privileged MariaDB user could've used wsrep_sst_receive_address or wsrep_sst_donor global system variables to execute shell commands as the uid of the mariadbd process on the galera joiner node. This issue has been patched in versions 10.6.27, 10.11.18, 11.4.12, 11.8.8, and 12.3.2.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Mariadb",
     "published": "2026-06-12T18:16:35.177"
   },
   {
@@ -44047,14 +44026,14 @@
     "id": "CVE-2026-41568",
     "description": "Moby is an open source container framework. In Docker Engine prior to version 29.5.1, Docker Daemon versions 28.5.2 and prior, and Moby Daemon prior to version 2.0.0-beta.14, a race condition during docker cp mount setup allows a malicious container to create empty files or directories at arbitrary absolute paths on the host filesystem. This issue has been patched in Docker Engine version 29.5.1 and Moby Daemon version 2.0.0-beta.14.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Engine",
     "published": "2026-06-12T19:16:26.907"
   },
   {
     "id": "CVE-2026-42306",
     "description": "Moby is an open source container framework. In Docker Engine prior to version 29.5.1, Docker Daemon versions 28.5.2 and prior, and Moby Daemon prior to version 2.0.0-beta.14, a race condition during docker cp mount setup allows a malicious container to redirect a bind mount target to an arbitrary host path, potentially overwriting host files or causing denial of service. This issue has been patched in Docker Engine version 29.5.1 and Moby Daemon version 2.0.0-beta.14.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Engine",
     "published": "2026-06-12T19:16:27.490"
   },
   {
@@ -44138,7 +44117,7 @@
     "id": "CVE-2026-53408",
     "description": "Improper Authorization in Handler for Custom URL Scheme in Zoom Workplace before version 7.0.4 for Android and before 7.0.3 for iOS may allow an unauthenticated user to conduct an escalation of privilege via network access.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Meeting software development kit",
     "published": "2026-06-12T19:16:30.093"
   },
   {
@@ -44404,7 +44383,7 @@
     "id": "CVE-2026-4870",
     "description": "IBM Qiskit SDK 0.43.0 through 2.5.0 could allow an attacker to trigger a segmentation fault leading to a denial of service due to uncontrolled recursion in the parser.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Qiskit software development kit",
     "published": "2026-06-12T21:16:23.963"
   },
   {
@@ -45734,7 +45713,7 @@
     "id": "CVE-2026-6517",
     "description": "Mattermost Desktop App versions <=6.1 5.5.13.0 fail to restrict the allow list of domains to which NTLM credentials were forwarded to in the Mattermost Desktop App which allows any user on a server without the image proxy enabled to intercept other users credentials via embedding an image that routes to an external web server. Mattermost Advisory ID: MMSA-2026-00651",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Mattermost desktop",
     "published": "2026-06-15T14:16:37.910"
   },
   {
@@ -45762,21 +45741,21 @@
     "id": "CVE-2026-5038",
     "description": "Impact: multer versions 2.0.0-alpha.1 through 2.1.1 and 3.0.0-alpha.1 are vulnerable to a Denial of Service when using diskStorage. Aborted or malformed multipart uploads leave orphaned partial files on disk because the Readable.pipe() call does not propagate the stream destroy signal to \nthe underlying fs.WriteStream. An attacker can exhaust disk space by triggering many aborted uploads, with no application bug required.\n\nPatches: Users should upgrade to multer 2.2.0 (2.x line) or 3.0.0-alpha.2 (3.x prerelease). Both versions track in-flight write streams and clean them up on the abort path.\n\nWorkarounds: None.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Multer",
     "published": "2026-06-15T16:16:34.423"
   },
   {
     "id": "CVE-2026-8683",
     "description": "Mattermost Desktop App versions <=6.1 5.5.13.0 fail to account for attempting to open extremely long URLs in the Mattermost Desktop App which allows a malicious server owner to crash the application via including a script to call window.open on a very large URL. Mattermost Advisory ID: MMSA-2026-00652",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Mattermost desktop",
     "published": "2026-06-15T16:16:34.700"
   },
   {
     "id": "CVE-2026-9595",
     "description": "Impact: When a user-configured proxy on webpack-dev-server has a broad context (e.g. /) and ws: true, it also intercepts the dev server's own HMR WebSocket and forwards it to the proxy target. This leaks the browser's cookies and Origin header to the backend, bypasses the dev server's Host/Origin validation, and corrupts the HMR socket (both HMR and the proxy end up writing to the same socket).\n\nPatches: Fixed in webpack-dev-server@5.2.5.\n\nWorkarounds: Scope user-defined proxy context to specific paths instead of /, or omit ws: true from the proxy entry when WebSocket forwarding is not required.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Webpack-dev-server",
     "published": "2026-06-15T16:16:35.227"
   },
   {
@@ -45867,63 +45846,63 @@
     "id": "CVE-2025-55641",
     "description": "A NULL pointer dereference in the gf_isom_copy_sample_info function (isomedia/isom_write.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:22.687"
   },
   {
     "id": "CVE-2025-55642",
     "description": "GPAC MP4Box v2.4 was discovered to contain a floating point exception in the avidmx_process function (isomedia/isom_write.c).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:23.257"
   },
   {
     "id": "CVE-2025-55643",
     "description": "A NULL pointer dereference in the TrackWriter handling component (filters/mux_isom.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:23.380"
   },
   {
     "id": "CVE-2025-55644",
     "description": "A heap use-after-free in the gf_node_get_tag function (scenegraph/base_scenegraph.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:23.490"
   },
   {
     "id": "CVE-2025-55645",
     "description": "A heap buffer overflow in the gf_cenc_set_pssh function (isomedia/drm_sample.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:23.600"
   },
   {
     "id": "CVE-2025-55647",
     "description": "An Out-of-Memory in the mp4_mux_cenc_insert_pssh function (filters/mux_isom.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:23.710"
   },
   {
     "id": "CVE-2025-55648",
     "description": "A heap buffer overflow in the gf_opus_parse_packet_header function (media_tools/av_parsers.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:23.817"
   },
   {
     "id": "CVE-2025-55649",
     "description": "A NULL pointer dereference in the gf_media_map_esd function (media_tools/isom_tools.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:23.923"
   },
   {
     "id": "CVE-2025-55650",
     "description": "A heap use-after-free in the gf_node_get_tag function (scenegraph/base_scenegraph.c) of GPAC MP4Box v2.4 allows attackers to cause a Denial of Service (DoS) via supplying a crafted MP4 file.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Gpac",
     "published": "2026-06-15T20:16:24.030"
   },
   {
@@ -46006,7 +45985,7 @@
   {
     "id": "CVE-2026-36521",
     "description": "PublicCMS V5.202506.d has a Cross Site Scripting (XSS) vulnerability in the site configuration management module.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:25.793"
   },
@@ -46034,49 +46013,49 @@
   {
     "id": "CVE-2026-37216",
     "description": "Ruoyi 4.8.2 is vulnerable to Cross Site Scripting (XSS) at the interface /system/notice/add.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:26.250"
   },
   {
     "id": "CVE-2026-38060",
     "description": "Tenda 5G03 V05.03.02.04 (Version 1.0) is vulnerable to Command injection in the function action_unlock_sim via the pin parameter.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:26.363"
   },
   {
     "id": "CVE-2026-38061",
     "description": "Tenda 5G03 V05.03.02.04 (Version 1.0) is vulnerable to Command injection in the function action_set_volume via the volume parameter.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:26.483"
   },
   {
     "id": "CVE-2026-38062",
     "description": "Tenda 5G03 V05.03.02.04 (Version 1.0) is vulnerable to Command injection in the function action_set_rat_mode via the ratMode parameter.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:26.583"
   },
   {
     "id": "CVE-2026-38063",
     "description": "Tenda 5G03 V05.03.02.04 (Version 1.0) is vulnerable to Command injection in the function action_radio_on_with_ia_apn via the ia parameter.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:26.687"
   },
   {
     "id": "CVE-2026-38064",
     "description": "Tenda 5G03 V05.03.02.04 (Version 1.0) is vulnerable to Command injection in the function action_dial_call via the dialNumber parameter.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:26.790"
   },
   {
     "id": "CVE-2026-38065",
     "description": "Tenda 5G03 V05.03.02.04 (Version 1.0) is vulnerable to Command injection in the function action_ims_on_with_apn via the ims_apn parameter.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:26.897"
   },
@@ -46111,7 +46090,7 @@
   {
     "id": "CVE-2026-39118",
     "description": "An issue in Iru, Inc Kandji Agent before v.4.7.5(5374) allows a local attacker to escalate privileges via a client validation gap to invoke restricted agent functionality.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:27.447"
   },
@@ -46125,7 +46104,7 @@
   {
     "id": "CVE-2026-39197",
     "description": "An issue in the /util/http/prelude.rs endpoint of Datadog, Inc Vector v0.54.0 allows attackers to cause a Denial of Service (DoS) via a crafted request or payload.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:27.677"
   },
@@ -46230,21 +46209,21 @@
   {
     "id": "CVE-2026-50874",
     "description": "An OS command injection vulnerability in the /manage/features/media component of kanishka-linux Reminiscence v0.3.0 allows attackers to execute arbitrary commands via supplying a crafted input.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:30.237"
   },
   {
     "id": "CVE-2026-50875",
     "description": "Incorrect access control in the /{form}/webhooks/{webhook} endpoint of Deck9 Input v2.0.1 allows authenticated attackers to arbitrarily modify or delete another tenant's webhook via a crafted request.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:30.367"
   },
   {
     "id": "CVE-2026-50876",
     "description": "A cross-site scripting (XSS) vulnerability in Deck9 Input v2.0.1 allows attackers to execute arbitrary web scripts or HTML via a crafted payload.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:30.500"
   },
@@ -46279,7 +46258,7 @@
   {
     "id": "CVE-2026-50881",
     "description": "Incorrect access control in the impworks Bonsai v6.0 allows authenticated attackers with Editor privileges to escalate privileges to Administrator and execute unauthorized account, password, and configuration changes.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:31.047"
   },
@@ -46300,7 +46279,7 @@
   {
     "id": "CVE-2026-50884",
     "description": "Incorrect access control in statping-ng v0.93.0 allows attackers to escalate privileges to Administrator and access sensitive components.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:31.370"
   },
@@ -46328,35 +46307,35 @@
   {
     "id": "CVE-2026-50888",
     "description": "An authenticated Server-Side Request Forgery (SSRF) in the custom scraper subsystem component of Benjamin Jonard Koillection v1.8.0 allows attackers to scan internal resources via supplying a crafted URL.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:31.793"
   },
   {
     "id": "CVE-2026-50889",
     "description": "An input handling flaw in the HTTP refresh token process of LLDAP v0.6.2 allows attackers to cause a Denial of Service (DoS) via sending a crafted refresh-token header.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:31.897"
   },
   {
     "id": "CVE-2026-50890",
     "description": "Bernd Bestel grocy v4.6.0 was discovered to contain a SQL injection vulnerability in the product-group parameter at /stockreports/spendings. This vulnerability allows attackers to access sensitive database information via a crafted SQL statement.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:32.003"
   },
   {
     "id": "CVE-2026-50891",
     "description": "Incorrect access control in the /admin/api/config component of Filestash v0.4.0 allows attackers to escalate privileges via sending a crafted request.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:32.110"
   },
   {
     "id": "CVE-2026-50892",
     "description": "Incorrect access control in the \"Let's Encrypt\" certificate download endpoint of Nginx Proxy Manager v2.14.0 allows authenticated attackers to obtain the TLS private key material via a crafted GET request.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-15T20:16:32.210"
   },
@@ -47896,14 +47875,14 @@
   {
     "id": "CVE-2026-11832",
     "description": "Dancer2::Plugin::Auth::OAuth versions before 0.22 for Perl default to a predictable nonce.\n\nThe default nonce was generated using an MD5 hash of the epoch time, which is predictable.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T22:16:15.400"
   },
   {
     "id": "CVE-2026-12087",
     "description": "Socket versions before 2.041 for Perl have an out-of-bounds heap read.\n\nIn Socket.xs, pack_ip_mreq_source() checks the length of its source argument before the argument is read, so the check tests the byte length carried over from the preceding multiaddr argument instead. Both addresses occupy a 4-byte field, so a valid multiaddr lets a source of any length pass the check, and the source is then copied into the 4-byte imr_sourceaddr field with a fixed-size copy. A source shorter than 4 bytes is not rejected, and the copy reads up to 3 bytes past the end of its buffer.\n\nCalling pack_ip_mreq_source() with a source value shorter than 4 bytes copies adjacent heap memory into the returned packed structure.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T22:16:16.197"
   },
@@ -47945,7 +47924,7 @@
   {
     "id": "CVE-2026-12205",
     "description": "Crypt::DSA versions before 1.21 for Perl reused the nonce across signatures, leading to private-key recovery.\n\nCrypt::DSA::sign caches the per-signature nonce material in the Key object without ever clearing it.\n\nThe first sign() on a Key object picks a nonce, and every later sign() on that same object reuses it, producing an identical \"r\".\n\nKeys used to sign more than once with an affected version should be considered compromised.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-15T23:16:43.150"
   },
@@ -48022,15 +48001,15 @@
   {
     "id": "CVE-2026-12161",
     "description": "Improper input validation in the SSH Elevate Shell feature in \nDevolutions Remote Desktop Manager 2026.2.7 allows an authenticated user\n with permission to create or modify a shared SSH entry to execute \narbitrary commands on a remote SSH host using stored elevation \ncredentials via a crafted alternate username and user interaction with \nthe Elevate Shell action.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Remote desktop manager",
     "published": "2026-06-16T01:16:22.950"
   },
   {
     "id": "CVE-2026-12162",
     "description": "Improper host validation in the social login autofill feature in \nDevolutions Remote Desktop Manager 2026.2.8 allows an attacker to \ndisclose stored social login credentials via a crafted web entry \npointing to a provider lookalike domain.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Remote desktop manager",
     "published": "2026-06-16T01:16:23.937"
   },
   {
@@ -48051,14 +48030,14 @@
     "id": "CVE-2026-1766",
     "description": "A flaw was found in GNOME localsearch (previously known as tracker-miners) MP3 Extractor, specifically within the tracker-extract-mp3 component. This heap buffer overflow vulnerability occurs when processing specially crafted MP3 files containing malformed ID3v2.3 COMM (Comment) tags. An attacker could exploit this by providing a malicious MP3 file, leading to a denial of service (DoS), which causes an application crash, and potentially disclosing sensitive information from the heap memory.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Localsearch",
     "published": "2026-06-16T02:16:18.313"
   },
   {
     "id": "CVE-2026-1767",
     "description": "A flaw was found in the GNOME localsearch (previously known as tracker-miners) MP3 Extractor `tracker-extract-mp3` component. A remote attacker could exploit this heap buffer overflow vulnerability by providing a specially crafted MP3 file containing malformed ID3 tags. This incorrect length calculation during the parsing of performer tags can lead to a read beyond the allocated buffer, potentially causing a Denial of Service (DoS) due to a crash or enabling information disclosure.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Localsearch",
     "published": "2026-06-16T02:16:18.447"
   },
   {
@@ -48350,302 +48329,302 @@
   },
   {
     "id": "CVE-2026-12289",
-    "description": "Privilege escalation in the Graphics: WebRender component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Privilege escalation in the Graphics: WebRender component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:29.173"
   },
   {
     "id": "CVE-2026-12290",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.267"
   },
   {
     "id": "CVE-2026-12291",
-    "description": "Use-after-free in the Networking: HTTP component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Use-after-free in the Networking: HTTP component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.363"
   },
   {
     "id": "CVE-2026-12292",
-    "description": "Incorrect boundary conditions in the Web Audio component. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
+    "description": "Incorrect boundary conditions in the Web Audio component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.457"
   },
   {
     "id": "CVE-2026-12293",
-    "description": "Use-after-free in the Graphics: WebGPU component. This vulnerability was fixed in Firefox 152.",
+    "description": "Use-after-free in the Graphics: WebGPU component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.553"
   },
   {
     "id": "CVE-2026-12294",
-    "description": "Sandbox escape in the DOM: Workers component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Sandbox escape in the DOM: Workers component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.643"
   },
   {
     "id": "CVE-2026-12295",
-    "description": "Sandbox escape in the DOM: Navigation component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Sandbox escape in the DOM: Navigation component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.737"
   },
   {
     "id": "CVE-2026-12296",
-    "description": "Sandbox escape in the Security: Process Sandboxing component. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
+    "description": "Sandbox escape in the Security: Process Sandboxing component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.833"
   },
   {
     "id": "CVE-2026-12297",
-    "description": "Sandbox escape due to incorrect boundary conditions in the Networking component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Sandbox escape due to incorrect boundary conditions in the Networking component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:29.927"
   },
   {
     "id": "CVE-2026-12298",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:30.040"
   },
   {
     "id": "CVE-2026-12299",
-    "description": "JIT miscompilation in the DOM: Core & HTML component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "JIT miscompilation in the DOM: Core & HTML component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:30.147"
   },
   {
     "id": "CVE-2026-12300",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:30.267"
   },
   {
     "id": "CVE-2026-12301",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:30.363"
   },
   {
     "id": "CVE-2026-12302",
-    "description": "Mitigation bypass in the DOM: Security component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
-    "severity": "Unknown",
+    "description": "Mitigation bypass in the DOM: Security component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:30.460"
   },
   {
     "id": "CVE-2026-12303",
-    "description": "Information disclosure due to incorrect boundary conditions in the Graphics: WebGPU component. This vulnerability was fixed in Firefox 152.",
+    "description": "Information disclosure due to incorrect boundary conditions in the Graphics: WebGPU component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:30.557"
   },
   {
     "id": "CVE-2026-12304",
-    "description": "Same-origin policy bypass in the Networking: Cookies component. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Same-origin policy bypass in the Networking: Cookies component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:30.643"
   },
   {
     "id": "CVE-2026-12305",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:30.743"
   },
   {
     "id": "CVE-2026-12306",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:30.833"
   },
   {
     "id": "CVE-2026-12307",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:30.933"
   },
   {
     "id": "CVE-2026-12308",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:31.053"
   },
   {
     "id": "CVE-2026-12309",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:31.180"
   },
   {
     "id": "CVE-2026-12310",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:31.380"
   },
   {
     "id": "CVE-2026-12311",
-    "description": "Information disclosure, sandbox escape in the Security: Process Sandboxing component. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "description": "Information disclosure, sandbox escape in the Security: Process Sandboxing component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Medium",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:31.677"
   },
   {
     "id": "CVE-2026-12312",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:31.810"
   },
   {
     "id": "CVE-2026-12313",
-    "description": "Information disclosure, sandbox escape in the Security: Process Sandboxing component. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
+    "description": "Information disclosure, sandbox escape in the Security: Process Sandboxing component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:31.920"
   },
   {
     "id": "CVE-2026-12314",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:32.037"
   },
   {
     "id": "CVE-2026-12315",
-    "description": "Mitigation bypass in the DOM: Security component. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Mitigation bypass in the DOM: Security component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:32.147"
   },
   {
     "id": "CVE-2026-12316",
-    "description": "Mitigation bypass in the DOM: Security component. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
+    "description": "Mitigation bypass in the DOM: Security component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:32.257"
   },
   {
     "id": "CVE-2026-12317",
-    "description": "Memory safety bug fixed in Firefox 152. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird 152. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:32.350"
   },
   {
     "id": "CVE-2026-12318",
-    "description": "Incorrect boundary conditions in the Libraries component in NSS. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
+    "description": "Incorrect boundary conditions in the Libraries component in NSS. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:32.463"
   },
   {
     "id": "CVE-2026-12319",
-    "description": "Denial-of-service in the Audio/Video: Playback component. This vulnerability was fixed in Firefox 152.",
+    "description": "Denial-of-service in the Audio/Video: Playback component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:32.563"
   },
   {
     "id": "CVE-2026-12320",
-    "description": "Information disclosure in the Password Manager component. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "description": "Information disclosure in the Password Manager component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "Medium",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:32.710"
   },
   {
     "id": "CVE-2026-12321",
-    "description": "JIT miscompilation in the JavaScript: WebAssembly component. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "description": "JIT miscompilation in the JavaScript: WebAssembly component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "Medium",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:32.823"
   },
   {
     "id": "CVE-2026-12322",
-    "description": "Clickjacking issue in the Widget: Gtk component. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "description": "Clickjacking issue in the Widget: Gtk component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "Medium",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:32.937"
   },
   {
     "id": "CVE-2026-12323",
-    "description": "Spoofing issue in the DOM: Core & HTML component. This vulnerability was fixed in Firefox 152.",
+    "description": "Spoofing issue in the DOM: Core & HTML component. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Firefox",
     "published": "2026-06-16T13:16:33.043"
   },
   {
     "id": "CVE-2026-12324",
-    "description": "Incorrect boundary conditions in the Graphics: CanvasWebGL component. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Incorrect boundary conditions in the Graphics: CanvasWebGL component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:33.153"
   },
   {
     "id": "CVE-2026-12325",
-    "description": "Denial-of-service in the Graphics: ImageLib component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Denial-of-service in the Graphics: ImageLib component. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:33.267"
   },
   {
     "id": "CVE-2026-12326",
-    "description": "Memory safety bugs present in Firefox 151 and Thunderbird 151. Some of these bugs showed evidence of memory corruption and we presume that with enough effort some of these could have been exploited to run arbitrary code. This vulnerability was fixed in Firefox 152.",
-    "severity": "Unknown",
+    "description": "Memory safety bugs present in Firefox 151 and Thunderbird 151. Some of these bugs showed evidence of memory corruption and we presume that with enough effort some of these could have been exploited to run arbitrary code. This vulnerability was fixed in Firefox 152 and Thunderbird 152.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:33.380"
   },
   {
     "id": "CVE-2026-12327",
-    "description": "Memory safety bugs present in Firefox ESR 140.11, Thunderbird ESR 140.11, Firefox 151 and Thunderbird 151. Some of these bugs showed evidence of memory corruption and we presume that with enough effort some of these could have been exploited to run arbitrary code. This vulnerability was fixed in Firefox 152 and Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bugs present in Firefox ESR 140.11, Thunderbird ESR 140.11, Firefox 151 and Thunderbird 151. Some of these bugs showed evidence of memory corruption and we presume that with enough effort some of these could have been exploited to run arbitrary code. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Thunderbird 152, and Thunderbird 140.12.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:33.473"
   },
   {
     "id": "CVE-2026-12328",
-    "description": "Memory safety bugs present in Firefox ESR 115.36, Firefox ESR 140.11, Thunderbird ESR 140.11, Firefox 151 and Thunderbird 151. Some of these bugs showed evidence of memory corruption and we presume that with enough effort some of these could have been exploited to run arbitrary code. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, and Firefox ESR 115.37.",
+    "description": "Memory safety bugs present in Firefox ESR 115.36, Firefox ESR 140.11, Thunderbird ESR 140.11, Firefox 151 and Thunderbird 151. Some of these bugs showed evidence of memory corruption and we presume that with enough effort some of these could have been exploited to run arbitrary code. This vulnerability was fixed in Firefox 152, Firefox ESR 140.12, Firefox ESR 115.37, Thunderbird 152, and Thunderbird 140.12.",
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:33.567"
   },
   {
     "id": "CVE-2026-12329",
-    "description": "Memory safety bug fixed in Firefox ESR 140.12. This vulnerability was fixed in Firefox ESR 140.12.",
-    "severity": "Unknown",
+    "description": "Memory safety bug fixed in Thunderbird ESR 140.12. This vulnerability was fixed in Firefox ESR 140.12 and Thunderbird 140.12.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:33.657"
   },
   {
     "id": "CVE-2026-12330",
-    "description": "Incorrect boundary conditions in the Internationalization component. This vulnerability was fixed in Firefox ESR 140.12 and Firefox ESR 115.37.",
-    "severity": "Unknown",
+    "description": "Incorrect boundary conditions in the Internationalization component. This vulnerability was fixed in Firefox ESR 140.12, Firefox ESR 115.37, and Thunderbird 140.12.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:33.747"
   },
   {
     "id": "CVE-2026-53899",
     "description": "Firefox for iOS used partial domain matching when attaching cookies to PDF requests, allowing a malicious site on a suffix domain to receive cookies belonging to the target site. This vulnerability was fixed in Firefox for iOS 152.0.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-16T13:16:37.420"
   },
@@ -48781,5 +48760,726 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-16T15:16:45.223"
+  },
+  {
+    "id": "CVE-2024-22451",
+    "description": "Dell Peripheral Manager, versions from 1.5.1 to 1.7.2, contain an uncontrolled search path element vulnerability. An attacker could potentially exploit this vulnerability through preloading malicious executable, leading to arbitrary code execution.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:27.697"
+  },
+  {
+    "id": "CVE-2024-24909",
+    "description": "Dell OpenManage Integration with Microsoft Windows Admin Center contains a Remote Code Execution vulnerability in the gateway plugin. A remote authenticated user could potentially exploit this vulnerability to escalate privileges. The malicious user may gain the ability to run arbitrary code remotely. This is a high severity vulnerability so Dell recommends customers to upgrade at the earliest opportunity.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:28.303"
+  },
+  {
+    "id": "CVE-2024-30476",
+    "description": "PowerStore contains a Stored Cross-Site Scripting Vulnerability in the PowerStore Manager. A remote authenticated low-privileged malicious actor could potentially exploit this vulnerability, it could lead to script execution in the client browser.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:28.433"
+  },
+  {
+    "id": "CVE-2024-38487",
+    "description": "api-gateway container running with root privilege would allow an attacker to escape the container and access host system to perform unintended actions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:28.560"
+  },
+  {
+    "id": "CVE-2025-71261",
+    "description": "An attacker with network-level access between the SUSE Virtualization \nand Rancher Manager in SUSE Harvester before 1.8.0 could interfere with the TLS handshake and abuse it \nto bypass TLS as a security control.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:30.193"
+  },
+  {
+    "id": "CVE-2026-10649",
+    "description": "A flaw was found in Pacemaker. An unauthenticated remote attacker can exploit an integer overflow vulnerability in the remote message decompression process. By sending a specially crafted compressed remote message before authentication, an attacker can cause memory corruption, leading to a denial of service (DoS) in the CIB remote listener. This can result in the affected service crashing.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:30.773"
+  },
+  {
+    "id": "CVE-2026-12003",
+    "description": "To allow builds of Python to be run from an in-tree layout (rather than\nan installed file layout), the VPATH variable is defined at build time\nand used to locate certain landmarks - specifically,\nModules/setup.local. When this landmark is found relative to VPATH\nrelative to the executable, Python assumes it is running in a source\ntree and generates a different default sys.path. This code remains in\nrelease builds, so that release-ready builds can be built in-tree.\n\nOn Windows, since builds are written to 'PCbuild/', the value of\nVPATH is set to '..\\..', which results in a landmark of\n'..\\..\\Modules\\setup.local'. This path is outside the install directory\nof Python, and may have different permissions, potentially allowing a\nlow-privilege user to create the landmark and an alternative `Lib`\nfolder that will be discovered by an otherwise restricted install.\n\nSuch a setup occurs with the legacy default install location for all\nusers (in the now superseded EXE installer), due to how Windows allows\nall users to create folders in the root directory of their OS drive.\n\nOur recommended mitigation on Windows is to migrate away from the\nlegacy installer and use the new [Python install\nmanager](https://www.python.org/downloads/latest/pymanager/) to install\nfor the current user. Installs where the directory two levels above the\nPython installation directory have equivalent permissions are unaffected\n(in general, a per-user install cannot be modified at all by other\nusers, removing any escalation of privilege risk, and could be directly\nmodified by a privileged user, making the potential tampering\nirrelevant). Alternative mitigations might include preemptively creating\nand restricting access to a `Modules` directory. Be aware that only 3.13\nand 3.14 will receive updated legacy installers - earlier fixes are only\nprovided as sources.\n\nPlatforms other than Windows allow VPATH to be overridden, but as they\ndon't usually use a separated directory in the build for binaries, are\nunlikely to have a landmark reference outside of the install directory.\n\nThe landmark detection involving VPATH is a fallback for when a more\nspecific landmark - .\\pybuilddir.txt - is absent, and was included for\ncompatibility. Future releases of Python will no longer include the\nfallback, and so builds will need to generate or preserve the\npybuilddir.txt file in order to work in-tree. This landmark file has\nbeen generated on Windows since 3.11, and on other platforms for longer.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:31.667"
+  },
+  {
+    "id": "CVE-2026-12412",
+    "description": "Rejected reason: loading template...",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:39.117"
+  },
+  {
+    "id": "CVE-2026-24155",
+    "description": "NVIDIA NeMo Framework for all platforms contains a code injection vulnerability. A successful exploit of this vulnerability might lead to code execution, escalation of privileges, information disclosure, and data tampering.",
+    "severity": "High",
+    "tech": "Nemo",
+    "published": "2026-06-16T17:16:39.440"
+  },
+  {
+    "id": "CVE-2026-24228",
+    "description": "NVIDIA NeMo Framework for Linux contains a vulnerability where an attacker may cause deserialization of untrusted data. A successful exploit of this vulnerability may lead to code execution, escalation of privileges, data tampering, and information disclosure.",
+    "severity": "High",
+    "tech": "Nemo",
+    "published": "2026-06-16T17:16:39.590"
+  },
+  {
+    "id": "CVE-2026-39926",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:40.370"
+  },
+  {
+    "id": "CVE-2026-39927",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:40.433"
+  },
+  {
+    "id": "CVE-2026-42089",
+    "description": "Yeoman Environment provides an API to discover, create, and run generators, and to configure where and how a generator is resolved. Versions 2.9.0 through 6.0.0 install missing local generator packages from caller-supplied package names without user confirmation. In downstream consumers that pass attacker-controlled project configuration into this path, this can result in arbitrary package installation and code execution during CLI bootstrap. The vulnerable method is installLocalGenerators(), which calls repository.install() directly without prompting the user. This issue has been fixed in version 6.0.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:40.740"
+  },
+  {
+    "id": "CVE-2026-44932",
+    "description": "Passing of unsanitized strings from DHCP replies into the wicked dhcp client before wicked 0.6.79 could be used by attackers operating a malicious DHCP server to execute code on the local machine.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:40.953"
+  },
+  {
+    "id": "CVE-2026-53776",
+    "description": "Perry before 0.5.1166 contains a JWT validation vulnerability that allows remote attackers to bypass token expiration by exploiting the unconditional setting of validate_exp = false in the verify_decode helper within the stdlib JWT verification path. Attackers in possession of a previously issued bearer token can present expired tokens to any jwt.verify() call and retain authenticated access indefinitely, bypassing force-expired sessions such as user logout or administrative revocation.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-16T17:16:42.620"
+  },
+  {
+    "id": "CVE-2024-39575",
+    "description": "update_disk_psu_baseline.sh requires password in plain text",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:29.040"
+  },
+  {
+    "id": "CVE-2026-10748",
+    "description": "An authenticated user with the nx-licensing-create privilege can upload a specially crafted license file to execute arbitrary operating system commands as the Nexus process user in Sonatype Nexus Repository 3 versions before 3.92.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:30.607"
+  },
+  {
+    "id": "CVE-2026-47748",
+    "description": "stable-diffusion.cpp is a pure C/C++ library for running diffusion model (Stable Diffusion, Flux, Wan, Qwen Image, Z-Image, and more) inference. Versions prior to master-584-0a7ae07 are vulnerable to an out-of-bounds reads error through PyTorch checkpoint pickle opcode parsing. The pickle .ckpt parser in src/model.cpp did not consistently check that enough input remained before reading opcode arguments or advancing the parser buffer with a crafted or truncated .ckpt file. Throughout the pickle parser, opcode handlers advanced the parser position with expressions such as buffer += N without first checking that buffer + N <= buffer_end. A truncated file could therefore cause reads past the end of the metadata buffer. LibFuzzer found crashes in under one second using malformed checkpoint inputs. Any application using affected stable-diffusion.cpp releases to load untrusted .ckpt model files could be vulnerable. The attack requires the victim or application to load a .ckpt file from an untrusted source, such as a downloaded model from a model sharing site. This issue has been fixed in version master-584-0a7ae07. If developers are unable to immediately update their applications, they can work around this issue by ensuring they do not load .ckpt checkpoint files from untrusted sources. They should prefer trusted model sources and safer formats such as .safetensors where possible.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:55.720"
+  },
+  {
+    "id": "CVE-2026-47749",
+    "description": "stable-diffusion.cpp is a pure C/C++ library for running diffusion model (Stable Diffusion, Flux, Wan, Qwen Image, Z-Image, and more) inference. Versions prior to master-584-0a7ae07 are vulnerable to heap buffer overflow in SHORT_BINUNICODE parsing for PyTorch checkpoint files. The pickle .ckpt parser in src/model.cpp contained a heap buffer overflow vulnerability in the SHORT_BINUNICODE opcode handler. The issue was caused by sign confusion on the opcode length field. A crafted .ckpt file could trigger memcpy with a very large length derived from a negative signed value, causing immediate heap corruption. Any application using affected stable-diffusion.cpp releases to load untrusted .ckpt model files could be vulnerable. A malicious checkpoint file could cause heap corruption through memcpy with an attacker-controlled length. This may lead to process crash and could potentially be leveraged for code execution depending on heap layout. The attack requires the victim or application to load a .ckpt file from an untrusted source, such as a downloaded model from a model sharing site. The issue has been resolved in version master-584-0a7ae07. If developers are unable to immediately update their applications they can work around this issue by not loading .ckpt checkpoint files from untrusted sources, and referring to trusted model sources and safer formats such as .safetensors where possible.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:55.867"
+  },
+  {
+    "id": "CVE-2026-47927",
+    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by an out-of-bounds read vulnerability that could lead to disclosure of sensitive memory. An attacker could leverage this vulnerability to disclose sensitive information. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:56.007"
+  },
+  {
+    "id": "CVE-2026-47934",
+    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by an out-of-bounds read vulnerability that could lead to disclosure of sensitive memory. An attacker could leverage this vulnerability to disclose sensitive information. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:56.130"
+  },
+  {
+    "id": "CVE-2026-47963",
+    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by an out-of-bounds read vulnerability that could lead to disclosure of sensitive memory. An attacker could leverage this vulnerability to disclose sensitive information. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:56.250"
+  },
+  {
+    "id": "CVE-2026-47964",
+    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by a Heap-based Buffer Overflow vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:56.367"
+  },
+  {
+    "id": "CVE-2026-48775",
+    "description": "LangGraph SQLite Checkpoint is an implementation of LangGraph CheckpointSaver that uses SQLite DB (both sync and async, via aiosqlite). In versions 4.1.0 and prior, the JsonPlusSerializer can reconstruct Python objects from JSON checkpoint payloads. Under conditions where someone could modify checkpoint bytes at rest in the backing store, the deserialization path could reconstruct objects beyond what the application expects, which could in turn result in code execution at checkpoint load time. This is a defense-in-depth issue. The affected behavior is reachable only when checkpoint bytes at rest in the backing store can be modified by an unauthorized party. In most deployments that prerequisite already implies a serious incident; the additional concern is turning \"checkpoint-store write access\" into code execution in the application runtime. This issue has been fixed in version 4.1.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:58.880"
+  },
+  {
+    "id": "CVE-2026-4367",
+    "description": "A flaw was found in libXpm. A local user with low privileges could exploit an Out-of-Bounds Read vulnerability in the `xpmNextWord()` function by processing a specially crafted or very small XPM (X PixMap) image file. This improper validation of file boundaries can cause an internal pointer to read beyond the file's end, leading to application crashes and Denial of Service conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:59.233"
+  },
+  {
+    "id": "CVE-2026-50656",
+    "description": "Microsoft is aware of an elevation of privilege in the Microsoft Malware Protection Engine in Microsoft Defender publicly referred to as &quot;RoguePlanet &quot;. We are working to provide a high quality security update that addresses this vulnerability. We will provide information in this CVE when the update is available.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:16:59.683"
+  },
+  {
+    "id": "CVE-2026-53840",
+    "description": "OpenClaw before 2026.5.12 contains an information disclosure vulnerability in streamable-http MCP servers that forwards operator-configured custom headers during cross-origin redirects. Attackers controlling or compromising an MCP endpoint can redirect requests to exfiltrate sensitive headers like API keys or tenant-routing credentials to attacker-controlled origins.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:00.863"
+  },
+  {
+    "id": "CVE-2026-53841",
+    "description": "OpenClaw before 2026.5.12 contains a cross-site scripting vulnerability in exported session HTML that preserves unsafe javascript: and data: links in generated content. Attackers can execute browser-side scripts if a trusted operator opens the exported file and activates a malicious link.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:00.993"
+  },
+  {
+    "id": "CVE-2026-53842",
+    "description": "OpenClaw before 2026.5.2 contains an environment variable injection vulnerability allowing workspace .env files to influence Python runtime selection through CLOUDSDK_PYTHON during Gmail setup gcloud execution. Attackers with repository access can manipulate the CLOUDSDK_PYTHON variable to execute setup through unintended local Python paths, potentially enabling arbitrary code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:01.127"
+  },
+  {
+    "id": "CVE-2026-53843",
+    "description": "OpenClaw before 2026.5.26 contains an authorization bypass vulnerability where a surviving pairing-scoped device session can re-establish node token authority after revocation. Attackers with a paired device can regain WebSocket node-level access without renewed approval, weakening revocation controls and maintaining unauthorized access longer than intended.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:01.257"
+  },
+  {
+    "id": "CVE-2026-53844",
+    "description": "OpenClaw before 2026.4.29 contains a session visibility check bypass vulnerability in shared memory search that allows authenticated callers to access memory entries without proper authorization. Attackers can skip session visibility guards on the search path to retrieve memory entries that should not be visible to their session.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:01.390"
+  },
+  {
+    "id": "CVE-2026-53845",
+    "description": "OpenClaw before 2026.5.6 contains a hook bypass vulnerability where skill commands routed through the affected dispatch path skip before-tool-call hook coverage. Attackers can exploit this by sending skill commands through the vulnerable dispatch path to bypass hook-based auditing and policy enforcement mechanisms.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:01.520"
+  },
+  {
+    "id": "CVE-2026-53846",
+    "description": "OpenClaw before 2026.4.29 contains a path traversal vulnerability in the install helper that allows workspace .env files to override the npm_execpath configuration used for bundled runtime dependency installation. Attackers with workspace access can execute unintended local package-manager executables during dependency setup to compromise the build environment.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:01.653"
+  },
+  {
+    "id": "CVE-2026-53847",
+    "description": "OpenClaw before 2026.5.6 contains a privilege escalation vulnerability in the Active Memory write scope that allows Gateway operators with operator.write access to modify global configuration without requiring operator.admin privileges. Attackers with operator.write access can exploit insufficient scope validation to apply unauthorized configuration changes beyond the intended write scope.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:01.790"
+  },
+  {
+    "id": "CVE-2026-53848",
+    "description": "OpenClaw before 2026.5.26 contains an exec allowlist bypass vulnerability allowing authenticated operators to execute wrapper-level side effects outside allowlisted command intent. Attackers can craft command requests that bypass allowlist validation by leveraging transparent command wrappers to perform unintended operations.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:01.920"
+  },
+  {
+    "id": "CVE-2026-53849",
+    "description": "OpenClaw before 2026.5.7 contains a privilege escalation vulnerability where the allowFrom feature improperly validates Discord account identity using mutable display names instead of immutable user IDs. Attackers with Discord accounts can change their display name to match a policy entry and gain unauthorized agent access intended for another Discord identity.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:02.053"
+  },
+  {
+    "id": "CVE-2026-53850",
+    "description": "OpenClaw before 2026.4.25 contains a control scope enforcement bypass vulnerability in the focus command that allows authenticated callers to execute the command without proper authorization checks. Attackers can trigger the focus command to change focus state outside intended caller authority, potentially enabling unauthorized operations depending on gateway configuration and input trust levels.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:02.183"
+  },
+  {
+    "id": "CVE-2026-53851",
+    "description": "OpenClaw before 2026.5.12 contains a notification bypass vulnerability allowing Slack reaction events to enter the agent pipeline despite disabled reaction notifications. Attackers can trigger unintended agent processing by sending reaction events when the feature is enabled, potentially leading to unauthorized processing of lower-trust input.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:02.327"
+  },
+  {
+    "id": "CVE-2026-53852",
+    "description": "OpenClaw before 2026.4.25 contains a scope containment bypass vulnerability in device re-pairing that allows authenticated operators to restore broader scopes than intended by submitting empty-scope re-pairing requests. Attackers can exploit this by sending re-pairing requests with empty scope sets to skip containment guards and retain unauthorized device access.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:02.510"
+  },
+  {
+    "id": "CVE-2026-53853",
+    "description": "OpenClaw before 2026.5.12 contains an argument pattern validation bypass in the exec allowlist that allows attackers to execute disallowed arguments for allowlisted executables on Linux and macOS systems. Attackers can bypass configured argPattern restrictions by directly invoking allowlisted executables with unrestricted arguments, potentially enabling unauthorized file access, network access, or command execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:02.650"
+  },
+  {
+    "id": "CVE-2026-53854",
+    "description": "OpenClaw before 2026.4.25 contains a privilege escalation vulnerability in internal and webchat command authentication that allows senders to inherit wildcard ownerAllowFrom state across channel boundaries. Attackers can exploit this by sending commands on affected internal or webchat paths to execute owner-style command behavior outside intended channel scope, potentially bypassing access controls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:02.780"
+  },
+  {
+    "id": "CVE-2026-53855",
+    "description": "OpenClaw before 2026.4.2 contains an inline-eval bypass vulnerability allowing authenticated operators to weaken strict allowlist checks via shell positional parameters. Attackers can combine allowlisted tools with shell positional arguments to place inline-eval content in shell carriers outside intended allowlist rules, enabling execution of unapproved shell-provided content.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:02.910"
+  },
+  {
+    "id": "CVE-2026-53856",
+    "description": "OpenClaw before 2026.4.24 contains an insecure file permissions vulnerability in config recovery that restores OpenClaw.json with overly broad permissions. Local attackers on shared hosts can read sensitive configuration data by exploiting the recovery path to access the restored config file.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:03.047"
+  },
+  {
+    "id": "CVE-2026-53857",
+    "description": "OpenClaw before 2026.5.3 contains a policy enforcement vulnerability where Zalo contacts with mutable display metadata could match allowFrom policy entries through display name changes. Attackers with mutable display names could receive agent responses intended for different Zalo identities when the feature is enabled.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:03.180"
+  },
+  {
+    "id": "CVE-2026-53858",
+    "description": "OpenClaw before 2026.5.2 contains an environment variable injection vulnerability where workspace .env STATE_DIRECTORY could influence bundled runtime dependency roots. Attackers can manipulate the STATE_DIRECTORY variable to load runtime dependencies from unintended local paths, potentially executing malicious code during dependency resolution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:03.310"
+  },
+  {
+    "id": "CVE-2026-53859",
+    "description": "OpenClaw before 2026.5.26 contains a hostname validation vulnerability allowing attackers to bypass blocklist comparisons using trailing-dot notation in model or workspace-derived URLs. Attackers can exploit inconsistent hostname checks to reach destinations that operators intended to block through hostname policies.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:03.440"
+  },
+  {
+    "id": "CVE-2026-53860",
+    "description": "OpenClaw before 2026.5.7 contains a sender policy bypass vulnerability in BlueBubbles that allows participants to match allowlist entries through conversation metadata rather than stable sender identity. Attackers can influence conversation-level identifiers to receive agent responses intended for configured senders, potentially bypassing access controls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:03.573"
+  },
+  {
+    "id": "CVE-2026-53861",
+    "description": "OpenClaw before 2026.5.6 contains an allowlist bypass vulnerability in the macOS Swift exec feature that misses combined POSIX inline-command flags. Attackers can execute shell content outside the intended allowlist check by using combined flag forms, potentially allowing unauthorized command execution depending on operator configuration.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:04.027"
+  },
+  {
+    "id": "CVE-2026-53862",
+    "description": "OpenClaw before 2026.5.12 contains a bootstrap token replay vulnerability allowing callers with pending token access to reuse tokens with broader requested scopes. Attackers can replay bootstrap tokens before approval to escalate pairing authority beyond intended scope limits.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:04.160"
+  },
+  {
+    "id": "CVE-2026-53863",
+    "description": "OpenClaw before 2026.4.25 contains an input validation vulnerability in tool group policy callers that accept unvalidated group IDs. Attackers who can supply a group ID to the policy resolver could trigger incorrect group-policy decisions for tool invocations, potentially bypassing intended access controls.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:04.633"
+  },
+  {
+    "id": "CVE-2026-53864",
+    "description": "OpenClaw before 2026.5.26 contains an insufficient sanitization vulnerability in the host environment sanitizer that allows Node.js control variables to bypass validation. Attackers with access to workspace .env files, tool environment overrides, or skill environment blocks can pass malicious Node.js control variables to influence child processes or coverage output paths.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:04.760"
+  },
+  {
+    "id": "CVE-2026-53865",
+    "description": "OpenClaw before 2026.5.2 contains a path traversal vulnerability in maintenance task execution that allows workspace-derived service paths to influence trash command selection. Attackers can execute unintended local executables from operator-unintended paths during maintenance operations by manipulating workspace-derived environment paths.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:04.890"
+  },
+  {
+    "id": "CVE-2026-53866",
+    "description": "OpenClaw before 2026.5.12 contains an allowlist bypass vulnerability in shell inline-command parsing that allows authenticated operators to execute unapproved commands. A command request using shell inline-command forms could route through a parser case missing the expected allowlist decision, enabling shell content execution without intended approval prompts.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T19:17:05.023"
+  },
+  {
+    "id": "CVE-2026-0125",
+    "description": "In multiple functions of vpu_ioctl.c, there is a possible use after free due to a race condition. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:23.430"
+  },
+  {
+    "id": "CVE-2026-0126",
+    "description": "In WC-Radio, there is a possible out of bounds write due to a missing bounds check. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:23.547"
+  },
+  {
+    "id": "CVE-2026-0127",
+    "description": "In NrmmMsgCodec::DecodeUPUTransparentContext of cn_NrmmDecoder.cpp, there is a possible out-of-bounds read due to memory corruption. This could lead to remote denial of service causing a communication processor crash with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:23.637"
+  },
+  {
+    "id": "CVE-2026-0128",
+    "description": "In RtcpFbPacket::decodeRtcpFbPacket, there is a possible out of bounds read due to an integer overflow. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:23.723"
+  },
+  {
+    "id": "CVE-2026-0129",
+    "description": "In RtcpByePacket::decodeByePacket, there is a possible  due to a missing bounds check. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:23.813"
+  },
+  {
+    "id": "CVE-2026-0130",
+    "description": "In RtcpChunk::decodeRtcpChunk, there is a possible out of bounds read due to a heap buffer overflow. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:23.900"
+  },
+  {
+    "id": "CVE-2026-0131",
+    "description": "In RtpPacket::decodePacket, there is a possible out of bounds access due to an integer overflow. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:23.990"
+  },
+  {
+    "id": "CVE-2026-0132",
+    "description": "In Modem, there is a possible out of bounds write due to a heap buffer overflow. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.080"
+  },
+  {
+    "id": "CVE-2026-0133",
+    "description": "In smmu_attach_dev of arm-smmu-v3.c, there is a possible way to sign malicious Android Runtime bootclass artifacts due to a missing permission check. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.170"
+  },
+  {
+    "id": "CVE-2026-0134",
+    "description": "In PostWipeData of recovery_ui.cpp, there is a possible data persistence issue after a factory reset due to a logic error in the code. This could lead to local information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.260"
+  },
+  {
+    "id": "CVE-2026-0135",
+    "description": "In Modem, there is a possible out of bounds read due to a missing bounds check. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.350"
+  },
+  {
+    "id": "CVE-2026-0136",
+    "description": "In Modem, there is a possible out of bounds read due to a missing bounds check. This could lead to remote denial of service with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.440"
+  },
+  {
+    "id": "CVE-2026-0137",
+    "description": "In edgetpu_sync_fence_group_shutdown() of edgetpu-dmabuf.c, there is a possible elevation of privilege due to a use after free. This could lead to local escalation of privilege with System execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.527"
+  },
+  {
+    "id": "CVE-2026-0138",
+    "description": "In lwis_io_buffer_write of lwis_io_buffer.c, there is a possible out of bounds write due to memory corruption. This could lead to local escalation of privilege with System execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.623"
+  },
+  {
+    "id": "CVE-2026-0139",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.730"
+  },
+  {
+    "id": "CVE-2026-0140",
+    "description": "In RtpPacket::decodePacket, there is a possible out-of-bounds read due to an integer overflow. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.817"
+  },
+  {
+    "id": "CVE-2026-0141",
+    "description": "In decodeAppPacket of RtcpAppPacket.cpp, there is a possible OOB read due to a missing bounds check. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.907"
+  },
+  {
+    "id": "CVE-2026-0142",
+    "description": "In iavb_parse_key_data of avb_rsa.c, there is a possible out of bounds read due to improper input validation. This could lead to local information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:24.997"
+  },
+  {
+    "id": "CVE-2026-0143",
+    "description": "In lwis_device_external_event_emit of lwis_event.c, there is a possible memory corruption due to a use after free. This could lead to local escalation of privilege with System execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.083"
+  },
+  {
+    "id": "CVE-2026-0144",
+    "description": "In writeAocCommand of AocAudioCodec.cpp, there is a possible memory safety issue due to a missing bounds check. This could lead to remote denial of service with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.170"
+  },
+  {
+    "id": "CVE-2026-0145",
+    "description": "In keymint, there is a possible Permission Bypass due to a logic error in the code. This could lead to local information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.260"
+  },
+  {
+    "id": "CVE-2026-0146",
+    "description": "In mfc_core_get_dec_metadata_sei_nal of mfc_core_reg_api.c, there is a possible out of bounds write due to a missing bounds check. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.350"
+  },
+  {
+    "id": "CVE-2026-0147",
+    "description": "In __mfc_core_nal_q_get_dec_metadata_sei_nal of mfc_core_nal_q.c, there is a possible out of bounds write due to a missing bounds check. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.440"
+  },
+  {
+    "id": "CVE-2026-0148",
+    "description": "In multiple functions of VideoRtpPayloadDecoderNode.cpp, there is a possible out of bounds write due to an integer overflow. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.530"
+  },
+  {
+    "id": "CVE-2026-0149",
+    "description": "In RtpSession::rtpSendRtcpPacket, there is a possible OOB write due to a heap buffer overflow. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.620"
+  },
+  {
+    "id": "CVE-2026-0150",
+    "description": "In ExecuteGraph command handler of EdgeTPU firmware, there is a possible out of bounds write due to an integer overflow. This could lead to local escalation of privilege with root privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.707"
+  },
+  {
+    "id": "CVE-2026-0151",
+    "description": "In IntfGraphCreate of intfgraph.c, there is a possible out of bounds write due to an integer overflow. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.793"
+  },
+  {
+    "id": "CVE-2026-0152",
+    "description": "In OSMMapPMRGeneric of pmr_os.c, there is a possible way to leverage a system call to system call to maliciously expand the VMA out of bounds due to a logic error in the code. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.883"
+  },
+  {
+    "id": "CVE-2026-0153",
+    "description": "In Write of msg_to_host_buffer.cc, there is a possible out of bounds write due to an incorrect bounds check. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:25.970"
+  },
+  {
+    "id": "CVE-2026-0154",
+    "description": "In Modem, there is a possible way to trigger a modem crash during a SIP REFER request due to memory corruption. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.063"
+  },
+  {
+    "id": "CVE-2026-0155",
+    "description": "In ImsMediaBitReader::ReadByteBuffer, there is a possible OOB read due to a missing bounds check. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.150"
+  },
+  {
+    "id": "CVE-2026-0156",
+    "description": "In checkSsrcCollisionOnRcv of RtpSession.cpp, there is a possible memory safety issue due to a missing null check. This could lead to remote denial of service with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.240"
+  },
+  {
+    "id": "CVE-2026-0157",
+    "description": "In RtcpHeader::decodeRtcpHeader, there is a possible OOB read due to a missing bounds check. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.327"
+  },
+  {
+    "id": "CVE-2026-0158",
+    "description": "In Camera, there is a possible unauthorized way to access photos due to a missing permission check. This could lead to local information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.420"
+  },
+  {
+    "id": "CVE-2026-0160",
+    "description": "In TextRtpPayloadDecoderNode::DecodeT140 of TextRtpPayloadDecoderNode.cpp, there is a possible out of bounds write due to a missing bounds check. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.517"
+  },
+  {
+    "id": "CVE-2026-0161",
+    "description": "In numberOfReportBlocks of RtpSession.cpp, there is a possible out of bounds write due to an integer overflow. This could lead to remote escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.610"
+  },
+  {
+    "id": "CVE-2026-0162",
+    "description": "In ParsePayloads of AudioSdpParser.cpp, there is a possible memory corruption due to type confusion. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.697"
+  },
+  {
+    "id": "CVE-2026-0164",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote code execution with no additional execution privileges needed. User interaction is not needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.790"
+  },
+  {
+    "id": "CVE-2026-0165",
+    "description": "In several functions of the RTCP packet decoder, there is a possible out-of-bounds read due to a missing bounds check. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is needed for exploitation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.877"
+  },
+  {
+    "id": "CVE-2026-10303",
+    "description": "In ServerCo getssl version 2.49 and prior, the ACME challenge token returned to the client was not strictly validated against RFC 8555 before being used in challenge-file handling, allowing a maliciously crafted token to influence local path/filename usage during validation. An attacker who can supply ACME challenge responses to getssl (for example, a malicious or compromised CA endpoint, or an on-path adversary able to tamper with that response path) could exploit this to achieve unauthorized file write/path traversal effects, usually with elevated privileges, ultimately allowing for remote command injection. This issue appears related in spirit to CVE-2023-38198, and is an instance of CWE-73, \"External control of file name or path.\" Other ACME shell script handlers may be affected by similar issues.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:26.963"
+  },
+  {
+    "id": "CVE-2026-11890",
+    "description": "Improper access control in PAM account discovery results in Devolutions \nServer 2026.2.5, 2026.1.21 allows an authenticated user to retrieve \naccount discovery scan results.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:27.227"
+  },
+  {
+    "id": "CVE-2026-12105",
+    "description": "Improper access control in Devolutions Server 2026.2.5, 2026.1.21 allows\n an authenticated user to access attachments via folder duplication with\n inherited permissions.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:27.483"
+  },
+  {
+    "id": "CVE-2026-12117",
+    "description": "Improper access control in the social login connection endpoint in \nDevolutions Server 2026.2.5 allows an authenticated vault member to \nenumerate social login entry metadata to which they are not authorized \nvia a crafted API request.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:27.577"
+  },
+  {
+    "id": "CVE-2026-12425",
+    "description": "Improper Neutralization of Input During Web Page Generation (XSS or 'Cross-site Scripting') vulnerability in PowerSchool Employee Access Center allows Cross-Site Scripting (XSS). This issue affects Employee Access Center: 23.10. It is possible to add in javascript code after the login URL and have it be eval()'d in the page and execute in the context of the user.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:28.443"
+  },
+  {
+    "id": "CVE-2026-22312",
+    "description": "The device has a webserver that exposes a REST API authenticated with a constant token. The unauthenticated API can be used by an attacker to get access to system settings, modify the configuration\nand execute some commands (e.g. system reboot).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:28.590"
+  },
+  {
+    "id": "CVE-2026-22313",
+    "description": "The device has a webserver that exposes a REST API authenticated with a token on the management network. By exploiting an OS command injection vulnerability an authenticated attacker can send\narbitrary commands to the device that are executed with administrative permissions by the underlying operating system.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:28.710"
+  },
+  {
+    "id": "CVE-2026-46448",
+    "description": "In OpenStack Nova before 33.0.2, the server create API does not strip certain hint data. The resulting instance has no Placement allocation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:41.697"
+  },
+  {
+    "id": "CVE-2026-47747",
+    "description": "stable-diffusion.cpp is a pure C/C++ library for running diffusion model (Stable Diffusion, Flux, Wan, Qwen Image, Z-Image, and more) inference. In versions prior to master-584-0a7ae07, the pickle .ckpt parser in src/model.cpp contained a heap buffer overflow vulnerability in the BINUNICODE opcode handler. The issue was caused by sign confusion on the opcode length field. A crafted .ckpt file could trigger memcpy with a very large length derived from a negative signed value, causing immediate heap corruption.\nThe issue has been resolved in version master-584-0a7ae07. If developers are unable to immediately update their applications they can work around this issue by only loading .ckpt checkpoint files from trusted sources and preferring trusted model sources and safer formats such as .safetensors where possible.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:44.163"
+  },
+  {
+    "id": "CVE-2026-47750",
+    "description": "stable-diffusion.cpp is a pure C/C++ library for running diffusion model (Stable Diffusion, Flux, Wan, Qwen Image, Z-Image, and more) inference. In versions prior to master-584-0a7ae07,  the pickle .ckpt parser in src/model.cpp contained a heap buffer overflow vulnerability in the GLOBAL opcode handler. The issue was caused by missing validation when searching for newline-delimited fields. A crafted .ckpt file without the expected newline could cause the parser to use -1 as a copy length, resulting in immediate heap corruption. The attack requires the victim or application to load a .ckpt file from an untrusted source, such as a downloaded model from a model sharing site. The issue has been resolved in version master-584-0a7ae07. If developers are unable to immediately update their applications they can work around this issue by following these instructions: do not load .ckpt checkpoint files from untrusted sources, and prefer trusted model sources and safer formats such as .safetensors where possible.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:44.413"
+  },
+  {
+    "id": "CVE-2026-48777",
+    "description": "FileBrowser Quantum is a free, self-hosted, web-based file manager. Versions prior to 1.3.2-stable, 1.4.0-beta and 1.4.1-beta are vulnerable to Path Traversal through the publicPatchHandler in backend/http/public.go which joins user-controlled fromPath and toPath body fields with the trusted d.share.Path BEFORE the downstream sanitizer runs. Because filepath.Join collapses .. segments during the join, the sanitizer in resourcePatchHandler never sees the traversal and the move/copy/rename operates on a path outside the shared directory. The same root-cause pattern was patched for the bulk DELETE endpoint as CVE-2026-44542 (GHSA-fwj3-42wh-8673), but the PATCH handler with the identical pattern was not updated. A public share link with AllowModify=true is sufficient to exploit this. Anyone holding such a link can move, copy, or rename arbitrary files within the share owner's source root. This issue has been fixed in versions 1.3.3-stable and 1.4.2-beta.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-16T20:16:46.583"
   }
 ]
