@@ -1,663 +1,5 @@
 [
   {
-    "id": "CVE-2026-0393",
-    "description": "The affected product may expose credentials remotely between low privileged visualization users during concurrent login operations due to insufficient isolation of authentication data. The vulnerability affects only login operations within an active visualization session.",
-    "severity": "Medium",
-    "tech": "Visualization",
-    "published": "2026-05-21T12:16:19.810"
-  },
-  {
-    "id": "CVE-2026-43494",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/rds: reset op_nents when zerocopy page pin fails\n\nWhen iov_iter_get_pages2() fails in rds_message_zcopy_from_user(),\nthe pinned pages are released with put_page(), and\nrm->data.op_mmp_znotifier is cleared.  But we fail to properly\nclear rm->data.op_nents.\n\nLater when rds_message_purge() is called from rds_sendmsg() the\ncleanup loop iterates over the incorrectly non zero number of\nop_nents and frees them again.\n\nFix this by properly resetting op_nents when it should be in\nrds_message_zcopy_from_user().",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T12:16:19.957"
-  },
-  {
-    "id": "CVE-2026-43495",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: wwan: t7xx: validate port_count against message length in t7xx_port_enum_msg_handler\n\nt7xx_port_enum_msg_handler() uses the modem-supplied port_count field as\na loop bound over port_msg->data[] without checking that the message buffer\ncontains sufficient data. A modem sending port_count=65535 in a 12-byte\nbuffer triggers a slab-out-of-bounds read of up to 262140 bytes.\n\nAdd a sizeof(*port_msg) check before accessing the port message header\nfields to guard against undersized messages.\n\nAdd a struct_size() check after extracting port_count and before the loop.\n\nIn t7xx_parse_host_rt_data(), guard the rt_feature header read with a\nremaining-buffer check before accessing data_len, validate feat_data_len\nagainst the actual remaining buffer to prevent OOB reads and signed\ninteger overflow on offset.\n\nPass msg_len from both call sites: skb->len at the DPMAIF path after\nskb_pull(), and the validated feat_data_len at the handshake path.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:18.847"
-  },
-  {
-    "id": "CVE-2026-43496",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/sched: sch_red: Replace direct dequeue call with peek and qdisc_dequeue_peeked\n\nWhen red qdisc has children (eg qfq qdisc) whose peek() callback is\nqdisc_peek_dequeued(), we could get a kernel panic. When the parent of such\nqdiscs (eg illustrated in patch #3 as tbf) wants to retrieve an skb from\nits child (red in this case), it will do the following:\n 1a. do a peek() - and when sensing there's an skb the child can offer, then\n     - the child in this case(red) calls its child's (qfq) peek.\n        qfq does the right thing and will return the gso_skb queue packet.\n        Note: if there wasnt a gso_skb entry then qfq will store it there.\n 1b. invoke a dequeue() on the child (red). And herein lies the problem.\n     - red will call the child's dequeue() which will essentially just\n       try to grab something of qfq's queue.\n\n[   78.667668][  T363] KASAN: null-ptr-deref in range [0x0000000000000048-0x000000000000004f]\n[   78.667927][  T363] CPU: 1 UID: 0 PID: 363 Comm: ping Not tainted 7.1.0-rc1-00033-g46f74a3f7d57-dirty #790 PREEMPT(full)\n[   78.668263][  T363] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011\n[   78.668486][  T363] RIP: 0010:qfq_dequeue+0x446/0xc90 [sch_qfq]\n[   78.668718][  T363] Code: 54 c0 e8 dd 90 00 f1 48 c7 c7 e0 03 54 c0 48 89 de e8 ce 90 00 f1 48 8d 7b 48 b8 ff ff 37 00 48 89 fa 48 c1 e0 2a 48 c1 ea 03 <80> 3c 02 00 74 05 e8 ef a1 e1 f1 48 8b 7b 48 48 8d 54 24 58 48 8d\n[   78.669312][  T363] RSP: 0018:ffff88810de573e0 EFLAGS: 00010216\n[   78.669533][  T363] RAX: dffffc0000000000 RBX: 0000000000000000 RCX: 0000000000000000\n[   78.669790][  T363] RDX: 0000000000000009 RSI: 0000000000000004 RDI: 0000000000000048\n[   78.670044][  T363] RBP: ffff888110dc4000 R08: ffffffffb1b0885a R09: fffffbfff6ba9078\n[   78.670297][  T363] R10: 0000000000000003 R11: ffff888110e31c80 R12: 0000001880000000\n[   78.670560][  T363] R13: ffff888110dc4150 R14: ffff888110dc42b8 R15: 0000000000000200\n[   78.670814][  T363] FS:  00007f66a8f09c40(0000) GS:ffff888163428000(0000) knlGS:0000000000000000\n[   78.671110][  T363] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n[   78.671324][  T363] CR2: 000055db4c6a30a8 CR3: 000000010da67000 CR4: 0000000000750ef0\n[   78.671585][  T363] PKRU: 55555554\n[   78.671713][  T363] Call Trace:\n[   78.671843][  T363]  <TASK>\n[   78.671936][  T363]  ? __pfx_qfq_dequeue+0x10/0x10 [sch_qfq]\n[   78.672148][  T363]  ? __pfx__printk+0x10/0x10\n[   78.672322][  T363]  ? srso_alias_return_thunk+0x5/0xfbef5\n[   78.672496][  T363]  ? lockdep_hardirqs_on_prepare+0xa8/0x1a0\n[   78.672706][  T363]  ? srso_alias_return_thunk+0x5/0xfbef5\n[   78.672875][  T363]  ? trace_hardirqs_on+0x19/0x1a0\n[   78.673047][  T363]  red_dequeue+0x65/0x270 [sch_red]\n[   78.673217][  T363]  ? srso_alias_return_thunk+0x5/0xfbef5\n[   78.673385][  T363]  tbf_dequeue.cold+0xb0/0x70c [sch_tbf]\n[   78.673566][  T363]  __qdisc_run+0x169/0x1900\n\nThe right thing to do in #1b is to grab the skb off gso_skb queue.\nThis patchset fixes that issue by changing #1b to use qdisc_dequeue_peeked()\nmethod instead.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:18.960"
-  },
-  {
-    "id": "CVE-2026-43497",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfbdev: udlfb: add vm_ops to dlfb_ops_mmap to prevent use-after-free\n\ndlfb_ops_mmap() uses remap_pfn_range() to map vmalloc framebuffer pages\nto userspace but sets no vm_ops on the VMA. This means the kernel cannot\ntrack active mmaps. When dlfb_realloc_framebuffer() replaces the backing\nbuffer via FBIOPUT_VSCREENINFO, existing mmap PTEs are not invalidated.\nOn USB disconnect, dlfb_ops_destroy() calls vfree() on the old pages\nwhile userspace PTEs still reference them, resulting in a use-after-free:\nthe process retains read/write access to freed kernel pages.\n\nAdd vm_operations_struct with open/close callbacks that maintain an\natomic mmap_count on struct dlfb_data. In dlfb_realloc_framebuffer(),\ncheck mmap_count and return -EBUSY if the buffer is currently mapped,\npreventing buffer replacement while userspace holds stale PTEs.\n\nTested with PoC using dummy_hcd + raw_gadget USB device emulation.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:19.090"
-  },
-  {
-    "id": "CVE-2026-43498",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\naccel/ivpu: Disallow re-exporting imported GEM objects\n\nPrevent re-exporting of imported GEM buffers by adding a custom\nprime_handle_to_fd callback that checks if the object is imported\nand returns -EOPNOTSUPP if so.\n\nRe-exporting imported GEM buffers causes loss of buffer flags settings,\nleading to incorrect device access and data corruption.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:19.200"
-  },
-  {
-    "id": "CVE-2026-43499",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nrtmutex: Use waiter::task instead of current in remove_waiter()\n\nremove_waiter() is used by the slowlock paths, but it is also used for\nproxy-lock rollback in rt_mutex_start_proxy_lock() when invoked from\nfutex_requeue().\n\nIn the latter case waiter::task is not current, but remove_waiter()\noperates on current for the dequeue operation. That results in several\nproblems:\n\n  1) the rbtree dequeue happens without waiter::task::pi_lock being held\n\n  2) the waiter task's pi_blocked_on state is not cleared, which leaves a\n     dangling pointer primed for UAF around.\n\n  3) rt_mutex_adjust_prio_chain() operates on the wrong top priority waiter\n     task\n\nUse waiter::task instead of current in all related operations in\nremove_waiter() to cure those problems.\n\n[ tglx: Fixup rt_mutex_adjust_prio_chain(), add a comment and amend the\n  \tchangelog ]",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:19.300"
-  },
-  {
-    "id": "CVE-2026-43501",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipv6: rpl: reserve mac_len headroom when recompressed SRH grows\n\nipv6_rpl_srh_rcv() decompresses an RFC 6554 Source Routing Header, swaps\nthe next segment into ipv6_hdr->daddr, recompresses, then pulls the old\nheader and pushes the new one plus the IPv6 header back.  The\nrecompressed header can be larger than the received one when the swap\nreduces the common-prefix length the segments share with daddr (CmprI=0,\nCmprE>0, seg[0][0] != daddr[0] gives the maximum +8 bytes).\n\npskb_expand_head() was gated on segments_left == 0, so on earlier\nsegments the push consumed unchecked headroom.  Once skb_push() leaves\nfewer than skb->mac_len bytes in front of data,\nskb_mac_header_rebuild()'s call to:\n\n\tskb_set_mac_header(skb, -skb->mac_len);\n\nwill store (data - head) - mac_len into the u16 mac_header field, which\nwraps to ~65530, and the following memmove() writes mac_len bytes ~64KiB\npast skb->head.\n\nA single AF_INET6/SOCK_RAW/IPV6_HDRINCL packet over lo with a two\nsegment type-3 SRH (CmprI=0, CmprE=15) reaches headroom 8 after one\npass; KASAN reports a 14-byte OOB write in ipv6_rthdr_rcv.\n\nFix this by expanding the head whenever the remaining room is less than\nthe push size plus mac_len, and request that much extra so the rebuilt\nMAC header fits afterwards.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:19.410"
-  },
-  {
-    "id": "CVE-2026-43502",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/rds: handle zerocopy send cleanup before the message is queued\n\nA zerocopy send can fail after user pages have been pinned but before\nthe message is attached to the sending socket.\n\nThe purge path currently infers zerocopy state from rm->m_rs, so an\nunqueued message can be cleaned up as if it owned normal payload pages.\nHowever, zerocopy ownership is really determined by the presence of\nop_mmp_znotifier, regardless of whether the message has reached the\nsocket queue.\n\nCapture op_mmp_znotifier up front in rds_message_purge() and use it as\nthe cleanup discriminator. If the message is already associated with a\nsocket, keep the existing completion path. Otherwise, drop the pinned\npage accounting directly and release the notifier before putting the\npayload pages.\n\nThis keeps early send failure cleanup consistent with the zerocopy\nlifetime rules without changing the normal queued completion path.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:19.520"
-  },
-  {
-    "id": "CVE-2026-45760",
-    "description": "(Externally Controlled Reference to a Resource in Another Sphere), (Authorization Bypass Through User-Controlled Key) vulnerability in Apache Camel K. Authorized users in a Kubernetes namespace can create a Build resource, controlling the Pod generation in a namespace of their choice, including the operator namespace.\n\nThis issue affects Apache Camel K: from 2.0.0 before 2.8.1, from 2.9.0 before 2.9.2, from 2.10.0 before 2.10.1.\n\nUsers are recommended to upgrade to version 2.10.1 (or 2.8.1 or 2.9.2), which fixes the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:19.840"
-  },
-  {
-    "id": "CVE-2026-5118",
-    "description": "The Divi Form Builder plugin for WordPress is vulnerable to privilege escalation in versions up to, and including, 5.1.2. This is due to the plugin accepting a user-controlled 'role' parameter from POST data during user registration without validating it against the form's configured default_user_role setting. This makes it possible for unauthenticated attackers to create administrator accounts by tampering with the role parameter during registration.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-21T13:16:20.013"
-  },
-  {
-    "id": "CVE-2026-6841",
-    "description": "Request Tracker is vulnerable to a reflected cross-site scripting (XSS) vulnerability via the \"Page\" parameter in GET requests. An attacker can craft a URL that, when opened, results in arbitrary JavaScript execution in the victim’s browser.\n\nThis vulnerability affects versions from 5.0.4 up to 5.0.9 and from 6.0.0 up to 6.0.2.",
-    "severity": "Medium",
-    "tech": "Request tracker",
-    "published": "2026-05-21T13:16:20.273"
-  },
-  {
-    "id": "CVE-2025-13477",
-    "description": "Exposure of private personal information to an unauthorized actor, Insufficiently Protected Credentials vulnerability in Digital Operations Services Inc. WifiBurada allows Authentication Bypass.\n\nThis issue affects WifiBurada: through 21052026. NOTE: The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T14:16:43.300"
-  },
-  {
-    "id": "CVE-2025-13479",
-    "description": "Authorization bypass through User-Controlled key vulnerability in PosCube Hardware Software and Consulting Ltd. QR Menu allows Exploitation of Trusted Identifiers.\n\nThis issue affects QR Menu: through 21052026. NOTE: The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T14:16:43.417"
-  },
-  {
-    "id": "CVE-2025-71210",
-    "description": "A vulnerability in the Trend Micro Apex One management console could allow a remote attacker to upload malicious code and execute commands on affected installations.\r\n\r\nPlease note: although this vulnerability carries a technical critical CVSS rating, this was reported via responsible disclosure via a researcher through the Zero Day Initiative. The SaaS versions of the product have already been mitigated and no customer action required.\r\n\r\nFor this particular vulnerability, an attacker must have access to the Trend Micro Apex One Management Console, so customers that have their console�s IP address exposed externally should consider mitigating factors such as source restrictions if not already applied.",
-    "severity": "Critical",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:43.540"
-  },
-  {
-    "id": "CVE-2025-71211",
-    "description": "A vulnerability in the Trend Micro Apex One management console could allow a remote attacker to upload malicious code and execute commands on affected installations. This vulnerability is similar in scope to CVE-2025-71210 but affects a different executable. \r\n\r\nPlease note: although this vulnerability carries a technical critical CVSS rating, this was reported via responsible disclosure via a researcher through the Zero Day Initiative. The SaaS versions of the product have already been mitigated and no customer action required.\r\n\r\nFor this particular vulnerability, an attacker must have access to the Trend Micro Apex One Management Console, so customers that have their console�s IP address exposed externally should consider mitigating factors such as source restrictions if not already applied.",
-    "severity": "Critical",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:43.663"
-  },
-  {
-    "id": "CVE-2025-71212",
-    "description": "A link following vulnerability in the Trend Micro Apex One scan engine could allow a local attacker to escalate privileges on affected installations.\r\n\r\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:43.777"
-  },
-  {
-    "id": "CVE-2025-71213",
-    "description": "An origin validation error vulnerability in Trend Micro Apex One could allow a local attacker to escalate privileges on affected installations.\r\n\r\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:43.897"
-  },
-  {
-    "id": "CVE-2025-71214",
-    "description": "An origin validation error vulnerability in the Trend Micro Apex One (mac) agent iCore service could allow a local attacker to escalate privileges on affected installations.\r\n\r\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\r\n\r\nThe following information is provided as informational only for CVE references, as these were addressed already via ActiveUpdate/SaaS updates in mid to late 2025 (SaaS 2507 & 2005 Yearly Release).",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:44.017"
-  },
-  {
-    "id": "CVE-2025-71215",
-    "description": "A time-of-check time-of-use vulnerability in the Trend Micro Apex One (mac) agent iCore service signature verification could allow a local attacker to escalate privileges on affected installations.\r\n\r\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\r\n\r\nThe following information is provided as informational only for CVE references, as these were addressed already via ActiveUpdate/SaaS updates in mid to late 2025 (SaaS 2507 & 2005 Yearly Release).",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:44.130"
-  },
-  {
-    "id": "CVE-2025-71216",
-    "description": "A time-of-check time-of-use vulnerability in the Trend Micro Apex One (mac) agent cache mechanism could allow a local attacker to escalate privileges on affected installations.\r\n\r\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\r\n\r\nThe following information is provided as informational only for CVE references, as these were addressed already via ActiveUpdate/SaaS updates in mid to late 2025 (SaaS 2507 & 2005 Yearly Release).",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:44.240"
-  },
-  {
-    "id": "CVE-2025-71217",
-    "description": "An origin validation error vulnerability in the Trend Micro Apex One (mac) agent self-protection mechanism could allow a local attacker to escalate privileges on affected installations.\r\n\r\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\r\n\r\nThe following information is provided as informational only for CVE references, as these were addressed already via ActiveUpdate/SaaS updates in mid to late 2025 (SaaS 2507 & 2005 Yearly Release).",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:44.350"
-  },
-  {
-    "id": "CVE-2026-2740",
-    "description": "Zohocorp ManageEngine ADSelfService Plus version before 6525, DataSecurity Plus before 6264 and RecoveryManager Plus before 6313 are vulnerable to Authenticated Remote code execution in the agent machines due to the bug in the 3rd party dependency.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T14:16:44.850"
-  },
-  {
-    "id": "CVE-2026-34926",
-    "description": "A directory traversal vulnerability in the Apex One (on-premise) server could allow a pre-authenticated local attacker to modify a key table on the server to inject malicious code to deploy to agents on affected installations.\n\n\r\nThis vulnerability is only exploitable on the on-premise version of Apex One and a potential attacker must have access to the Apex One Server and already obtained administrative credentials to the server via some other method to exploit this vulnerability.",
-    "severity": "Medium",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:45.213"
-  },
-  {
-    "id": "CVE-2026-34927",
-    "description": "An origin validation vulnerability in the Apex One/SEP agent could allow a local attacker to escalate privileges on affected installations.\n\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:45.333"
-  },
-  {
-    "id": "CVE-2026-34928",
-    "description": "An origin validation vulnerability in the Apex One/SEP agent could allow a local attacker to escalate privileges on affected installations. This is similar to CVE-2026-34927 but exists in a different named pipe communication mechanism.\n\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:45.463"
-  },
-  {
-    "id": "CVE-2026-34929",
-    "description": "An origin validation vulnerability in the Apex One/SEP agent could allow a local attacker to escalate privileges on affected installations. This is similar to CVE-2026-34927 but exists in a different inter-process communication mechanism.\n\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:45.590"
-  },
-  {
-    "id": "CVE-2026-34930",
-    "description": "An origin validation vulnerability in the Apex One/SEP agent could allow a local attacker to escalate privileges on affected installations. This is similar to CVE-2026-34927 but exists in a different process protection mechanism.\n\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:45.710"
-  },
-  {
-    "id": "CVE-2026-45206",
-    "description": "An origin validation vulnerability in the Apex One/SEP agent could allow a local attacker to escalate privileges on affected installations. This is similar to CVE-2026-45207 but exists in a different process protection communication mechanism.\n\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:47.983"
-  },
-  {
-    "id": "CVE-2026-45207",
-    "description": "An origin validation vulnerability in the Apex One/SEP agent could allow a local attacker to escalate privileges on affected installations. This is similar to CVE-2026-45206 but exists in a different process protection communication mechanism.\n\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:48.133"
-  },
-  {
-    "id": "CVE-2026-45208",
-    "description": "A time-of-check time-of-use vulnerability in the Apex One/SEP agent could allow a local attacker to escalate privileges on affected installations.\n\nPlease note: an attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.",
-    "severity": "High",
-    "tech": "Apex one",
-    "published": "2026-05-21T14:16:48.257"
-  },
-  {
-    "id": "CVE-2026-1815",
-    "description": "Insufficient session expiration vulnerability in Turkiye Electricity Transmission Corporation (TEİAŞ) Mobile Application allows Session Hijacking.\n\nThis issue affects Mobile Application: from 1.6.2 before 1.13.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T15:16:22.413"
-  },
-  {
-    "id": "CVE-2026-1816",
-    "description": "Improper restriction of excessive authentication attempts vulnerability in Turkiye Electricity Transmission Corporation (TEİAŞ) Mobile Application allows Brute Force.\n\nThis issue affects Mobile Application: from 1.6.2 before 1.13.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T15:16:22.557"
-  },
-  {
-    "id": "CVE-2026-36189",
-    "description": "Buffer Overflow vulnerability in Uncrustify Project Affected v.Uncrustify_d-0.82.0-132-bcc41cbdc and Fixed in commit 68e67b9a1435a1bb173b106fedb4a4f510972bdc allows a local attacker to cause a denial of service via the check_template.cpp, check_template function, tokenize_cleanup function, uncrustify executable components",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T15:16:24.500"
-  },
-  {
-    "id": "CVE-2026-39531",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in Wp Directory Kit WP Directory Kit allows Blind SQL Injection.\n\nThis issue affects WP Directory Kit: from n/a through 1.5.0.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-05-21T16:16:23.030"
-  },
-  {
-    "id": "CVE-2026-9089",
-    "description": "The ConnectWise Automate™ Agent does not fully verify the authenticity of components obtained during plugin loading and self-update operations. This issue is addressed in Automate 2026.5.",
-    "severity": "High",
-    "tech": "Automate",
-    "published": "2026-05-21T16:16:23.570"
-  },
-  {
-    "id": "CVE-2026-48207",
-    "description": "Deserialization of untrusted data in Apache Fory PyFory. PyFory's ReduceSerializer could bypass documented DeserializationPolicy validation hooks during reduce-state restoration and global-name resolution. An application is vulnerable if it deserializes attacker-controlled data using PyFory Python-native mode with strict mode disabled and relies on DeserializationPolicy to restrict unsafe classes, functions, or module attributes.\n\nThis issue affects Apache Fory: from before 1.0.0.\n\nMitigation: Users of Apache Fory are recommended to upgrade to version 1.0.0 or later, which enforces DeserializationPolicy validation for the affected ReduceSerializer paths and thus fixes this issue.",
-    "severity": "Critical",
-    "tech": "Fory",
-    "published": "2026-05-21T17:16:21.857"
-  },
-  {
-    "id": "CVE-2026-48213",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in add.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the ticket_id POST parameter directly into an HTML form input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T17:16:22.370"
-  },
-  {
-    "id": "CVE-2026-39593",
-    "description": "Missing Authorization vulnerability in VillaTheme HAPPY allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects HAPPY: from n/a through 1.0.10.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:17.203"
-  },
-  {
-    "id": "CVE-2026-48214",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in add_nm.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the ticket_id POST parameter directly into an HTML form input value attribute and an inline JavaScript string literal. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:17.603"
-  },
-  {
-    "id": "CVE-2026-48215",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in circle.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_id POST parameter directly into an HTML form input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:17.730"
-  },
-  {
-    "id": "CVE-2026-48216",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in db_loader.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the multiple POST parameters (ticketshost, ticketsdb, ticketsuser, ticketspassword, ticketsprefix, db_schema) directly into HTML form input value attributes. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:17.857"
-  },
-  {
-    "id": "CVE-2026-48217",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in delete_module.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the multiple POST parameters (module_choice, flag, confirmation) directly into rendered HTML content and form action attributes. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:17.983"
-  },
-  {
-    "id": "CVE-2026-48218",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in icons/buttons/landb.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_name and frm_id POST parameters directly into rendered HTML content and inline JavaScript. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:18.110"
-  },
-  {
-    "id": "CVE-2026-48219",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in ics202.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_add_str POST parameter directly into an HTML form hidden input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:18.237"
-  },
-  {
-    "id": "CVE-2026-48220",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in ics205.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_add_str POST parameter directly into an HTML form hidden input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:18.360"
-  },
-  {
-    "id": "CVE-2026-48221",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in ics205a.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_add_str POST parameter directly into an HTML form hidden input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:18.490"
-  },
-  {
-    "id": "CVE-2026-48222",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in ics213.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_add_str POST parameter directly into an HTML form hidden input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:18.613"
-  },
-  {
-    "id": "CVE-2026-48223",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in ics213rr.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_add_str POST parameter directly into an HTML form hidden input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:18.740"
-  },
-  {
-    "id": "CVE-2026-48224",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in ics214.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the frm_add_str POST parameter directly into an HTML form hidden input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:18.870"
-  },
-  {
-    "id": "CVE-2026-48225",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in landb.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the _type POST parameter directly into an HTML form hidden input value attribute. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.000"
-  },
-  {
-    "id": "CVE-2026-48226",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in os_watch.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the ref and mode_orig POST parameters directly into HTML form hidden input value attributes. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.127"
-  },
-  {
-    "id": "CVE-2026-48227",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in patient.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the id and ticket_id GET parameters directly into an HTML form action URL. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.257"
-  },
-  {
-    "id": "CVE-2026-48228",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in patient_w.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the id and ticket_id GET parameters directly into an HTML form action URL. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.380"
-  },
-  {
-    "id": "CVE-2026-48229",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in routes_i.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the ticket_id GET parameter directly into HTML form hidden input value attributes. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.507"
-  },
-  {
-    "id": "CVE-2026-48230",
-    "description": "Open ISES Tickets before 3.44.2 contains a reflected cross-site scripting vulnerability in ticketsmdb_import.php that allows authenticated attackers to inject arbitrary JavaScript by passing an unsanitized value through the multiple POST parameters (mdbhost, mdbdb, mdbuser, mdbpassword, mdbprefix, ticketshost, ticketsdb, ticketsuser, ticketspassword, ticketsprefix) directly into HTML form hidden input value attributes. Attackers can craft a malicious request containing a JavaScript payload that executes in the victim's browser when the response is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.640"
-  },
-  {
-    "id": "CVE-2026-48231",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in tables.php where the multiple POST parameters (tablename, indexname, sortby) are concatenated into table/column identifiers in dynamically constructed SELECT/UPDATE/DELETE statements without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.790"
-  },
-  {
-    "id": "CVE-2026-48232",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in ajax/fullsit_incidents.php where the offset GET parameter is concatenated into the LIMIT clause of a SELECT statement without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:19.927"
-  },
-  {
-    "id": "CVE-2026-48233",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in ajax/sit_incidents.php where the offset GET parameter is concatenated into the LIMIT clause of a SELECT statement without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.050"
-  },
-  {
-    "id": "CVE-2026-48234",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in portal/ajax/list_requests.php where the sort and dir GET parameters are concatenated into the ORDER BY clause of a SELECT statement without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.180"
-  },
-  {
-    "id": "CVE-2026-48235",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in incs/remotes.inc.php where latitude, longitude, callsign, mph, altitude, and timestamp values parsed from external GPS tracking service XML/JSON responses (InstaMapper and Google Latitude integration) are concatenated into UPDATE and INSERT statements without sanitization. An attacker able to compromise or impersonate the remote GPS tracker endpoint can inject SQL to manipulate the responder location, tracks, and assignment tables.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.310"
-  },
-  {
-    "id": "CVE-2026-48236",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in db_loader.php where the multiple POST parameters (ticketsdb, ticketshost, ticketsuser, ticketspassword) are concatenated into mysqli connection arguments and dynamic SQL operating against an attacker-controlled database without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.440"
-  },
-  {
-    "id": "CVE-2026-48237",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in message.php where the frm_ticket_id and frm_resp_id POST parameters are concatenated into WHERE clauses of SELECT/UPDATE statements without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.570"
-  },
-  {
-    "id": "CVE-2026-48238",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in ajax/mobile_main.php where the id GET parameter is concatenated into the WHERE clause of a SELECT statement used as a ticket-existence sanity check without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.697"
-  },
-  {
-    "id": "CVE-2026-48239",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in ajax/reports.php where the tick_id POST parameter is concatenated into the WHERE clause of SELECT statements in the incidents summary report without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.820"
-  },
-  {
-    "id": "CVE-2026-48240",
-    "description": "Open ISES Tickets before 3.44.2 contains a SQL injection vulnerability in ajax/statistics.php where the tick_id and f_tick_id POST parameters are concatenated into WHERE clauses of SELECT statements in the statistics rollup queries without sanitization. Authenticated attackers can craft requests that alter query semantics to read, modify, or destroy database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:20.943"
-  },
-  {
-    "id": "CVE-2026-48241",
-    "description": "Open ISES Tickets before 3.44.2 contains hardcoded MySQL database credentials in loader.php (a public-facing database utility) that are committed to the source repository. Any actor with access to the public source tree (or an unauthenticated attacker with read access to the file on a deployed installation) can read the username, password, and database name and use them to connect to the database if it is reachable from their network.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:21.070"
-  },
-  {
-    "id": "CVE-2026-48242",
-    "description": "Open ISES Tickets before 3.44.2 contains hardcoded MySQL database connection credentials (host, username, password, database name) in import_mdb.php. The credentials are embedded in source code committed to the public repository, allowing any reader of the source to obtain valid configuration values that may match deployed installations.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:21.220"
-  },
-  {
-    "id": "CVE-2026-48243",
-    "description": "Open ISES Tickets before 3.44.2 embeds a hardcoded WhitePages reverse-phone API key in wp1.php that is committed to the public source repository. Any actor with read access to the source tree can extract the key and use it to make third-party API calls billed to or rate-limited against the original owner's WhitePages account.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:21.380"
-  },
-  {
-    "id": "CVE-2026-48244",
-    "description": "Open ISES Tickets before 3.44.2 embeds a hardcoded Google Maps API key in settings.inc.php that is committed to the public source repository. The key can be extracted by anyone with read access to the source and used to make Google Maps Platform requests billed against the original owner's Google Cloud project.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:21.530"
-  },
-  {
-    "id": "CVE-2026-48245",
-    "description": "Open ISES Tickets before 3.44.2 embeds a hardcoded Google Maps API key in tables.php that is committed to the public source repository. The key can be extracted by anyone with read access to the source and used to make Google Maps Platform requests billed against the original owner's Google Cloud project.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:21.653"
-  },
-  {
-    "id": "CVE-2026-48246",
-    "description": "Open ISES Tickets before 3.44.2 disables TLS certificate verification in ajax/reports.php by setting CURLOPT_SSL_VERIFYPEER to false (and not setting CURLOPT_SSL_VERIFYHOST) when issuing outbound HTTPS requests for Google Maps Directions API lookups during incident report generation. An attacker positioned on the network path between the server and the remote endpoint can present a forged certificate to intercept, monitor, or modify the request and response, including any API keys or session-bearing data in transit.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:21.780"
-  },
-  {
-    "id": "CVE-2026-48247",
-    "description": "Open ISES Tickets before 3.44.2 disables TLS certificate verification in incs/functions.inc.php by setting CURLOPT_SSL_VERIFYPEER to false (and not setting CURLOPT_SSL_VERIFYHOST) when issuing outbound HTTPS requests for general-purpose outbound HTTPS requests issued by the shared helper functions. An attacker positioned on the network path between the server and the remote endpoint can present a forged certificate to intercept, monitor, or modify the request and response, including any API keys or session-bearing data in transit.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:21.910"
-  },
-  {
-    "id": "CVE-2026-48248",
-    "description": "Open ISES Tickets before 3.44.2 disables TLS certificate verification in incs/login.inc.php by setting CURLOPT_SSL_VERIFYPEER to false (and not setting CURLOPT_SSL_VERIFYHOST) when issuing outbound HTTPS requests issued during the login/authentication flow. An attacker positioned on the network path between the server and the remote endpoint can present a forged certificate to intercept, monitor, or modify the request and response, including any API keys or session-bearing data in transit.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:22.037"
-  },
-  {
-    "id": "CVE-2026-48249",
-    "description": "Open ISES Tickets before 3.44.2 disables TLS certificate verification in rm/incs/mobile_login.inc.php by setting CURLOPT_SSL_VERIFYPEER to false (and not setting CURLOPT_SSL_VERIFYHOST) when issuing outbound HTTPS requests issued during the mobile (RouteMate) login flow. An attacker positioned on the network path between the server and the remote endpoint can present a forged certificate to intercept, monitor, or modify the request and response, including any API keys or session-bearing data in transit.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T18:16:22.167"
-  },
-  {
-    "id": "CVE-2026-46473",
-    "description": "Authen::TOTP versions before 0.1.1 for Perl generate secrets using rand.\n\nSecrets were generated using Perl's built-in rand function, which is predictable and unsuitable for security usage.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T19:16:53.510"
-  },
-  {
-    "id": "CVE-2026-47114",
-    "description": "IINA before 1.4.3 contains a user-assisted command execution vulnerability that allows remote attackers to execute arbitrary commands by supplying malicious mpv_-prefixed query parameters through the iina://open custom URL scheme handler. Attackers can deliver a crafted URL via a browser that passes unvalidated mpv_options/input-commands parameters into the mpv runtime, causing arbitrary command execution as the current macOS user upon approval of the browser protocol prompt without requiring a valid media file.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-05-21T20:16:14.340"
-  },
-  {
-    "id": "CVE-2026-4843",
-    "description": "The GSheet For Woo Importer plugin for WordPress is vulnerable to unauthorized loss of data due to a missing capability check on the process_ajax_restore_action() function in all versions up to, and including, 2.3.1. This makes it possible for authenticated attackers, with Subscriber-level access and above, to delete the plugin's Google Sheets API token and configuration options.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-05-21T20:16:14.723"
-  },
-  {
-    "id": "CVE-2026-47101",
-    "description": "LiteLLM prior to 1.83.14 allows an authenticated internal_user to create API keys with access to routes that their role does not permit. When generating a key, the allowed_routes field is stored without verifying that the specified routes fall within the user's own permissions. A key created with access to admin-only routes can then be used to reach those routes successfully, bypassing the role-based access controls that would otherwise block the request, enabling full privilege escalation from internal_user to proxy_admin.",
-    "severity": "High",
-    "tech": "Litellm",
-    "published": "2026-05-21T21:16:32.413"
-  },
-  {
-    "id": "CVE-2026-47102",
-    "description": "LiteLLM prior to 1.83.10 allows a user to modify their own user_role via the /user/update endpoint. While the endpoint correctly restricts users to updating only their own account, it does not restrict which fields may be changed. A user who can reach this endpoint can set their role to proxy_admin, gaining full administrative access to LiteLLM including all users, teams, keys, models, and prompt history. Users with the org_admin role have legitimate access to this endpoint and can exploit this vulnerability without chaining any additional flaw.",
-    "severity": "High",
-    "tech": "Litellm",
-    "published": "2026-05-21T21:16:32.557"
-  },
-  {
-    "id": "CVE-2026-6826",
-    "description": "Concrete CMS 9.5.0 and below  is vulnerable to unauthenticated file usage disclosure via missing permission check in the usage controller.  Any unauthenticated visitor can request /ccm/system/dialogs/file/usage/{fID} with any file ID and receive a list of every page that references that file, including page IDs, handles, and full URLs. This includes pages that are otherwise restricted by permissions.The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 6.9 with vector CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N. Thanks Eldudareeno for reporting.",
-    "severity": "Medium",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:32.697"
-  },
-  {
-    "id": "CVE-2026-8134",
-    "description": "Concrete CMS 9.5.0 and below fails to sanitize path traversal sequences in the ptComposerFormLayoutSetControlCustomTemplate field when saving page type composer form layouts. An authenticated rogue administrator with composer form editing rights can exploit this to include arbitrary readable files on the server. Combined with the file uploader's extension-only validation (which permits PHP code in files saved with image extensions like .png), this can result in authenticated remote code execution. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 9.4 with vector CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H   Thanks Yonatan Drori (Tenzai) for reporting.",
-    "severity": "High",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:32.837"
-  },
-  {
-    "id": "CVE-2026-8135",
-    "description": "Concrete CMS 9.5.0 and below is vulnerable to Remote Code Execution  due to insecure deserialization occurring in the ExpressEntryList block controller. An rogue administrator with privileges to add blocks to an area can bypass the intended protection mechanism (_fromCIF === true), which normally restricts malicious inputs over form POST requests, by leveraging the REST API functionality. Because the REST API parses requests using json_decode(), the string \"true\" is evaluated as a strict PHP Boolean(true).  This bypass allows the attacker to inject a malicious serialized payload  into the block's filterFields database column. The payload will subsequently be executed when the block's data is viewed or edited by an administrator leading to complete server takeover (RCE).The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 8.9 with a vector of CVSS:4.0/AV:N/AC:H/AT:P/PR:H/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H.  Thanks  Nguyễn Văn Thiện https://github.com/Thien225409  for reporting",
-    "severity": "High",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:32.970"
-  },
-  {
-    "id": "CVE-2026-8140",
-    "description": "Concrete CMS 9.5.0 and below does not validate a CSRF token before processing requests to /dashboard/extend/install/download/<remoteId>. The download() method in concrete/controllers/single_page/dashboard/extend/install.php checks only the canInstallPackages() permission before fetching a remote marketplace package and writing it to the server's DIR_PACKAGES directory. Because the endpoint is a state-changing GET route with no token enforcement, an attacker who can cause an authenticated administrator to visit a crafted page can force an arbitrary marketplace package to be downloaded. In order to be vulnerable, the victim must be passing canInstallPackages() and the site must be connected to the Concrete marketplace. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.5 with vector CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:A/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks  https://github.com/maru1009  for reporting.",
-    "severity": "Medium",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:33.107"
-  },
-  {
-    "id": "CVE-2026-8197",
-    "description": "Concrete CMS 9.5.0 and below is vulnerable to Stored XSS via OAuth integration name. The OAuth authorize template renders the integration name (admin-controlled) through Concrete's t() translation helper as a sprintf-style format. The <strong>...</strong> wrap is built by PHP string interpolation before t() runs, so the integration name lands in the translated output as raw HTML. A rogue admin could potentially snoop on login submissions.The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.3 with vector CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N  Thanks Yonatan Drori (Tenzai) for reporting.",
-    "severity": "Medium",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:33.240"
-  },
-  {
-    "id": "CVE-2026-8203",
-    "description": "Concrete CMS 9.5.0 and below has Stored XSS on the height parameter. The controller does not validate or sanitize $height. Any user with editor privileges can inject malicious JavaScript that executes in the context of any visitor's browser, potentially leading to session hijacking, credential theft, or other malicious actions. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.3 with vector CVSS:4.0/AV:N/AC:H/AT:P/PR:H/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks Alfin Joseph for reporting.",
-    "severity": "Medium",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:33.380"
-  },
-  {
-    "id": "CVE-2026-8204",
-    "description": "Concrete CMS 9.5.0 and below is vulnerable to authorization Bypass in the Calendar Event Frontend Dialog which can allow cross-calendar data disclosure. A public calendar block can be used as a pivot point to access private calendar data. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 6.3 with vector CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N. Thanks Winston Crooker for reporting.",
-    "severity": "Medium",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:33.530"
-  },
-  {
-    "id": "CVE-2026-8205",
-    "description": "Concrete CMS 9.5.0 and below is vulnerable to authorization bypass in the Calendar Block since action_get_events does not check canView on the calendar which results in restricted event details being disclosed. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 6.3 with vector CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N. Thanks lalalala5678 for reporting.",
-    "severity": "Medium",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:33.650"
-  },
-  {
-    "id": "CVE-2026-8350",
-    "description": "Concrete CMS 9.5.0 and below is vulnerable to missing authorization in the bulk_user_assignment.php which can lead to privilege escalation to Administrative Group. Any authenticated user with access to the bulk user assignment dashboard page can add any user email to any group and can remove legitimate admins. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.5 with vector CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks Vincent55 for reporting.",
-    "severity": "High",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:33.773"
-  },
-  {
-    "id": "CVE-2026-8352",
-    "description": "Rejected reason: ** REJECT ** DO NOT USE THIS CANDIDATE NUMBER. Reason: This candidate was issued in error. Notes: All references and descriptions in this candidate have been removed to prevent accidental usage.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-05-21T21:16:33.893"
-  },
-  {
-    "id": "CVE-2026-8417",
-    "description": "Concrete CMS 9.5.0 and below does not validate a CSRF token before processing requests to /dashboard/extend/update/do_update/<pkgHandle>. The do_update() method in concrete/controllers/single_page/dashboard/extend/update.php checks only canInstallPackages() before executing upgradeCoreData() and upgrade() on the named package's controller. Because the endpoint is a state-changing GET route with no token enforcement, an attacker can force an authenticated administrator to trigger a package upgrade via a single cross-site navigation.In order to be vulnerable, the victim must be passing canInstallPackages() and and a target package must already be already installed. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.5 with vector CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:A/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks  https://github.com/maru1009  for reporting.",
-    "severity": "High",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:33.980"
-  },
-  {
-    "id": "CVE-2026-8421",
-    "description": "Concrete CMS 9.5.0 and below contains a CSRF vulnerability in the install_package() method of concrete/controllers/single_page/dashboard/extend/install.php.  An attacker who can cause an authenticated administrator to visit a crafted page,  and who has placed or caused a package to be present under DIR_PACKAGES/<handle>/, can force the installation of that package without any CSRF protection. Package installation executes the package controller's install() method as the web server user, enabling remote code execution.  In order to be vulnerable, the victim must be passing canInstallPackages. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.5 with vector CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:A/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks  https://github.com/maru1009  for reporting.",
-    "severity": "High",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:34.107"
-  },
-  {
-    "id": "CVE-2026-8426",
-    "description": "Concrete CMS 9.5.0 and below does not validate a CSRF token before processing requests to /dashboard/extend/update/prepare_remote_upgrade/<remoteMPID>. An attacker who controls the remote package returned for a known marketplace item ID can overwrite the package PHP on disk and force its upgrade() method to execute in a single browser navigation. This results in remote code execution as the web server user.   In order to be vulnerable, the victim must be passing canInstallPackages, victim site must be connected to the Concrete marketplace; and the attacker controls the package returned for a marketplace item ID already installed on the victim site. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.5 with vector CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:A/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks https://github.com/maru1009 for reporting.",
-    "severity": "High",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:34.243"
-  },
-  {
-    "id": "CVE-2026-8428",
-    "description": "Concrete CMS 9.5.0 and below emits a CSRF token in the local_available_update.php view ($token->output('do_update')) but the corresponding do_update() method in concrete/controllers/single_page/dashboard/system/update/update.php never calls $this->token->validate('do_update'). The form is rendered as a POST form, meaning the token reaches the browser, but because the controller discards it without verification, an attacker can craft a cross-site POST that triggers a core CMS update to an attacker-specified version string.  In order to be vulnerable, theictim must be passing canUpgrade()anda valid update version must be present under DIR_CORE_UPDATES. The Concrete CMS security team gave this vulnerability a CVSS v.4.0 score of 7.5 with vector CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:A/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks https://github.com/maru1009 for reporting.",
-    "severity": "High",
-    "tech": "Concrete cms",
-    "published": "2026-05-21T21:16:34.387"
-  },
-  {
     "id": "CVE-2026-22678",
     "description": "Webmin before 2.641 contains a stored cross-site scripting vulnerability in the email template description field of the System and Server Status module that allows low-privileged authenticated attackers to execute arbitrary JavaScript in the browser context of administrators by injecting unsanitized input stored in save_tmpl.cgi and rendered unescaped in list_tmpls.cgi.",
     "severity": "Medium",
@@ -53065,5 +52407,243 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-20T09:16:15.593"
+  },
+  {
+    "id": "CVE-2026-48908",
+    "description": "A vulnerability in the SP Page Builder for Joomla allows the upload of arbitrary files for unauthenticated users, ultimately resulting in PHP code upload and execution.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-20T13:16:42.080"
+  },
+  {
+    "id": "CVE-2026-48909",
+    "description": "SP LMS (com_splms) < 4.1.4 by JoomShaper deserializes user-controlled cookie data without validation, enabling an unauthenticated remote attacker to execute arbitrary code on the server.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-20T13:16:42.317"
+  },
+  {
+    "id": "CVE-2026-48939",
+    "description": "A vulnerability in the iCagenda extension for Joomla allows the upload of arbitrary files in the file attachment feature, ultimately resulting in PHP code upload and execution.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-20T13:16:42.433"
+  },
+  {
+    "id": "CVE-2019-25763",
+    "description": "WordPress Ultimate Addons for Beaver Builder 1.2.4.1 contains an authentication bypass vulnerability that allows attackers to gain unauthorized access by exploiting the social media login form functionality. Attackers can submit a POST request to the admin-ajax.php endpoint with the uabb-lf-google-submit action, a valid administrator email address, and a valid nonce to obtain session cookies and authenticate as that user.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-20T14:16:17.783"
+  },
+  {
+    "id": "CVE-2020-37255",
+    "description": "WordPress Time Capsule Plugin 1.21.16 contains an authentication bypass vulnerability that allows unauthenticated attackers to gain administrative access by sending a crafted POST request with the IWP_JSON_PREFIX header. Attackers can exploit this flaw to obtain valid administrator session cookies and access the WordPress dashboard without providing credentials.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-20T14:16:18.790"
+  },
+  {
+    "id": "CVE-2022-50972",
+    "description": "WooCommerce 7.1.0 contains a remote code execution vulnerability that allows attackers to execute arbitrary PHP code by injecting shell commands through the product-type parameter. Attackers can send requests to the class-wc-meta-box-product-images.php endpoint with unsanitized product-type values to write malicious PHP files to the web root.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-20T14:16:18.960"
+  },
+  {
+    "id": "CVE-2026-12673",
+    "description": "Liquidfiles versions before 4.2.12 are affected by a broken access control vulnerability resulting in privilege escalation from an Admin in a secondary domain to a Sysadmin by modifying a group in their managed secondary (non-default) group.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-20T14:16:19.147"
+  },
+  {
+    "id": "CVE-2024-58351",
+    "description": "Flowise before 2.1.4 allows configuration to be injected into the Chainflow during execution via the overrideConfig option, supported in both the frontend web integration and the backend Prediction API. Because this feature is enabled by default with no allow-list of permitted variables and relies on vm2 for sandboxing, an attacker can abuse it to achieve remote code execution and sandbox escape, denial of service by crashing the server, server-side request forgery, prompt injection, and server variable and data exfiltration. These issues are self-targeted and do not persist to other users.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:03.973"
+  },
+  {
+    "id": "CVE-2025-71331",
+    "description": "Flowise before 3.0.8 contains a cross-site scripting (XSS) vulnerability caused by insufficient input filtering in chat messages and custom agent functions. An attacker can inject malicious JavaScript by sending an iframe payload (e.g., <iframe src=\"javascript:alert(document.cookie)\">) in a chat box, or by having a custom agent function return an XSS payload from an external website. The injected script executes in the victim's browser, enabling theft of cookies and session data.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:04.137"
+  },
+  {
+    "id": "CVE-2026-56218",
+    "description": "Capgo before 12.128.2 fails to strip EXIF metadata including GPS geolocation data from uploaded images, allowing information disclosure. Attackers can download uploaded images and extract precise latitude and longitude coordinates revealing user physical location at capture time.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:04.287"
+  },
+  {
+    "id": "CVE-2026-56227",
+    "description": "Capgo before 12.128.2 contains a server-side request forgery vulnerability in webhook URL validation that allows loopback and internal addresses. Organization admins can configure webhooks pointing to localhost or 127.0.0.1, and when triggered, the backend performs outbound requests to these addresses with error responses disclosed to users.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:04.417"
+  },
+  {
+    "id": "CVE-2026-56228",
+    "description": "Capgo before 12.128.2 fails to enforce a maximum value on the minimum password length field in its password policy configuration. An authenticated organization administrator can set an extremely large numeric value (e.g., billions of characters) as the minimum password length, making compliance impossible for all organization members. Once the policy is enabled, users (including administrators) are unable to change their passwords or access the organization, resulting in an organization-wide account lockout and application-level denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:04.543"
+  },
+  {
+    "id": "CVE-2026-56235",
+    "description": "Cap-go capgo before 12.128.2 contains an authorization bypass in several Supabase PostgREST RPC functions (get_app_metrics, get_global_metrics, get_total_metrics) that are granted to the anon role without enforcing org membership or permission checks. An unauthenticated attacker using only the public Supabase API key (sb_publishable_*) can query arbitrary org_id values to disclose cross-tenant usage telemetry (MAU, bandwidth, installs, gets), enumerate app IDs for a target org, and determine org existence via an oracle (valid org returns metrics, invalid returns []).",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:04.677"
+  },
+  {
+    "id": "CVE-2026-56267",
+    "description": "Flowise before 3.0.13 contains an information exposure vulnerability in the POST /api/v1/account/forgot-password endpoint that returns full user objects including PII to unauthenticated attackers. An attacker can enumerate valid email addresses and harvest sensitive user data including user IDs, names, account status, and timestamps by sending requests with known email addresses.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:04.813"
+  },
+  {
+    "id": "CVE-2026-56276",
+    "description": "Flowise before 3.1.2 contains a mass assignment vulnerability in the PUT /api/v1/user endpoint that allows authenticated users to directly modify the credential field without validation. Attackers can bypass password change verification and session invalidation by supplying a crafted password hash, establishing persistent account access after temporary session compromise.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:04.940"
+  },
+  {
+    "id": "CVE-2026-56282",
+    "description": "Capgo before 12.128.2 contains an information disclosure vulnerability in the unauthenticated /replication endpoint that exposes internal PostgreSQL replication telemetry including slot names and WAL LSN positions. Attackers can access this endpoint without authentication to retrieve sensitive infrastructure details such as replication slot names, confirmed_flush_lsn, restart_lsn values, and database error messages for reconnaissance purposes.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.057"
+  },
+  {
+    "id": "CVE-2026-56294",
+    "description": "capacitor-native-biometric before 12.128.2 contains an authentication bypass vulnerability where the onAuthenticationSucceeded() method fails to validate CryptoObject parameters. Attackers can hook the onAuthenticationSucceeded() function using dynamic instrumentation to bypass biometric authentication without valid credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.187"
+  },
+  {
+    "id": "CVE-2026-56295",
+    "description": "Capgo before 12.128.2 contains an authorization bypass vulnerability in webhook management endpoints that allows non-expiring API keys to bypass the require_apikey_expiration organization policy. The checkWebhookPermission function fails to call apikeyHasOrgRightWithPolicy, enabling attackers with legacy non-expiring keys to list, create, and delete webhooks despite explicit organizational policy requiring key expiration.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.330"
+  },
+  {
+    "id": "CVE-2026-56304",
+    "description": "picklescan before 1.0.1 contains an unsafe pickle deserialization vulnerability allowing unauthenticated attackers to create arbitrary zero-byte files via logging.FileHandler class instantiation. Attackers can exploit this by crafting malicious pickle payloads to bypass RCE blocklists and create lock files or other filesystem artifacts, potentially causing denial of service or application disruption.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.463"
+  },
+  {
+    "id": "CVE-2026-56307",
+    "description": "Cap-go before 12.128.12 contains a broken cursor pagination vulnerability in the /private/devices endpoint on the Cloudflare/workerd path that allows authenticated attackers to cause duplicate-page loops and make later rows unreachable. Attackers with app.read_devices access can exploit non-advancing cursor filters to trigger infinite pagination loops, prevent dataset traversal, and cause repeated processing in device-management workflows.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.597"
+  },
+  {
+    "id": "CVE-2026-56317",
+    "description": "Nuxt before 4.4.7 (and the 3.x branch before 3.21.7) contains a cross-site scripting vulnerability in the NoScript component that writes slot content to innerHTML without escaping. Attackers can inject malicious scripts through untrusted data in NoScript slots, such as route.query parameters, which execute in the document context when the noscript tag is implicitly closed by script tags.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.733"
+  },
+  {
+    "id": "CVE-2026-56319",
+    "description": "Capgo before 12.128.2 contains an information disclosure vulnerability in the GET /statistics/app/:app_id endpoint that allows app-limited API keys to distinguish existing sibling app IDs through differential error responses. Attackers can enumerate real app IDs outside their allowed scope by observing 500 PGRST116 errors for inaccessible apps versus 401 errors for nonexistent apps, breaking tenant isolation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.863"
+  },
+  {
+    "id": "CVE-2026-56325",
+    "description": "Capgo before 12.128.2 uses ILIKE pattern matching instead of exact matching for app_id lookup in the preview subdomain resolver, allowing underscore characters in app_id to act as SQL wildcards. Attackers can create apps with app_ids differing by one character at underscore positions to cause unintended pattern matches, breaking preview functionality for legitimate apps or causing app-id confusion.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:05.997"
+  },
+  {
+    "id": "CVE-2026-56330",
+    "description": "Capgo before 12.128.2 contains an open redirect vulnerability in stripe_portal and stripe_checkout endpoints that accept unvalidated callbackUrl, successUrl, and cancelUrl parameters. Authenticated attackers can craft malicious billing URLs to redirect users to attacker-controlled domains for phishing and credential harvesting.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:06.130"
+  },
+  {
+    "id": "CVE-2026-56332",
+    "description": "Capgo before 12.128.2 contains an open redirect vulnerability in the confirm-signup endpoint that allows attackers to redirect users to arbitrary external websites. The confirmation_url parameter is not validated, enabling attackers to craft malicious links for phishing and credential harvesting attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T16:17:06.257"
+  },
+  {
+    "id": "CVE-2026-5366",
+    "description": "Prefect version 3.6.23 is vulnerable to remote code execution due to improper handling of user-controlled input in the `GitRepository` storage class. The `commit_sha` parameter, which is passed to git commands, lacks validation and does not include a `--` separator to distinguish user input from git flags. This allows attackers to inject arbitrary git flags, such as `--upload-pack`, enabling execution of external programs. Additionally, the `directories` parameter can be exploited to inject git flags during sparse-checkout operations. These vulnerabilities allow any user with deployment creation permissions to execute arbitrary commands on worker machines, compromising shared work pools in multi-tenant environments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-20T17:16:26.560"
+  },
+  {
+    "id": "CVE-2025-71379",
+    "description": "vLLM versions >= 0.6.3 and < 0.9.0 contain multiple regular expression denial of service (ReDoS) vulnerabilities. Several regex patterns — in vllm/lora/utils.py, the phi4mini tool parser, and the OpenAI-compatible serving chat endpoint — are susceptible to catastrophic backtracking. An attacker submitting crafted input with nested or repeated structures can trigger severe CPU consumption and performance degradation, resulting in denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T19:16:23.410"
+  },
+  {
+    "id": "CVE-2026-56340",
+    "description": "vLLM versions >= 0.10.2 and < 0.13.0 are missing sparse tensor validation in multimodal embeddings processing. Because PyTorch disables sparse tensor invariant checks by default, an attacker can submit crafted embedding requests with malformed (negative or out-of-bounds) tensor indices, when the prompt-embeds feature is enabled, to trigger crashes or resource exhaustion (denial of service), with potential for out-of-bounds/write-what-where memory corruption. This continues CVE-2025-62164, whose prior fix only disabled the feature by default rather than addressing the root cause.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-20T19:16:23.567"
+  },
+  {
+    "id": "CVE-2026-56341",
+    "description": "AVideo through version 26.0 contains multiple unauthenticated list.json.php endpoints in payment plugins lacking authorization checks, exposing PayPal tokens, Authorize.Net webhooks, and Bitcoin transaction records. Unauthenticated attackers can retrieve all payment transaction data including agreement IDs, user financial records, and API responses via direct GET requests to vulnerable endpoints.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-20T19:16:23.700"
+  },
+  {
+    "id": "CVE-2026-56342",
+    "description": "AVideo through version 27.0 contains a server-side request forgery vulnerability in plugin/Live/test.php that allows authenticated administrators to read arbitrary URLs via the statsURL parameter, which lacks isSSRFSafeURL() validation and accepts requests to private IP ranges and cloud metadata endpoints. Attackers can exploit this by crafting requests to internal services, cloud metadata endpoints like 169.254.169.254, and localhost to retrieve sensitive information including IAM credentials, internal service responses, and network configuration details.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T19:16:23.850"
+  },
+  {
+    "id": "CVE-2026-56345",
+    "description": "AVideo through 29.0 contains an authorization bypass vulnerability in the Meet plugin's uploadRecordedVideo.json.php endpoint that derives the target users_id from the uploaded filename without verification. An attacker with knowledge of the Meet shared secret can craft a malicious file upload with a filename containing an arbitrary users_id to invoke passwordless User->login() and establish an authenticated session as any user including admin. Attackers can obtain the Meet shared secret through path-traversal vulnerabilities or timing attacks against checkToken.json.php, then POST a crafted file to uploadRecordedVideo.json.php with a filename like '1-anything.mp4' to hijack admin sessions and gain full account takeover.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-20T19:16:23.983"
+  },
+  {
+    "id": "CVE-2026-56346",
+    "description": "AVideo through version 25.0 contains an authentication bypass vulnerability in the decryptMessage.json.php endpoint that allows unauthenticated users to decrypt PGP messages. Remote attackers can submit private keys, ciphertext, and passphrases to perform server-side decryption without credentials, exposing key material to logs and enabling resource exhaustion attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T19:16:24.127"
+  },
+  {
+    "id": "CVE-2026-56347",
+    "description": "AVideo TopMenu plugin through version 26.0 contains a stored cross-site scripting vulnerability in menu item rendering due to missing output encoding of icon classes, URLs, and text labels. Attackers can inject malicious JavaScript through unescaped menu item fields that execute for all site visitors, potentially stealing session cookies or performing unauthorized actions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-20T19:16:24.267"
+  },
+  {
+    "id": "CVE-2026-56355",
+    "description": "GNU Savannah Administration Savane through 3.17 uses untrusted data as part of authorization.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-06-20T21:16:54.293"
   }
 ]
