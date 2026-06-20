@@ -1,5 +1,222 @@
 [
   {
+    "id": "CVE-2026-9375",
+    "description": "urllib3 version 2.6.3 is vulnerable to a decompression bomb bypass in its streaming API (`preload_content=False`) when using Brotli support. The issue arises due to three independent code paths in `response.py` that bypass the `max_length` protection introduced in version 2.6.0 to mitigate CVE-2025-66471. Specifically, negative `max_length` values can be produced due to buffer arithmetic in `read()`, `flush_decoder` unconditionally overrides `max_length` to `-1`, and `_flush_decoder()` passes no limit at all, defaulting to unlimited decompression. This allows a malicious HTTP server to trigger an out-of-memory (OOM) condition by decompressing large payloads into memory, leading to a denial of service (DoS). The vulnerability affects urllib3 2.6.3 and Brotli 1.2.0 and impacts applications and libraries using `requests` or `urllib3` to stream content from untrusted sources.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.947"
+  },
+  {
+    "id": "CVE-2026-49340",
+    "description": "gonic is a music streaming server / free-software subsonic server API implementation. Prior to version 0.21.0, a logic error in `ServeCreateOrUpdatePlaylist` allows any authenticated Subsonic user (including non-admin) to write playlist M3U content to an attacker-controlled absolute filesystem path on the gonic host, and to create intermediate directories with `0o777` permissions. The bug is independent of CVE-2026-49338 and CVE-2026-49339. It is an unreachable guard clause combined with no path containment in `Store.Write`. Version 0.21.0 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.817"
+  },
+  {
+    "id": "CVE-2026-49339",
+    "description": "gonic is a music streaming server / free-software subsonic server API implementation. The maintainer's fix in  commit `6dd71e6a3c966867ef8c900d359a7df75789f410` added an ownership check based on `playlist.UserID`. However, `playlist.UserID` is derived from the first path segment of the attacker-controlled playlist ID, with no path containment on the resolved file path. Any authenticated Subsonic user can therefore bypass the ownership check and read any other user's playlist, delete any other user's playlist, and probe arbitrary file paths on the host for existence/readability. This is a bypass of the boundary the `6dd71e6` fix is trying to enforce; it is closely related to the original GONIC-1 IDOR but uses a different primitive (path traversal in the `id` parameter rather than direct cross-user access). Commit 0824bed88f6bbc490ba28bf09d28e5dfeb07b445 in version 0.21.0 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.687"
+  },
+  {
+    "id": "CVE-2026-49338",
+    "description": "gonic is a music streaming server / free-software subsonic server API implementation. Prior to version 0.21.0, the Subsonic API endpoints `/rest/deletePlaylist.view` and `/rest/getPlaylist.view` perform no per-resource authorization. Once authenticated as any user (admin or not), an attacker can delete any playlist owned by any other user (including admin) by passing its `id` and read the full contents (name, comment, song list) of any other user's **private** (non-public) playlist by passing its `id`. The Subsonic playlist `id` is `base64url(\"<userID>/<filename>.m3u\")`. Because filenames are user-supplied or time-derived and the `userID` is a small integer, IDs are guessable and frequently exposed (e.g. a previously-public playlist that was later made private still has the same ID). This breaks the multi-user trust boundary of gonic: a low-privileged user can wipe an administrator's curated playlists, and a user can exfiltrate any private playlist they obtain an ID for. The issue was fixed in commit `6dd71e6a3c966867ef8c900d359a7df75789f410`, which is part of version 0.21.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.557"
+  },
+  {
+    "id": "CVE-2026-49336",
+    "description": "@microsoft/kiota-http-fetchlibrary provides TypeScript libraries for Kiota-generated API clients. In versions 1.0.0-preview.97 through 1.0.0-preview.101, `@microsoft/kiota-http-fetchlibrary`'s `RedirectHandler` is documented as stripping `Authorization` and `Cookie` from cross-origin redirect targets, but the default `scrubSensitiveHeaders` callback in `RedirectHandlerOptions` uses case-sensitive property deletion (`delete headers.Authorization`, `delete headers.Cookie`) on a headers object that `FetchRequestAdapter.getRequestFromRequestInformation` has already lower-cased. The delete therefore targets keys that do not exist, the scrub is a no-op, and any Bearer token or Cookie attached by a kiota-generated SDK is forwarded to an attacker-controlled host across a 30x redirect. This is reachable in the default middleware chain (`MiddlewareFactory.getDefaultMiddlewares`) with no custom configuration, and applies to every kiota-generated TypeScript SDK that uses `BaseBearerTokenAuthenticationProvider` or any other authentication provider that sets the `Authorization` request header. Version 1.0.0-preview.102 patches the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.430"
+  },
+  {
+    "id": "CVE-2026-49293",
+    "description": "js-toml is a TOML parser for JavaScript, fully compliant with the TOML 1.0.0 Spec. Versions up to and including 1.1.0 parse hexadecimal / octal / binary integer literals via a hand-written `parseBigInt` loop that multiplies a `BigInt` accumulator by the radix once per input digit. Each iteration performs a `BigInt * BigInt` operation on an accumulator that grows linearly with the number of digits already consumed, so the whole loop is O(n²) in the literal length. The lexer regex places no upper bound on the literal length, so a single TOML document containing one ~500 kB hex literal pins one CPU core for ~40 seconds on a modern laptop (Apple M-series, Node v22). Memory amplification is bounded but CPU amplification is severe and grows quadratically: doubling the literal length quadruples the work. A caller that invokes `load()` on attacker-controlled TOML (configuration upload endpoints, CI/CD systems ingesting third-party `*.toml`, IDE plugins, build tools) is exposed to a single-request CPU exhaustion DoS. Version 1.1.1 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.297"
+  },
+  {
+    "id": "CVE-2026-49291",
+    "description": "mcp-memory-service is a semantic memory layer for AI applications. Prior to version 10.65.3, the HTTP MCP JSON-RPC endpoint at `/mcp` requires only OAuth `read` scope for all requests, then dispatches `tools/call` directly to handlers that include mutating tools. A read-only OAuth client can call `store_memory` and `delete_memory` through MCP even though the corresponding REST endpoints require `write` scope. Version 10.65.3 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.170"
+  },
+  {
+    "id": "CVE-2026-49288",
+    "description": "Statamic is a Laravel and Git powered content management system (CMS). Prior to 5.73.23 and 6.20.0, an authenticated Control Panel user could view metadata and content for resources they don't have permission to view, including entries, assets, users, roles, groups, and other configured resources. Depending on the resource, this could expose titles, custom field values, entry content, asset metadata, and the existence of users, roles, and groups. No data could be modified. This has been fixed in 5.73.23 and 6.20.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:36.040"
+  },
+  {
+    "id": "CVE-2026-27878",
+    "description": "A TraceQL query in Grafana Tempo with a large exemplars hint value can cause the Tempo instance to allocate an excessive amount of memory, resulting in an out-of-memory crash. This could allow an authenticated user to trigger a denial of service against the Tempo service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:34.897"
+  },
+  {
+    "id": "CVE-2026-12726",
+    "description": "A flaw was found in the AWX GitHub webhook integration. When processing GitHub pull_request webhooks, the controller stores the pull_request.statuses_url value from the webhook payload without validating that it points to a trusted GitHub API endpoint. If a job template is configured with a GitHub Personal Access Token as its webhook credential, the controller later POSTs that token to the stored callback URL when posting job status updates. An attacker who can submit a correctly signed forged webhook using the job template's webhook_key can redirect the callback to an attacker-controlled URL and exfiltrate the configured GitHub PAT.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:27.217"
+  },
+  {
+    "id": "CVE-2026-12238",
+    "description": "The WP Go Maps – Most Popular Map Plugin plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 10.1.01. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to create arbitrary records in plugin database tables (maps, markers, circles, polygons, polylines, rectangles, and point labels) by supplying a WPGMZA-namespaced CRUD-backed class name via the phpClass parameter. The namespace validation check (requiring the 'WPGMZA' prefix) does not prevent exploitation because classes such as WPGMZA\\Map and WPGMZA\\Marker satisfy it while still triggering an INSERT into the corresponding plugin table before the route rejects the request.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:27.093"
+  },
+  {
+    "id": "CVE-2023-54357",
+    "description": "Joomla com_booking component 2.4.9 contains an information disclosure vulnerability that allows unauthenticated attackers to enumerate user accounts by exploiting the getUserData function in the customer controller. Attackers can send GET requests to index.php with option=com_booking, controller=customer, task=getUserData, and an id parameter to retrieve user names, usernames, and email addresses through brute force enumeration.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T19:16:25.840"
+  },
+  {
+    "id": "CVE-2026-49359",
+    "description": "PhpWeasyPrint is a PHP library allowing PDF generation from a URL or an HTML page. Prior to version 2.6.0, `pontedilana/php-weasyprint` fetches the content of option values server-side via `file_get_contents()` when the value looks like a URL, without restricting the URL scheme. The `attachment` option of `Pdf` is the reachable sink: any value that passes `isOptionUrl()` (`filter_var(..., FILTER_VALIDATE_URL)`) is downloaded by the PHP process and embedded into the generated PDF. Because `FILTER_VALIDATE_URL` accepts `http`, `https`, `ftp`, `file` and PHP stream wrappers such as `php://`, an attacker who can influence the `attachment` value reaches both a **Server-Side Request Forgery** primitive (e.g. internal HTTP endpoints, cloud metadata) and a local file disclosure primitive (`file://`, `php://filter/...`), with the fetched bytes exfiltrated as a PDF attachment. This is the same class of issue KnpLabs/snappy patched for its `xsl-style-sheet` option in GHSA-c5fp-p67m-gq56. The library is documented as a one-to-one substitute for KnpLabs/snappy and shares the same code shape. PhpWeasyPrint version 2.6.0 contains a patch for the issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:19.890"
+  },
+  {
+    "id": "CVE-2026-49290",
+    "description": "Slopsmith is a self-contained web application for browsing, playing, and practicing Rocksmith 2014 Custom DLC (CDLC). Prior to 0.2.9-alpha.5, a path-traversal vulnerability in Slopsmith's archive extractors allows an attacker to write arbitrary files outside the extraction directory by supplying a crafted PSARC or sloppak archive. With the default Docker configuration (running as root) and the ability to drop a file into the plugin directory, this escalates to arbitrary remote code execution on the host. Three archive extractors concatenated archive-entry filenames directly onto the extraction root without validation: `lib/psarc.py::unpack_psarc` — PSARC TOC filenames; `lib/patcher.py::unpack_psarc` — duplicate of the above in the patcher flow; `lib/sloppak.py::_unpack_zip` — bare `ZipFile.extractall()` with no member filter. Each accepts entry names containing `..` segments, absolute paths, or backslash separators. The Python `zipfile` module's default `extractall()` is documented as not preventing traversal when callers don't supply a member-filter callback. Version 0.2.9-alpha.5 patches the issue. Until updated, do not open PSARC or sloppak archives from untrusted sources, and do not expose the Slopsmith instance to the public internet. Docker users should also pull the latest image after the next slopsmith Docker image is published.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:19.750"
+  },
+  {
+    "id": "CVE-2026-49287",
+    "description": "Statamic is a Laravel and Git powered content management system (CMS). Prior to 5.73.23 and 6.20.0, the fix for CVE-2026-41175 was incomplete. It addressed the issue in the query builder, but the same protection was not applied to in-memory collection sorting. Manipulating sort parameters could result in the loss of content and assets. This requires a front-end template that passes request input into a tag's sort parameter. It is not exploitable by default — a template would need to be explicitly set up to sort by a visitor-controlled value. This has been fixed in 5.73.23 and 6.20.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:19.617"
+  },
+  {
+    "id": "CVE-2026-49286",
+    "description": "PhpWeasyPrint is a PHP library allowing PDF generation from a URL or an HTML page. Prior to version 2.6.0, `pontedilana/php-weasyprint` guarded the output filename against the `phar://` stream wrapper with a case-sensitive blacklist. PHP stream wrappers are case-insensitive, so `PHAR://`, `Phar://`, etc. bypass the check and reach `fileExists()` (`file_exists()`) in `prepareOutput()`. On PHP 7 (which the library still supports — PHP 7.4+), this triggers deserialization of a crafted PHAR archive's metadata, leading to remote code execution. This is the patch-bypass of CVE-2023-28115. The same issue and fix were handled upstream in KnpLabs/snappy (GHSA-92rv-4j2h-8mjj). PhpWeasyPrint version 2.6.0 contains a patch for the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:19.487"
+  },
+  {
+    "id": "CVE-2026-49271",
+    "description": "libheif is a HEIF and AVIF file format decoder and encoder. Prior to version 1.22.1, the uncompressed HEIF decoder validates explicit icef compressed-unit offsets using unit_offset + unit_size. Because the addition can wrap, a crafted HEIF file can pass the range check and then construct a vector from iterators outside the compressed item buffer, producing an out-of-bounds heap read and crash. Version 1.22.1 patches the issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:19.353"
+  },
+  {
+    "id": "CVE-2019-25762",
+    "description": "Joomla! Component JoomProject 1.1.3.2 contains an information disclosure vulnerability that allows unauthenticated attackers to access sensitive user data by exploiting the projects endpoint. Attackers can send requests to index.php with option=com_jpprojects&view=projects&tmpl=component&format=json parameters to retrieve user IDs, names, and email addresses in JSON format.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:19.143"
+  },
+  {
+    "id": "CVE-2019-25761",
+    "description": "Joomla! Component JoomCRM 1.1.1 contains an SQL injection vulnerability that allows authenticated attackers to execute arbitrary SQL queries by injecting malicious code through the deal_id parameter. Attackers can send GET requests to index.php with option=com_joomcrm&view=contacts and inject SQL code in the deal_id parameter to extract sensitive database information including table names and schemas.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:19.020"
+  },
+  {
+    "id": "CVE-2019-25760",
+    "description": "Joomla! Component Easy Shop 1.2.3 contains a local file inclusion vulnerability that allows unauthenticated attackers to read arbitrary files by supplying base64-encoded file paths. Attackers can send GET requests to index.php with the option parameter set to com_easyshop, task set to ajax.loadImage, and a base64-encoded file path in the file parameter to retrieve sensitive files like configuration.php and system files.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:18.890"
+  },
+  {
+    "id": "CVE-2019-25759",
+    "description": "Joomla! Component vBizz 1.0.7 contains an SQL injection vulnerability that allows authenticated attackers to execute arbitrary SQL queries by injecting malicious code through the payid parameter. Attackers can submit POST requests to the employee management interface with crafted payid array values containing SQL commands to extract sensitive database information including version and database names.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:18.763"
+  },
+  {
+    "id": "CVE-2019-25758",
+    "description": "Joomla! Component vBizz 1.0.7 contains an unrestricted file upload vulnerability that allows authenticated attackers to upload arbitrary PHP files by submitting malicious files through the profile_pic parameter. Attackers can upload PHP files via POST requests to the employee view endpoint and execute them from the uploads directory to achieve remote code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:18.523"
+  },
+  {
+    "id": "CVE-2019-25757",
+    "description": "Joomla vWishlist 1.0.1 contains an SQL injection vulnerability that allows authenticated attackers to execute arbitrary SQL queries by injecting malicious code through the vproductid and userid parameters. Attackers can send POST requests to the component with crafted SQL payloads in these parameters to extract sensitive database information including version and database names.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:18.360"
+  },
+  {
+    "id": "CVE-2019-25756",
+    "description": "Joomla! Component vAccount 2.0.2 contains an SQL injection vulnerability that allows unauthenticated attackers to execute arbitrary SQL queries by injecting malicious code through the vid parameter. Attackers can send GET requests to the vaccount-dashboard/expense endpoint with crafted SQL payloads in the vid parameter to extract sensitive database information including version and database names.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:18.230"
+  },
+  {
+    "id": "CVE-2019-25755",
+    "description": "Joomla Component vReview 1.9.11 contains an SQL injection vulnerability that allows unauthenticated attackers to execute arbitrary SQL queries by injecting malicious code through the cmId parameter. Attackers can send POST requests to the editReview task endpoint with URL-encoded SQL UNION statements in the cmId parameter to extract database information including usernames, passwords, and database versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:18.100"
+  },
+  {
+    "id": "CVE-2019-25754",
+    "description": "Joomla Component vRestaurant 1.9.4 contains an SQL injection vulnerability that allows unauthenticated attackers to execute arbitrary SQL queries by injecting malicious code through the keysearch parameter. Attackers can send POST requests to the menu-listing-layout endpoint with crafted SQL payloads in the keysearch parameter to extract database table names and sensitive information from the database.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:17.973"
+  },
+  {
+    "id": "CVE-2019-25753",
+    "description": "Joomla! Component VMap 1.9.6 contains an SQL injection vulnerability that allows unauthenticated attackers to execute arbitrary SQL queries by injecting malicious code into the latlngbound parameter. Attackers can send GET requests to index.php with the option=com_vmap&task=loadmarker parameters containing SQL injection payloads to manipulate database queries and extract sensitive information.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:17.847"
+  },
+  {
+    "id": "CVE-2019-25752",
+    "description": "Joomla! Component J-BusinessDirectory 4.9.7 contains an SQL injection vulnerability that allows unauthenticated attackers to execute arbitrary SQL queries by injecting malicious code through the type parameter. Attackers can send GET requests to index.php with the option=com_jbusinessdirectory&task=categories.getCategories parameters and inject UNION-based SQL statements in the type parameter to extract database information including schema names and sensitive data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:17.723"
+  },
+  {
+    "id": "CVE-2019-25751",
+    "description": "Joomla Component J-ClassifiedsManager 3.0.5 contains an SQL injection vulnerability that allows unauthenticated attackers to execute arbitrary SQL queries by injecting malicious code through POST parameters. Attackers can submit crafted SQL payloads in the categorySearch, adType, and citySearch parameters to the displayads component to extract sensitive database information including usernames, databases, and version details.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:17.600"
+  },
+  {
+    "id": "CVE-2019-25750",
+    "description": "Joomla Component J-MultipleHotelReservation 6.0.7 contains an SQL injection vulnerability that allows unauthenticated attackers to execute arbitrary SQL queries by injecting malicious code through the hotel_id parameter. Attackers can send POST requests to the search-hotels endpoint with crafted SQL UNION SELECT statements to extract sensitive database information including table names and column data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:17.473"
+  },
+  {
+    "id": "CVE-2019-25749",
+    "description": "Joomla J-CruisePortal 6.0.4 contains an SQL injection vulnerability that allows authenticated attackers to execute arbitrary SQL queries by injecting malicious code through the guest_adult parameter. Attackers can send POST requests to the cruises endpoint with crafted SQL payloads in the guest_adult parameter to extract sensitive database information or manipulate database records.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-19T18:16:16.473"
+  },
+  {
     "id": "CVE-2026-56211",
     "description": "A remote code execution vulnerability was found in libaom, the reference AV1 codec implementation. Insufficient bounds validation in the AV1 encoder's SVC (Scalable Video Coding) layer ID control allows an attacker to supply crafted video frame pixels that overlap with internal encoder layer context structures. In fork-based video processing services, an attacker can use this to hijack the cyclic refresh map pointer, brute-force the process base address via a crash oracle, and redirect control flow to achieve arbitrary command execution. Exploitation requires the target service to use libaom with SVC encoding enabled and accept attacker-supplied video frames.",
     "severity": "High",
@@ -7530,271 +7747,5 @@
     "severity": "High",
     "tech": "Android",
     "published": "2026-06-16T20:16:23.430"
-  },
-  {
-    "id": "CVE-2026-53866",
-    "description": "OpenClaw before 2026.5.12 contains an allowlist bypass vulnerability in shell inline-command parsing that allows authenticated operators to execute unapproved commands. A command request using shell inline-command forms could route through a parser case missing the expected allowlist decision, enabling shell content execution without intended approval prompts.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:05.023"
-  },
-  {
-    "id": "CVE-2026-53865",
-    "description": "OpenClaw before 2026.5.2 contains a path traversal vulnerability in maintenance task execution that allows workspace-derived service paths to influence trash command selection. Attackers can execute unintended local executables from operator-unintended paths during maintenance operations by manipulating workspace-derived environment paths.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:04.890"
-  },
-  {
-    "id": "CVE-2026-53864",
-    "description": "OpenClaw before 2026.5.26 contains an insufficient sanitization vulnerability in the host environment sanitizer that allows Node.js control variables to bypass validation. Attackers with access to workspace .env files, tool environment overrides, or skill environment blocks can pass malicious Node.js control variables to influence child processes or coverage output paths.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:04.760"
-  },
-  {
-    "id": "CVE-2026-53863",
-    "description": "OpenClaw before 2026.4.25 contains an input validation vulnerability in tool group policy callers that accept unvalidated group IDs. Attackers who can supply a group ID to the policy resolver could trigger incorrect group-policy decisions for tool invocations, potentially bypassing intended access controls.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:04.633"
-  },
-  {
-    "id": "CVE-2026-53862",
-    "description": "OpenClaw before 2026.5.12 contains a bootstrap token replay vulnerability allowing callers with pending token access to reuse tokens with broader requested scopes. Attackers can replay bootstrap tokens before approval to escalate pairing authority beyond intended scope limits.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:04.160"
-  },
-  {
-    "id": "CVE-2026-53861",
-    "description": "OpenClaw before 2026.5.6 contains an allowlist bypass vulnerability in the macOS Swift exec feature that misses combined POSIX inline-command flags. Attackers can execute shell content outside the intended allowlist check by using combined flag forms, potentially allowing unauthorized command execution depending on operator configuration.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:04.027"
-  },
-  {
-    "id": "CVE-2026-53860",
-    "description": "OpenClaw before 2026.5.7 contains a sender policy bypass vulnerability in BlueBubbles that allows participants to match allowlist entries through conversation metadata rather than stable sender identity. Attackers can influence conversation-level identifiers to receive agent responses intended for configured senders, potentially bypassing access controls.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:03.573"
-  },
-  {
-    "id": "CVE-2026-53859",
-    "description": "OpenClaw before 2026.5.26 contains a hostname validation vulnerability allowing attackers to bypass blocklist comparisons using trailing-dot notation in model or workspace-derived URLs. Attackers can exploit inconsistent hostname checks to reach destinations that operators intended to block through hostname policies.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:03.440"
-  },
-  {
-    "id": "CVE-2026-53858",
-    "description": "OpenClaw before 2026.5.2 contains an environment variable injection vulnerability where workspace .env STATE_DIRECTORY could influence bundled runtime dependency roots. Attackers can manipulate the STATE_DIRECTORY variable to load runtime dependencies from unintended local paths, potentially executing malicious code during dependency resolution.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:03.310"
-  },
-  {
-    "id": "CVE-2026-53857",
-    "description": "OpenClaw before 2026.5.3 contains a policy enforcement vulnerability where Zalo contacts with mutable display metadata could match allowFrom policy entries through display name changes. Attackers with mutable display names could receive agent responses intended for different Zalo identities when the feature is enabled.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:03.180"
-  },
-  {
-    "id": "CVE-2026-53856",
-    "description": "OpenClaw 2026.4.23 before 2026.4.24 contains an insecure file permissions vulnerability in config recovery that restores OpenClaw.json with overly broad permissions. Local attackers on shared hosts can read sensitive configuration data by exploiting the recovery path to access the restored config file.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:03.047"
-  },
-  {
-    "id": "CVE-2026-53855",
-    "description": "OpenClaw before 2026.4.2 contains an inline-eval bypass vulnerability allowing authenticated operators to weaken strict allowlist checks via shell positional parameters. Attackers can combine allowlisted tools with shell positional arguments to place inline-eval content in shell carriers outside intended allowlist rules, enabling execution of unapproved shell-provided content.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:02.910"
-  },
-  {
-    "id": "CVE-2026-53854",
-    "description": "OpenClaw before 2026.4.25 contains a privilege escalation vulnerability in internal and webchat command authentication that allows senders to inherit wildcard ownerAllowFrom state across channel boundaries. Attackers can exploit this by sending commands on affected internal or webchat paths to execute owner-style command behavior outside intended channel scope, potentially bypassing access controls.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:02.780"
-  },
-  {
-    "id": "CVE-2026-53853",
-    "description": "OpenClaw before 2026.5.12 contains an argument pattern validation bypass in the exec allowlist that allows attackers to execute disallowed arguments for allowlisted executables on Linux and macOS systems. Attackers can bypass configured argPattern restrictions by directly invoking allowlisted executables with unrestricted arguments, potentially enabling unauthorized file access, network access, or command execution.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:02.650"
-  },
-  {
-    "id": "CVE-2026-53852",
-    "description": "OpenClaw before 2026.4.25 contains a scope containment bypass vulnerability in device re-pairing that allows authenticated operators to restore broader scopes than intended by submitting empty-scope re-pairing requests. Attackers can exploit this by sending re-pairing requests with empty scope sets to skip containment guards and retain unauthorized device access.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:02.510"
-  },
-  {
-    "id": "CVE-2026-53851",
-    "description": "OpenClaw before 2026.5.12 contains a notification bypass vulnerability allowing Slack reaction events to enter the agent pipeline despite disabled reaction notifications. Attackers can trigger unintended agent processing by sending reaction events when the feature is enabled, potentially leading to unauthorized processing of lower-trust input.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:02.327"
-  },
-  {
-    "id": "CVE-2026-53850",
-    "description": "OpenClaw before 2026.4.25 contains a control scope enforcement bypass vulnerability in the focus command that allows authenticated callers to execute the command without proper authorization checks. Attackers can trigger the focus command to change focus state outside intended caller authority, potentially enabling unauthorized operations depending on gateway configuration and input trust levels.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:02.183"
-  },
-  {
-    "id": "CVE-2026-53849",
-    "description": "OpenClaw before 2026.5.7 contains a privilege escalation vulnerability where the allowFrom feature improperly validates Discord account identity using mutable display names instead of immutable user IDs. Attackers with Discord accounts can change their display name to match a policy entry and gain unauthorized agent access intended for another Discord identity.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:02.053"
-  },
-  {
-    "id": "CVE-2026-53848",
-    "description": "OpenClaw before 2026.5.26 contains an exec allowlist bypass vulnerability allowing authenticated operators to execute wrapper-level side effects outside allowlisted command intent. Attackers can craft command requests that bypass allowlist validation by leveraging transparent command wrappers to perform unintended operations.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:01.920"
-  },
-  {
-    "id": "CVE-2026-53847",
-    "description": "OpenClaw before 2026.5.6 contains a privilege escalation vulnerability in the Active Memory write scope that allows Gateway operators with operator.write access to modify global configuration without requiring operator.admin privileges. Attackers with operator.write access can exploit insufficient scope validation to apply unauthorized configuration changes beyond the intended write scope.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:01.790"
-  },
-  {
-    "id": "CVE-2026-53846",
-    "description": "OpenClaw before 2026.4.29 contains a path traversal vulnerability in the install helper that allows workspace .env files to override the npm_execpath configuration used for bundled runtime dependency installation. Attackers with workspace access can execute unintended local package-manager executables during dependency setup to compromise the build environment.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:01.653"
-  },
-  {
-    "id": "CVE-2026-53845",
-    "description": "OpenClaw before 2026.5.6 contains a hook bypass vulnerability where skill commands routed through the affected dispatch path skip before-tool-call hook coverage. Attackers can exploit this by sending skill commands through the vulnerable dispatch path to bypass hook-based auditing and policy enforcement mechanisms.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:01.520"
-  },
-  {
-    "id": "CVE-2026-53844",
-    "description": "OpenClaw before 2026.4.29 contains a session visibility check bypass vulnerability in shared memory search that allows authenticated callers to access memory entries without proper authorization. Attackers can skip session visibility guards on the search path to retrieve memory entries that should not be visible to their session.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:01.390"
-  },
-  {
-    "id": "CVE-2026-53843",
-    "description": "OpenClaw before 2026.5.26 contains an authorization bypass vulnerability where a surviving pairing-scoped device session can re-establish node token authority after revocation. Attackers with a paired device can regain WebSocket node-level access without renewed approval, weakening revocation controls and maintaining unauthorized access longer than intended.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:01.257"
-  },
-  {
-    "id": "CVE-2026-53842",
-    "description": "OpenClaw before 2026.5.2 contains an environment variable injection vulnerability allowing workspace .env files to influence Python runtime selection through CLOUDSDK_PYTHON during Gmail setup gcloud execution. Attackers with repository access can manipulate the CLOUDSDK_PYTHON variable to execute setup through unintended local Python paths, potentially enabling arbitrary code execution.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:01.127"
-  },
-  {
-    "id": "CVE-2026-53841",
-    "description": "OpenClaw before 2026.5.12 contains a cross-site scripting vulnerability in exported session HTML that preserves unsafe javascript: and data: links in generated content. Attackers can execute browser-side scripts if a trusted operator opens the exported file and activates a malicious link.",
-    "severity": "Medium",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:00.993"
-  },
-  {
-    "id": "CVE-2026-53840",
-    "description": "OpenClaw before 2026.5.12 contains an information disclosure vulnerability in streamable-http MCP servers that forwards operator-configured custom headers during cross-origin redirects. Attackers controlling or compromising an MCP endpoint can redirect requests to exfiltrate sensitive headers like API keys or tenant-routing credentials to attacker-controlled origins.",
-    "severity": "High",
-    "tech": "Openclaw",
-    "published": "2026-06-16T19:17:00.863"
-  },
-  {
-    "id": "CVE-2026-50656",
-    "description": "Microsoft is aware of an elevation of privilege in the Microsoft Malware Protection Engine in Microsoft Defender publicly referred to as &quot;RoguePlanet &quot;. We are working to provide a high quality security update that addresses this vulnerability. We will provide information in this CVE when the update is available.",
-    "severity": "High",
-    "tech": "Malware protection engine",
-    "published": "2026-06-16T19:16:59.683"
-  },
-  {
-    "id": "CVE-2026-4367",
-    "description": "A flaw was found in libXpm. A local user with low privileges could exploit an Out-of-Bounds Read vulnerability in the `xpmNextWord()` function by processing a specially crafted or very small XPM (X PixMap) image file. This improper validation of file boundaries can cause an internal pointer to read beyond the file's end, leading to application crashes and Denial of Service conditions.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:59.233"
-  },
-  {
-    "id": "CVE-2026-48775",
-    "description": "LangGraph SQLite Checkpoint is an implementation of LangGraph CheckpointSaver that uses SQLite DB (both sync and async, via aiosqlite). In versions 4.1.0 and prior, the JsonPlusSerializer can reconstruct Python objects from JSON checkpoint payloads. Under conditions where someone could modify checkpoint bytes at rest in the backing store, the deserialization path could reconstruct objects beyond what the application expects, which could in turn result in code execution at checkpoint load time. This is a defense-in-depth issue. The affected behavior is reachable only when checkpoint bytes at rest in the backing store can be modified by an unauthorized party. In most deployments that prerequisite already implies a serious incident; the additional concern is turning \"checkpoint-store write access\" into code execution in the application runtime. This issue has been fixed in version 4.1.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:58.880"
-  },
-  {
-    "id": "CVE-2026-47964",
-    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by a Heap-based Buffer Overflow vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:56.367"
-  },
-  {
-    "id": "CVE-2026-47963",
-    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by an out-of-bounds read vulnerability that could lead to disclosure of sensitive memory. An attacker could leverage this vulnerability to disclose sensitive information. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:56.250"
-  },
-  {
-    "id": "CVE-2026-47934",
-    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by an out-of-bounds read vulnerability that could lead to disclosure of sensitive memory. An attacker could leverage this vulnerability to disclose sensitive information. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:56.130"
-  },
-  {
-    "id": "CVE-2026-47927",
-    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by an out-of-bounds read vulnerability that could lead to disclosure of sensitive memory. An attacker could leverage this vulnerability to disclose sensitive information. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:56.007"
-  },
-  {
-    "id": "CVE-2026-47749",
-    "description": "stable-diffusion.cpp is a pure C/C++ library for running diffusion model (Stable Diffusion, Flux, Wan, Qwen Image, Z-Image, and more) inference. Versions prior to master-584-0a7ae07 are vulnerable to heap buffer overflow in SHORT_BINUNICODE parsing for PyTorch checkpoint files. The pickle .ckpt parser in src/model.cpp contained a heap buffer overflow vulnerability in the SHORT_BINUNICODE opcode handler. The issue was caused by sign confusion on the opcode length field. A crafted .ckpt file could trigger memcpy with a very large length derived from a negative signed value, causing immediate heap corruption. Any application using affected stable-diffusion.cpp releases to load untrusted .ckpt model files could be vulnerable. A malicious checkpoint file could cause heap corruption through memcpy with an attacker-controlled length. This may lead to process crash and could potentially be leveraged for code execution depending on heap layout. The attack requires the victim or application to load a .ckpt file from an untrusted source, such as a downloaded model from a model sharing site. The issue has been resolved in version master-584-0a7ae07. If developers are unable to immediately update their applications they can work around this issue by not loading .ckpt checkpoint files from untrusted sources, and referring to trusted model sources and safer formats such as .safetensors where possible.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:55.867"
-  },
-  {
-    "id": "CVE-2026-47748",
-    "description": "stable-diffusion.cpp is a pure C/C++ library for running diffusion model (Stable Diffusion, Flux, Wan, Qwen Image, Z-Image, and more) inference. Versions prior to master-584-0a7ae07 are vulnerable to an out-of-bounds reads error through PyTorch checkpoint pickle opcode parsing. The pickle .ckpt parser in src/model.cpp did not consistently check that enough input remained before reading opcode arguments or advancing the parser buffer with a crafted or truncated .ckpt file. Throughout the pickle parser, opcode handlers advanced the parser position with expressions such as buffer += N without first checking that buffer + N <= buffer_end. A truncated file could therefore cause reads past the end of the metadata buffer. LibFuzzer found crashes in under one second using malformed checkpoint inputs. Any application using affected stable-diffusion.cpp releases to load untrusted .ckpt model files could be vulnerable. The attack requires the victim or application to load a .ckpt file from an untrusted source, such as a downloaded model from a model sharing site. This issue has been fixed in version master-584-0a7ae07. If developers are unable to immediately update their applications, they can work around this issue by ensuring they do not load .ckpt checkpoint files from untrusted sources. They should prefer trusted model sources and safer formats such as .safetensors where possible.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:55.720"
-  },
-  {
-    "id": "CVE-2026-10748",
-    "description": "An authenticated user with the nx-licensing-create privilege can upload a specially crafted license file to execute arbitrary operating system commands as the Nexus process user in Sonatype Nexus Repository 3 versions before 3.92.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:30.607"
-  },
-  {
-    "id": "CVE-2024-39575",
-    "description": "update_disk_psu_baseline.sh requires password in plain text",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-16T19:16:29.040"
   }
 ]
