@@ -1,5 +1,89 @@
 [
   {
+    "id": "CVE-2026-11833",
+    "description": "Overview: \nA vulnerability has been found in FAST/TOOLS and CI Server. The web server may return a response containing the CI Server setting information. This information could \nbe exploited by an attacker for other attacks. \n\nThe affected products and versions are as follows:\n\nFAST/TOOLS (Packages: RVSVRN, UNSVRN, HMIWEB, FTEES, HMIMOB) R9.01 to R10.04\n\nCI Server (All packages) R1.01 to R1.04",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-23T02:16:30.917"
+  },
+  {
+    "id": "CVE-2026-10658",
+    "description": "A missing length validation in the Zephyr Bluetooth Host ISO receive path can be triggered by malformed HCI ISO data. In bt_iso_recv() (subsys/bluetooth/host/iso.c), when processing PB=START/SINGLE fragments, the code pulls a TS SDU header (8 bytes, ts=1) or a non-TS SDU header (4 bytes, ts=0) without first verifying that buf->len contains at least that many bytes. The outer HCI ISO length check in hci_iso() validates payload length consistency but not the minimum inner SDU header size, so a packet with payload length 1 passes hci_iso() and then reaches net_buf_pull_mem(), which asserts buf->len >= len. As a result, malformed ISO traffic deterministically triggers a kernel assert (denial of service) in assert-enabled builds, and in non-assert builds the same path may proceed with an undersized buffer, leading to out-of-bounds read behavior. The issue affects products using the Zephyr Host with CONFIG_BT_ISO_RX enabled, particularly where incoming HCI data can be influenced by a malicious or compromised controller or malformed forwarded ISO traffic.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-23T01:16:26.867"
+  },
+  {
+    "id": "CVE-2026-10651",
+    "description": "A malformed Bluetooth Classic SDP attribute can trigger a reachable assertion in Zephyr's SDP parser. In subsys/bluetooth/host/classic/sdp.c, bt_sdp_parse_attribute() accepts an input buffer once it contains the 1-byte attribute type and 2-byte attribute id, but then unconditionally pulls an additional byte for the value type without verifying that the byte is present. A truncated 3-byte attribute (for example 09 00 09) therefore reaches net_buf_simple_pull() with insufficient remaining length, triggering the __ASSERT_NO_MSG(buf->len >= len) check and a kernel panic in assert-enabled builds (denial of service). In builds where assertions are disabled, parsing may continue past the end of the available buffer, leading to an out-of-bounds read and undefined behavior.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-23T01:16:26.747"
+  },
+  {
+    "id": "CVE-2026-10645",
+    "description": "Zephyr's ext2 directory-entry parser does not fully validate on-disk directory entry structure before copying the entry name and advancing traversal state. In ext2_fetch_direntry() (subsys/fs/ext2/ext2_diskops.c), the code only checks de_name_len <= EXT2_MAX_FILE_NAME and then copies the name with memcpy without validating the structural relationship between de_rec_len, de_name_len, and the directory block boundary (for example that de_rec_len is non-zero, at least the size of the entry header, and that the record fits within the block). Callers such as find_dir_entry() and ext2_get_direntry() (subsys/fs/ext2/ext2_impl.c) then advance traversal using the unvalidated de_rec_len. A crafted ext2 image can therefore cause an out-of-bounds read from the directory block buffer when a malformed entry near the end of a block triggers an oversized name copy, or a zero-progress infinite loop when de_rec_len == 0. The issue is not reached at mount time but later through directory traversal paths such as pathname lookup, stat/open/unlink/rename, and readdir. The primary impact is denial of service and out-of-bounds reads under attacker-controlled ext2 images mounted from untrusted media.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-23T01:16:26.607"
+  },
+  {
+    "id": "CVE-2026-54236",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.23.1rc0, the fix for CVE-2026-22778, which introduced a sanitize_message helper that strips object-repr memory addresses from error messages before they reach the client, is incomplete: several response paths echo str(exc) directly to clients without calling sanitize_message. The unsanitized sites include the Anthropic API router in vllm/entrypoints/anthropic/api_router.py (the POST /v1/messages and POST /v1/messages/count_tokens handlers), the Server-Sent Events streaming converter in vllm/entrypoints/anthropic/serving.py, and the realtime speech-to-text WebSocket in vllm/entrypoints/speech_to_text/realtime/connection.py. These paths catch the exception inside the route coroutine and construct the JSONResponse themselves, bypassing the sanitizing global FastAPI exception handler, and WebSocket frames do not traverse that handler chain at all. Using the same primitive as the parent issue, an unauthenticated attacker can send malformed image bytes through the Anthropic Messages API image content parts so that PIL.Image.open raises an UnidentifiedImageError whose message contains the BytesIO object repr, leaking the heap memory address verbatim in the error.message field of the response body. This vulnerability is fixed in 0.23.1rc0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:31.290"
+  },
+  {
+    "id": "CVE-2026-54235",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.23.1rc0, ll temperature validation gates use comparison operators (<, >), which silently evaluate to False for NaN and for positive Infinity in Python's IEEE 754 float semantics. Both values pass every guard and propagate to GPU sampling kernels, where they produce undefined behavior or CUDA errors that can crash the inference worker. This vulnerability is fixed in 0.23.1rc0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:31.143"
+  },
+  {
+    "id": "CVE-2026-54233",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.23.1rc0, vLLM's /v1/audio/transcriptions endpoint limits compressed upload size but not decoded PCM output. A 25MB OPUS file expands to ~14.9GB of float32 PCM at decode time. This vulnerability is fixed in 0.23.1rc0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:31.007"
+  },
+  {
+    "id": "CVE-2026-54232",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.22.1, the vLLM Dockerfile is vulnerable to a dependency confusion attack through the flashinfer-jit-cache package. The package is installed from a custom index (flashinfer.ai/whl/) using --extra-index-url, but the package name was not registered on PyPI, and UV_INDEX_STRATEGY=\"unsafe-best-match\" is set globally. An attacker who registers flashinfer-jit-cache on PyPI with version 0.6.11.post2 can execute arbitrary code as root during the Docker build and backdoor every resulting container image, enabling exfiltration of all user prompts, API credentials, and model data from production vLLM deployments This vulnerability is fixed in 0.22.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:30.873"
+  },
+  {
+    "id": "CVE-2026-53923",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). From 0.5.5 until 0.23.1rc0, integer truncation of tensor dimensions in vLLM's GGUF dequantize kernels (csrc/quantization/gguf/gguf_kernel.cu) causes partial tensor processing. The output tensor is allocated at full size via torch::empty (uninitialized memory), but the dequantize CUDA kernel processes only a truncated number of elements. The unfilled portion of the output tensor retains whatever was previously in GPU memory. In multi-tenant inference deployments, this residual GPU memory may contain tensor data from other users' inference requests, constituting information disclosure. This vulnerability is fixed in 0.23.1rc0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:30.737"
+  },
+  {
+    "id": "CVE-2026-48746",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). From 0.3.0 until 0.22.0, a vulnerability in ASGI web servers and starlette's trust on those web servers enables an authentication bypass of the OpenAI API AuthenticationMiddleware. It allows to use the API without providing the configured VLLM_API_KEY or --api-key. This vulnerability is fixed in 0.22.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:30.490"
+  },
+  {
+    "id": "CVE-2026-47155",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.22.0, vLLM's revision pinning controls do not consistently apply to all artifacts loaded for a model. A deployment that supplies --revision or --code-revision can still load dynamic code, GGUF files, image processors, retrieval side weights, or same-repository subfolder weights/config from an unpinned/default revision. This is a supply-chain integrity issue for pinned vLLM deployments. Operators can believe they are serving a reviewed model revision while vLLM resolves behavior-affecting nested or sibling artifacts outside that reviewed revision. This vulnerability is fixed in 0.22.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:30.357"
+  },
+  {
+    "id": "CVE-2026-41523",
+    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.22.0, an assert-based security check in vLLM's activation function loading allows any unauthenticated attacker to achieve arbitrary code execution on the server by publishing a malicious HuggingFace model, when vLLM runs in Python optimized mode (python -O or PYTHONOPTIMIZE=1). This vulnerability is fixed in 0.22.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-22T23:16:30.200"
+  },
+  {
     "id": "CVE-2026-56698",
     "description": "Nuxt versions 4.0.0 before 4.4.7 and 3.x before 3.21.7 fail to validate script-capable URLs in the navigateTo open option, allowing client-side script execution. Attackers can supply javascript: URLs through the open parameter to execute arbitrary scripts in the application's origin when user-controlled input is passed to navigateTo.",
     "severity": "Medium",
@@ -2252,61 +2336,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-20T09:16:13.910"
-  },
-  {
-    "id": "CVE-2026-9843",
-    "description": "The Database for Contact Form 7, WPforms, Elementor forms plugin for WordPress is vulnerable to arbitrary file deletion due to insufficient file path validation in the view_page function in all versions up to, and including, 1.5.1. This makes it possible for unauthenticated attackers to delete arbitrary files on the server, which can easily lead to remote code execution when the right file is deleted (such as wp-config.php). Successful exploitation requires an administrator to view or edit the poisoned form entry, at which point PHP's bracket parser reshapes the attacker-crafted JSON key to bypass the stored-path isset check and trigger deletion of the traversal-specified file.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-20T02:16:26.910"
-  },
-  {
-    "id": "CVE-2026-9265",
-    "description": "Crypt::OpenSSL::PKCS12 versions before 1.96 for Perl permits a heap OOB read in print_attribute UTF8STRING path.\n\nprint_attribute() copies a UTF8STRING ASN.1 attribute value into a heap buffer sized exactly to its declared length via strncpy, leaving no NUL terminator. Downstream callers run strlen() on the result and pass the inflated length to newSVpvn(), copying attacker-influenced adjacent heap bytes into a Perl scalar.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-20T02:16:26.020"
-  },
-  {
-    "id": "CVE-2026-56216",
-    "description": "Capgo before 12.128.2 contains a scope escalation vulnerability in the POST /functions/v1/apikey endpoint that allows app-limited API keys to mint unrestricted keys by setting empty limits. Attackers with a compromised app-limited key can create an unrestricted key with org-wide access to resources like app listings and other protected endpoints.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-20T01:16:16.970"
-  },
-  {
-    "id": "CVE-2026-56215",
-    "description": "Capgo before 12.128.12 allows authenticated users to modify their mutable public.users.email to arbitrary addresses, which the SSO provisioning endpoint trusts as an account-merge key. Attackers can pre-position their account with a victim's corporate SSO email, causing the provision-user endpoint to merge the victim's SSO identity into the attacker-controlled account.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-20T01:16:16.840"
-  },
-  {
-    "id": "CVE-2026-56214",
-    "description": "Capgo before 12.128.2 contains an information disclosure vulnerability in Supabase PostgREST RPC endpoints is_trial_org and is_paying_org that allows unauthenticated attackers to enumerate organizations and disclose billing status using the public sb_publishable key. Attackers can invoke these endpoints to determine organization existence via distinguishable return values and identify paying customers for targeted profiling.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-20T01:16:16.710"
-  },
-  {
-    "id": "CVE-2026-56213",
-    "description": "Capgo before 12.128.2 contains an authorization bypass vulnerability in the public.upsert_version_meta SECURITY DEFINER function exposed via PostgREST RPC, allowing unauthenticated attackers to insert arbitrary rows into version_meta for any app_id. Attackers can exploit this by calling the RPC endpoint with a public anon key to poison storage metrics, causing persistent false data in dashboards and triggering incorrect alerts across victim applications.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-20T01:16:16.583"
-  },
-  {
-    "id": "CVE-2026-56212",
-    "description": "Capgo before 12.128.2 contains an authentication logic flaw: a user with permission to manage team or organization security settings can enable mandatory two-factor authentication for all team members without first enabling 2FA on their own account. The application fails to verify the initiator's 2FA status before allowing the policy change, resulting in inconsistent security enforcement, potential administrative misuse, and lockout risk for team members.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-06-20T01:16:16.453"
-  },
-  {
-    "id": "CVE-2026-11551",
-    "description": "The Branda plugin for WordPress is vulnerable to privilege escalation via account takeover in all versions up to, and including, 3.4.29. This is due to the plugin not properly validating a user's identity prior to updating their password. This makes it possible for unauthenticated attackers to change arbitrary user's passwords, including administrators, and leverage that to gain access to their account.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-20T00:16:15.580"
   }
 ]
