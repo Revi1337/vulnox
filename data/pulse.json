@@ -1,5 +1,264 @@
 [
   {
+    "id": "CVE-2026-52944",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nksmbd: fix FSCTL permission bypass by adding a permission check for FSCTL_SET_SPARSE\n\nFSCTL_SET_SPARSE in fsctl_set_sparse() modifies the file's sparse\nattribute and saves it through xattr without any permission checks.\n\nThis exposes two issues:\n\n1) A client on a read-only share can change the sparse attribute\n   on files it opened, even though the share is read-only.\n   Other FSCTL write operations already check\n   test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE),\n   but FSCTL_SET_SPARSE does not.\n\n2) Even on writable shares, clients without FILE_WRITE_DATA or\n   FILE_WRITE_ATTRIBUTES access should not modify the sparse\n   attribute. Similar handle-level checks exist in other functions\n   but are missing here.\n\nAdd both share-level writable check and per-handle access check.\nUse goto out on error to avoid leaking file references.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T10:17:19.447"
+  },
+  {
+    "id": "CVE-2026-52943",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: skbuff: fix missing zerocopy reference in pskb_carve helpers\n\npskb_carve_inside_header() and pskb_carve_inside_nonlinear() both copy\nthe old skb_shared_info header into a new buffer via memcpy(), which\nincludes the destructor_arg pointer (uarg) for MSG_ZEROCOPY skbs.\nNeither function calls net_zcopy_get() for the new shinfo, creating an\nunaccounted holder: every skb_shared_info with destructor_arg set will\ncall skb_zcopy_clear() once when freed, but the corresponding\nnet_zcopy_get() was never called for the new copy. Repeated calls\ndrive uarg->refcnt to zero prematurely, freeing ubuf_info_msgzc while\nTX skbs still hold live destructor_arg pointers.\n\nKASAN reports use-after-free on a freed ubuf_info_msgzc:\n\n  BUG: KASAN: slab-use-after-free in skb_release_data+0x77b/0x810\n  Read of size 8 at addr ffff88801574d3e8 by task poc/220\n\n  Call Trace:\n   skb_release_data+0x77b/0x810\n   kfree_skb_list_reason+0x13e/0x610\n   skb_release_data+0x4cd/0x810\n   sk_skb_reason_drop+0xf3/0x340\n   skb_queue_purge_reason+0x282/0x440\n   rds_tcp_inc_free+0x1e/0x30\n   rds_recvmsg+0x354/0x1780\n   __sys_recvmsg+0xdf/0x180\n\n  Allocated by task 219:\n   msg_zerocopy_realloc+0x157/0x7b0\n   tcp_sendmsg_locked+0x2892/0x3ba0\n\n  Freed by task 219:\n   ip_recv_error+0x74a/0xb10\n   tcp_recvmsg+0x475/0x530\n\nThe skb consuming the late access still referenced the same uarg via\nshinfo->destructor_arg copied by pskb_carve_inside_nonlinear() without\na refcount bump. This has been verified to be reliably exploitable: a\nworking proof-of-concept achieves full root privilege escalation from\nan unprivileged local user on a default kernel configuration.\n\nThe fix follows the pattern of pskb_expand_head() which has the same\nmemcpy/cloned structure. For pskb_carve_inside_header(), net_zcopy_get()\nis placed after skb_orphan_frags() succeeds, so the orphan error path\nneeds no cleanup. For pskb_carve_inside_nonlinear(), net_zcopy_get() is\nplaced after all failure points and just before skb_release_data(), so\nno error path needs cleanup at all -- matching pskb_expand_head() more\nclosely and avoiding the need for a balancing net_zcopy_put().",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T10:17:19.293"
+  },
+  {
+    "id": "CVE-2026-11968",
+    "description": "Argument Injection in TortoiseGitBlame via Malicious Git History Filenames Leads to Arbitrary File Write in TortoiseGit",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-24T10:17:19.063"
+  },
+  {
+    "id": "CVE-2026-10745",
+    "description": "Improper output neutralization for logs vulnerability in upKeeper Solutions upKeeper Instant Privilege Access on Windows allows Log Injection-Tampering-Forging.\n\nThis issue affects upKeeper Instant Privilege Access: through 1.6.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T09:16:30.147"
+  },
+  {
+    "id": "CVE-2026-7761",
+    "description": "The Ultimate Member plugin for WordPress is vulnerable to Account Takeover via Password Reset Link Disclosure in all versions up to and including 2.11.4. This is due to a chain of three logic bugs: (1) an MD5 hash fallback in get_directory_by_hash() that allows any post to be used as a member directory by computing SUBSTRING(MD5(post_id), 11, 5), (2) a strstr() parsing logic flaw in post_data() that allows bypassing WordPress's protected meta key restrictions by placing '_um_' anywhere in the meta key name rather than at the start, and (3) missing field name validation in build_user_card_data() that allows arbitrary field names including 'password_reset_link' to be passed to um_filtered_value(). This makes it possible for authenticated attackers with Contributor-level access and above to create a malicious post via XMLRPC with crafted meta fields, use the MD5 fallback to point the member directory AJAX handler to their post, inject 'password_reset_link' into the tagline_fields configuration, and leak live password reset URLs for all users in the member directory response, including administrators.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:24.830"
+  },
+  {
+    "id": "CVE-2026-56052",
+    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in FunnelKit Funnel Builder by FunnelKit allows Blind SQL Injection.\n\nThis issue affects Funnel Builder by FunnelKit: from n/a through 3.15.0.5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:24.623"
+  },
+  {
+    "id": "CVE-2026-52942",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nf_log: validate MAC header was set before dumping it\n\nThe fallback path of dump_mac_header() guards the MAC header access\nonly with \"skb->mac_header != skb->network_header\", without checking\nskb_mac_header_was_set(). When the MAC header is unset, mac_header is\n0xffff, so the test passes and skb_mac_header(skb) returns\nskb->head + 0xffff, ~64 KiB past the buffer; the loop then reads\ndev->hard_header_len bytes out of bounds into the kernel log.\n\nThis is reachable via the netdev logger: nf_log_unknown_packet() calls\ndump_mac_header() unconditionally, and an skb sent through AF_PACKET\nwith PACKET_QDISC_BYPASS reaches the egress hook with mac_header still\nunset (__dev_queue_xmit(), which would reset it, is bypassed).\n\nAdd the skb_mac_header_was_set() check the ARPHRD_ETHER path already\nuses, and replace the open-coded MAC header length test with\nskb_mac_header_len(). Only skbs with an unset MAC header are affected;\nvalid ones are dumped as before.\n\n BUG: KASAN: slab-out-of-bounds in dump_mac_header (net/netfilter/nf_log_syslog.c:831)\n Read of size 1 at addr ffff88800ea49d3f by task exploit/148\n Call Trace:\n  kasan_report (mm/kasan/report.c:595)\n  dump_mac_header (net/netfilter/nf_log_syslog.c:831)\n  nf_log_netdev_packet (net/netfilter/nf_log_syslog.c:938 net/netfilter/nf_log_syslog.c:963)\n  nf_log_packet (net/netfilter/nf_log.c:260)\n  nft_log_eval (net/netfilter/nft_log.c:60)\n  nft_do_chain (net/netfilter/nf_tables_core.c:285)\n  nft_do_chain_netdev (net/netfilter/nft_chain_filter.c:307)\n  nf_hook_slow (net/netfilter/core.c:619)\n  nf_hook_direct_egress (net/packet/af_packet.c:257)\n  packet_xmit (net/packet/af_packet.c:280)\n  packet_sendmsg (net/packet/af_packet.c:3114)\n  __sys_sendto (net/socket.c:2265)",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:24.490"
+  },
+  {
+    "id": "CVE-2026-52941",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/smc: avoid NULL deref of conn->lnk in smc_msg_event tracepoint\n\nThe smc_msg_event tracepoint class, shared by smc_tx_sendmsg and\nsmc_rx_recvmsg, unconditionally dereferences smc->conn.lnk:\n\n\t__string(name, smc->conn.lnk->ibname)\n\nconn->lnk is only set for SMC-R; for SMC-D it is NULL. Other code on\nthese paths already handles this (e.g. !conn->lnk in\nSMC_STAT_RMB_TX_SIZE_SMALL()). With the tracepoint enabled, the first\nsendmsg()/recvmsg() on an SMC-D socket crashes:\n\n  Oops: general protection fault, probably for non-canonical address\n  KASAN: null-ptr-deref in range [...]\n  RIP: 0010:strlen+0x1e/0xa0\n  Call Trace:\n   trace_event_raw_event_smc_msg_event (net/smc/smc_tracepoint.h:44)\n   smc_rx_recvmsg (net/smc/smc_rx.c:515)\n   smc_recvmsg (net/smc/af_smc.c:2859)\n   __sys_recvfrom (net/socket.c:2315)\n   __x64_sys_recvfrom (net/socket.c:2326)\n   do_syscall_64\n\nThe faulting address 0x3e0 is offsetof(struct smc_link, ibname),\nconfirming the NULL ->lnk deref. Enabling the tracepoint requires\nroot, but the trigger itself is unprivileged: socket(AF_SMC, ...) has\nno capability check, and SMC-D negotiation needs no admin step on\ns390 or on x86 with the loopback ISM device loaded.\n\nLog an empty device name for SMC-D instead of dereferencing NULL.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:24.380"
+  },
+  {
+    "id": "CVE-2026-52940",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ntun: zero the whole vnet header in tun_put_user()\n\ntun_put_user() declares an on-stack struct virtio_net_hdr_v1_hash_tunnel\nwithout zeroing it. For a non-tunnel skb, virtio_net_hdr_tnl_from_skb()\nonly initializes the first 10 bytes (sizeof(struct virtio_net_hdr)),\nleaving bytes 10..23 (num_buffers and the hash/tunnel fields) as stack\ngarbage.\n\nAn unprivileged user can set the vnet header size to 24 with\nTUNSETVNETHDRSZ, so __tun_vnet_hdr_put() copies all 24 bytes of the\npartially-initialized struct to userspace, leaking 14 bytes of kernel\nstack on every read of a non-tunnel packet.\n\nFix it the same way tun_get_user() already does by zeroing the whole\nheader right after declaration.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:24.287"
+  },
+  {
+    "id": "CVE-2026-52939",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/rds: fix NULL deref in rds_ib_send_cqe_handler() on masked atomic completion\n\nrds_ib_xmit_atomic() always programs a masked atomic opcode\n(IB_WR_MASKED_ATOMIC_CMP_AND_SWP or IB_WR_MASKED_ATOMIC_FETCH_AND_ADD)\nfor every RDS atomic cmsg.  But the completion-side switch in\nrds_ib_send_unmap_op() only handles the non-masked opcodes, so a masked\natomic completion falls through to default and returns rm == NULL while\nsend->s_op is left set.  rds_ib_send_cqe_handler() then dereferences the\nNULL rm via rm->m_final_op, oopsing in softirq context.  An unprivileged\nAF_RDS sendmsg() of an atomic cmsg over an active RDS/IB connection\ntriggers it; on hardware that natively accepts masked atomics (mlx4,\nmlx5) no extra setup is needed.\n\n  RDS/IB: rds_ib_send_unmap_op: unexpected opcode 0xd in WR!\n  Oops: general protection fault [#1] SMP KASAN\n  KASAN: null-ptr-deref in range [0x0000000000000190-0x0000000000000197]\n  RIP: rds_ib_send_cqe_handler+0x25c/0xb10 (net/rds/ib_send.c:282)\n  Call Trace:\n   <IRQ>\n   rds_ib_send_cqe_handler (net/rds/ib_send.c:282)\n   poll_scq (net/rds/ib_cm.c:274)\n   rds_ib_tasklet_fn_send (net/rds/ib_cm.c:294)\n   tasklet_action_common (kernel/softirq.c:943)\n   handle_softirqs (kernel/softirq.c:573)\n   run_ksoftirqd (kernel/softirq.c:479)\n   </IRQ>\n  Kernel panic - not syncing: Fatal exception in interrupt\n\nHandle the masked atomic opcodes in the same case as the non-masked\nones: they map to the same struct rds_message.atomic union member, so\nthe existing container_of()/rds_ib_send_unmap_atomic() body is correct\nfor them.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:24.160"
+  },
+  {
+    "id": "CVE-2026-52938",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: Fix NULL pointer dereference in bpf_sk_storage_clone and diag paths\n\nbpf_selem_unlink_nofail() sets SDATA(selem)->smap to NULL before\nremoving the selem from the storage hlist. A concurrent RCU reader in\nbpf_sk_storage_clone() can observe the selem still on the list with\nsmap already NULL, causing a NULL pointer dereference.\n\n general protection fault, probably for non-canonical address 0xdffffc000000000a:\n KASAN: null-ptr-deref in range [0x0000000000000050-0x0000000000000057]\n RIP: 0010:bpf_sk_storage_clone+0x1cd/0xaa0 net/core/bpf_sk_storage.c:174\n Call Trace:\n  <IRQ>\n  sk_clone+0xfed/0x1980 net/core/sock.c:2591\n  inet_csk_clone_lock+0x30/0x760 net/ipv4/inet_connection_sock.c:1222\n  tcp_create_openreq_child+0x35/0x2680 net/ipv4/tcp_minisocks.c:571\n  tcp_v4_syn_recv_sock+0x123/0xf90 net/ipv4/tcp_ipv4.c:1729\n  tcp_check_req+0x8e1/0x2580 include/net/tcp.h:855\n  tcp_v4_rcv+0x1845/0x3b80 net/ipv4/tcp_ipv4.c:2347\n\nAdd a NULL check for smap in bpf_sk_storage_clone().\n\nbpf_sk_storage_diag_put_all() has the same issue. Add a NULL check\nand pass the validated smap directly to diag_get(), which is refactored\nto take smap as a parameter instead of reading it internally.\n\nbpf_sk_storage_diag_put() uses diag->maps[i] which is always valid\nunder its refcount, so diag->maps[i] is passed directly to diag_get().",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:24.073"
+  },
+  {
+    "id": "CVE-2026-52937",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ntap: fix stack info leak in tap_ioctl() SIOCGIFHWADDR\n\nIn the SIOCGIFHWADDR path, tap_ioctl() copies 16 bytes of an\nuninitialised on-stack struct sockaddr_storage to userspace via\nifr_hwaddr, but netif_get_mac_address() only writes sa_family and\ndev->addr_len (6 for Ethernet) bytes, leaving sa_data[6..13] uninitialised.\n\nThose 8 trailing bytes leak kernel stack contents; SIOCGIFHWADDR on a\nmacvtap chardev returns kernel .text and direct-map pointers, defeating\nKASLR.\n\nInitialise ss at declaration.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.980"
+  },
+  {
+    "id": "CVE-2026-52936",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: jitterentropy - replace long-held spinlock with mutex\n\njent_kcapi_random() serializes the shared jitterentropy state, but it\ncurrently holds a spinlock across the jent_read_entropy() call. That\npath performs expensive jitter collection and SHA3 conditioning, so\nparallel readers can trigger stalls as contending waiters spin for\nthe same lock.\n\nTo prevent non-preemptible lock hold, replace rng->jent_lock with a\nmutex so contended readers sleep instead of spinning on a shared lock\nheld across expensive entropy generation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.883"
+  },
+  {
+    "id": "CVE-2026-52935",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nxfrm: espintcp: do not reuse an in-progress partial send\n\nespintcp keeps a single in-flight transmit in ctx->partial.\nBefore building a new sk_msg, espintcp_sendmsg() first tries to flush\nthat state through espintcp_push_msgs().\n\nFor blocking callers, espintcp_push_msgs() may return success even when\nthe previous partial send is still pending. espintcp_sendmsg() would\nthen reinitialize emsg->skmsg and reuse ctx->partial while the old\ntransfer still owns that state.\n\nDo not rebuild the send message when ctx->partial is still in progress.\nIf espintcp_push_msgs() returns with emsg->len still set, fail the new\nsend instead of overwriting the live partial state.\n\nThis is a memory-safety fix: reusing the live partial-send state can\nleave a stale offset attached to a new sk_msg and lead to an out-of-\nbounds read in the send path.\n\ntcp_sendmsg_locked() already handles waiting for send buffer memory, so\nthe fix here is just to preserve espintcp's one-message-at-a-time\ntransmit state.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.760"
+  },
+  {
+    "id": "CVE-2026-52934",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tvlv: reject oversized TVLV packets\n\nbatadv_tvlv_container_ogm_append() builds a TVLV packet section from\nthe tvlv.container_list. The total size of this section is computed by\nbatadv_tvlv_container_list_size(), which sums the sizes of all registered\ncontainers.\n\nThe return type and accumulator in batadv_tvlv_container_list_size() were\nu16. If the accumulated size exceeds U16_MAX, the value wraps around,\ncausing the subsequent allocation in batadv_tvlv_container_ogm_append()\nto be undersized. The memcpy-style copy that follows would then write\nbeyond the end of the allocated buffer, corrupting kernel memory.\n\nFix this by widening the return type of batadv_tvlv_container_list_size()\nto size_t. In batadv_tvlv_container_ogm_append(), check the computed length\nagainst U16_MAX before proceeding, and bail out as if the allocation had\nfailed when the limit is exceeded.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.620"
+  },
+  {
+    "id": "CVE-2026-52933",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nio_uring/poll: fix signed comparison in io_poll_get_ownership()\n\nio_poll_get_ownership() uses a signed comparison to check whether\npoll_refs has reached the threshold for the slowpath:\n\n    if (unlikely(atomic_read(&req->poll_refs) >= IO_POLL_REF_BIAS))\n\natomic_read() returns int (signed). When IO_POLL_CANCEL_FLAG\n(BIT(31)) is set in poll_refs, the value becomes negative in\nsigned arithmetic, so the >= 128 comparison always evaluates to\nfalse and the slowpath is never taken.\n\nFix this by casting the atomic_read() result to unsigned int\nbefore the comparison, so that the cancel flag is treated as a\nlarge positive value and correctly triggers the slowpath.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.480"
+  },
+  {
+    "id": "CVE-2026-52932",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nxfrm: ipcomp: Free destination pages on acomp errors\n\nMove the out_free_req label up by a couple of lines so that the\nallocated dst SG list gets freed on error as well as success.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.390"
+  },
+  {
+    "id": "CVE-2026-52931",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tp_meter: avoid use of uninit sender vars\n\nbatadv_tp_recv_ack() and batadv_tp_stop() are only valid for tp_vars in the\nBATADV_TP_SENDER role. When called with a BATADV_TP_RECEIVER role, it\nproceeds to read sender-only members that were never initialized, leading\nto undefined behavior.\n\nThis can be triggered when a node that is currently acting as a receiver in\nan ongoing tp_meter session receives a malicious ACK packet.\n\nGuard against this by checking tp_vars->role immediately after the\nlookup and bailing out if it is not BATADV_TP_SENDER, before any of\nthose members are accessed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.273"
+  },
+  {
+    "id": "CVE-2026-52930",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipc/shm: serialize orphan cleanup with shm_nattch updates\n\nshm_destroy_orphaned() walks the shm idr under shm_ids(ns).rwsem, but that\ndoes not serialize all fields tested by shm_may_destroy().  In particular,\nshm_nattch is updated while holding shm_perm.lock, and attach paths can do\nthat without holding the rwsem.\n\nDo not decide that an orphaned segment is unused before taking the object\nlock.  Move the shm_may_destroy() check under shm_perm.lock, matching the\nother destroy paths, and unlock the segment when it no longer qualifies\nfor removal.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.157"
+  },
+  {
+    "id": "CVE-2026-52929",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsctp: stream: fully roll back denied add-stream state\n\nWhen ADD_OUT_STREAMS is denied, SCTP only shrinks the queued chunks and\nthen lowers outcnt. That leaves removed stream metadata behind, so a\nlater re-add can reuse a stale ext and hit a null-pointer dereference in\nthe scheduler get path.\n\nFix the rollback by tearing down the removed stream state the same way\nother stream resizes do. Unschedule the current scheduler state, drop\nthe removed stream ext state with sctp_stream_outq_migrate(), and then\nreschedule the remaining streams.\n\nThis keeps scheduler-private RR/FC/PRIO lists consistent while fully\nrolling back denied outgoing stream additions.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:23.040"
+  },
+  {
+    "id": "CVE-2026-52928",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\naf_unix: Reject SIOCATMARK on non-stream sockets\n\nSIOCATMARK reports whether the receive queue is at the urgent mark for\nMSG_OOB.\n\nIn AF_UNIX, MSG_OOB is supported only for SOCK_STREAM sockets.\nSOCK_DGRAM and SOCK_SEQPACKET reject MSG_OOB in sendmsg() and recvmsg(),\nso they should not support SIOCATMARK either.\n\nReturn -EOPNOTSUPP for non-stream sockets before checking the receive\nqueue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.937"
+  },
+  {
+    "id": "CVE-2026-52927",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: ebtables: fix OOB read in compat_mtw_from_user\n\nLuxiao Xu says:\n\n The function compat_mtw_from_user() converts ebtables extensions from\n 32-bit user structures to kernel native structures. However, it lacks\n proper validation of the user-supplied match_size/target_size.\n\n When certain extensions are processed, the kernel-side translation\n logic may perform memory accesses based on the extension's expected\n size. If the user provides a size smaller than what the extension\n requires, it results in an out-of-bounds read as reported by KASAN.\n\n This fix introduces a check to ensure match_size is at least as large\n as the extension's required compatsize. This covers matches, watchers,\n and targets, while maintaining compatibility with standard targets.\n\nAFAIU this is relevant for matches that need to go though\nmatch->compat_from_user() call.  Those that use plain memcpy with the\nuser-provided size are ok because the caller checks that size vs the\nstart of the next rule entry offset (which itself is checked vs. total\nsize copied from userspace).\n\nThe ->compat_from_user() callbacks assume they can read compatsize bytes,\nso they need this extra check.\n\nBased on an earlier patch from Luxiao Xu.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.810"
+  },
+  {
+    "id": "CVE-2026-52926",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: clear current gateway during teardown\n\nbatadv_gw_node_free() removes the gateway list entries during mesh teardown,\nbut it does not clear the currently selected gateway. This leaves stale\ngateway state behind across cleanup and can break a later mesh recreation.\n\nClear bat_priv->gw.curr_gw before walking the gateway list so the selected\ngateway reference is dropped as part of teardown.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.697"
+  },
+  {
+    "id": "CVE-2026-52925",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nvrf: Fix a potential NPD when removing a port from a VRF\n\nRCU readers that identified a net device as a VRF port using\nnetif_is_l3_slave() assume that a subsequent call to\nnetdev_master_upper_dev_get_rcu() will return a VRF device. They then\ncontinue to dereference its l3mdev operations.\n\nThis assumption is not always correct and can result in a NPD [1]. There\nis no RCU synchronization when removing a port from a VRF, so it is\npossible for an RCU reader to see a new master device (e.g., a bridge)\nthat does not have l3mdev operations.\n\nFix by adding RCU synchronization after clearing the IFF_L3MDEV_SLAVE\nflag. Skip this synchronization when a net device is removed from a VRF\nas part of its deletion and when the VRF device itself is deleted. In\nthe latter case an RCU grace period will pass by the time RTNL is\nreleased.\n\n[1]\nBUG: kernel NULL pointer dereference, address: 0000000000000000\n[...]\nRIP: 0010:l3mdev_fib_table_rcu (net/l3mdev/l3mdev.c:181)\n[...]\nCall Trace:\n<TASK>\nl3mdev_fib_table_by_index (net/l3mdev/l3mdev.c:201 net/l3mdev/l3mdev.c:189)\n__inet_bind (net/ipv4/af_inet.c:499 (discriminator 3))\ninet_bind_sk (net/ipv4/af_inet.c:469)\n__sys_bind (./include/linux/file.h:62 (discriminator 1) ./include/linux/file.h:83 (discriminator 1) net/socket.c:1951 (discriminator 1))\n__x64_sys_bind (net/socket.c:1969 (discriminator 1) net/socket.c:1967 (discriminator 1) net/socket.c:1967 (discriminator 1))\ndo_syscall_64 (arch/x86/entry/syscall_64.c:63 (discriminator 1) arch/x86/entry/syscall_64.c:94 (discriminator 1))\nentry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:130)",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.563"
+  },
+  {
+    "id": "CVE-2026-52924",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsctp: purge outqueue on stale COOKIE-ECHO handling\n\nsctp_stream_update() is only invoked when the association is moved into\nCOOKIE_WAIT during association setup/reconfiguration. In this path, the\noutbound stream scheduler state (stream->out_curr) is expected to be\nclean, since no user data should have been transmitted yet unless the\nstate machine has already partially progressed.\n\nHowever, a corner case exists in sctp_sf_do_5_2_6_stale(): when a\nStale Cookie ERROR is received, the association is rolled back from\nCOOKIE_ECHOED to COOKIE_WAIT. In this scenario, user data may already\nhave been queued and even bundled with the COOKIE-ECHO chunk.\n\nDuring the rollback, sctp_stream_update() frees the old stream table\nand installs a new one, but it does not invalidate stream->out_curr.\nAs a result, out_curr may still point to a freed sctp_stream_out\nentry from the previous stream state.\n\nLater, SCTP scheduler dequeue paths (FCFS, RR, PRIO, etc.) rely on\nstream->out_curr->ext, which can lead to use-after-free once the old\nstream state has been released via sctp_stream_free().\n\nThis results in crashes such as (reported by Yuqi):\n\n  BUG: KASAN: slab-use-after-free in sctp_sched_fcfs_dequeue+0x13a/0x140\n  Read of size 8 at addr ff1100004d4d3208 by task mini_poc/9312\n  CPU: 1 UID: 1001 PID: 9312 Comm: mini_poc Not tainted\n     7.1.0-rc1-00305-gbd3a4795d574 #5 PREEMPT(full)\n   sctp_sched_fcfs_dequeue+0x13a/0x140\n   sctp_outq_flush+0x1603/0x33e0\n   sctp_do_sm+0x31c9/0x5d30\n   sctp_assoc_bh_rcv+0x392/0x6f0\n   sctp_inq_push+0x1db/0x270\n   sctp_rcv+0x138d/0x3c10\n\nFix this by fully purging the association outqueue when handling the\nStale Cookie case. This ensures all pending transmit and retransmit\nstate is dropped, and any scheduler cached pointers are invalidated,\nmaking it safe to rebuild stream state during COOKIE_WAIT restart.\n\nUpdating only stream->out_curr would be insufficient, since queued\nand retransmittable data would still reference the old stream state and\ntrigger later use-after-free in dequeue paths.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.430"
+  },
+  {
+    "id": "CVE-2026-52923",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipc: limit next_id allocation to the valid ID range\n\nThe checkpoint/restore sysctl path can request the next SysV IPC id\nthrough ids->next_id.  ipc_idr_alloc() currently forwards that request to\nidr_alloc() with an open-ended upper bound.\n\nIf the valid tail of the SysV IPC id space is full, the allocation can\nspill beyond ipc_mni.  The returned SysV IPC id still uses the normal\nindex encoding, so later lookup and removal can target the wrong slot. \nThis leaves the real IDR entry behind and breaks the IDR state for the\nobject.\n\nThe bug is in ipc_idr_alloc() in the checkpoint/restore path.\n\n1. ids->next_id is passed to:\n\n       idr_alloc(&ids->ipcs_idr, new, ipcid_to_idx(next_id), 0, ...)\n\n2. The zero upper bound makes the allocation effectively open-ended.\n   Once the valid SysV IPC tail is occupied, idr_alloc() can spill past\n   ipc_mni and allocate an entry beyond the valid IPC id range.\n\n3. The new object id is still encoded with the narrower SysV IPC index\n   width:\n\n       new->id = (new->seq << ipcmni_seq_shift()) + idx\n\n4. Later removal goes through ipc_rmid(), which uses:\n\n       ipcid_to_idx(ipcp->id)\n\n   That truncates the real IDR index. An object actually stored at a\n   high index can then be removed as if it lived at a low in-range\n   index.\n\n5. For shared memory, shm_destroy() frees the current object anyway, but\n   the real high IDR slot is left behind as a dangling pointer.\n\n6. A subsequent walk of /proc/sysvipc/shm reaches the stale IDR entry\n   and dereferences freed memory.\n\nPrevent this by bounding the requested allocation to ipc_mni so the\ncheckpoint/restore path fails once the valid range is exhausted.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.300"
+  },
+  {
+    "id": "CVE-2026-52922",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: dat: handle forward allocation error\n\nbatadv_dat_forward_data() calls pskb_copy_for_clone() to duplicate an skb\nfor each DHT candidate, but does not check the return value before passing\nit to batadv_send_skb_prepare_unicast_4addr(). That function dereferences\nthe skb unconditionally, so a failed allocation triggers a NULL pointer\ndereference.\n\nSkip forwarding to the current DHT candidate on allocation failure.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.187"
+  },
+  {
+    "id": "CVE-2026-52921",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: ipset: stop hash:* range iteration at end\n\nThe following hash set variants:\n\nhash:ip,mark\nhash:ip,port\nhash:ip,port,ip\nhash:ip,port,net\n\niterate IPv4 ranges with a 32-bit iterator.\n\nThe iterator must stop once the last address in the requested range has\nbeen processed. Advancing it once more can move the traversal state past\nthe end of the request, so a later retry may continue from an unintended\nposition.\n\nHandle the iterator increment explicitly at the end of the loop and stop\nonce the upper bound has been processed. This keeps the existing retry\nbehaviour intact for valid ranges while preventing traversal from\ncontinuing past the original boundary.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:22.067"
+  },
+  {
+    "id": "CVE-2026-52920",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: xt_policy: fix strict mode inbound policy matching\n\nmatch_policy_in() walks sec_path entries from the last transform to the\nfirst one, but strict policy matching needs to consume info->pol[] in\nthe same forward order as the rule layout.\n\nDerive the strict-match policy position from the number of transforms\nalready consumed so that multi-element inbound rules are matched\nconsistently.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.950"
+  },
+  {
+    "id": "CVE-2026-52919",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: fix tp_meter counter underflow during shutdown\n\nbatadv_tp_sender_shutdown() unconditionally decrements the \"sending\"\natomic counter. If multiple paths (e.g. timeout, user cancel, and\nnormal finish) call this function, the counter can underflow to -1.\n\nSince the sender logic treats any non-zero value as \"still sending\",\na negative value causes the sender kthread to loop indefinitely.\nThis leads to a use-after-free when the interface is removed while\nthe zombie thread is still active.\n\nFix this by using atomic_xchg() to ensure the counter only transitions\nfrom 1 to 0 once.\n\n[sven: added missing change in batadv_tp_send]",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.833"
+  },
+  {
+    "id": "CVE-2026-52918",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nBluetooth: serialize accept_q access\n\nbt_sock_poll() walks the accept queue without synchronization, while\nchild teardown can unlink the same socket and drop its last reference.\nThe unsynchronized accept queue walk has existed since the initial\nBluetooth import.\n\nProtect accept_q with a dedicated lock for queue updates and polling.\nAlso rework bt_accept_dequeue() to take temporary child references under\nthe queue lock before dropping it and locking the child socket.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.713"
+  },
+  {
+    "id": "CVE-2026-52917",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsctp: diag: reject stale associations in dump_one path\n\nThe SCTP exact sock_diag lookup can hold a transport reference, block on\nlock_sock(sk), and then resume after sctp_association_free() has marked\nthe association dead and freed its bind address list.\n\nWhen that happens, inet_assoc_attr_size() and\ninet_diag_msg_sctpasoc_fill() can still dereference association state\nthat is no longer valid for reporting. In particular,\ninet_diag_msg_sctpasoc_fill() may read an empty bind-address list as a\nreal sctp_sockaddr_entry and trigger an out-of-bounds read from\nunrelated association memory.\n\nReject the association after taking the socket lock if it has been\nreaped or detached from the endpoint, and report the lookup as stale.\nThis keeps the exact dump-one path from formatting torn association\nstate.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.587"
+  },
+  {
+    "id": "CVE-2026-52916",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: frag: disallow unicast fragment in fragment\n\nbatadv_frag_skb_buffer() is called by batadv_batman_skb_recv() when a\nBATADV_UNICAST_FRAG packet is received. Once all fragments are collected\nand the packet is reassembled, batadv_recv_frag_packet() calls\nbatadv_batman_skb_recv() again to process the defragmented payload.\n\nA malicious sender can craft a BATADV_UNICAST_FRAG packet whose reassembled\npayload is itself a BATADV_UNICAST_FRAG packet (matryoshka-style nesting).\nEach nesting level recurses through batadv_batman_skb_recv() without bound,\ngrowing the kernel stack until it is exhausted.\n\nSince refragmentation or fragments in fragments are not actually allowed,\ndiscard all packets which are still BATADV_UNICAST_FRAG packets after the\ndefragmentation process.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.463"
+  },
+  {
+    "id": "CVE-2026-52915",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: ip6t_hbh: reject oversized option lists\n\nstruct ip6t_opts stores at most IP6T_OPTS_OPTSNR option descriptors,\nbut hbh_mt6_check() does not reject larger optsnr values supplied from\nuserspace.\n\nValidate optsnr in the rule setup path so only match data that fits the\nfixed-size opts array can be installed. This follows the existing xtables\npattern of rejecting invalid user-provided counts in checkentry() and\nkeeps the packet matching path unchanged.\n\n`struct ip6t_opts` has a fixed `opts[IP6T_OPTS_OPTSNR]` array,\nwhere `IP6T_OPTS_OPTSNR` is 16, then off-by-one array access is possible:\n\n[  137.924693][ T8692] UBSAN: array-index-out-of-bounds in ../net/ipv6/netfilter/ip6t_hbh.c:110:29\n[  137.926167][ T8692] index 16 is out of range for type '__u16 [16]'",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.340"
+  },
+  {
+    "id": "CVE-2026-52914",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: fix fragment reassembly length accounting\n\nbatman-adv keeps a running payload length for queued fragments and uses it\nto validate a fragment chain before reassembly.\n\nThat accounting currently allows the accumulated fragment length to be\ntruncated during updates. As a result, malformed fragment chains can\nbypass the intended validation and drive reassembly with inconsistent\nlength state, leading to a local denial of service.\n\nFix the accounting by storing the accumulated length in a length-typed\nfield and rejecting update overflows before the existing validation logic\nruns.\n\nThe fix was verified against the original reproducer and against valid\nfragment reassembly paths.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.213"
+  },
+  {
+    "id": "CVE-2026-52913",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: v: stop OGMv2 on disabled interface\n\nWhen a batadv_hard_iface is disabled, its mesh_iface pointer is set to\nNULL. However, batadv_v_ogm_send_meshif() may still dispatch OGMs via\nbatadv_v_ogm_queue_on_if() for interfaces that have since lost their\nmesh_iface association. This results in a NULL pointer dereference when\nbatadv_v_ogm_queue_on_if() unconditionally calls netdev_priv() on the\nnow NULL hard_iface->mesh_iface to retrieve the batadv_priv.\n\nIt is necessary to ensure that the batadv_v_ogm_queue_on_if() checks that\nit is using the same mesh_iface for which batadv_v_ogm_send_meshif() was\ncalled.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:21.080"
+  },
+  {
+    "id": "CVE-2026-52912",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nf_queue: hold bridge skb->dev while queued\n\nbr_pass_frame_up() rewrites skb->dev from the ingress port to the bridge\nmaster before queueing bridge LOCAL_IN packets. NFQUEUE only holds\nreferences on state.in/out and bridge physdevs, so a queued bridge\npacket can retain a freed bridge master in skb->dev until reinjection.\n\nWhen the verdict is reinjected later, br_netif_receive_skb() re-enters\nthe receive path with skb->dev still pointing at the freed bridge master,\ntriggering a use-after-free.\n\nStore skb->dev in the queue entry, hold a reference on it for the queue\nlifetime, and use the saved device when dropping queued packets during\nNETDEV_DOWN handling.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-24T08:16:20.640"
+  },
+  {
     "id": "CVE-2026-9724",
     "description": "The MotorDesk plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 1.1.2. This is due to missing or incorrect nonce validation on the motordesk_admin_home function. This makes it possible for unauthenticated attackers to update the plugin's configuration settings, including the search page URI and custom template directory path via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.",
     "severity": "Medium",
@@ -4100,96 +4359,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-21T14:16:22.750"
-  },
-  {
-    "id": "CVE-2026-12799",
-    "description": "A security vulnerability has been detected in BerriAI litellm up to 1.82.2. Affected by this issue is the function ui_view_users of the file litellm/proxy/management_endpoints/internal_user_endpoints.py of the component Incomplete Fix CVE-2025-0628. Such manipulation leads to improper authorization. It is possible to launch the attack remotely. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure.",
-    "severity": "Medium",
-    "tech": "Litellm",
-    "published": "2026-06-21T10:16:17.173"
-  },
-  {
-    "id": "CVE-2026-12798",
-    "description": "A weakness has been identified in BerriAI litellm up to 1.82.2. Affected by this vulnerability is the function load_openapi_spec_async of the file litellm/proxy/_experimental/mcp_server/openapi_to_mcp_generator.py of the component MCP OpenAPI Spec Loader. This manipulation of the argument spec_path causes server-side request forgery. It is possible to initiate the attack remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure.",
-    "severity": "Medium",
-    "tech": "Litellm",
-    "published": "2026-06-21T10:16:17.023"
-  },
-  {
-    "id": "CVE-2026-12797",
-    "description": "A security flaw has been discovered in BerriAI litellm up to 1.82.5. Affected is the function async_pre_call_hook of the file enterprise/enterprise_hooks/banned_keywords.py of the component Completions Interface. The manipulation of the argument prompt results in incorrect authorization. The attack may be performed from remote. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure.",
-    "severity": "Medium",
-    "tech": "Litellm",
-    "published": "2026-06-21T10:16:16.870"
-  },
-  {
-    "id": "CVE-2026-12796",
-    "description": "A vulnerability was identified in BerriAI litellm up to 1.82.2. This impacts the function get_redirect_response_from_openid of the file litellm/proxy/management_endpoints/ui_sso.py of the component SSO Authentication Flow. The manipulation leads to session expiration. The attack is possible to be carried out remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure.",
-    "severity": "Medium",
-    "tech": "Litellm",
-    "published": "2026-06-21T10:16:15.220"
-  },
-  {
-    "id": "CVE-2026-12795",
-    "description": "A vulnerability was determined in BerriAI litellm up to 1.82.2. This affects the function json.dumps of the file litellm/proxy/management_endpoints/ui_sso.py of the component SSO Debug Flow. Executing a manipulation can lead to missing authentication. The attack can be executed remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure.",
-    "severity": "High",
-    "tech": "Litellm",
-    "published": "2026-06-21T09:16:25.887"
-  },
-  {
-    "id": "CVE-2026-12789",
-    "description": "A vulnerability was identified in ILIAS Learning Management System 11.0. This issue affects the function ilTrQuery::executeQueries of the file components/ILIAS/Tracking/classes/class.ilTrQuery.php of the component Learning Progress Tracking. Such manipulation of the argument troup_table_nav leads to sql injection. It is possible to launch the attack remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-21T09:16:25.680"
-  },
-  {
-    "id": "CVE-2026-12788",
-    "description": "A vulnerability was determined in zhilink 智互联(深圳)科技有限公司 ADP Application Developer Platform 应用开发者平台 1.0.0. This vulnerability affects unknown code of the file /adpweb/a/base/barcodeDetail/import of the component XML Parser. This manipulation causes xml external entity reference. It is possible to initiate the attack remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-21T09:16:25.500"
-  },
-  {
-    "id": "CVE-2026-12787",
-    "description": "A vulnerability was found in zhilink 智互联(深圳)科技有限公司 ADP Application Developer Platform 应用开发者平台 1.0.0. This affects an unknown part of the component testConnection Endpoint. The manipulation of the argument jdbcUrl results in deserialization. The attack may be performed from remote. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-21T09:16:25.320"
-  },
-  {
-    "id": "CVE-2026-12786",
-    "description": "A vulnerability has been found in Ezbsystems UltraISO Premium Edition up to 9.76. Affected by this issue is some unknown functionality in the library bootpt64.sys of the component Kernel Driver. The manipulation leads to improper access controls. Local access is required to approach this attack. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-21T09:16:25.130"
-  },
-  {
-    "id": "CVE-2026-52911",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nksmbd: scope conn->binding slowpath to bound sessions only\n\nWhen the binding SESSION_SETUP sets conn->binding = true, the flag stays\nset after the call so that the global session lookup in\nksmbd_session_lookup_all() can find the session, which was not added to\nconn->sessions. Because the flag is connection-wide, the global lookup\npath will also resolve any other session by id if asked.\n\nTighten the global lookup so that the returned session must have this\nconnection registered in its channel xarray (sess->ksmbd_chann_list).\nThe channel entry is installed by the existing binding_session path in\nntlm_authenticate()/krb5_authenticate() when a SESSION_SETUP completes\nsuccessfully, so this condition is a strict equivalent of \"this\nconnection has been accepted as a channel of this session\". Connections\nthat have not bound to a given session cannot reach it via the global\ntable.\n\nThe existing conn->binding gate for entering the slowpath is preserved\nso that non-binding connections keep the fast-path-only behavior, and\nthe session->state check is unchanged.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-21T08:16:23.607"
-  },
-  {
-    "id": "CVE-2026-12784",
-    "description": "A weakness has been identified in IM-Magic Partition Resizer up to 7.9.0. This affects an unknown function in the library MDA_NTDRV.sys of the component Kernel Driver. This manipulation causes improper access controls. The attack requires local access. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-21T08:16:23.443"
-  },
-  {
-    "id": "CVE-2026-12782",
-    "description": "A security flaw has been discovered in EaseUS Partition Master up to 14.5. The impacted element is an unknown function in the library EUEDKEPM.sys of the component Kernel Driver. The manipulation results in improper access controls. The attack requires a local approach. The exploit has been released to the public and may be used for attacks. The affected component should be upgraded. The vendor explains: \"We have confirmed that this issue was present only in older versions of the product. Our product has since been updated, and the issue has been resolved in the latest version, so it no longer exists.\"",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-21T08:16:23.280"
-  },
-  {
-    "id": "CVE-2026-12781",
-    "description": "A vulnerability was identified in EaseUS Partition Master up to 14.5. The affected element is an unknown function in the library epmntdrv.sys of the component Kernel Driver. The manipulation leads to improper access controls. The attack needs to be performed locally. The exploit is publicly available and might be used. You should upgrade the affected component. The vendor explains: \"We have confirmed that this issue was present only in older versions of the product. Our product has since been updated, and the issue has been resolved in the latest version, so it no longer exists.\"",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-21T08:16:21.907"
   }
 ]
