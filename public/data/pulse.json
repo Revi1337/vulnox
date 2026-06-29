@@ -1,5 +1,40 @@
 [
   {
+    "id": "CVE-2026-13483",
+    "description": "A flaw has been found in arc53 DocsGPT up to 0.18.0. The affected element is the function encrypt_credentials of the file application/security/encryption.py of the component Credential Storage. This manipulation causes insufficient verification of data authenticity. It is possible to initiate the attack remotely. The complexity of an attack is rather high. The exploitability is described as difficult. The exploit has been published and may be used. The pull request to fix this issue awaits acceptance.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-06-28T07:16:21.417"
+  },
+  {
+    "id": "CVE-2026-13482",
+    "description": "A vulnerability was detected in skypilot-org skypilot up to 0.12.0. Impacted is the function username.encode of the file sky/users/server.py of the component User ID Handler. The manipulation results in use of weak hash. The attack may be performed from remote. This attack is characterized by high complexity. The exploitability is considered difficult. The exploit is now public and may be used. The vendor was contacted early about this disclosure.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-06-28T05:16:21.200"
+  },
+  {
+    "id": "CVE-2026-10646",
+    "description": "Zephyr's BSD-sockets getaddrinfo() implementation (subsys/net/lib/sockets/getaddrinfo.c) passes a pointer to a stack-allocated state object (struct getaddrinfo_state ai_state) as the user_data of an asynchronous DNS resolver query. The socket layer waits on a semaphore with a timeout deliberately set slightly longer than the resolver's own per-query timeout. When that semaphore wait nonetheless times out (-EAGAIN) - which can occur when the resolver's timeout work is delayed by workqueue contention, or in the documented multi-retry configuration where CONFIG_NET_SOCKETS_DNS_TIMEOUT exceeds CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL - the pre-fix code retries the query (goto again) without cancelling the previous one and without resetting the semaphore. The previous query slot remains active in the resolver with its callback and the stack pointer as user_data, and ai_state-dns_id is overwritten so the stale query can no longer be cancelled. A subsequent DNS response delivered over UDP and matched by its 16-bit transaction id (in dispatcher_cb()/dns_read()), or the resolver's own delayed query-timeout work, then invokes dns_resolve_cb() against the now out-of-scope stack frame, writing through the stale pointer (state-status, state-idx, state-ai_arr[], and k_sem_give()). Because the triggering response is network-delivered and its 16-bit id is spoofable/replayable by an on- or off-path attacker, this is a network-influenceable use-after-return that can corrupt reused stack memory, leading to crashes/denial of service or memory corruption. The fix cancels the timed-out query by name and type before retrying and resets the local semaphore, eliminating the stale callback path. Affected: Zephyr v4.0.0 through v4.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-28T05:16:21.083"
+  },
+  {
+    "id": "CVE-2026-10644",
+    "description": "The Microchip SERCOM-G1 UART driver (drivers/serial/uart_mchp_sercom_g1.c), used by the PIC32CM-JH SoC family, contains an out-of-bounds write in its asynchronous (DMA) receive path. When uart_rx_enable() is invoked with a one-byte receive buffer (len == 1) and CONFIG_UART_MCHP_ASYNC is enabled, the RX-complete ISR starts a single-beat DMA transfer while a received byte is already pending in the SERCOM DATA register. On this SoC the peripheral-triggered DMA start sequencing then writes one byte past the end of the caller-supplied buffer (CWE-787). The overflowed byte's value is the UART RX data supplied by the connected serial peer (adjacent attacker), while its size and location are fixed at one byte immediately after the buffer. Exploitation requires the async UART config (not enabled by default on the in-tree PIC32CM-JH boards) and a consumer that enables RX with a one-byte buffer; impact is limited single-byte memory corruption adjacent to the RX buffer (possible crash / denial of service). The defect shipped in v4.4.0. The fix reads the first byte with the CPU and, for one-byte buffers, performs no DMA at all; for larger buffers it sizes the DMA for the remaining len-1 bytes.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-28T05:16:20.980"
+  },
+  {
+    "id": "CVE-2026-10593",
+    "description": "The Zephyr Bluetooth LE Audio Basic Audio Profile (BAP) unicast client mishandles peer-supplied ASE state notifications. In unicast_client_ep_qos_state() (subsys/bluetooth/audio/bap_unicast_client.c), the handler writes attacker-controlled QoS fields (interval, framing, phy, sdu, rtn, latency, pd) through the stream-qos pointer with only a stream != NULL guard. stream-qos is NULL for any stream that has been codec-configured via bt_bap_stream_config() but not yet added to a unicast group (it is set only by unicast_group_add_stream()). A malicious or buggy remote ASCS server, to which the local device is connected as a BAP unicast client, can send a GATT notification announcing the ASE has entered the QoS Configured state while the local endpoint is still in the Codec Configured state — a transition the dispatcher explicitly permits — during that window, causing a write through a NULL pointer and a crash (denial of service). The data written is itself remote-controlled. The defect shipped in v4.3.0 and v4.4.0 (and earlier). The fix re-points all BAP QoS storage to the always-valid embedded ep-qos struct, eliminating the NULL dereference.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-28T05:16:20.097"
+  },
+  {
     "id": "CVE-2026-58058",
     "description": "Nmap through 7.99 does not keep the IPv6 extension-header walk within the captured packet in ipv6_get_data_primitive (libnetutil/netutil.cc), so the pointer advances past the buffer and the remaining-length computation underflows to a large value. A scanned target or on-path attacker returning a crafted IPv6 response with a truncated extension header can trigger out-of-bounds reads and a crash during raw IPv6 scans.",
     "severity": "Medium",
@@ -5773,194 +5808,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-06-25T09:16:29.767"
-  },
-  {
-    "id": "CVE-2026-56129",
-    "description": "Generic IO & Memory Access driver for PCs provided by TOSHIBA CORPORATION and Dynabook Inc. exposes its IOCTL with insufficient access control. A logged-in user with no administrative privilege may access physical memory.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-25T08:16:29.960"
-  },
-  {
-    "id": "CVE-2026-12937",
-    "description": "The Tourfic – AI Powered Travel Booking, Hotel Booking & Car Rental WordPress Plugin plugin for WordPress is vulnerable to generic SQL Injection via the 'post_id' parameter in all versions up to, and including, 2.22.7 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The AJAX handler is registered for unauthenticated users via wp_ajax_nopriv_tf_room_availability, and the required nonce is emitted on the public single-hotel page template, allowing unauthenticated attackers to freely obtain a valid nonce and reach the vulnerable code path.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-25T08:16:29.787"
-  },
-  {
-    "id": "CVE-2026-9702",
-    "description": "The InPost PL WordPress plugin before 1.9.1 does not verify that the request originates from the legitimate buyer before allowing the WooCommerce order parcel-locker destination to be updated, allowing unauthenticated attackers to silently redirect the shipping destination of any pending or processing order on the site.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-25T07:16:45.830"
-  },
-  {
-    "id": "CVE-2026-5305",
-    "description": "The Email Address Encoder WordPress plugin before 1.0.25, email-encoder-premium WordPress plugin before 0.3.12 does not properly handle email replacement, which could allow unauthenticated users to perform Stored XSS attacks",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-25T07:16:45.737"
-  },
-  {
-    "id": "CVE-2026-12490",
-    "description": "When a provide-xfr is given with a tls-auth-name, a secondary requesting a transfer should provide a client certificate with that name. However, no client certificate is needed when the request comes in over TLS over the regular tls-port (and not the tls-auth-port) or over over TCP over the regular port, when the other conditions of the provide-xfr rule match.",
-    "severity": "High",
-    "tech": "Nsd",
-    "published": "2026-06-25T07:16:45.330"
-  },
-  {
-    "id": "CVE-2026-12246",
-    "description": "NSD version 4.14.0 introduced a bug where a specially crafted APL RR, with an adflength larger than permitted for the address family will overwrite the stack when the zone is written to disk, with a maximum of 111 attacker controlled bytes.",
-    "severity": "High",
-    "tech": "Nsd",
-    "published": "2026-06-25T07:16:45.197"
-  },
-  {
-    "id": "CVE-2026-12245",
-    "description": "NSD from version 4.13.0 has a heap use-after-free bug in logging errors on TLS connections, causing a crash of the server process, which can be triggered trivially by sending a DNS query over a DoT connection, and closing the connection without reading the response.",
-    "severity": "High",
-    "tech": "Nsd",
-    "published": "2026-06-25T07:16:45.080"
-  },
-  {
-    "id": "CVE-2026-12244",
-    "description": "If NSD is configured as secondary for a zone, the primary of that zone can crash NSD with an AXFR containing a DNS message with a special crafted SVCB RR with an rdata size of 65512, that let's an (uint16_t) variable that is used to allocate space needed for the RR wrap (because total size > 65535), causing a heap overflow. The attacker can perform a controlled (RCE class) head write of up to 65509 bytes",
-    "severity": "High",
-    "tech": "Nsd",
-    "published": "2026-06-25T07:16:44.900"
-  },
-  {
-    "id": "CVE-2026-10824",
-    "description": "The Masteriyo LMS  WordPress plugin before 2.2.1 does not perform authorization checks in a course-progress REST API controller, allowing unauthenticated users to read and permanently delete any user's course-progress records.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-25T07:16:44.767"
-  },
-  {
-    "id": "CVE-2026-8330",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 9.3 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed sensitive information to be written to application logs due to insufficient filtering in a CI/CD API endpoint.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:55.733"
-  },
-  {
-    "id": "CVE-2026-5952",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.11 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user with developer-role permissions to bypass package protection rules and overwrite protected Maven package metadata due to incorrect authorization checks.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:55.620"
-  },
-  {
-    "id": "CVE-2026-5796",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 13.6 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user with Reporter-level group permissions to view package metadata from projects with the Package Registry disabled due to incorrect authorization checks in the group packages feature.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:55.510"
-  },
-  {
-    "id": "CVE-2026-5309",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.6 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user to read or modify another group's virtual registry cleanup policy settings without authorization.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:55.390"
-  },
-  {
-    "id": "CVE-2026-3176",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.6 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user with limited permissions to access project information due to insufficient authorization checks.",
-    "severity": "Low",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:53.440"
-  },
-  {
-    "id": "CVE-2026-2238",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.5 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an unauthenticated user to view confidential issue references on public projects due to improper authorization checks.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:53.323"
-  },
-  {
-    "id": "CVE-2026-1606",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 14.8 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user to conceal content within a Snippet due to improper input validation.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:52.920"
-  },
-  {
-    "id": "CVE-2026-13311",
-    "description": "shell-quote prior to 1.8.5 finalizes parsed tokens in parse() using Array.prototype.concat as a reduce accumulator, which reallocates and copies the entire growing array on every iteration. As a result parse() runs in O(n^2) time relative to the number of input tokens. An attacker who can supply an attacker-controlled string to any code path that calls parse() (no shell metacharacters are required; plain space-separated words suffice) can block the single-threaded Node.js event loop for an extended period with a small input, resulting in a denial of service. There is no code execution or data disclosure; impact is to availability only. Fixed in 1.8.5.",
-    "severity": "High",
-    "tech": "Shell-quote",
-    "published": "2026-06-25T05:16:52.763"
-  },
-  {
-    "id": "CVE-2026-12635",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 8.3 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user with maintainer-role permissions to make requests to internal network resources through mirror synchronization due to improper URL validation.",
-    "severity": "None",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:51.170"
-  },
-  {
-    "id": "CVE-2026-12053",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.1 before 19.1.1 that under certain conditions could have allowed a user to access sensitive information that had already been committed to a project, due to insufficient output filtering in Duo Workflows.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:50.890"
-  },
-  {
-    "id": "CVE-2026-11379",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 13.11 prior to 18.11.6, 19.0 prior to 19.0.3, and 19.1 prior to 19.1.1 in which incorrect authorization in DAST site profile management could allow a user with Developer role to exfiltrate DAST site profile secrets under certain conditions.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:50.767"
-  },
-  {
-    "id": "CVE-2026-10712",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.10 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an unauthenticated user to execute arbitrary JavaScript in a user's browser session due to improper path validation under certain conditions.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:50.640"
-  },
-  {
-    "id": "CVE-2026-10086",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 16.4 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user with developer-role permissions to execute arbitrary client-side code in the context of another user's session, due to improper sanitization of user-supplied input.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:50.530"
-  },
-  {
-    "id": "CVE-2026-0934",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.9 before 18.11.6, 19.0 before 19.0.3, and 19.1 before 19.1.1 that under certain conditions could have allowed an authenticated user with custom role permissions to view, create, or delete protected environment configurations despite CI/CD visibility being disabled for the project.",
-    "severity": "Low",
-    "tech": "Gitlab",
-    "published": "2026-06-25T05:16:50.410"
-  },
-  {
-    "id": "CVE-2026-2508",
-    "description": "The Gravity Forms Booking plugin for WordPress is vulnerable to time-based SQL Injection via the ‘staff_id’ parameter in all versions up to, and including, 2.7.1 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with Subscriber-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-25T04:17:56.043"
-  },
-  {
-    "id": "CVE-2026-12079",
-    "description": "The Dokan Pro plugin for WordPress is vulnerable to time-based SQL Injection via the ’orderby’ parameter in all versions up to, and including, 5.0.4 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for authenticated attackers, with Subscriber-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-25T04:17:55.913"
-  },
-  {
-    "id": "CVE-2026-12077",
-    "description": "The Dokan Pro plugin for WordPress is vulnerable to time-based SQL Injection via the via 'latitude' and 'longitude' parameters in all versions up to, and including, 5.0.4 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query.  This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-25T04:17:55.627"
-  },
-  {
-    "id": "CVE-2026-10833",
-    "description": "The Gutenberg Essential Blocks – Page Builder for Gutenberg Blocks & Patterns plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'configurablePrefix' Block Attribute in all versions up to, and including, 6.1.4 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with Contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-25T04:17:52.507"
   }
 ]
