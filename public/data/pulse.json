@@ -1,5 +1,33 @@
 [
   {
+    "id": "CVE-2026-57997",
+    "description": "Strapi users-permissions plugin fails to restrict JWT algorithms when plugin::users-permissions.jwt.algorithm is not explicitly configured, allowing acceptance of HS384 and HS512 tokens alongside HS256. Attackers possessing the jwtSecret can mint tokens with non-standard HMAC variants to bypass algorithm restrictions and weaken authentication controls.",
+    "severity": "Medium",
+    "tech": "Strapi",
+    "published": "2026-06-29T22:16:49.350"
+  },
+  {
+    "id": "CVE-2026-51221",
+    "description": "A buffer overflow in the Get_Attribute_List function of EIPStackGroup OpENer commit 76b95c allows attackers to cause a Denial of Service (DoS) via supplying a crafted Common Packet Format (CPF) packet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T22:16:49.070"
+  },
+  {
+    "id": "CVE-2026-34592",
+    "description": "Coolify is an open-source and self-hostable tool for managing servers, applications, and databases. Prior to 4.0.0-beta.471, Coolify server and project lookups are not scoped to the current team, allowing any authenticated user to access servers and projects belonging to other teams by specifying their IDs directly. This vulnerability is fixed in 4.0.0-beta.471.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T22:16:44.120"
+  },
+  {
+    "id": "CVE-2026-10647",
+    "description": "The USB CDC-NCM device class (subsys/usb/device_next/class/usbd_cdc_ncm.c) ignores the return value of usbd_ep_enqueue() in its ethernet transmit callback cdc_ncm_send(). When the enqueue fails, the function still calls k_sem_take(&data-sync_sem, K_FOREVER), blocking on a completion semaphore that is only ever signaled from the bulk-IN transfer-completion callback. Because nothing was enqueued, that callback never fires and the calling thread — a shared network traffic-class TX thread — deadlocks permanently while holding the interface TX lock, halting transmission until reboot (and leaking the transmit buffer).\n\nThe enqueue fails under conditions controlled by the attached USB host: usbd_ep_enqueue() returns -EPERM whenever the bus is suspended (a standard, persistent host operation), and the underlying udc_ep_enqueue() returns -EPERM/-ENODEV on disconnect, bus reset, or endpoint disable. The cdc_ncm_send() guard only checks the DATA_IFACE_ENABLED and IFACE_UP flags, not the suspended state, so a packet transmitted while the host holds the bus suspended reaches the failing enqueue and deadlocks the TX path.\n\nThe realistic trigger is a bus suspend that occurs while the exported network interface is active and has traffic to send — host sleep, USB selective/auto-suspend, or hub power management — after which any device-originated packet deadlocks the path, recoverable only by reboot. The impact is a persistent loss of the virtual network connection between the host's NCM interface and the Zephyr device; because the deadlocked thread is a shared traffic-class TX thread, egress on other network interfaces can stall as well. There is no memory corruption or information disclosure.\n\nThe defect was introduced with the CDC-NCM driver and shipped in releases through v4.4.0; it is fixed by checking the usbd_ep_enqueue() return value and freeing the buffer before the blocking wait.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T22:16:42.940"
+  },
+  {
     "id": "CVE-2026-55957",
     "description": "Missing Critical Step in Authentication vulnerability in Apache Tomcat when the JNDIRealm was configured to authenticate binds using GSSAPI allowed attackers to authenticate without provided the correct password.\n\nThis issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.4, from 10.1.0-M1 through 10.1.36, from 9.0.0.M1 through 9.0.100, from 8.5.0 through 8.5.100, from 7.0.0 through 7.0.109.\n\nUsers are recommended to upgrade to version 11.0.5, 10.1.37 or 9.0.101, which fixes the issue.",
     "severity": "High",
@@ -2189,96 +2217,5 @@
     "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-06-26T23:17:08.537"
-  },
-  {
-    "id": "CVE-2026-55069",
-    "description": "Kestra is an open-source, event-driven orchestration platform. Prior to 1.3.24, this vulnerability exists in the BasicAuth authentication component of the Kestra OSS workflow orchestration platform. An attacker who gains read access to the PostgreSQL database can exploit SHA-512's high computation speed to recover the administrator password offline. In Kubernetes deployments, a successful crack further enables reading of the cluster ServiceAccount Token and all K8s Secrets, achieving vertical privilege escalation. This vulnerability is fixed in 1.3.24.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:33.093"
-  },
-  {
-    "id": "CVE-2026-53577",
-    "description": "Kestra is an open-source, event-driven orchestration platform. Prior to 1.0.45 and 1.3.21, the previewFileFromExecution endpoint (GET /api/v1/{tenant}/executions/{executionId}/file/preview) contains an access control bypass that allows any authenticated user to read output files from any other execution within the same tenant, bypassing execution-level and namespace-level isolation. This vulnerability is fixed in 1.0.45 and 1.3.21.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:32.967"
-  },
-  {
-    "id": "CVE-2026-53576",
-    "description": "Kestra is an open-source, event-driven orchestration platform. Prior to 1.0.45 and 1.3.21, the authentication filter for the REST API (@Filter(\"/api/v1/**\")) treats any request whose path ends in /configs as the public instance-config endpoint and forwards it without a credential check. kestra addresses its resources by URL path segments that the caller chooses (/api/v1/{tenant}/flows/{namespace}, /api/v1/{tenant}/executions/{namespace}/{id}, /api/v1/{tenant}/namespaces/{namespace}/kv/{key}). An anonymous caller picks the literal configs as the final segment, and the request bypasses Basic-Auth entirely. Because the bypass reaches the flow-create and execution-trigger routes, an unauthenticated caller creates a flow containing a Shell or Process task and runs it. The task executes as root inside the kestra container. The official docker-compose.yml mounts /var/run/docker.sock, so root in the container reaches the host Docker daemon. This vulnerability is fixed in 1.0.45 and 1.3.21.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:32.840"
-  },
-  {
-    "id": "CVE-2026-50767",
-    "description": "A stored cross-site scripting (XSS) vulnerability in the item type administration page of Koha Library Management System 0 through 25.11 versions allow an authenticated remote attacker with administrator privileges to inject arbitrary web scripts via the item type check-in message field (checkinmsg).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:32.727"
-  },
-  {
-    "id": "CVE-2026-50766",
-    "description": "A stored cross-site scripting (XSS) vulnerability in the OPAC item detail page of Koha Library Management System 0 through 25.11 versions allow an authenticated remote attacker with edit_items permission to inject arbitrary web scripts via the item public notes field (items.itemnotes).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:32.617"
-  },
-  {
-    "id": "CVE-2026-50765",
-    "description": "A stored cross-site scripting (XSS) vulnerability in the patron restriction type administration page of Koha Library Management System 0 through 25.11 versions allow an authenticated remote attacker with administrator privileges to inject arbitrary web scripts via the restriction type label (display_text field).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:32.500"
-  },
-  {
-    "id": "CVE-2026-49984",
-    "description": "Kestra is an open-source, event-driven orchestration platform. Prior to 1.0.45 and 1.3.23, the local internal-storage backend validates user-supplied paths for .. traversal before it converts Windows-style backslashes to forward slashes. An attacker can therefore smuggle a traversal sequence past the guard using backslashes (..\\..\\..\\); the guard sees a harmless string, and the path is only rewritten to ../../../ after validation, immediately before the file is opened. Any authenticated user who can view an execution (the lowest-privilege role) can call GET /api/v1/{tenant}/executions/{executionId}/file?path=… and read any file on the server filesystem readable by the Kestra process, outside the storage sandbox and across every tenant and namespace. This includes the embedded H2 database (all flows, all users, all stored secrets), internal storage of every other tenant/namespace, mounted secret files, and the process environment (/proc/self/environ) which contains configured database and secret-backend credentials. It is a complete breach of Kestra's storage isolation and multi-tenancy boundary. This vulnerability is fixed in 1.0.45 and 1.3.23.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:32.243"
-  },
-  {
-    "id": "CVE-2026-49869",
-    "description": "Kestra is an open-source, event-driven orchestration platform. Prior to 1.0.45 and 1.3.21, AuthenticationFilter in Kestra OSS uses request.getPath().endsWith(\"/configs\") to whitelist the public configuration endpoint from Basic Auth. Because the check is a suffix match rather than an exact path match, any API path whose last segment is configs bypasses authentication entirely. An unauthenticated remote attacker can exploit this to create and execute arbitrary workflows without credentials. Because Kestra ships with script execution plugins (plugin-script-shell, plugin-script-python, etc.) enabled by default, this directly results in unauthenticated Remote Code Execution as root inside the Kestra worker container.  This vulnerability is fixed in 1.0.45 and 1.3.21.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:32.113"
-  },
-  {
-    "id": "CVE-2026-45807",
-    "description": "Kestra is an open-source, event-driven orchestration platform. Prior to 1.0.43 and 1.3.19, several Kestra API endpoints accept a kestra:// URI from the client and pass it through StorageInterface.parentTraversalGuard before reading the underlying file from the local storage backend. The guard only inspects the literal URI.toString(), so a URL-encoded .. written as %2E%2E slips through. The downstream code then calls URI.getPath(), which decodes %2E%2E back to .., and the resulting path is handed to Paths.get(...) without normalization. The OS resolves the .. segments at open(2) time, so an authenticated user with a single execution can read any file the Kestra process has access to on the host filesystem (/etc/passwd, mounted secrets, other tenants' execution outputs, etc.). This vulnerability is fixed in 1.0.43 and 1.3.19.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:31.973"
-  },
-  {
-    "id": "CVE-2026-38571",
-    "description": "Cleartext storage and exposure of WPA2 credentials, and missing authentication on the rr/wr memory read/write commands, in the unauthenticated UART debug console of the Tenda N300 F3 (V603) allow a physically proximate attacker to obtain stored WPA2 credentials in cleartext and to read or write arbitrary memory via the serial console.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:31.860"
-  },
-  {
-    "id": "CVE-2026-36908",
-    "description": "A stack overflow in the AP4_Array<AP4_TrunAtom::Entry>::EnsureCapacity component of axiomatic-systems Bento4 before v1.8.9allows attackers to cause a Denial of Service (DoS) via a crafted MP4 file.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:31.747"
-  },
-  {
-    "id": "CVE-2026-36907",
-    "description": "A stack overflow in the AP4_StsdAtom::AP4_StsdAtom component of axiomatic-systems Bento4 before v1.8.9allows attackers to cause a Denial of Service (DoS) via a crafted MP4 file.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:31.637"
-  },
-  {
-    "id": "CVE-2026-36478",
-    "description": "An issue in Technitium DNS Server v.14.3 and before allows a remote attacker to cause a denial of service via the DnsServerApp.exe, DnsServerApp.dll, TechnitiumLibrary.Net/Dns/DnsClient.cs components",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T22:16:31.513"
   }
 ]
