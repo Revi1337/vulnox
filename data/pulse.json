@@ -1,5 +1,222 @@
 [
   {
+    "id": "CVE-2026-58000",
+    "description": "luci-proto-openvpn through 0.11.1, fixed in commit e4ff45e, contains a command injection vulnerability in the generateKey ubus method where the cl_meta parameter is interpolated into a shell command without proper escaping or quoting. An authenticated LuCI user with OpenVPN protocol configuration access can inject arbitrary shell metacharacters into cl_meta to execute commands as root via the popen function.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T19:16:42.993"
+  },
+  {
+    "id": "CVE-2026-57999",
+    "description": "luci-app-tailscale-community contains a command injection vulnerability in the tailscale.do_login RPC method that allows authenticated users to execute arbitrary commands as root. The vulnerability exists because user-controlled loginserver and loginserver_authkey parameters are improperly quoted within a double-quoted shell command, allowing shell substitutions like $() to be evaluated by the outer shell before argument processing.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T19:16:42.857"
+  },
+  {
+    "id": "CVE-2026-53428",
+    "description": "Memory Allocation with Excessive Size Value vulnerability in leandrocp mdex allows an unauthenticated attacker to cause a denial of service through unbounded memory allocation.\n\ncomrak_nif::lumis_adapter::LumisAdapter::parse_highlight_lines in native/comrak_nif/src/lumis_adapter.rs eagerly expands a user-controlled inclusive line range from a fenced code block's highlight_lines decorator into a Vec<usize>, pushing one element per integer in the range with no upper bound on the range size. An attacker who can supply Markdown that an application renders with MDEx.to_html/2 (for example a comment, chat message, or wiki page) can embed a code block whose info string is rust highlight_lines=\"1-100000000\", forcing the native adapter to allocate roughly 8 bytes per line in the range.\n\nA payload that differs by only a few bytes can therefore allocate hundreds of megabytes, and a sufficiently large range (for example 1-2000000000) exhausts host memory and aborts the BEAM, denying service to every user of the rendering process. The per-line write loop additionally tests membership with a linear scan over the same vector, degrading rendering to a quadratic cost even for ranges that do not immediately exhaust memory.\n\nThe vulnerable native code originally shipped inside mdex (in native/comrak_nif/src/lumis_adapter.rs) and was later extracted into the separate mdex_native package (native/mdex_native_nif/src/lumis_adapter.rs), where it remains unpatched.\n\nThis issue affects mdex from 0.11.0 before 0.12.3, and mdex_native from 0.1.0 before 0.2.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-29T19:16:41.817"
+  },
+  {
+    "id": "CVE-2026-53427",
+    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in leandrocp MDEx allows stored or reflected cross-site scripting via attacker-controlled Markdown.\n\nWhen syntax highlighting and full info-string forwarding (render: [full_info_string: true]) are enabled, the Lumis adapter copies the value of a code fence's highlight_lines_class info-string attribute, unescaped, into the class attribute of every rendered line. comrak_nif::lumis_adapter::LumisAdapter::parse_custom_attributes in native/comrak_nif/src/lumis_adapter.rs shlex-parses the info string and stores each key=value pair verbatim, highlight_lines_config pulls highlight_lines_class into the per-line class value, and write_highlighted interpolates that value directly into the class attribute of the per-line <div>. A single-quoted shell token preserves an inner double quote through shlex parsing, so a value such as '\"><script>alert(1)</script>' terminates the class attribute early and the markup that follows is emitted as live HTML.\n\nAn attacker who can submit Markdown (through comments, posts, wiki pages, documentation, or any user-generated content) can inject arbitrary HTML and JavaScript that runs in the browser of every user who views the rendered output, enabling session theft, account takeover, and other client-side attacks. No authentication or special privileges are required.\n\nThe vulnerable native code originally shipped inside mdex (in native/comrak_nif/src/lumis_adapter.rs) and was later extracted into the separate mdex_native package (native/mdex_native_nif/src/lumis_adapter.rs), where it remains unpatched.\n\nThis issue affects mdex from 0.11.3 before 0.12.3, and mdex_native from 0.1.0 before 0.2.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-29T19:16:41.597"
+  },
+  {
+    "id": "CVE-2026-13757",
+    "description": "A flaw was found in p11-kit. The RPC message attribute parsing functions p11_rpc_message_get_attribute() and p11_rpc_message_get_attribute_array_value() form a mutually-recursive call chain with no recursion depth limit when processing nested CKA_WRAP_TEMPLATE, CKA_UNWRAP_TEMPLATE, and CKA_DERIVE_TEMPLATE attributes. An unauthenticated attacker with local access to the p11-kit RPC Unix domain socket can send a specially crafted request with deeply nested template attributes, causing stack exhaustion and crashing the p11-kit server process and its dependent services.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T19:16:40.907"
+  },
+  {
+    "id": "CVE-2026-57960",
+    "description": "Hi.Events through 1.9.0 public check-in list endpoints use short_id as sole access control, allowing unauthenticated access to retrieve full attendee lists including emails and personal information. Attackers with knowledge of the short_id can call GET /api/public/check-in-lists/{short_id}/attendees to read attendee data and create or delete check-in records without authentication.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:42.130"
+  },
+  {
+    "id": "CVE-2026-57959",
+    "description": "Hi.Events through 1.9.0 contains a promo code validation vulnerability where reservation validates usage count before asynchronous UpdateEventStatisticsJob increments it, allowing attackers to redeem limited promo codes unlimited times. Attackers can sequentially reserve multiple orders with the same restricted promo code, each reading order_usage_count=0 and passing validation, then complete them all at discounted prices without concurrent requests.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:41.997"
+  },
+  {
+    "id": "CVE-2026-57958",
+    "description": "Mixpost through 2.6.0 contains a reflected cross-site scripting vulnerability that allows unauthenticated attackers to execute arbitrary JavaScript in authenticated users' browsers by crafting malicious OAuth callback URLs with unsanitized error query parameters. Attackers can exploit the OAuth callback controller's failure to sanitize error parameters before rendering them through Laravel flash messages via the Vue v-html directive to hijack authenticated user sessions or perform unauthorized actions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:41.253"
+  },
+  {
+    "id": "CVE-2026-57957",
+    "description": "Papermark through 0.22.0 contains a cross-origin resource sharing (CORS) misconfiguration vulnerability that allows unauthenticated remote attackers to perform credentialed cross-origin requests by exploiting the TUS-based viewer upload endpoint reflecting arbitrary request Origins with Access-Control-Allow-Credentials set to true. Attackers can lure authenticated victims to malicious pages that silently issue credentialed cross-origin requests to upload arbitrary files into victim datarooms and read credentialed responses.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:41.097"
+  },
+  {
+    "id": "CVE-2026-57956",
+    "description": "SigNoz through 0.130.1 contains a broken access control vulnerability that allows authenticated users to access other organizations' alert rules by supplying a target rule UUID, as the alert rule store predicates fail to filter by organization ID. Attackers can read, edit, and delete alert rules belonging to other organizations by exploiting the missing tenant isolation check, bypassing multi-tenant access controls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:40.963"
+  },
+  {
+    "id": "CVE-2026-57955",
+    "description": "SigNoz through 0.130.1 contains a SQL injection vulnerability that allows authenticated attackers to execute arbitrary ClickHouse queries by injecting URL-encoded quotes into the rule ID path parameter of the alert-history endpoints. Attackers can manipulate the unsanitized rule ID interpolated into ClickHouse queries to read all stored traces, logs, and metrics, or abuse the url() function to perform server-side request forgery.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:40.817"
+  },
+  {
+    "id": "CVE-2026-57954",
+    "description": "Elide through 7.1.17 fails to enforce @ReadPermission on client-supplied sort expressions in SortingImpl.getValidSortingRules, allowing attackers to sort collections by forbidden fields. Attackers can infer hidden field values through row ordering analysis, leaking relative field ordering across all rows via both JSON:API and GraphQL read paths.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:40.673"
+  },
+  {
+    "id": "CVE-2026-57953",
+    "description": "Mythic before 3.4.0.60 contains an authorization bypass vulnerability that allows authenticated spectator-role users to perform unauthorized write operations by accessing the eventing_import_automatic_webhook endpoint registered under spectator-permitted middleware. Attackers with spectator role can exploit this misconfigured access control to create and delete automation workflows, making unauthorized modifications to operation automation configuration and EventGroups.",
+    "severity": "Medium",
+    "tech": "Mythic",
+    "published": "2026-06-29T18:16:40.547"
+  },
+  {
+    "id": "CVE-2026-57952",
+    "description": "Mythic before 3.4.0.60 contains an authorization bypass vulnerability in four REST endpoints (c2profile_config_check_webhook, c2profile_redirect_rules_webhook, c2profile_get_ioc_webhook, c2profile_sample_message_webhook) that fail to verify payload ownership. An operator in one operation can invoke these endpoints with a known payload UUID from another operation to access that operation's C2 profile configuration including encryption keys and callback parameters.",
+    "severity": "Medium",
+    "tech": "Mythic",
+    "published": "2026-06-29T18:16:40.380"
+  },
+  {
+    "id": "CVE-2026-57951",
+    "description": "Mythic before 3.4.0.60 contains a broken hasura permission filter on the payload_build_step table with an always-satisfied _or condition that bypasses operation-scoped access controls. Authenticated operators and spectators can query payload_build_step to read step_stdout, step_stderr, step_name, and step_description across all operations on the server.",
+    "severity": "Medium",
+    "tech": "Mythic",
+    "published": "2026-06-29T18:16:40.253"
+  },
+  {
+    "id": "CVE-2026-57950",
+    "description": "ruoyi-vue-pro through 2026.05, fixed in commit 5d1fd70 contains a broken access control vulnerability in ErpSaleOrderController that allows attackers with erp:sale-out permissions to gain unauthorized access to sale order operations by exploiting an incorrect permission namespace enforcement. Attackers holding shipment-level permissions can perform unauthorized create, update, delete, and read operations on financially sensitive sale orders due to the controller enforcing erp:sale-out instead of the intended erp:sale-order namespace.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:40.130"
+  },
+  {
+    "id": "CVE-2026-57949",
+    "description": "ruoyi-vue-pro through 2026.05, fixed in commit c779a47, contains a missing authorization vulnerability in the CRM module's GET /admin-api/crm/follow-up-record/get endpoint that allows authenticated users to read any follow-up record by iterating sequential numeric IDs. Attackers can exploit this by sending requests with arbitrary ID parameters to access other users' follow-up notes, file attachments, scheduling information, and business entity references without proper authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:39.997"
+  },
+  {
+    "id": "CVE-2026-57948",
+    "description": "Pinpoint through version 3.1.0 contains an insecure session management vulnerability that allows attackers to access the pinpointJwt session cookie due to missing HttpOnly and Secure attributes, enabling JavaScript access via document.cookie and cleartext transmission over HTTP. Attackers can exploit stored or reflected cross-site scripting vulnerabilities to exfiltrate the session token or intercept it through network sniffing to perform session hijacking.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:39.863"
+  },
+  {
+    "id": "CVE-2026-57947",
+    "description": "Pinpoint through 3.1.0 contains a server-side request forgery vulnerability in the webhook registration endpoint that allows authenticated users to register internal URLs due to missing SSRF protection. Attackers can trigger alarm threshold breaches to force the server to issue POST requests to internal hosts and metadata endpoints, enabling unauthorized access to internal network resources.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:39.720"
+  },
+  {
+    "id": "CVE-2026-57946",
+    "description": "Invidious before version 2.20260626.0 contains a broken access control vulnerability that allows unauthenticated attackers to retrieve private playlist contents by accessing the RSS feed playlist endpoint without authentication. Attackers can supply a playlist ID to the feed endpoint to obtain the full playlist contents, owner email address, and associated video entries without any authentication.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:39.587"
+  },
+  {
+    "id": "CVE-2026-57945",
+    "description": "PhotoPrism before 260601-a7d098548 contains a broken access control vulnerability that allows authenticated non-admin users to modify other users' profile information by sending requests to arbitrary user endpoints. Attackers can exploit the missing session-to-user identifier validation in the PUT users API endpoint to overwrite another user's profile details without authorization.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:39.457"
+  },
+  {
+    "id": "CVE-2026-57943",
+    "description": "LibrePhotos before 1.0.0 contains a broken object level authorization vulnerability in the SetPhotosShared endpoint that allows authenticated users to grant themselves access to other users' private photos by bypassing ownership validation. Attackers can manipulate shared_to relations without proper owner checks to read arbitrary private photos belonging to other users.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:39.323"
+  },
+  {
+    "id": "CVE-2026-57942",
+    "description": "LibreTranslate through 1.9.7, fixed in commit 397fd22, contains an IP spoofing vulnerability in the get_remote_address() function that allows unauthenticated attackers to spoof client IP addresses by injecting arbitrary values into the X-Forwarded-For header without trusted proxy validation. Attackers can bypass per-IP rate limiting and flood bans by supplying forged addresses in the X-Forwarded-For header to enable unlimited API abuse.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:39.180"
+  },
+  {
+    "id": "CVE-2026-56783",
+    "description": "Parseable before 2.9.2 contains an information disclosure vulnerability in the notification-target API endpoints that returns webhook tokens and basic-auth credentials in cleartext due to commented-out secret-masking functionality. Any authenticated user with the GetAlert action, including low-privilege reader roles, can recover credentials and internal endpoint URLs for all configured notification targets by querying GET /api/v1/targets or related endpoints.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:38.950"
+  },
+  {
+    "id": "CVE-2026-56782",
+    "description": "Gorse before 0.5.10 contains an authentication bypass vulnerability in the /api/dump and /api/restore endpoints that allows unauthenticated attackers to access protected functionality when admin_api_key is empty, which is the default configuration. Remote attackers can exfiltrate the entire database including user records, items, and feedback data containing personally identifiable information, or completely overwrite the dataset without authentication.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:38.817"
+  },
+  {
+    "id": "CVE-2026-56781",
+    "description": "Teable before 2026-06-15T04-43-24Z.1912 contains an improper access control vulnerability that allows anonymous attackers to access hidden field data by supplying arbitrary field IDs in the projection parameter of the share view records endpoint. Attackers can enumerate hidden field IDs from share metadata and specify them in projection parameters to read field values that are intended to be restricted from public view.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:38.683"
+  },
+  {
+    "id": "CVE-2026-56780",
+    "description": "Modoboa before 2.9.0 contains an insecure direct object reference vulnerability in the PUT /api/v1/accounts/{pk}/password/ endpoint that allows domain administrators to change any user's password. Attackers with domain admin privileges can bypass object-level access controls to reset superadmin passwords and achieve full account takeover.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:38.550"
+  },
+  {
+    "id": "CVE-2026-56285",
+    "description": "Nitter's /video media proxy endpoint fails to validate target URLs against Twitter/X domains and uses a hardcoded default HMAC key, allowing unauthenticated attackers to compute valid HMACs for arbitrary URLs. Attackers can retrieve HTTP responses from any host reachable by the server, including cloud metadata services and internal network resources.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:38.410"
+  },
+  {
+    "id": "CVE-2026-36848",
+    "description": "Gigamon GVOS v5.16.1 and below is vulnerable to Directory Traversal in the GVOS H-VUE subsystem.",
+    "severity": "High",
+    "tech": "Gigavue-os",
+    "published": "2026-06-29T18:16:37.583"
+  },
+  {
+    "id": "CVE-2026-13592",
+    "description": "A vulnerability was detected in liftoff-sr CIPster up to e8e9dba09bf56962807d3504b783ccdb6287f3e4. Affected by this issue is the function BufWriter::append of the component EtherNet IP Message Handler. Performing a manipulation results in out-of-bounds write. Remote exploitation of the attack is possible. The exploit is now public and may be used. This product follows a rolling release approach for continuous delivery, so version details for affected or updated releases are not provided. The patch is named 3a0159ed43125dcd024a1965f0289cb186bae9ff. To fix this issue, it is recommended to deploy a patch.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:37.103"
+  },
+  {
+    "id": "CVE-2026-11720",
+    "description": "A path traversal vulnerability exists in the HTTP tool URL builder of googleapis/mcp-toolbox.\n\nWhen constructing downstream API requests, the URL builder substitutes user-controlled pathParams into the configured tool path and parses the resulting string as a relative URL. While it checks that the input does not alter the scheme, host, or user info, it relies on ResolveReference for the final URL resolution. Because dot segments (../) are normalized during this resolution step, an attacker can supply path parameters containing directory traversal sequences to escape the operator-configured path scope. This allows the client to coerce the toolbox into making requests to unintended endpoints on the same target host while forwarding the toolbox's configured credentials (e.g., bypassing a restricted path like /api/v1/users/{{.id}} to reach /admin/secrets).",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-06-29T18:16:36.173"
+  },
+  {
     "id": "CVE-2026-13752",
     "description": "Improper neutralization of parameters in Snowflake CLI versions prior to 3.19 allowed unintended SQL execution. An attacker could exploit this by supplying crafted values to vulnerable command paths, causing Snowflake CLI to execute unintended SQL in the context of the user’s Snowflake session. Successful exploitation required crafted values to reach vulnerable parameters, including through socially engineered input, malicious repository configuration, or compromised automation feeding external values into the CLI, and impact is limited by the privileges assigned to the active session. The fix is available in Snowflake CLI version 3.19, and users must manually upgrade.",
     "severity": "Medium",
@@ -1648,14 +1865,14 @@
     "id": "CVE-2026-54351",
     "description": "Budibase is an open-source low-code platform. Prior to 3.39.9, the webhook trigger endpoint in Budibase is publicly accessible and passes the full HTTP request body into automation execution parameters. A mass assignment vulnerability in externalTrigger() allows an attacker to overwrite the internal appId property by including it in the webhook POST body. When the automation is processed asynchronously (the default path for webhooks without a collect step), the worker executes the attacker-defined automation in the context of the victim's workspace, granting full read/write access to the victim's database. This vulnerability is fixed in 3.39.9.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Budibase",
     "published": "2026-06-26T21:16:35.170"
   },
   {
     "id": "CVE-2026-54350",
     "description": "Budibase is an open-source low-code platform. Prior to 3.39.12,  an unauthenticated visitor of any published Budibase app reads every document of the backing MongoDB, CouchDB, Elasticsearch, DynamoDB-PartiQL, or REST-with-JSON-body collection and, where the builder has published a PUBLIC write query, modifies every document of that collection with one HTTP request. enrichContext at packages/server/src/sdk/workspace/queries/queries.ts:121-138 substitutes parameter values into the raw JSON body of a query, then JSON.parses the result. The validator validateQueryInputs at packages/server/src/api/controllers/query/index.ts:61-71 rejects only Handlebars markers ({{, }}) in user input and does not escape JSON metacharacters (\", \\, }). A parameter value containing a closing quote and additional keys lifts attacker-controlled fields into the parsed filter object. For Mongo find, the parsed filter passes directly to collection.find() (packages/server/src/integrations/mongodb.ts:506-510). Duplicate-key JSON parsing overrides the builder's {name: \"...\"} with {name: {$exists: true}} and returns every document. The same primitive against an updateMany query (mongodb.ts:577-585) widens the filter scope to the full collection while the builder-controlled $set body runs against every matched document. The authorized middleware at packages/server/src/middleware/authorized.ts:141-148 short-circuits when the query's role is PUBLIC. CSRF is not enforced on this path. POST /api/v2/queries/:queryId (packages/server/src/api/routes/query.ts:63) accepts the call with no session, only an x-budibase-app-id header that is public from the published-app URL. This vulnerability is fixed in 3.39.12.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Budibase",
     "published": "2026-06-26T21:16:35.040"
   },
   {
@@ -1675,22 +1892,22 @@
   {
     "id": "CVE-2026-50137",
     "description": "Budibase is an open-source low-code platform. Prior to 3.39.0, an anonymous attacker who knows or can enumerate a workspace id (app_...) and an S3-source datasource id (ds_...) can call this endpoint with no auth and obtain a 15-minute pre-signed PUT URL minted on the victim's IAM identity. The endpoint also returns the publicUrl so the attacker knows exactly where their PUT lands. Because bucket is attacker-controlled, the attacker can write to any bucket those IAM credentials can write to, not only the bucket the datasource was configured for. The Budibase server route POST /api/attachments/:datasourceId/url (packages/server/src/api/routes/static.ts) is registered with only the recaptcha middleware. There is no authorized(...) middleware in the chain. The controller (packages/server/src/api/controllers/static/index.ts::getSignedUploadURL) looks the requested datasource up, instantiates an AWS S3 client with the datasource's stored accessKeyId / secretAccessKey, and returns an AWS Signature V4 pre-signed PutObjectCommand URL for the caller-supplied bucket and key. The bucket is not pinned to the datasource's configured bucket. The workspace context required by sdk.datasources.get is sourced by getWorkspaceIdFromCtx (packages/backend-core/src/utils/utils.ts) from any of: the x-budibase-app-id header, the JSON body appId, a path segment that begins with the workspace prefix, or ?appId=. auth.buildAuthMiddleware([], { publicAllowed: true }) runs before any of this and explicitly allows anonymous requests. The currentWorkspace middleware's \"deny access to dev preview\" branch only triggers under isBrowser(ctx) && !isApiKey(ctx); isBrowser checks the parsed User-Agent for a recognised browser, so any non-browser client (curl, the supplied PoC, any tool not setting a browser UA) is neither and reaches dev workspaces too. This vulnerability is fixed in 3.39.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Budibase",
     "published": "2026-06-26T21:16:34.673"
   },
   {
     "id": "CVE-2026-50136",
     "description": "Budibase is an open-source low-code platform. Prior to 3.39.3, the application server exposes an unauthenticated endpoint that generates S3 PutObject presigned URLs using credentials stored in a workspace datasource. The route is protected only by the recaptcha middleware and does not require authentication, table permission, datasource permission, or builder access. A public caller who knows a workspace ID and S3 datasource ID can request a signed upload URL for attacker-controlled bucket and key values. This vulnerability is fixed in 3.39.3.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Budibase",
     "published": "2026-06-26T21:16:34.547"
   },
   {
     "id": "CVE-2026-50132",
     "description": "Budibase is an open-source low-code platform. Prior to 3.39.0, `GET /api/chat-links/:instance/:token/handoff` is a public endpoint (no auth required) that performs a permanent, state-changing operation: it binds an external chat identity (Slack/Discord/MS Teams) to an authenticated Budibase user account, with no consent UI and no CSRF protection. The session token in the URL is created by the attacker (from their own /link slash command) and embeds the attacker's externalUserId. When an authenticated Budibase victim visits the URL, their account is silently and permanently linked to the attacker's Slack/Discord identity. The server responds with \"Authentication succeeded.\" — no indication of what was linked. This vulnerability is fixed in 3.39.0.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Budibase",
     "published": "2026-06-26T21:16:34.420"
   },
   {
@@ -2245,166 +2462,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-26T20:16:54.093"
-  },
-  {
-    "id": "CVE-2026-54753",
-    "description": "Nx is a monorepo solution for TypeScript and polyglot codebases. From 17.0.4 until 22.7.2 and 23.0.0-beta.2, the local HTTP server started by nx graph sent Access-Control-Allow-Origin: * on every response, letting any website a developer visited read the server's responses cross-origin — including the full project graph and the output of the /help endpoint, which runs a target's configured help command. The practical impact is typically cross-origin information disclosure, but can be arbitrary command injection in rare cases. This vulnerability is fixed in 22.7.2 and 23.0.0-beta.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T19:16:43.937"
-  },
-  {
-    "id": "CVE-2026-48090",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.37.0 until 1.37.5 and 1.38.3, the HTTP OAuth2 filter (envoy.filters.http.oauth2) can leave an in-flight async token exchange attached to a downstream stream that has already been torn down. A late AsyncClient completion can still invoke OAuth2Filter methods that use StreamDecoderFilterCallbacks after that object’s lifetime has ended, causing undefined behavior, worker crashes (availability loss), and use-after-free / invalid-vptr failures under AddressSanitizer. This is a memory-safety / lifetime issue in the data plane, not a trivial config bug. Remote code execution is not claimed here; the primary demonstrated impact is DoS via crash and UB; any further impact would be deployment- and allocator-dependent.  This vulnerability is fixed in 1.37.5 and 1.38.3.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T19:16:41.590"
-  },
-  {
-    "id": "CVE-2026-47220",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.37.0 until 1.37.5 and 1.38.3, when the %REQUESTED_SERVER_NAME(X:Y)% is used in log format and host related options is specified, like HOST_FIRST, SNI_FIRST, it's possible to crash Envoy when the specified host header is missing in the request headers. This vulnerability is fixed in 1.37.5 and 1.38.3.",
-    "severity": "High",
-    "tech": "Envoy",
-    "published": "2026-06-26T19:16:41.173"
-  },
-  {
-    "id": "CVE-2026-47205",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.36.0 until 1.36.9, 1.37.5, and 1.38.3, a Use-After-Free (UAF) vulnerability leading to a sudden segmentation fault exists in Envoy's ext_authz HTTP filter when processing per-route authorization overrides concurrently with rapid downstream client disconnects. During standard request lifecycles, Envoy instantiates the ext_authz filter with a foundational authorization client object (client_). If a matched route dictates a dynamic per-route HTTP or gRPC authorization service override, the filter generates a localized client. In the vulnerable implementation, this transient client aggressively overwrote the default client_ unique pointer by executing client_ = std::move(per_route_client). When a client rapidly establishes and subsequently tears down a stream (such as rapidly refreshing a protected WebSocket endpoint), the downstream triggers the ConnectionManagerImpl::doDeferredStreamDestroy() -> ActiveStream::onResetStream() lifecycle. Envoy immediately sequences Filter::onDestroy() in an attempt to securely abort dispatched asynchronous authorization check transactions via client_->cancel(). By destructing the default client abruptly during initiateCall, a memory lifecycle misalignment occurs within the async client manager. The stream teardown fails to reliably track and cancel the dynamically bound asynchronous authorization tasks, orchestrating a sequence where a late asynchronous callback from the network evaluates against a heavily destroyed ActiveStream validation span, generating a UAF process crash. This vulnerability is fixed in 1.36.9, 1.37.5, and 1.38.3.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T19:16:40.853"
-  },
-  {
-    "id": "CVE-2026-13372",
-    "description": "Incorrect link resolution by display name in the custom PowerShell VPN editor in Devolutions Remote Desktop Manager 2026.2.5 through 2026.2.11 allows an authenticated attacker with write access to a shared workspace to execute a PowerShell script in another user's context via a display name collision with an existing VPN script link.",
-    "severity": "High",
-    "tech": "Remote desktop manager",
-    "published": "2026-06-26T19:16:39.897"
-  },
-  {
-    "id": "CVE-2026-56876",
-    "description": "extract-zip does not validate symlink targets when extracting zip archives. When processing a malicious zip file containing a symlink with a relative path like '../../../../etc/passwd', extract-zip will extract the symlink without validation, allowing it to point outside the extraction directory. Depending on how extract-zip is used, an attacker could read or write to arbitrary files.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T18:17:03.447"
-  },
-  {
-    "id": "CVE-2026-55448",
-    "description": "mise manages dev tools like node, python, cmake, and terraform. From 2026.3.15 until 2026.6.4, mise loads github.credential_command from local project config before any trust decision, then executes that value with sh -c when resolving a GitHub token. An attacker who can place a .mise.toml in a repository can execute arbitrary shell commands when the victim runs a GitHub-related mise command and no higher-priority GitHub token environment variable is set. This vulnerability is fixed in 2026.6.4.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T18:17:01.323"
-  },
-  {
-    "id": "CVE-2026-55441",
-    "description": "mise manages dev tools like node, python, cmake, and terraform. Prior to 2026.6.4, mise's trust feature gates config files (mise.toml, .tool-versions) through trust_check, but task-include files are loaded on a path that never reaches it. When a directory has a task-include dir (mise-tasks/, .mise/tasks/, …) but no config file, mise falls back to the default includes and renders each task's tera fields — and that tera environment has exec() registered. A {{ exec(command='…') }} in any rendered field runs arbitrary commands the moment the tasks are merely listed. There's no config file to gate on, so no trust prompt ever appears. Read-only commands trigger it: mise tasks, mise task ls, mise run, mise tasks --usage (the query shell completion runs on Tab). The victim only has to cd into a cloned repo and list or tab-complete a task. This vulnerability is fixed in 2026.6.4.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T18:17:01.190"
-  },
-  {
-    "id": "CVE-2026-54557",
-    "description": "mise manages dev tools like node, python, cmake, and terraform. Prior to 2026.6.1, the mise HTTP backend builds its install symlink destination from the raw resolved version string for non-latest versions. Normal tool install paths use the sanitized version pathname, but the HTTP backend's symlink path uses the raw value. On Unix-like systems, if that version is an absolute path, PathBuf::join discards the intended mise installs root. A repository-controlled .tool-versions file can therefore make mise install create a symlink outside the mise install tree. With bin_path, the same issue can place an executable symlink under an attacker-selected absolute prefix, such as a developer-tool prefix that is later added to PATH. This vulnerability is fixed in 2026.6.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T18:17:00.553"
-  },
-  {
-    "id": "CVE-2026-54341",
-    "description": "Dragonfly is an in-memory data store built for modern application workloads. Prior to 1.39.0, a crafted RESTORE payload triggers an out-of-bounds read in DragonflyDB's listpack collection loaders, crashing the entire server process (SIGSEGV). Because DragonflyDB requires no authentication by default and RESTORE is a normal keyspace command, an unauthenticated remote attacker can crash the server with a single ~24-byte command — a remote, repeatable denial of service. This vulnerability is fixed in 1.39.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T18:17:00.417"
-  },
-  {
-    "id": "CVE-2026-48743",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. Prior to 1.35.11, 1.36.7, 1.37.3, and 1.38.1, Envoy can translate a downstream HTTP/3 request that is complete at the transport layer (HEADERS with FIN / headers-only close) but still carries a nonzero Content-Length into a complete upstream HTTP/1 request with unresolved body debt. In an HTTP/1 upstream deployment where the origin replies before reading the declared body and keeps the connection reusable, the beginning of the next Envoy-generated upstream request can be consumed as the first request's body. The remaining bytes are then parsed by the origin as a new HTTP/1 request. This was reproduced as a route-bypass/desync: direct /pwn was denied by Envoy, but the second downstream H3 stream received the response for backend-parsed GET /pwn HTTP/1.1. This vulnerability is fixed in 1.35.11, 1.36.7, 1.37.3, and 1.38.1.",
-    "severity": "High",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:17:00.173"
-  },
-  {
-    "id": "CVE-2026-48706",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.34.0 until 1.35.13, 1.36.9, 1.37.5, and 1.38.3, a vulnerability exists in Envoy's TCP StatsD sink (TcpStatsdSink), where the thread-local flusher buffer can be overflowed by exceptionally long statistic names (e.g., >16KiB). During formatting, TcpStatsdSink reserves a single contiguous memory slice of 16KiB (FLUSH_SLICE_SIZE_BYTES). If formatting a single metric exceeds the remaining capacity, the flusher initiates a buffer rotation but incorrectly continues to allocate another fixed 16KiB slice. If an attacker can trigger a statistic name longer than 16KiB—for example, by sending an HTTP or gRPC request with an extremely long request path (:path) that is recorded by the grpc_stats filter configured with stats_for_all_methods: true—the flusher will attempt to copy the metric name using memcpy operations beyond the allocated heap buffer boundaries. This leads to a heap write overflow, which can cause immediate denial-of-service (process crash) or potential remote code execution (RCE). This vulnerability is fixed in 1.35.13, 1.36.9, 1.37.5, and 1.38.3.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:17:00.027"
-  },
-  {
-    "id": "CVE-2026-48497",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. Prior to 1.35.11, 1.36.7, 1.37.3, and 1.38.1, in cases where UDP DNS filter is configured with local resolution containing a name with the length of 255 octets or remote resolution for a name of 255 octets long can complete successfully, a query with such name will result in abnormal process termination. The abnormal process termination is triggered by an invalid runtime precondition that the query name is strictly less than 255 octets, contradicting DNS specification rfc1035#section-2.3.4 that the name can be 255 or less octets. This vulnerability is fixed in 1.35.11, 1.36.7, 1.37.3, and 1.38.1.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:59.897"
-  },
-  {
-    "id": "CVE-2026-48044",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.23.0 until 1.35.11, 1.36.7, 1.37.3, and 1.38.1, a  vulnerability has been identified in Envoy's zstd decompressor implementation (ZstdDecompressorImpl). When zstd decompression is enabled, processing a specially crafted, highly compressed zstd payload can lead to massive memory allocation. An attacker can exploit this to cause severe memory exhaustion, potentially resulting in an Out-Of-Memory (OOM) kill and Denial of Service (DoS) for the Envoy proxy. This vulnerability is fixed in 1.35.11, 1.36.7, 1.37.3, and 1.38.1.",
-    "severity": "High",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:59.767"
-  },
-  {
-    "id": "CVE-2026-48042",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. Prior to 1.35.11, 1.36.7, 1.37.3, and 1.38.1, destructor of JSON Object results in stack overflow when deeply O(100K) nested objects are present. This vulnerability is fixed in 1.35.11, 1.36.7, 1.37.3, and 1.38.1.",
-    "severity": "High",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:59.630"
-  },
-  {
-    "id": "CVE-2026-47778",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. Prior to 1.35.11, 1.36.7, 1.37.3, and 1.38.1, a structural flaw was identified in DefaultCertValidator::verifySubjectAltName where the extracted DNS SAN string is cast to a C-style string using .c_str() before being passed to the Utility::dnsNameMatch() algorithm. If the attacker serves a certificate with a dNSName SAN containing an embedded NUL byte, the helper Utility::generalNameAsString captures the complete string including the NUL. However, when .c_str() evaluates it, implicit conversion to absl::string_view inside dnsNameMatch relies on strlen(), prematurely truncating the evaluation context. Envoy evaluates trucated string against the exact required config_san match and returns true, thereby successfully validating the string with the Nul byte for an upstream routing. This vulnerability is fixed in 1.35.11, 1.36.7, 1.37.3, and 1.38.1.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:59.480"
-  },
-  {
-    "id": "CVE-2026-47775",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. Prior to 1.35.11, 1.36.7, 1.37.3, and 1.38.1, the OAuth2 HTTP filter's encrypt()/decrypt() functions use AES-256-CBC without an authentication tag (no HMAC, no AEAD). The /callback endpoint returns HTTP 302 on successful decryption and HTTP 401 on padding failure, creating a padding oracle. An attacker who obtains the encrypted CodeVerifier cookie can recover the plaintext PKCE code_verifier in ~6,200 requests (~100 seconds), then exchange it with a stolen authorization code to obtain the victim's access token. This vulnerability is fixed in 1.35.11, 1.36.7, 1.37.3, and 1.38.1.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:59.350"
-  },
-  {
-    "id": "CVE-2026-47692",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.34.0 until 1.35.13, 1.36.9, 1.37.5, and 1.38.3, PROXY Protocol v2 header generator emits TLVs beyond the maximum length of 65535 bytes, causing a mismatch between bytes written and the length field in the header. This can result in smuggled bytes on the upstream request. This vulnerability is fixed in 1.35.13, 1.36.9, 1.37.5, and 1.38.3.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:59.220"
-  },
-  {
-    "id": "CVE-2026-47221",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.18.0 until 1.35.13, 1.36.9, 1.37.5, and 1.38.3, the router filter contains a null pointer dereference vulnerability when handling HTTP 303 (See Other) internal redirects for body-less non-GET/HEAD requests. When a POST, PUT, DELETE, or PATCH request without a body is sent to a route configured with internal redirect policy that includes 303 in redirect_response_codes, and the upstream responds with HTTP 303, the redirect handling code attempts to drain a request body buffer that was never allocated. This results in a segmentation fault that crashes the entire Envoy process. When route configured with internal_redirect_policy including 303 in redirect_response_codes and upstream must return HTTP 303 response, an unauthenticated attacker can exploit this to cause complete denial of service, terminating all active connections. This vulnerability is fixed in 1.35.13, 1.36.9, 1.37.5, and 1.38.3.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:59.087"
-  },
-  {
-    "id": "CVE-2026-47207",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.34.0 until 1.35.13, 1.36.9, 1.37.5, and 1.38.3, Envoy crashes if an ext_proc server sends a single gRPC message containing multiple, specially crafted ProcessingResponse messages. This can occur when the first response in the batch causes the gRPC stream object to be destroyed, leading to a use-after-free error when Envoy attempts to process subsequent responses in the same gRPC message. This vulnerability is fixed in 1.35.13, 1.36.9, 1.37.5, and 1.38.3.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:58.957"
-  },
-  {
-    "id": "CVE-2026-47206",
-    "description": "Dragonfly is an in-memory data store built for modern application workloads. Prior to 1.39.9, Dragonfly has a RESP Protocol Injection via Lua redis.error_reply() in EvalSerializer. An authenticated user can inject arbitrary RESP messages into the connection's response stream, potentially causing response desynchronization in connection-pool clients. This vulnerability is fixed in 1.39.9.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-26T18:16:58.810"
-  },
-  {
-    "id": "CVE-2026-47204",
-    "description": "Envoy is an open source edge and service proxy designed for cloud-native applications. From 1.26.0 until 1.35.13, 1.36.9, 1.37.5, and 1.38.3, the envoy.filters.http.grpc_stats filter crashes (null pointer dereference / segfault) when a Connect protocol request (Content-Type: application/connect+proto or application/connect+json) hits a direct_response route. A single unauthenticated HTTP request crashes the Envoy process. This vulnerability is fixed in 1.35.13, 1.36.9, 1.37.5, and 1.38.3.",
-    "severity": "Medium",
-    "tech": "Envoy",
-    "published": "2026-06-26T18:16:58.673"
-  },
-  {
-    "id": "CVE-2026-33646",
-    "description": "mise manages dev tools like node, python, cmake, and terraform. Prior to 2026.3.10, mise processes .tool-versions files through the Tera template engine during parsing, with the exec() function registered, enabling arbitrary command execution. Unlike .mise.toml files, .tool-versions files are not subject to trust verification in non-paranoid mode. This means an attacker can place a malicious .tool-versions file in a git repository, and when a victim with mise activated cds into the directory, arbitrary commands execute without any trust prompt. This vulnerability is fixed in 2026.3.10.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-26T18:16:58.420"
   }
 ]
