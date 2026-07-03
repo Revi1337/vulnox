@@ -1,5 +1,145 @@
 [
   {
+    "id": "CVE-2026-9834",
+    "description": "The WP Database Backup – Unlimited Database & Files Backup by Backup for WP plugin for WordPress is vulnerable to OS Command Injection in all versions up to and including 7.11 via the `wp_db_exclude_table` parameter. This is due to the direct concatenation of user-supplied `$_POST['wp_db_exclude_table']` values into the `mysqldump` shell command string in the `mysqldump()` function of `includes/admin/class-wpdb-admin.php` without wrapping them in `escapeshellarg()`—every other argument in the same command (DB_USER, DB_PASSWORD, host, filename, DB_NAME) is properly escaped, making the exclude-table values the sole exception—and because the only applied filtering, `sanitize_text_field()` via `recursive_sanitize_text_field()`, strips HTML tags but leaves shell metacharacters such as `;`, `|`, `` ` ``, and `$()` intact. This makes it possible for authenticated attackers, with administrator-level access and above, to execute arbitrary operating system commands on the server, potentially enabling full remote code execution. The injection is stored: malicious values submitted through the plugin settings form are persisted to the WordPress options table via `update_option('wp_db_exclude_table')` and later retrieved with `get_option()` and passed unsanitized to `shell_exec()` whenever a backup operation runs.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:29.353"
+  },
+  {
+    "id": "CVE-2026-9188",
+    "description": "The Appointment Bookings for Zoom GoogleMeet and more – Wappointment plugin for WordPress is vulnerable to Insecure Direct Object Reference in all versions up to and including 2.7.6 via the `appointmentkey` parameter due to the appointment `edit_key` — the sole authorization token consumed by `tryCancel()` — being generated as a predictable, unsalted MD5 hash of only `client_id` (a sequential integer), `start_at` (a publicly observable appointment timestamp), and `staff_id` (a small enumerable integer), with no secret salt or random component, and the unauthenticated cancellation and rescheduling REST endpoints performing no ownership or identity verification beyond matching this reconstructible key. This makes it possible for unauthenticated attackers to compute valid `edit_key` values for appointments belonging to other users and cancel or reschedule those appointments arbitrarily. Exploitation requires the `allow_cancellation` or `allow_rescheduling` setting to be enabled on the site, both of which are common configurations for active booking deployments; an attacker can obtain the inputs needed to reconstruct a victim's key by booking their own appointment to observe their sequential `client_id` and correlating publicly visible appointment times and enumerable staff identifiers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.970"
+  },
+  {
+    "id": "CVE-2026-9145",
+    "description": "The Database for Contact Form 7, WPforms, Elementor forms plugin for WordPress is vulnerable to Arbitrary File Copy via the create_entry_el() function in versions up to, and including, 1.5.1. The function reads raw_value from Elementor Pro's Form_Record object for upload-type fields and passes it directly to PHP's copy() without validating that the value corresponds to a legitimately uploaded file — when no file is present in $_FILES, raw_value reflects the attacker-controlled POST string. copy() accepts both local filesystem paths and URL sources, so the attacker can target any file readable by the PHP process or supply an attacker-controlled remote URL. Elementor Pro is a prerequisite for triggering the code path (it owns the elementor_pro/forms/new_record hook and populates the Form_Record object), but the bug itself is entirely in Contact Form Entries' handler. This could allow unauthenticated attackers to disclose arbitrary files on the affected site's server. The file is copied to a directory unknown to the attacker; the hashed directory name provides defense-in-depth but is generated from non-cryptographic sources (uniqid() + rand()) and should not be relied upon as the primary mitigation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.850"
+  },
+  {
+    "id": "CVE-2026-8482",
+    "description": "A vulnerability was discovered on StormShield Network Security 4.3.0 to 4.3.41 (included), 4.8.0 to 4.8.15 (included) , 5.0.0 to 5.0.5 (included)\n\nThere is a possible leak of secret information if administration commands have been passed with the CLI command line tool.\n\nSomeone with SSH access to the firewall (if SSH multiuser mode is enabled) could possibly get the proxy CA passphrase or TPM password.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.737"
+  },
+  {
+    "id": "CVE-2026-8441",
+    "description": "The WP Review Slider Pro plugin for WordPress is vulnerable to SQL Injection via the 'notinstring' parameter of the wprp_load_more_revs AJAX action in versions up to, and including, 12.7.2. The parameter is read via $_POST['notinstring'] and passed through sanitize_text_field() — which strips HTML and whitespace but does not provide SQL safety. The value is then concatenated directly into a numeric/unquoted `AND id NOT IN (...)` clause and executed via $wpdb->get_results() without $wpdb->prepare() or intval() casting. Because the value sits in an unquoted numeric context, WordPress's wp_magic_quotes protection (which only escapes embedded quotes) is ineffective. The AJAX hook is registered via wp_ajax_nopriv_wprp_load_more_revs, and the required check_ajax_referer nonce is publicly available via wp_localize_script on any frontend page that renders the plugin shortcode, so an unauthenticated attacker who can reach a public page hosting the plugin can extract arbitrary data from the database via blind/time-based injection.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.617"
+  },
+  {
+    "id": "CVE-2026-14336",
+    "description": "PIA's OIDC issuer allowlist for Jenkins tokens uses a bare string-prefix check (issuer.startswith(' https://ci.eclipse.org ') in is_issuer_known, pia/models.py:139) instead of validating the issuer as a properly host-bounded URL. An attacker can craft an issuer such as  https://ci.eclipse.org@evil.host  (userinfo trick) or  https://ci.eclipse.org.evil.host  (suffix trick) that satisfies the prefix check while pointing the OIDC discovery and JWKS fetches at a server the attacker controls. An unauthenticated caller of POST /v1/upload/sbom can use this to force PIA to make outbound HTTP(S) requests to an arbitrary attacker-chosen host, and to have oidc.verify_token accept a JWT signed with the attacker's own key.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.487"
+  },
+  {
+    "id": "CVE-2026-14029",
+    "description": "The Groundhogg — CRM, Newsletters, and Marketing Automation plugin for WordPress is vulnerable to generic SQL Injection via the 'select' parameter in all versions up to, and including, 4.5.8 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with custom-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. Exploitation requires the attacker to hold a Groundhogg custom role with the view_contacts capability, which is granted by default to several built-in Groundhogg roles above the base subscriber level.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.367"
+  },
+  {
+    "id": "CVE-2026-13459",
+    "description": "The JetFormBuilder — Dynamic Blocks Form Builder plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 3.6.3. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to retrieve every distinct value stored under any arbitrary wp_postmeta key on the site — including WooCommerce billing PII such as _billing_email, _billing_phone, and _billing_address fields, order totals, attachment paths, and any third-party plugin credentials or tokens stored in post meta — provided at least one published JetFormBuilder form with a get_from_db generator field exists on the site. Exploitation requires that the target site has at least one published jet-form-builder post containing a field whose generator_function is set to get_from_db; an attacker must supply a matching form ID, field name, and generator ID in the request, but all of these can be discovered by browsing the site's public forms.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.247"
+  },
+  {
+    "id": "CVE-2026-13369",
+    "description": "The Ninja Forms - File Uploads plugin for WordPress is vulnerable to Arbitrary File Read via the attach_files() function in versions up to, and including, 3.3.29. This is due to the get_files_for_attachment() function accepting a raw attacker-controlled 'files' array when the process() method returns early due to a client-supplied saveProgress flag, bypassing all upload validation, path normalization, and database record creation steps, and allowing an attacker-supplied file_path value to reach wp_mail() as an email attachment with only a file_exists() check. This makes it possible for unauthenticated attackers to read arbitrary files on the affected site's server.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.130"
+  },
+  {
+    "id": "CVE-2026-13252",
+    "description": "The RSS Aggregator by Feedzy – Feed to Post, Autoblogging, News & YouTube Video Feeds Aggregator plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'aspectRatio' Attribute in all versions up to, and including, 5.2.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:28.010"
+  },
+  {
+    "id": "CVE-2026-13251",
+    "description": "The Perfmatters plugin for WordPress is vulnerable to Directory Traversal in all versions up to, and including, 2.6.4 via the 's' parameter. This makes it possible for unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information. Exploitation requires the Local Google Fonts feature to be enabled (disabled by default), pretty permalinks to be active, and RSS feed links to remain enabled in the plugin settings.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:27.893"
+  },
+  {
+    "id": "CVE-2026-12657",
+    "description": "The LatePoint – Calendar Booking Plugin for Appointments and Events plugin for WordPress is vulnerable to Insecure Direct Object Reference in all versions up to, and including, 5.6.2 via the 'service_id' parameter due to missing validation on a user controlled key. This makes it possible for unauthenticated attackers to create approved bookings against services explicitly restricted to admins and agents, consuming restricted appointment capacity and triggering unauthorized bookings for admin/agent-only services. The bypass works via both the params[booking][service_id] parameter in steps__load_step and the presets[selected_service] parameter in steps__start, both of which are publicly accessible without authentication.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:27.773"
+  },
+  {
+    "id": "CVE-2026-12472",
+    "description": "The Kirki – Freeform Page Builder, Website Builder & Customizer plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 6.0.11. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to send arbitrary HTML-injected emails — including phishing messages embedding a real, valid WordPress password-reset URL for the targeted user — to any registered user via the site's own mail server, abusing its SPF/DKIM reputation. The attacker-controlled emailSubject parameter is passed to wp_mail() with only sanitize_text_field() applied, while emailBody 'text' items are concatenated raw into the HTML email body with no escaping, and 'chip' items can include the genuine WordPress password-reset link for the targeted account.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:27.653"
+  },
+  {
+    "id": "CVE-2026-12134",
+    "description": "The JoomSport – for Sports: Team & League, Football, Hockey & more plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 5.7.8. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with subscriber-level access and above, to create arbitrary season groups or modify existing group names, participants, and round-type options. Exploitation requires obtaining the joomsportajaxnonce, which is exposed on frontend pages that render a JoomSport shortcode.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:27.530"
+  },
+  {
+    "id": "CVE-2026-12122",
+    "description": "The Kirki – Freeform Page Builder, Website Builder & Customizer plugin for WordPress is vulnerable to Sensitive Information Exposure in all versions up to, and including, 6.0.11 via the get_single_symbol. This makes it possible for unauthenticated attackers to extract the full builder metadata and rendered HTML of any kirki_symbol post — including unpublished drafts — by supplying a sequential WordPress post ID.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:27.410"
+  },
+  {
+    "id": "CVE-2026-11896",
+    "description": "The My Calendar – Accessible Event Manager plugin for WordPress is vulnerable to Insecure Direct Object Reference in all versions up to, and including, 3.7.14 via the 'vcal' parameter due to missing validation on a user controlled key. This makes it possible for unauthenticated attackers to enumerate occurrence IDs and access the full iCalendar export of non-public, draft, trashed, and personal calendar events, disclosing sensitive event metadata including titles, descriptions, dates, locations, organizer and host details, permalinks, and related calendar metadata.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:27.280"
+  },
+  {
+    "id": "CVE-2026-10104",
+    "description": "The Product Video Gallery for Woocommerce plugin for WordPress is vulnerable to Stored Cross-Site Scripting via custom_thumbnail Parameter in all versions up to, and including, 1.5.1.8 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with shop manager-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-02T10:16:26.970"
+  },
+  {
+    "id": "CVE-2026-9563",
+    "description": "In Eclipse Parsson published Maven Central artifacts before version 1.1.8, the JSON parser did not enforce a default maximum on the number of characters consumed while parsing a single JSON document. Applications that parse attacker- controlled JSON can be forced to consume excessive CPU and memory by processing very large documents, including large arrays, objects, strings, numbers, whitespace, or nested structures, resulting in a denial of service. Eclipse Parsson 1.1.8 introduces a configurable maximum parsing limit with a default limit of 15 million parser-consumed characters.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T09:16:19.247"
+  },
+  {
+    "id": "CVE-2026-8147",
+    "description": "In MLflow versions prior to 3.14.0, when running with authentication enabled, the trace API endpoints lack proper authorization validators. This allows any authenticated user to bypass experiment-level authorization controls on all trace operations, including reading, deleting, and modifying traces on experiments they do not have permission to access. The issue arises from the `_before_request` handler, which does not register authorization validators for trace endpoints, resulting in requests proceeding without validation. This vulnerability can expose sensitive data, destroy audit logs, and allow unauthorized modifications.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T09:16:19.100"
+  },
+  {
+    "id": "CVE-2026-33592",
+    "description": "An unauthenticated remote attacker can exhaust\nserver memory via the FindServers Discovery Service in open62541. The\nserverUris field of FindServersRequest is not validated for length or array\nsize. An attacker can declare an arbitrarily large string (up to ~3.9 GB)\ndelivered across intermediate chunks without ever sending the final chunk. The\nserver buffers all chunks in RAM indefinitely until the SecureChannel times\nout. The attack is pre-session and bypasses all encryption configuration. The issue affects open62541: from 1.4.0 through 1.4.16, from 1.5.0 through 1.5.4, master.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-02T08:16:39.230"
+  },
+  {
     "id": "CVE-2026-5821",
     "description": "The Image Optimizer plugin for WordPress is vulnerable to arbitrary file deletion in versions up to and including 1.7.4. This is due to insufficient path validation in the Image_Backup::remove() function where backup file paths stored in post meta are used directly in file deletion operations without verifying they are within the uploads directory. The plugin stores backup file paths in the image_optimizer_metadata post meta field and trusts these paths completely when deleting backups on the delete_attachment hook. An authenticated attacker with Author-level access can edit the image_optimizer_metadata post meta on their own attachments via WordPress's Custom Fields interface, injecting arbitrary absolute file paths into the backups array. When the attacker subsequently deletes the attachment, the plugin calls File_System::delete() on each path without validation. This makes it possible for authenticated attackers, with Author-level access and above, to delete arbitrary files on the server within the web server's filesystem permissions, potentially leading to denial of service, data loss, or security degradation.",
     "severity": "High",
@@ -8566,159 +8706,5 @@
     "severity": "Low",
     "tech": "Unknown",
     "published": "2026-06-29T12:16:27.610"
-  },
-  {
-    "id": "CVE-2026-57346",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Epiphyt Embed Privacy allows Path Traversal.\n\nThis issue affects Embed Privacy: from n/a through 1.12.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:32.073"
-  },
-  {
-    "id": "CVE-2026-25707",
-    "description": "A relative path traversal bug problem when processing repository metadata in libzypp before 17.38.10 could be used by remote attackers supplying repositories to overwrite files on the system, leading to denial of service or privilege escalation.",
-    "severity": "High",
-    "tech": "Libzypp",
-    "published": "2026-06-29T10:16:30.330"
-  },
-  {
-    "id": "CVE-2026-13601",
-    "description": "A flaw was found in Yelp due to an overly permissive Content Security Policy (CSP) implementation provided by yelp-xsl. A malicious Flatpak application can open crafted help content through the OpenURI portal. By embedding an untrusted CSS stylesheet within a structured SVG document, attacker-controlled content can bypass Flatpak's intended sandbox isolation, allowing Yelp to evaluate local XML inclusions and disclose arbitrary user-readable host files through remote CSS resource requests. This may result in the unauthorized disclosure of sensitive information.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:30.180"
-  },
-  {
-    "id": "CVE-2026-13557",
-    "description": "A vulnerability was identified in itsourcecode Online Hotel Management System 1.0. This vulnerability affects unknown code of the file /admin/mod_room/controller.php?action=add of the component POST Request Handler. Such manipulation of the argument Name leads to cross site scripting. The attack may be launched remotely. The exploit is publicly available and might be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:30.033"
-  },
-  {
-    "id": "CVE-2026-13556",
-    "description": "A vulnerability was determined in itsourcecode Online Hotel Management System 1.0. This affects an unknown part of the file /admin/mod_users/controller.php?action=edit of the component POST Request Handler. This manipulation of the argument Name causes cross site scripting. The attack may be initiated remotely. The exploit has been publicly disclosed and may be utilized.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:29.887"
-  },
-  {
-    "id": "CVE-2026-13555",
-    "description": "A vulnerability was found in itsourcecode Online Hotel Management System 1.0. Affected by this issue is some unknown functionality of the file /admin/mod_users/controller.php?action=add. The manipulation of the argument Name results in sql injection. The attack can be launched remotely. The exploit has been made public and could be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:29.740"
-  },
-  {
-    "id": "CVE-2026-13554",
-    "description": "A vulnerability has been found in itsourcecode Online Hotel Management System 1.0. Affected by this vulnerability is an unknown functionality of the file /admin/mod_amenities/controller.php?action=add of the component POST Request Handler. The manipulation of the argument Name leads to cross site scripting. The attack can be initiated remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:29.590"
-  },
-  {
-    "id": "CVE-2026-13553",
-    "description": "A flaw has been found in itsourcecode Online Hotel Management System 1.0. Affected is an unknown function of the file /admin/mod_amenities/controller.php?action=add. Executing a manipulation of the argument image can lead to unrestricted upload. It is possible to launch the attack remotely. The exploit has been published and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:29.420"
-  },
-  {
-    "id": "CVE-2026-13552",
-    "description": "A vulnerability was detected in itsourcecode Online Hotel Management System 1.0. This impacts an unknown function of the file /admin/mod_amenities/controller.php?action=edit. Performing a manipulation of the argument amen_id results in sql injection. It is possible to initiate the attack remotely. The exploit is now public and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T10:16:28.293"
-  },
-  {
-    "id": "CVE-2026-9267",
-    "description": "Eclipse tinydtls before commit b3efd41ad111a4920f599f51ffa4f5e9f1e72221 contains an out-of-bounds read vulnerability in the check_server_certificate() function that allows unauthenticated attackers to trigger reads beyond valid buffer boundaries by crafting a Certificate handshake message with a specific fragment_length value. Attackers can exploit missing buffer length validation before uint24 reads, memcmp, and memcpy operations during DTLS epoch 0 on both client and server paths to cause denial of service on memory-constrained devices.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:31.750"
-  },
-  {
-    "id": "CVE-2026-57966",
-    "description": "A path traversal vulnerability was found in spice-vdagent. This flaw allows a malicious or compromised SPICE host to write arbitrary files to any location on the guest operating system. This occurs because the filename provided by the SPICE host during file transfers is not properly sanitized before being used. An attacker could exploit this to write to sensitive locations with the privileges of the spice-vdagent process, typically the logged-in user. This issue requires the SPICE host to be untrusted or compromised for exploitation.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:31.403"
-  },
-  {
-    "id": "CVE-2026-57965",
-    "description": "A flaw was found in spice-vdagent. A malicious or compromised SPICE host can trigger an integer overflow by sending a specially crafted message. This vulnerability can lead to a heap buffer overflow, causing the spice-vdagent daemon to crash and resulting in a Denial of Service (DoS) for the virtual machine. This issue requires the SPICE host to be untrusted or compromised for exploitation.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:31.283"
-  },
-  {
-    "id": "CVE-2026-57676",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in Matteo Manna Simple User Avatar allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects Simple User Avatar: from n/a through 4.9.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:31.147"
-  },
-  {
-    "id": "CVE-2026-22078",
-    "description": "Because O+ Connect's IPC service does not authenticate clients, external applications can escalate privileges and perform sensitive actions through the IPC channel.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:28.440"
-  },
-  {
-    "id": "CVE-2026-13595",
-    "description": "A flaw was found in the libblkid library of util-linux. During nested partition probing, the BSD, Minix, Solaris x86, and UnixWare partition probers cache a raw pointer to a parent partition entry in a dynamically allocated array. When subsequent partition additions cause the array to be reallocated, this pointer becomes stale, leading to a heap use-after-free read. An attacker who can present a crafted block device image (for example, via USB insertion or a loop-mounted disk image) can trigger this flaw without user interaction, as libblkid is invoked automatically by udev/udisks as root on block-device hot-plug events. This could lead to limited information disclosure or denial of service.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:28.303"
-  },
-  {
-    "id": "CVE-2026-13551",
-    "description": "A security vulnerability has been detected in itsourcecode Baptism Information Management System 1.0. This affects an unknown function of the file /editBaptism.php. Such manipulation of the argument ID leads to sql injection. The attack may be performed from remote. The exploit has been disclosed publicly and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:28.160"
-  },
-  {
-    "id": "CVE-2026-13550",
-    "description": "A weakness has been identified in itsourcecode Baptism Information Management System 1.0. The impacted element is an unknown function of the file /delbaptism.php. This manipulation of the argument ID causes sql injection. The attack is possible to be carried out remotely. The exploit has been made available to the public and could be used for attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:28.017"
-  },
-  {
-    "id": "CVE-2026-13549",
-    "description": "A security flaw has been discovered in CodeAstro Complaint Management System 1.0. The affected element is the function deletereport of the file application/controllers/Report.php of the component Report Endpoint. The manipulation results in authorization bypass. The attack can be executed remotely. The exploit has been released to the public and may be used for attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:27.837"
-  },
-  {
-    "id": "CVE-2026-13548",
-    "description": "A vulnerability was identified in itsourcecode Hospital Management System 1.0. Impacted is an unknown function of the file /doctortimings.php. The manipulation of the argument editid leads to sql injection. Remote exploitation of the attack is possible. The exploit is publicly available and might be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:27.690"
-  },
-  {
-    "id": "CVE-2026-13547",
-    "description": "A vulnerability was determined in Hanwang e-Face General Management Platform 6.3.5.4. This issue affects some unknown processing of the file /manage/resourceUpload/upload.do. Executing a manipulation of the argument File can lead to unrestricted upload. The attack may be launched remotely. The exploit has been publicly disclosed and may be utilized.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:27.540"
-  },
-  {
-    "id": "CVE-2026-13546",
-    "description": "A vulnerability was found in Feehi CMS up to 2.1.1. This vulnerability affects unknown code of the file /api/articles of the component REST API Endpoint. Performing a manipulation results in missing authentication. The attack may be initiated remotely. The exploit has been made public and could be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-29T09:16:27.390"
-  },
-  {
-    "id": "CVE-2026-13545",
-    "description": "A vulnerability has been found in D-Link DCS-935L 1.10.01. This affects the function sub_400E40 of the file setconf.cgi of the component POST Parameter Handler. Such manipulation of the argument UID leads to os command injection. The attack can be launched remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "High",
-    "tech": "Dcs-935l firmware",
-    "published": "2026-06-29T09:16:27.230"
   }
 ]
