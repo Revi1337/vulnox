@@ -1,5 +1,96 @@
 [
   {
+    "id": "CVE-2026-14628",
+    "description": "A vulnerability was detected in NousResearch hermes-agent up to 2026.5.16. This impacts the function extract_media of the file gateway/platforms/base.py of the component Live Webhook Endpoint. Performing a manipulation results in path traversal. The attack may be initiated remotely. The exploit is now public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-04T13:16:30.413"
+  },
+  {
+    "id": "CVE-2026-14627",
+    "description": "A security vulnerability has been detected in NousResearch hermes-agent up to 0.15.2. This affects the function DiscordAdapter._is_allowed_user of the file gateway/platforms/discord.py of the component Discord Platform Integration. Such manipulation leads to improper authentication. The attack can be launched remotely. This attack is characterized by high complexity. The exploitability is reported as difficult. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-04T13:16:30.230"
+  },
+  {
+    "id": "CVE-2025-13475",
+    "description": "In multi-tenanted deployments, the application consent management mechanism fails to correctly isolate consent scopes between tenants. Consent granted by a user for a specific SaaS application within one tenant can be incorrectly applied to SaaS applications with the same name in other tenants, leading to unintended cross-tenant consent sharing.\n\nThis vulnerability may result in the exposure of user data across tenants, enabling SaaS applications in different tenants to access and modify information without explicit user authorization. This can lead to unauthorized data access and privacy violations. This vulnerability has no impact if the deployment does not support multi-tenancy.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-04T13:16:30.083"
+  },
+  {
+    "id": "CVE-2026-53362",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipv6: account for fraggap on the paged allocation path\n\nIn __ip6_append_data(), when the paged-allocation branch is taken\n(MSG_MORE / NETIF_F_SG / large fraglen), alloclen and pagedlen are\ncomputed as\n\n\talloclen = fragheaderlen + transhdrlen;\n\tpagedlen = datalen - transhdrlen;\n\ndatalen already includes fraggap (datalen = length + fraggap). When\nfraggap is non-zero, this is not the first skb and transhdrlen is zero.\nThe fraggap bytes carried over from the previous skb are copied just past\nthe fragment headers in the new skb's linear area. The linear area is\ntherefore undersized by fraggap bytes while pagedlen is overstated by the\nsame amount, and the copy writes past skb->end into the trailing\nskb_shared_info.\n\nAn unprivileged user can trigger this via a UDPv6 socket using\nMSG_MORE together with MSG_SPLICE_PAGES.\n\nThe bad accounting was introduced by commit 773ba4fe9104 (\"ipv6:\navoid partial copy for zc\"). Before commit ce650a166335 (\"udp6: Fix\n__ip6_append_data()'s handling of MSG_SPLICE_PAGES\"), the negative\ncopy value caused -EINVAL to be returned. That later commit allowed\nMSG_SPLICE_PAGES to proceed in this case, making the corruption\ntriggerable.\n\nThe non-paged branch sets alloclen to fraglen, which already accounts\nfor fraggap because datalen does. Bring the paged branch in line by\nadding fraggap to alloclen and subtracting it from pagedlen.\n\nAfter this adjustment, copy no longer collapses to -fraggap on the\npaged path, so remove the stale comment describing that old arithmetic.\nSince a negative copy is no longer expected for a valid MSG_SPLICE_PAGES\ncase, remove the MSG_SPLICE_PAGES exception from the negative copy check.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:17:02.113"
+  },
+  {
+    "id": "CVE-2026-53361",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\naf_unix: Set gc_in_progress to true in unix_gc().\n\nIgor Ushakov reported that unix_gc() could run with gc_in_progress\nbeing false if the work is scheduled while running:\n\n  Thread 1         Thread 2                     Thread 3\n  --------         --------                     --------\n                   unix_schedule_gc()           unix_schedule_gc()\n                   `- if (!gc_in_progress)      `- if (!gc_in_progress)\n                      |- gc_in_progress = true     |\n                      `- queue_work()              |\n  unix_gc() <----------------/                     |\n  |                                                |- gc_in_progress = true\n  ...                                              `- queue_work()\n  |                                                       |\n  `- gc_in_progress = false                               |\n                                                          |\n  unix_gc() <---------------------------------------------'\n  |\n  ... /* gc_in_progress == false */\n  |\n  `- gc_in_progress = false\n\nunix_peek_fpl() relies on gc_in_progress not to confuse GC\nby MSG_PEEK.\n\nLet's set gc_in_progress to true in unix_gc().",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:17:02.010"
+  },
+  {
+    "id": "CVE-2026-53360",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: SEV: Require in-GHCB scratch area if GHCB v2+ is in use\n\nAs per the GHCB spec, when using GHCB v2+ require the software scratch area\nto reside in the GHCB's shared buffer.  Note, things like Page State Change\n(PSC) requests _rely_ on this behavior, as the guest can't provide a length\nwhen making the request, i.e. the size of the guest payload is bounded by\nthe size of the shared buffer.\n\nFailure to force usage of the GHCB, and a slew of other flaws, lets a\nmalicious SNP guest corrupt host kernel heap memory, and leak host heap\nlayout information.\n\nsetup_vmgexit_scratch() allocates a buffer via kvzalloc(exit_info_2),\nwhere exit_info_2 is guest-controlled. With exit_info_2=24, this yields\na 24-byte allocation in kmalloc-cg-32 (32-byte slab objects). The buffer\nholds an 8-byte psc_hdr followed by 8-byte psc_entry structs, so only\nentries[0] and entries[1] are in-bounds.\n\nsnp_begin_psc() validates end_entry against VMGEXIT_PSC_MAX_COUNT (253)\nbut NOT against the actual buffer size:\n\n      idx_end = hdr->end_entry;\n\n      if (idx_end >= VMGEXIT_PSC_MAX_COUNT) {   // checks 253, not buffer\n          snp_complete_psc(svm, ...);\n          return 1;\n      }\n\n      for (idx = idx_start; idx <= idx_end; idx++) {\n          entry_start = entries[idx];           // OOB when idx >= 2\n\nThe guest sets end_entry=10+, causing the host to iterate entries[2+]\nwhich are OOB into adjacent slab objects. For each OOB entry:\n\n  - The host reads 8 bytes (OOB READ / info leak oracle)\n  - If the data passes PSC validation, __snp_complete_one_psc() writes\n    cur_page = 1 or 512 into the entry (OOB WRITE, sev.c:3806)\n  - If validation fails, the error response reveals whether adjacent\n    memory is zero vs non-zero (information disclosure to guest)\n\nThe guest controls allocation size (exit_info_2), entry range\n(cur_entry/end_entry), and can fire unlimited VMGEXITs to repeatedly\nhit different slab positions.\n\nBy exploiting the variety of bugs, a malicious SEV-SNP guest can:\n    - OOB read adjacent kmalloc-cg-32 objects (heap layout disclosure)\n    - OOB write cur_page bits into adjacent objects (heap corruption)\n    - Trigger use-after-free conditions across VMGEXITs\n\nE.g. with KASAN enabled, a single insmod of the PoC guest module\nproduces 73 KASAN reports:\n\n    BUG: KASAN: slab-out-of-bounds in snp_begin_psc+0x126/0x890\n    Read of size 8 at addr ffff888219ffb5e0 by task qemu-system-x86/2199\n\n    BUG: KASAN: slab-out-of-bounds in snp_begin_psc+0x468/0x890\n    Write of size 8 at addr ffff888351566648 by task qemu-system-x86/2199\n\n    The buggy address belongs to the object at ffff888XXXXXXXXX\n     which belongs to the cache kmalloc-cg-32 of size 32\n    The buggy address is located N bytes to the right of\n     allocated 32-byte region [ffff888XXXXXXXXX, ffff888XXXXXXXXX)\n\n  Breakdown:\n    62 slab-out-of-bounds (reads + writes past allocation)\n     7 slab-use-after-free\n     4 use-after-free\n\nAll credit to Stan for the wonderful description and reproducer!\n\n[sean: write changelog]",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:17:01.880"
+  },
+  {
+    "id": "CVE-2026-53359",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: x86: Fix shadow paging use-after-free due to unexpected role\n\nCommit 0cb2af2ea66ad (\"KVM: x86: Fix shadow paging use-after-free due\nto unexpected GFN\") fixed a shadow paging mismatch between stored and\ncomputed GFNs; the bug could be triggered by changing a PDE mapping from\noutside the guest, and then deleting a memslot.  The rmap_remove()\ncall would miss entries created after the PDE change because the GFN\nof the leaf SPTE does not match the GFN of the struct kvm_mmu_page.\n\nA similar hole however remains if the modified PDE points to a non-leaf\npage.  In this case the gfn can be made to match, but the role does not\nmatch: the original large 2MB page creates a kvm_mmu_page with direct=1,\nwhile the new 4KB needs a kvm_mmu_page with direct=0.  However,\nkvm_mmu_get_child_sp() does not compare the role, and therefore reuses\nthe page.\n\nThe next step is installing a leaf (4KB) SPTE on the new path which\nrecords an rmap entry under the gfn resolved by the walk.  But when\nthat child is zapped its parent kvm_mmu_page has direct=1 and\nkvm_mmu_page_get_gfn() computes the gfn for the 4KB page as\nsp->gfn + index instead of using sp->shadowed_translation[] (or sp->gfns[]\nin older kernels).  It therefore fails to remove the recorded entry.\n\nWhen the memslot is dropped the shadow page is freed but the rmap\nentry survives, as in the scenario that was already fixed.  Code that\nlater walks that gfn (dirty logging, MMU notifier invalidation, and\nso on) dereferences an sptep that lies in the freed page, causing the\nuse-after-free.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:17:01.760"
+  },
+  {
+    "id": "CVE-2026-14626",
+    "description": "A weakness has been identified in NousResearch hermes-agent up to 2026.4.30. The impacted element is the function AIAgent.run_conversation of the file run_agent.py of the component HTTP API. This manipulation of the argument todos causes denial of service. The attack can be initiated remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:16:53.903"
+  },
+  {
+    "id": "CVE-2026-14625",
+    "description": "A security flaw has been discovered in NousResearch hermes-agent up to 0.15.2. The affected element is the function shell.exec of the file tui_gateway/server.py. The manipulation results in protection mechanism failure. It is possible to launch the attack remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:16:53.740"
+  },
+  {
+    "id": "CVE-2026-12196",
+    "description": "HestiaCP panel cronjob feature is affected by a broken access control vulnerability. Low privilege users can modify the panel cronjob to execute scripts HestiaCP management scripts with passwordless sudo. This could result in the takeover of administrator users in the application and the underlying webserver.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:16:53.600"
+  },
+  {
+    "id": "CVE-2026-12195",
+    "description": "myVesta is affected by an authenticated remote code execution vulnerability. Low privileged users can insert arbitrary commands as a part of the v_ftp_user parameter when deleting FTP usernames. This could result in the execution of commands as the admin user or takevoer of the admin user in myVesta.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-04T12:16:53.300"
+  },
+  {
+    "id": "CVE-2026-14624",
+    "description": "A vulnerability was identified in omec-project amf up to 2.0.2/2.1.1. Impacted is an unknown function of the file /go/src/amf/ngap/handler.go of the component NGSetupRequest Handler. The manipulation leads to denial of service. It is possible to initiate the attack remotely. The exploit is publicly available and might be used. The identifier of the patch is 34bc6724acc97dba1f8691e586da95b042cb612d. To fix this issue, it is recommended to deploy a patch.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-04T11:16:47.613"
+  },
+  {
+    "id": "CVE-2026-14623",
+    "description": "A vulnerability was determined in omec-project amf up to 2.1.1. This issue affects the function RRCInactiveTransitionReport of the component NGAP Message Handler. Executing a manipulation can lead to denial of service. The attack may be performed from remote. The exploit has been publicly disclosed and may be utilized. This patch is called 34bc6724acc97dba1f8691e586da95b042cb612d. A patch should be applied to remediate this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-04T10:16:27.623"
+  },
+  {
     "id": "CVE-2026-14622",
     "description": "A vulnerability was found in jairiidriss restaurant-website-php-mysql up to 521428b5b612449df0cf4a5d15ee40cba67f3d35. This vulnerability affects unknown code of the file /admin/ajax_files of the component AJAX Endpoint. Performing a manipulation results in missing authentication. The attack is possible to be carried out remotely. The exploit has been made public and could be used. This product adopts a rolling release strategy to maintain continuous delivery. Therefore, version details for affected or updated releases cannot be specified. The project was informed of the problem early through an issue report but has not responded yet.",
     "severity": "High",
@@ -5199,145 +5290,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-01T14:16:31.910"
-  },
-  {
-    "id": "CVE-2026-8387",
-    "description": "A vulnerability in allegroai/clearml versions up to and including 1.16.5 allows for relative path traversal when extracting `.zip` archives using the `ZipFile.extractall()` method in `StorageManager._extract_to_cache()`. This issue arises due to the lack of path traversal validation, enabling an attacker to write arbitrary files to the filesystem. Attack vectors include dataset downloads, artifact downloads, model downloads, and offline session imports. The vulnerability can lead to remote code execution through methods such as cron job injection, SSH key overwrite, or web shell deployment. The issue is resolved in version 2.1.6.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:54.240"
-  },
-  {
-    "id": "CVE-2026-5120",
-    "description": "A Race Condition vulnerability affecting BIOVIA Workbook from Release 2021 through Release 2026 could allow a user to access unauthorized data from another user.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:48.033"
-  },
-  {
-    "id": "CVE-2026-53909",
-    "description": "MCO does not correctly validate types of uploaded files. File upload validation functionality relies only on client-side checks, which can be bypassed. An authorized, low-privileged attacker can upload files with arbitrary types to the server.\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:46.080"
-  },
-  {
-    "id": "CVE-2026-53908",
-    "description": "MCO is vulnerable to User Enumeration through authentication-related functionalities. The application returns distinguishable responses for valid and invalid users during username reminder and password reset operations. An attacker can leverage these differences to enumerate valid usernames and email addresses.\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:45.967"
-  },
-  {
-    "id": "CVE-2026-53907",
-    "description": "MCO is vulnerable to Stored Cross‑Site Scripting (XSS) via the application logo upload functionality. An attacker with the ability to change the application logo can upload a crafted SVG file containing malicious JavaScript code that is executed when the logo is rendered or opened.\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:45.830"
-  },
-  {
-    "id": "CVE-2026-53906",
-    "description": "MCO is vulnerable to Path Disclosure and Path Traversal in file handling functionality related to data export and upload. Improper validation of the filename parameter allows writing files to arbitrary locations as well as indirect disclosure of absolute server paths through error messages.\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:45.717"
-  },
-  {
-    "id": "CVE-2026-53905",
-    "description": "MCO does not properly enforce authorization checks in the /customer/servlet/mco/webapi/admin-view-hierarchy/get-acl-tree-structure endpoint. An authenticated, low-privileged user can retrieve administrator access control structures without proper authorization checks.\nThis may expose sensitive permission mappings and internal configuration details.\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:45.607"
-  },
-  {
-    "id": "CVE-2026-53904",
-    "description": "MCO is vulnerable to Account Denial of Service due to improper implementation of password reset functionality. Each password reset request invalidates previously set password as well as previously issued temporary passwords, furthermore, password resets are not limited in any way. An attacker who provides victim's email and answer to their security question, can successfully initiate the reset process and continuously invalidate credentials, effectively locking the victim out of their account. Answering security questions has a limited number of tries which lowers the risk of this vulnerability.\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:45.490"
-  },
-  {
-    "id": "CVE-2026-53903",
-    "description": "MCO is vulnerable to an Insecure Direct Object Reference (IDOR) vulnerability in the /customer/servlet/mco/webapi/trading-document/fetchPdfStatement endpoint. The application does not properly validate whether an authenticated user is authorized to access a requested document, allowing direct retrieval based on a user-supplied identifier.\nAn attacker can access trading documents belonging to other users by providing a valid document ID. Although exploitation requires guessing the identifier, predictable ID patterns enable feasible enumeration, leading to unauthorized disclosure of sensitive information.\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:45.373"
-  },
-  {
-    "id": "CVE-2026-53902",
-    "description": "MCO does not properly enforce authorization checks in the /customer/servlet/mco/webapi/profile-sections/group-membership endpoint. An authenticated user can modify their group membership without proper authorization checks, allowing privilege escalation.\nAn attacker can add themselves to arbitrary groups by supplying a valid group ID, which can be obtained via other application functionalities (e.g. /customer/servlet/mco/webapi/group/picker/groups), provided he has necessary permissions, or potentially inferred through brute-force techniques.\n\n\n\nBecause vendor contact attempts were unsuccessful, the vulnerability has only been confirmed in version 25.3.3.1 but may also affect other versions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-01T13:17:45.237"
-  },
-  {
-    "id": "CVE-2026-14198",
-    "description": "@fastify/middie versions 9.1.0 through 9.3.2 decode the encoded slash %2F inside path parameter values before matching middleware paths, while Fastify's underlying router preserves the encoding during route lookup. The two layers disagree on the canonical request path, so the middleware fails to match a URL that the route handler does match. When middleware is used for authentication, authorization, rate limiting, or auditing on parameterized paths, an attacker can reach the protected handler by sending a single crafted URL with an encoded slash in the parameter position. The bypass is HTTP method agnostic and requires no authentication or special preconditions. Patches: upgrade to @fastify/middie 9.3.3. Workarounds: avoid parameterized middleware paths for security decisions, or enforce authentication at the route handler or via a Fastify hook that runs after the router has resolved the request.",
-    "severity": "Critical",
-    "tech": "Fastify\\/middie",
-    "published": "2026-07-01T12:16:38.463"
-  },
-  {
-    "id": "CVE-2026-14181",
-    "description": "@fastify/middie versions 9.1.0 through 9.3.2 fail to guard the URL normalization step used by the standalone engine when incoming request paths contain malformed percent-encoded sequences. Inputs such as an incomplete percent escape or a truncated multibyte sequence cause the underlying decoder to throw synchronously, and the exception escapes the middie normalize step and terminates the Node.js process. The bypass affects applications that call middie.run directly on the standalone engine API, causing an immediate denial of service for all connected clients until restart. Applications using the Fastify plugin path are not affected because Fastifys error handler catches the exception. Patches: upgrade to @fastify/middie 9.3.3. Workarounds: migrate from the standalone engine API to the Fastify plugin path, where the framework error handler catches the exception.",
-    "severity": "High",
-    "tech": "Fastify\\/middie",
-    "published": "2026-07-01T12:16:38.343"
-  },
-  {
-    "id": "CVE-2026-13323",
-    "description": "In Open VSX Registry before 1.0.2, the /vscode/unpkg/ endpoint serves user-supplied HTML files with Content-Type: text/html and without a Content-Security-Policy or Content-Disposition: attachment response header. An unauthenticated attacker can register a publisher account, upload a VSIX containing a crafted HTML payload, and induce an authenticated user to visit the resulting URL. The browser renders the file inline in the open-vsx.org origin context, enabling session token exfiltration, persistent Personal Access Token (PAT) generation, and unauthorized publication of malicious extension versions. Because Open VSX extensions are distributed to VS Code, VSCodium, Cursor, Windsurf, and compatible editors, a compromised extension update constitutes a supply chain attack against all downstream users.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-01T12:16:38.117"
-  },
-  {
-    "id": "CVE-2026-14258",
-    "description": "A flaw was found in dhcpcd's IPv6 Neighbor Discovery Router Advertisement processing. A specially crafted IPv6 Router Advertisement containing a zero-length Neighbor Discovery option can bypass validation during packet storage and later be reparsed without adequate validation, causing the parser to enter a non-advancing loop. Successful exploitation may result in excessive CPU consumption, leading to a denial of service.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-01T11:16:25.980"
-  },
-  {
-    "id": "CVE-2026-13228",
-    "description": "The LatePoint – Calendar Booking Plugin for Appointments and Events plugin for WordPress is vulnerable to Privilege Escalation to Administrator in versions up to, and including, 5.6.3 This is due to an Insecure Direct Object Reference (IDOR) in the create_or_update() function of OsOrdersController, which allows an authenticated Agent to supply an arbitrary order[customer_id] and overwrite any LatePoint customer's email field (including one linked to a WordPress Administrator's account) through the public-scope customer set_data() call, combined with a missing role verification in OsAuthHelper::authorize_customer() which logs in the linked WordPress user without checking its role. This makes it possible for authenticated attackers, with custom (Agent)-level access and above, to elevate their privileges to Administrator.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-01T11:16:25.377"
-  },
-  {
-    "id": "CVE-2026-12142",
-    "description": "The NEX-Forms – Ultimate Forms Plugin for WordPress plugin for WordPress is vulnerable to Stored Cross-Site Scripting via '_name[]' Array Parameter in all versions up to, and including, 9.2.2 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The wp_kses() output filtering pass provides no mitigation because NEXForms_allowed_tags() explicitly permits &lt;script&gt;, &lt;iframe src/srcdoc&gt;, and JS event handlers such as onClick, onBlur, and onChange in its allow-list.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-01T11:16:24.043"
-  },
-  {
-    "id": "CVE-2026-10095",
-    "description": "The WP Photo Album Plus plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'subtext' parameter in all versions up to, and including, 9.1.13.005 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. A contributor-level attacker can embed the malicious [photo] shortcode in a post submitted for review, causing the stored payload to execute when an administrator or any other user views the post.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-01T11:16:21.827"
-  },
-  {
-    "id": "CVE-2026-27435",
-    "description": "Missing Authorization vulnerability in WofficeIO Woffice allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects Woffice: from n/a before 5.4.33.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-01T10:16:28.120"
-  },
-  {
-    "id": "CVE-2026-13454",
-    "description": "The MotoPress Appointment Booking plugin for WordPress is vulnerable to generic SQL Injection via the 's' parameter in all versions up to, and including, 2.4.5 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with custom-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. Exploitation requires the mpa_appointment_employee custom role, meaning any user assigned this role can perform the attack.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-01T10:16:27.980"
-  },
-  {
-    "id": "CVE-2026-12754",
-    "description": "The VikBooking Hotel Booking Engine & PMS plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'layoutstyle' parameter in all versions up to, and including, 1.8.12 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link. Exploitation requires the targeted page to render the [vikbooking view=\"roomslist\"] shortcode, as the vulnerable layoutstyle parameter is only processed in that view context.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-01T10:16:26.790"
   }
 ]
