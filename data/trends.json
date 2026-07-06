@@ -1,12 +1,5 @@
 [
   {
-    "id": "CVE-2026-36229",
-    "description": "Rejected reason: DO NOT USE THIS CANDIDATE NUMBER. ConsultIDs: none. Reason: This candidate was withdrawn by its CNA. Further investigation showed that it was not a security issue. Notes: none.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-06T21:16:25.703"
-  },
-  {
     "id": "CVE-2026-26422",
     "description": "clash-verge-service-ipc before 2.3.0 has a world-reachable IPC endpoint, leading to local privilege escalation.",
     "severity": "High",
@@ -32972,15 +32965,15 @@
   {
     "id": "CVE-2026-53167",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse: limit FUSE_NOTIFY_RETRIEVE to uptodate folios\n\nFUSE_NOTIFY_RETRIEVE must be limited to uptodate folios; !uptodate folios\ncan contain uninitialized data.\nSince FUSE_NOTIFY_RETRIEVE is intended to only return data that is already\nin the page cache and not wait for data from the FUSE daemon, treat\n!uptodate folios as if they weren't present.\n\nThis only has security impact on systems that don't enable automatic\nzero-initialization of all page allocations via\nCONFIG_INIT_ON_ALLOC_DEFAULT_ON or init_on_alloc=1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:34.073"
   },
   {
     "id": "CVE-2026-53168",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse: reject fuse_notify() pagecache ops on directories\n\nThe operations FUSE_NOTIFY_STORE and FUSE_NOTIFY_RETRIEVE allow the\nFUSE daemon to actively write/read pagecache contents.\n\nFor directories with FOPEN_CACHE_DIR, the pagecache is used as\nkernel-internal cache storage, and userspace is not supposed to have\ndirect access to this cache - in particular, fuse_parse_cache() will hit\nWARN_ON() if the cache contains bogus data.\n\nReject FUSE_NOTIFY_STORE and FUSE_NOTIFY_RETRIEVE on anything other than\nregular files with -EINVAL.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:34.170"
   },
   {
@@ -37725,169 +37718,169 @@
   {
     "id": "CVE-2026-53301",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nreset: amlogic: t7: Fix null reset ops\n\nFix missing reset ops causing kernel null pointer dereference.\nThis SOC's reset is currently not used yet.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:23.313"
   },
   {
     "id": "CVE-2026-53302",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: eip93 - fix hmac setkey algo selection\n\neip93_hmac_setkey() allocates a temporary ahash transform for\ncomputing HMAC ipad/opad key material. The allocation uses the\ndriver-specific cra_driver_name (e.g. \"sha256-eip93\") but passes\nCRYPTO_ALG_ASYNC as the mask, which excludes async algorithms.\n\nSince the EIP93 hash algorithms are the only ones registered\nunder those driver names and they are inherently async, the\nlookup is self-contradictory and always fails with -ENOENT.\n\nWhen called from the AEAD setkey path, this failure leaves the\nSA record partially initialized with zeroed digest fields. A\nsubsequent crypto operation then dereferences a NULL pointer in\nthe request context, resulting in a kernel panic:\n\n```\n  pc : eip93_aead_handle_result+0xc8c/0x1240 [crypto_hw_eip93]\n  lr : eip93_aead_handle_result+0xbec/0x1240 [crypto_hw_eip93]\n  sp : ffffffc082feb820\n  x29: ffffffc082feb820 x28: ffffff8011043980 x27: 0000000000000000\n  x26: 0000000000000000 x25: ffffffc078da0bc8 x24: 0000000091043980\n  x23: ffffff8004d59e50 x22: ffffff8004d59410 x21: ffffff8004d593c0\n  x20: ffffff8004d593c0 x19: ffffff8004d4f300 x18: 0000000000000000\n  x17: 0000000000000000 x16: 0000000000000000 x15: 0000007fda7aa498\n  x14: 0000000000000000 x13: 0000000000000000 x12: 0000000000000000\n  x11: 0000000000000000 x10: fffffffff8127a80 x9 : 0000000000000000\n  x8 : ffffff8004d4f380 x7 : 0000000000000000 x6 : 000000000000003f\n  x5 : 0000000000000040 x4 : 0000000000000008 x3 : 0000000000000009\n  x2 : 0000000000000008 x1 : 0000000028000003 x0 : ffffff8004d388c0\n  Code: 910142b6 f94012e0 f9002aa0 f90006d3 (f9400740)\n```\n\nThe reported symbol eip93_aead_handle_result+0xc8c is a\nresolution artifact from static functions being merged under\nthe nearest exported symbol. Decoding the faulting sequence:\n\n```\n  910142b6  ADD  X22, X21, #0x50\n  f94012e0  LDR  X0, [X23, #0x20]\n  f9002aa0  STR  X0, [X21, #0x50]\n  f90006d3  STR  X19, [X22, #0x8]\n  f9400740  LDR  X0, [X26, #0x8]\n```\n\nThe faulting LDR at [X26, #0x8] is loading ctx->flags\n(offset 8 in eip93_hash_ctx), where ctx has been resolved\nto NULL from a partially initialized or unreachable\ntransform context following the failed setkey.\n\nFix this by dropping the CRYPTO_ALG_ASYNC mask from the\ncrypto_alloc_ahash() call. The code already handles async\ncompletion correctly via crypto_wait_req(), so there is no\nrequirement to restrict the lookup to synchronous algorithms.\n\nNote that hashing a single 64-byte block through the hardware\nis likely slower than doing it in software due to the DMA\nround-trip overhead, but offloading it may still spare CPU\ncycles on the slower embedded cores where this IP is found.\n\n[Detailed investigation report of this bug]",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:23.413"
   },
   {
     "id": "CVE-2026-53303",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nf2fs: protect extension_list reading with sb_lock in f2fs_sbi_show()\n\nIn f2fs_sbi_show(), the extension_list, extension_count and\nhot_ext_count are read without holding sbi->sb_lock. If a concurrent\nsysfs store modifies the extension list via f2fs_update_extension_list(),\nthe show path may read inconsistent count and array contents, potentially\nleading to out-of-bounds access or displaying stale data.\n\nFix this by holding sb_lock around the entire extension list read\nand format operation.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:23.527"
   },
   {
     "id": "CVE-2026-53304",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nscsi: sg: Resolve soft lockup issue when opening /dev/sgX\n\nThe parameter def_reserved_size defines the default buffer size reserved\nfor each Sg_fd and should be restricted to a range between 0 and 1,048,576\n(see https://tldp.org/HOWTO/SCSI-Generic-HOWTO/proc.html).  Although the\nfunction sg_proc_write_dressz enforces this limit, it is possible to bypass\nit by directly modifying the module parameter as shown below, which then\ncauses a soft lockup:\n\necho -1 > /sys/module/sg/parameters/def_reserved_size\nexec 4<> /dev/sg0\n\nwatchdog: BUG: soft lockup - CPU#5 stuck for 26 seconds! [bash:537]\nModules loaded:\nCPU: 5 UID: 0 PID: 537 Command: bash, kernel version 6.19.0-rc3+ #134,\nPREEMPT disabled\nHardware: QEMU Standard PC (i440FX + PIIX, 1996), BIOS version\n1.16.1-2.fc37 dated 04/01/2014\n...\nCall Trace:\n\n  sg_build_reserve+0x5c/0xa0\n  sg_add_sfp+0x168/0x270\n  sg_open+0x16e/0x340\n  chrdev_open+0xbe/0x230\n  do_dentry_open+0x175/0x480\n  vfs_open+0x34/0xf0\n  do_open+0x265/0x3d0\n  path_openat+0x110/0x290\n  do_filp_open+0xc3/0x170\n  do_sys_openat2+0x71/0xe0\n  __x64_sys_openat+0x6d/0xa0\n  do_syscall_64+0x62/0x310\n  entry_SYSCALL_64_after_hwframe+0x76/0x7e\n\nThe fix is to use module_param_cb to validate and reject invalid values\nassigned to def_reserved_size.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:23.637"
   },
   {
     "id": "CVE-2026-53305",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nusb: typec: ps883x: Fix Oops at unbind\n\nWhen trying to unbind a device in order to bind to it vfio-platform as:\n\n  echo bc0000.geniqup  > /sys/bus/platform/devices/bc0000.geniqup/driver/unbind\n\nI get the following Oops:\n\n[  436.478639] Unable to handle kernel NULL pointer dereference at virtual address 0000000000000020\n[  436.487762] Mem abort info:\n[  436.490716]   ESR = 0x0000000096000004\n[  436.494595]   EC = 0x25: DABT (current EL), IL = 32 bits\n[  436.500071]   SET = 0, FnV = 0\n[  436.503250]   EA = 0, S1PTW = 0\n[  436.506505]   FSC = 0x04: level 0 translation fault\n[  436.511533] Data abort info:\n[  436.514558]   ISV = 0, ISS = 0x00000004, ISS2 = 0x00000000\n[  436.520215]   CM = 0, WnR = 0, TnD = 0, TagAccess = 0\n[  436.525436]   GCS = 0, Overlay = 0, DirtyBit = 0, Xs = 0\n[  436.530918] user pgtable: 4k pages, 48-bit VAs, pgdp=00000008861a9000\n[  436.537554] [0000000000000020] pgd=0000000000000000, p4d=0000000000000000\n[  436.544548] Internal error: Oops: 0000000096000004 [#1]  SMP\n[  436.550374] Modules linked in:\n[  436.553542] CPU: 2 UID: 0 PID: 671 Comm: bash Tainted: G        W           7.0.0-rc3-g56fcdd0911a5-dirty #2 PREEMPT\n[  436.564440] Tainted: [W]=WARN\n[  436.567515] Hardware name: LENOVO 91B6CTO1WW/3796, BIOS O6NKT3BA 05/02/2025\n[  436.574675] pstate: 21400005 (nzCv daif +PAN -UAO -TCO +DIT -SSBS BTYPE=--)\n[  436.581841] pc : ps883x_retimer_remove+0x14/0x94\n[  436.586605] lr : i2c_device_remove+0x28/0x84\n[  436.591017] sp : ffff8000847137c0\n\nThat's because the ps883x_retimer_remove() retrieves the driver data\nfrom i2c_get_clientdata() which was never set at probe. So, add\ni2c_set_clientdata() at the end of the probe.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:23.767"
   },
   {
     "id": "CVE-2026-53306",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ntty: hvc_iucv: fix off-by-one in number of supported devices\n\nMAX_HVC_IUCV_LINES == HVC_ALLOC_TTY_ADAPTERS == 8.\nThis is the number of entries in:\n  static struct hvc_iucv_private *hvc_iucv_table[MAX_HVC_IUCV_LINES];\n\nSometimes hvc_iucv_table[] is limited by:\n(a)\tif (num > hvc_iucv_devices) // for error detection\nor\n(b)\tfor (i = 0; i < hvc_iucv_devices; i++) // in 2 places\n(so these 2 don't agree; second one appears to be correct to me.)\n\nhvc_iucv_devices can be 0..8. This is a counter.\n(c)\tif (hvc_iucv_devices > MAX_HVC_IUCV_LINES)\n\nIf hvc_iucv_devices == 8, (a) allows the code to access hvc_iucv_table[8].\nOops.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:23.877"
   },
   {
     "id": "CVE-2026-53307",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\npinctrl: pinconf-generic: Fully validate 'pinmux' property\n\nThe pinconf_generic_parse_dt_pinmux() assumes that the 'pinmux' property\nis not empty when present. This might be not true. With that, the allocator\nwill give a special value in return and not NULL which lead to the crash\nwhen trying to access that (invalid) memory. Fix that by fully validating\n'pinmux' value, including its length.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.010"
   },
   {
     "id": "CVE-2026-53308",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\npower: supply: max77705: Free allocated workqueue and fix removal order\n\nUse devm interface for allocating workqueue to fix two bugs at the same\ntime:\n\n1. Driver leaks the memory on remove(), because the workqueue is not\n   destroyed.\n\n2. Driver allocates workqueue and then registers interrupt handlers\n   with devm interface.  This means that probe error paths will not use a\n   reversed order, but first destroy the workqueue and then, via devm\n   release handlers, free the interrupt.\n\n   The interrupt handler schedules work on this exact workqueue, thus if\n   interrupt is hit in this short time window - after destroying\n   workqueue, but before devm() frees the interrupt - the schedulled\n   work will lead to use of freed memory.\n\nChange is not equivalent in the workqueue itself: use non-legacy API\nwhich does not set (__WQ_LEGACY | WQ_MEM_RECLAIM).  The workqueue is\nused to update power supply (power_supply_changed()) status, thus there\nis no point to run it for memory reclaim.  Note that dev_name() is not\ndirectly used in second argument to prevent possible unlikely parsing\nany \"%\" character in device name as format.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.110"
   },
   {
     "id": "CVE-2026-53309",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nocfs2/dlm: fix off-by-one in dlm_match_regions() region comparison\n\nThe local-vs-remote region comparison loop uses '<=' instead of '<',\ncausing it to read one entry past the valid range of qr_regions.  The\nother loops in the same function correctly use '<'.\n\nFix the loop condition to use '<' for consistency and correctness.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.203"
   },
   {
     "id": "CVE-2026-53310",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsoc/tegra: cbb: Fix cross-fabric target timeout lookup\n\nWhen a fabric receives an error interrupt, the error may have\noccurred on a different fabric. The target timeout lookup was using\nthe wrong base address (cbb->regs) with offsets from a different\nfabric's target map, causing a kernel page fault.\n\n  Unable to handle kernel paging request at virtual address ffff80000954cc00\n  pc : tegra234_cbb_get_tmo_slv+0xc/0x28\n  Call trace:\n   tegra234_cbb_get_tmo_slv+0xc/0x28\n   print_err_notifier+0x6c0/0x7d0\n   tegra234_cbb_isr+0xe4/0x1b4\n\nAdd tegra234_cbb_get_fabric() to look up the correct fabric device\nusing fab_id, and use its base address for accessing target timeout\nregisters.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.330"
   },
   {
     "id": "CVE-2026-53311",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse: fix uninit-value in fuse_dentry_revalidate()\n\nfuse_dentry_revalidate() may be called with a dentry that didn't had\n->d_time initialised.  The issue was found with KMSAN, where lookup_open()\ncalls __d_alloc(), followed by d_revalidate(), as shown below:\n\n=====================================================\nBUG: KMSAN: uninit-value in fuse_dentry_revalidate+0x150/0x13d0 fs/fuse/dir.c:394\n fuse_dentry_revalidate+0x150/0x13d0 fs/fuse/dir.c:394\n d_revalidate fs/namei.c:1030 [inline]\n lookup_open fs/namei.c:4405 [inline]\n open_last_lookups fs/namei.c:4583 [inline]\n path_openat+0x1614/0x64c0 fs/namei.c:4827\n do_file_open+0x2aa/0x680 fs/namei.c:4859\n[...]\n\nUninit was created at:\n slab_post_alloc_hook mm/slub.c:4466 [inline]\n slab_alloc_node mm/slub.c:4788 [inline]\n kmem_cache_alloc_lru_noprof+0x382/0x1280 mm/slub.c:4807\n __d_alloc+0x55/0xa00 fs/dcache.c:1740\n d_alloc_parallel+0x99/0x2740 fs/dcache.c:2604\n lookup_open fs/namei.c:4398 [inline]\n open_last_lookups fs/namei.c:4583 [inline]\n path_openat+0x135f/0x64c0 fs/namei.c:4827\n do_file_open+0x2aa/0x680 fs/namei.c:4859\n[...]\n=====================================================",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.423"
   },
   {
     "id": "CVE-2026-53312",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu/riscv: Remove overflows on the invalidation path\n\nSince RISC-V supports a sign extended page table it should support\na gather->end of ULONG_MAX, but if this happens it will infinite loop\nbecause of the overflow.\n\nAlso avoid overflow computing the length by moving the +1 to the other\nside of the <",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.520"
   },
   {
     "id": "CVE-2026-53313",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/display: Avoid NULL dereference in dc_dmub_srv error paths\n\nIn dc_dmub_srv_log_diagnostic_data() and\ndc_dmub_srv_enable_dpia_trace().\n\nBoth functions check:\n\n  if (!dc_dmub_srv || !dc_dmub_srv->dmub)\n\nand then call DC_LOG_ERROR() inside that block.\n\nDC_LOG_ERROR() uses dc_dmub_srv->ctx internally. So if\ndc_dmub_srv is NULL, the logging itself can dereference a\nNULL pointer and cause a crash.\n\nFix this by splitting the checks.\n\nFirst check if dc_dmub_srv is NULL and return immediately.\nThen check dc_dmub_srv->dmub and log the error only when\ndc_dmub_srv is valid.\n\nFixes the below:\n../display/dc/dc_dmub_srv.c:962 dc_dmub_srv_log_diagnostic_data() error: we previously assumed 'dc_dmub_srv' could be null (see line 961)\n../display/dc/dc_dmub_srv.c:1167 dc_dmub_srv_enable_dpia_trace() error: we previously assumed 'dc_dmub_srv' could be null (see line 1166)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.613"
   },
   {
     "id": "CVE-2026-53314",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\npadata: Put CPU offline callback in ONLINE section to allow failure\n\nsyzbot reported the following warning:\n\n    DEAD callback error for CPU1\n    WARNING: kernel/cpu.c:1463 at _cpu_down+0x759/0x1020 kernel/cpu.c:1463, CPU#0: syz.0.1960/14614\n\nat commit 4ae12d8bd9a8 (\"Merge tag 'kbuild-fixes-7.0-2' of git://git.kernel.org/pub/scm/linux/kernel/git/kbuild/linux\")\nwhich tglx traced to padata_cpu_dead() given it's the only\nsub-CPUHP_TEARDOWN_CPU callback that returns an error.\n\nFailure isn't allowed in hotplug states before CPUHP_TEARDOWN_CPU\nso move the CPU offline callback to the ONLINE section where failure is\npossible.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.717"
   },
   {
     "id": "CVE-2026-53315",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/ras: Fix NULL deref in ras_core_get_utc_second_timestamp()\n\nras_core_get_utc_second_timestamp() retrieves the current UTC timestamp\n(in seconds since the Unix epoch) through a platform-specific RAS system\ncallback and is used for timestamping RAS error events.\n\nThe function checks ras_core in the conditional statement before calling\nthe sys_fn callback. However, when the condition fails, the function\nprints an error message using ras_core->dev.\n\nIf ras_core is NULL, this can lead to a potential NULL pointer\ndereference when accessing ras_core->dev.\n\nAdd an early NULL check for ras_core at the beginning of the function\nand return 0 when the pointer is not valid. This prevents the\ndereference and makes the control flow clearer.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.840"
   },
   {
     "id": "CVE-2026-53316",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/ras: Fix NULL deref in ras_core_ras_interrupt_detected()\n\nFixes a NULL pointer dereference when ras_core is NULL and ras_core->dev\nis accessed in the error path.\n\nReported by: Dan Carpenter <dan.carpenter@linaro.org>",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:24.937"
   },
   {
     "id": "CVE-2026-53317",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nwifi: mt76: mt7921: Place upper limit on station AID\n\nAny station configured with an AID over 20 causes a firmware crash.\nThis situation occurred in our testing using an AP interface on 7922\nhardware, with a modified hostapd, sourced from Mediatek's OpenWRT\nfeeds.\n\nIn stock hostapd, station AIDs begin counting at 1, and this\nconfiguration is prevented with an upper limit on associated stations.\nHowever, the modified hostapd began allocation at 65, which caused the\nfirmware to crash. This fix does not allow these AIDs to work, but will\nprevent the firmware crash.\n\nThis crash was only seen on IFTYPE_AP interfaces, and the fix does not\nappear to have an effect on IFTYPE_STATION behavior.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.037"
   },
   {
     "id": "CVE-2026-53318",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nwifi: mt76: mt7925: prevent NULL pointer dereference in mt7925_tx_check_aggr()\n\nMove the NULL check for 'sta' before dereferencing it to prevent a\npossible crash.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.137"
   },
   {
     "id": "CVE-2026-53319",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nblk-wbt: remove WARN_ON_ONCE from wbt_init_enable_default()\n\nwbt_init_enable_default() uses WARN_ON_ONCE to check for failures from\nwbt_alloc() and wbt_init(). However, both are expected failure paths:\n\n- wbt_alloc() can return NULL under memory pressure (-ENOMEM)\n- wbt_init() can fail with -EBUSY if wbt is already registered\n\nsyzbot triggers this by injecting memory allocation failures during MTD\npartition creation via ioctl(BLKPG), causing a spurious warning.\n\nwbt_init_enable_default() is a best-effort initialization called from\nblk_register_queue() with a void return type. Failure simply means the\ndisk operates without writeback throttling, which is harmless.\n\nReplace WARN_ON_ONCE with plain if-checks, consistent with how\nwbt_set_lat() in the same file already handles these failures. Add a\npr_warn() for the wbt_init() failure to retain diagnostic information\nwithout triggering a full stack trace.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.230"
   },
   {
     "id": "CVE-2026-53320",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnilfs2: reject zero bd_oblocknr in nilfs_ioctl_mark_blocks_dirty()\n\nnilfs_ioctl_mark_blocks_dirty() uses bd_oblocknr to detect dead blocks\nby comparing it with the current block number bd_blocknr. If they differ,\nthe block is considered dead and skipped.\n\nHowever, bd_oblocknr should never be 0 since block 0 typically stores the\nprimary superblock and is never a valid GC target block. A corrupted ioctl\nrequest with bd_oblocknr set to 0 causes the comparison to incorrectly\nmatch when the lookup returns -ENOENT and sets bd_blocknr to 0, bypassing\nthe dead block check and calling nilfs_bmap_mark() on a non-existent\nblock. This causes nilfs_btree_do_lookup() to return -ENOENT, triggering\nthe WARN_ON(ret == -ENOENT).\n\nFix this by rejecting ioctl requests with bd_oblocknr set to 0 at the\nbeginning of each iteration.\n\n[ryusuke: slightly modified the commit message and comments for accuracy]",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.330"
   },
   {
     "id": "CVE-2026-53321",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nio_uring/napi: cap busy_poll_to 10 msec\n\nCurrently there's no cap on the maximum amount of time that napi is\nallowed to poll if no events are found, which can lead to kernel\ncomplaints on a task being stuck as there's no conditional rescheduling\ndone within that loop.\n\nJust cap it to 10 msec in total, that's already way above any kind of\nsane value that will reap any benefits, yet low enough that it's\nnowhere near being able to trigger preemption complaints.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.460"
   },
   {
     "id": "CVE-2026-53322",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nvfio/pci: Clean up DMABUFs before disabling function\n\nOn device shutdown, make vfio_pci_core_close_device() call\nvfio_pci_dma_buf_cleanup() before the function is disabled via\nvfio_pci_core_disable().  This ensures that all access via DMABUFs is\nrevoked before the function's BARs become inaccessible.\n\nThis fixes an issue where, if the function is disabled first, a tiny\nwindow exists in which the function's MSE is cleared and yet BARs\ncould still be accessed via the DMABUF.  The resources would also be\nfreed and up for grabs by a different driver.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.560"
   },
   {
     "id": "CVE-2026-53323",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: dsa: remove redundant netdev_lock_ops() from conduit ethtool ops\n\nDSA replaces the conduit (master) device's ethtool_ops with its own\nwrappers that aggregate stats from both the conduit and DSA switch\nports. Taking the lock again inside the DSA wrappers causes a deadlock.\n\nStumbled upon this when booting qemu with fbnic and CONFIG_NET_DSA_LOOP=y\n(which looks like some kind of testing device that auto-populates the ports\nof eth0). `ethtool -i` is enough to deadlock. This means we have basically zero\ncoverage for DSA stuff with real ops locked devs.\n\nRemove the redundant netdev_lock_ops()/netdev_unlock_ops() calls from\nthe DSA conduit ethtool wrappers.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.653"
   },
   {
     "id": "CVE-2026-53324",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: mana: Use pci_name() for debugfs directory naming\n\nUse pci_name(pdev) for the per-device debugfs directory instead of\nhardcoded \"0\" for PFs and pci_slot_name(pdev->slot) for VFs. The\nprevious approach had two issues:\n\n1. pci_slot_name() dereferences pdev->slot, which can be NULL for VFs\n   in environments like generic VFIO passthrough or nested KVM,\n   causing a NULL pointer dereference.\n\n2. Multiple PFs would all use \"0\", and VFs across different PCI\n   domains or buses could share the same slot name, leading to\n   -EEXIST errors from debugfs_create_dir().\n\npci_name(pdev) returns the unique BDF address, is always valid, and is\nunique across the system.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-26T20:17:25.750"
   },
   {
@@ -38866,8 +38859,8 @@
   {
     "id": "CVE-2026-53325",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nagp/amd64: Fix broken error propagation in agp_amd64_probe()\n\nA NULL pointer dereference was observed in the AMD64 AGP driver when\nrunning in a virtualized environment (e.g. qemu/kvm) without a physical\nAMD northbridge. The crash occurs in amd64_fetch_size() when attempting\nto dereference the pointer returned by node_to_amd_nb(0).\n\nThe root cause of this crash is broken error propagation in\nagp_amd64_probe(): When no AMD northbridges are found, cache_nbs()\ncorrectly returns -ENODEV. However, the probe function erroneously\nchecks the return value against exactly -1, rather than < 0.\n\nAs a result, the hardware absence error is masked, allowing the driver\nto improperly proceed with initialization. It eventually calls\nagp_add_bridge(), which invokes amd64_fetch_size(). Since the hardware\ndoes not exist, node_to_amd_nb(0) returns NULL, leading to a General\nProtection Fault (GPF) when accessing its ->misc member.\n\nFix the issue by correcting the error check in agp_amd64_probe() to\nabort properly when cache_nbs() returns any negative error code. This\nprevents the driver from erroneously proceeding without hardware, thereby\navoiding the subsequent NULL pointer dereference at its source.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-29T06:16:33.167"
   },
   {
@@ -41058,7 +41051,7 @@
     "id": "CVE-2026-13455",
     "description": "PostgreSQL Anonymizer contains a vulnerability that allows unprivileged masked users to repeatedly call the anon.hash() function and collects (seed, hash_output) pairs to perform an offline brute-force attack and deduce the salt. The problem is resolved in PostgreSQL Anonymizer 3.1.2 and later versions",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Postgresql anonymizer",
     "published": "2026-06-30T16:16:44.547"
   },
   {
@@ -45138,8 +45131,8 @@
   {
     "id": "CVE-2026-58519",
     "description": "Improper neutralization of input during web page generation ('cross-site scripting') vulnerability in The Wikimedia Foundation Mediawiki - Cargo Extension allows Stored XSS.\n\nThis issue affects Mediawiki - Cargo Extension: from * before 3.9.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Cargo",
     "published": "2026-07-01T05:16:23.110"
   },
   {
@@ -45468,7 +45461,7 @@
     "id": "CVE-2026-13323",
     "description": "In Open VSX Registry before 1.0.2, the /vscode/unpkg/ endpoint serves user-supplied HTML files with Content-Type: text/html and without a Content-Security-Policy or Content-Disposition: attachment response header. An unauthenticated attacker can register a publisher account, upload a VSIX containing a crafted HTML payload, and induce an authenticated user to visit the resulting URL. The browser renders the file inline in the open-vsx.org origin context, enabling session token exfiltration, persistent Personal Access Token (PAT) generation, and unauthorized publication of malicious extension versions. Because Open VSX extensions are distributed to VS Code, VSCodium, Cursor, Windsurf, and compatible editors, a compromised extension update constitutes a supply chain attack against all downstream users.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Open vsx",
     "published": "2026-07-01T12:16:38.117"
   },
   {
@@ -46608,8 +46601,8 @@
   {
     "id": "CVE-2026-58521",
     "description": "Improper neutralization of special elements used in an SQL command ('SQL injection') vulnerability in The Wikimedia Foundation Mediawiki - Cargo Extension allows SQL Injection.\n\nThis issue affects Mediawiki - Cargo Extension: from * before 1.43.9,1.44.6,1.45.4.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Cargo",
     "published": "2026-07-01T18:16:36.107"
   },
   {
@@ -46651,7 +46644,7 @@
     "id": "CVE-2026-41121",
     "description": "Dell Device Management Agent, versions prior to DDMA 26.05, contain an Improper Link Resolution Before File Access ('Link Following’) vulnerability. A low privileged attacker with local access could potentially exploit this vulnerability, leading to Elevation of Privileges.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Device management agent",
     "published": "2026-07-01T19:16:51.953"
   },
   {
@@ -50417,7 +50410,7 @@
     "id": "CVE-2026-58288",
     "description": "Use after free in Microsoft Edge (Chromium-based) allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:03.523"
   },
   {
@@ -50431,7 +50424,7 @@
     "id": "CVE-2026-58290",
     "description": "Access of resource using incompatible type ('type confusion') in Microsoft Edge (Chromium-based) allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:03.770"
   },
   {
@@ -51537,7 +51530,7 @@
     "id": "CVE-2026-14761",
     "description": "A security vulnerability has been detected in radareorg radare2 up to 6.1.6. The affected element is the function r_str_ndup/r_str_append of the file libr/util/str.c. The manipulation leads to integer overflow. An attack has to be approached locally. The exploit has been disclosed publicly and may be used. The identifier of the patch is a20a56917ae85d732e683f8d9078bdcfee92446c. Applying a patch is the recommended action to fix this issue.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Radare2",
     "published": "2026-07-05T16:19:44.893"
   },
   {
@@ -51921,14 +51914,14 @@
   {
     "id": "CVE-2026-24013",
     "description": "Authentication Bypass by Spoofing vulnerability in Apache IoTDB.\nCertain Thrift RPC query handlers lack strict validation of the sessionId\nparameter. An attacker can construct requests with a forged sessionId and,\nwithout performing openSession authentication, receive valid query results.\nThis allows authentication bypass and unauthorized reading of time-series\ndata.\n\n\nThis issue affects Apache IoTDB: from 1.3.3 before 2.0.8.\n\nUsers are recommended to upgrade to version 2.0.8, which fixes the issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:35.163"
   },
   {
     "id": "CVE-2026-24014",
     "description": "Apache IoTDB DataNode’s internal RPC interface for creating Trigger instances uses the uploaded Trigger JAR name to build a file path without sufficient validation. If the internal DataNode RPC port is exposed to an untrusted network, an attacker may use path traversal sequences in the JAR name to write files outside the intended Trigger installation directory. This could allow arbitrary file write with the permissions of the IoTDB process.\n\nThis issue affects Apache IoTDB: from 1.3.3 before 2.0.8.\n\nUsers are recommended to upgrade to version 2.0.8, which fixes the issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:35.270"
   },
@@ -51963,14 +51956,14 @@
   {
     "id": "CVE-2026-43866",
     "description": "Deserialization of Untrusted Data vulnerability in Apache Camel, Apache Camel JMS component.\n\nJmsBinding.extractBodyFromJms() in camel-jms - and the equivalent JmsBinding in camel-sjms - deserializes the payload of an incoming JMS ObjectMessage via jakarta.jms.ObjectMessage.getObject() whenever the mapJmsMessage option is enabled (the default) and Camel acts as a JMS consumer. The CVE-2026-40860 hardening added a post-deserialization class check that rejects classes outside the default allow-list java.**;javax.**;org.apache.camel.**;!*. However org.apache.camel.support.DefaultExchangeHolder itself lives in the allow-listed org.apache.camel.** namespace, so an ObjectMessage whose top-level object is a DefaultExchangeHolder passes the check. The receiving side then calls DefaultExchangeHolder.unmarshal() on it without requiring the transferExchange option to be enabled - an asymmetric trust boundary, since the sending side gates ObjectMessage and transferExchange handling but the receiving side did not - writing every non-null field of the holder into the Exchange: the message body, the IN and OUT headers, the exchange properties, the variables, the exchange id and the exception. An attacker who can publish an ObjectMessage to a queue or topic consumed by an affected Camel application can therefore inject arbitrary Exchange state using only universally-trusted java.lang and java.util types, with no deserialization gadget chain required, to manipulate routing and headers, exchange properties and error handling. The same handling applies to camel-sjms and camel-sjms2, and to the JMS-family components built on JmsComponent and JmsBinding: camel-amqp, camel-activemq and camel-activemq6. This is a bypass of the CVE-2026-40860 fix rather than a flaw in it.\nThis issue affects Apache Camel: from 3.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0; Apache Camel: from 3.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, JMS ObjectMessage handling is disabled by default in camel-jms, camel-sjms and the JMS-family components (a new objectMessageEnabled option defaults to false at the component and endpoint level), so an incoming ObjectMessage - including a DefaultExchangeHolder payload - is no longer deserialized unless the option is explicitly enabled; only set objectMessageEnabled=true when the consumed JMS destination is fed exclusively by trusted producers. For deployments that cannot upgrade immediately, restrict publish access to the queues and topics consumed by Camel to trusted producers via JMS broker authorization, and do not expose JMS consumers that map ObjectMessage bodies to untrusted networks; a JMS-provider deserialization allow-list does not mitigate this specific bypass because the crafted payload uses only universally-trusted classes.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:35.913"
   },
   {
     "id": "CVE-2026-43867",
     "description": "Deserialization of Untrusted Data vulnerability in Apache Camel PQC Component.\n\nThe camel-pqc component persists post-quantum key metadata (KeyMetadata) through pluggable KeyLifecycleManager implementations. AwsSecretsManagerKeyLifecycleManager.deserializeMetadata() reads that metadata back from the configured AWS Secrets Manager secret by Base64-decoding the stored value and deserializing it with a raw java.io.ObjectInputStream.readObject() and no ObjectInputFilter or class allow-list; the cast to KeyMetadata happens only after readObject() returns, so any readObject() side effects in a crafted object run before the type check. A principal who can write to the AWS Secrets Manager secret that holds this metadata (requiring secretsmanager:PutSecretValue on that secret) could store a crafted serialized object that is deserialized during normal key-lifecycle operations, potentially leading to code execution in the context of the application that manages the keys. This is the same underlying defect, in the same code path and remediated by the same fix, as CVE-2026-46590, which was reported independently and additionally covers the HashiCorp Vault and file-based sibling managers; both are incomplete-remediation follow-ons to CVE-2026-40048 (CAMEL-23200).\nThis issue affects Apache Camel: from 4.18.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.18.x LTS releases stream, then they are suggested to upgrade to 4.18.3. For deployments that cannot upgrade immediately, restrict write access to the AWS Secrets Manager secret that holds the camel-pqc key metadata so that only the application’s own identity holds secretsmanager:PutSecretValue on it (least-privilege IAM), and keep the PQC key material in a secret separate from any data that less-trusted principals can write.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:36.057"
   },
@@ -51998,98 +51991,98 @@
   {
     "id": "CVE-2026-46455",
     "description": "Insufficient Session Expiration vulnerability in Apache Camel Keycloak Component.\n\nThe camel-keycloak security helper KeycloakSecurityHelper.parseAndVerifyAccessToken builds a Keycloak TokenVerifier using withChecks(...) with only the subject-exists check and the realm-URL (issuer) check. Keycloak's TokenVerifier.withChecks(...) appends to an initially empty check list - the upstream default checks are installed only when withDefaultChecks() is called - so the built-in IS_ACTIVE predicate, which validates the token's exp (expiration) and nbf (not-before) claims, is never applied. As a result the helper verifies the token signature, subject and issuer but does not enforce the token's validity window: an access token that is expired, or not yet valid, is accepted as valid. Routes that rely on this helper to authenticate inbound requests therefore accept access tokens that are outside their intended lifetime.\nThis issue affects Apache Camel: from 4.18.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. The fix makes KeycloakSecurityHelper.parseAndVerifyAccessToken include the TokenVerifier.IS_ACTIVE check so that expired or not-yet-valid access tokens are rejected, aligning the helper with Keycloak's default check set. For deployments that cannot upgrade immediately, enforce token expiration outside the helper - for example validate the access token's exp/nbf claims in the route before trusting it, keep Keycloak access-token lifetimes short, and ensure any upstream gateway or resource server also validates the token validity window.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:36.573"
   },
   {
     "id": "CVE-2026-46456",
     "description": "Improper Input Validation vulnerability in Apache Camel AWS2-SQS Component.\n\n\nThe camel-aws2-sqs component map inbound message attributes into the Camel Exchange through a component-specific HeaderFilterStrategy. Sqs2HeaderFilterStrategy configured only an outbound filter (setOutFilterPattern, which blocks Camel*, breadcrumbId and org.apache.camel.* headers being written to the broker) but did not configure an inbound filter. As a result, when Sqs2Consumer copies each SQS MessageAttribute into the Exchange via HeaderFilterStrategy.applyFilterToExternalHeaders, DefaultHeaderFilterStrategy applied no inbound rule and treated every header name as not filtered - including Camel-internal control headers such as CamelHttpUri, CamelFileName or CamelSqlQuery - copying them unmodified onto the Camel message. Any principal able to send messages to the consumed SQS queue (for example a cross-account sender or a lower-privileged in-account component holding sqs:SendMessage) could therefore set arbitrary Camel control headers that influence the behaviour of downstream producers in the route (for example redirecting an HTTP producer, changing a file name, or overriding a query); the injected headers also persist across internal direct, seda and vm hops. The concrete downstream impact depends on which producers the route uses.\n\n\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. The fix adds an inbound HeaderFilterStrategy rule to Sqs2HeaderFilterStrategy that filters the Camel header namespace case-insensitively on inbound mapping, so sender-supplied Camel* / camel* headers are no longer copied into the Exchange. For deployments that cannot upgrade immediately, strip the Camel control headers from inbound messages before they reach any downstream producer (for example removeHeaders('Camel*') and removeHeaders('camel*') at the start of the route), and restrict who may send to the consumed SQS queue by applying least-privilege sqs:SendMessage permissions on the queue resource policy.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:36.683"
   },
   {
     "id": "CVE-2026-46457",
     "description": "Improper Input Validation vulnerability in Apache Camel NATS component.\n\nThe camel-nats component maps inbound NATS message headers into the Camel Exchange but defaulted its headerFilterStrategy to a bare new DefaultHeaderFilterStrategy() with no inbound rules configured (NatsConfiguration). With no inFilter, inFilterPattern or inFilterStartsWith set, DefaultHeaderFilterStrategy.applyFilterToExternalHeaders returns not filtered for every header name, so NatsConsumer copies every NATS message header - including Camel-internal control headers such as CamelHttpUri, CamelFileName or CamelSqlQuery - unmodified onto the Camel message. A client able to publish to the consumed NATS subject can therefore inject arbitrary Camel control headers that influence the behaviour of downstream producers in the route (for example redirecting an HTTP producer, changing a file name, or overriding a query); the injected headers also persist across internal direct, seda and vm hops. The concrete downstream impact depends on which producers the route uses. NATS message headers require NATS 2.2 or later, and the issue is reachable without credentials when the NATS server is configured without authentication (the NATS server default).\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. The fix makes camel-nats default to a dedicated NatsHeaderFilterStrategy that filters the Camel header namespace case-insensitively on inbound mapping, so client-supplied Camel* / camel* headers are no longer copied into the Exchange. For deployments that cannot upgrade immediately, strip the Camel control headers from inbound NATS messages before they reach any downstream producer (for example removeHeaders('Camel*') and removeHeaders('camel*') at the start of the route), and enable authentication on the NATS server so that only trusted clients can publish to the consumed subject.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:36.807"
   },
   {
     "id": "CVE-2026-46584",
     "description": "Improper Input Validation, Exposure of Sensitive Information to an Unauthorized Actor vulnerability in Apache Camel Mail Component.\n\nThe camel-mail producer (MailProducer.getSender) scanned the outgoing Exchange for message headers in the mail.smtp. / mail.smtps. namespace and, when any were present, built a per-message JavaMail sender with those values applied as JavaMail session properties, overriding the endpoint configuration. This namespace is Camel-internal - only MailProducer interprets it - and was not blocked by any HeaderFilterStrategy, so the values could originate from any inbound protocol (for example platform-http query parameters or request headers, or JMS / Kafka messages from untrusted producers) that feeds a route ending in an smtp / smtps producer without an intervening removeHeaders. The maximal impact is version-dependent: on releases before 4.19.0, setting mail.smtp.host redirects the SMTP connection to a server under the attacker's control, and because the producer then authenticates with the endpoint's configured username and password those credentials are transmitted to the attacker; on 4.19.0 and later the producer connects to the endpoint's configured host explicitly, so the reachable impact is limited to weakening transport security (for example mail.smtp.ssl.trust, mail.smtp.starttls.enable or mail.smtp.socks.host) and interception of the outgoing message rather than host redirect. Exploitation requires a route that channels untrusted input into the mail producer without stripping the namespace.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, the per-message override is disabled by default; enable it only on trusted endpoints with useJavaMailSessionPropertiesFromHeaders=true. For deployments that cannot upgrade immediately, strip the namespace before the mail producer with removeHeaders('mail.smtp.*') and removeHeaders('mail.smtps.*') between any untrusted ingress and the smtp / smtps producer. Even with the opt-in enabled, route authors should still strip the namespace on any path that carries untrusted input.",
-    "severity": "Unknown",
+    "severity": "Low",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:36.927"
   },
   {
     "id": "CVE-2026-46585",
     "description": "Improper Input Validation, Authorization Bypass Through User-Controlled Key vulnerability in Apache Camel Lucene Component.\n\nThe camel-lucene producer reads the search phrase from an Exchange header (LuceneConstants.HEADER_QUERY) whose value was the plain string QUERY (and RETURN_LUCENE_DOCS for HEADER_RETURN_LUCENE_DOCS). Because these names do not start with the Camel / camel prefix, HttpHeaderFilterStrategy - which blocks only the Camel header namespace on the HTTP boundary - let them pass from an inbound HTTP request straight into the Exchange. In a route that exposes a Lucene query operation behind an HTTP consumer (for example platform-http), any HTTP client could therefore set the QUERY header and have its value executed against the full-text index, overriding the query the route intended to run. Depending on what is indexed, this allows reading documents the request should not have access to (for example a match-all query returns the entire index, or the route's intended per-user filter can be replaced), and expensive regular-expression queries can consume significant CPU. No credentials are required when the HTTP consumer is unauthenticated.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, routes that set the query via the raw header name must use CamelLuceneQuery (and CamelLuceneReturnLuceneDocs) instead of QUERY / RETURN_LUCENE_DOCS. For deployments that cannot upgrade immediately, strip the attacker-controllable headers before the Lucene producer and set the query from a trusted source (for example removeHeader('QUERY') and removeHeader('RETURN_LUCENE_DOCS'), then setHeader('QUERY', constant(...)) at the start of the route).",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.030"
   },
   {
     "id": "CVE-2026-46590",
     "description": "Deserialization of Untrusted Data vulnerability in Apache Camel PQC component.\n\nThe camel-pqc component persists post-quantum key metadata (KeyMetadata) through pluggable KeyLifecycleManager implementations. HashicorpVaultKeyLifecycleManager and AwsSecretsManagerKeyLifecycleManager read that metadata back from the configured secret backend by deserializing a Base64-wrapped value with a raw java.io.ObjectInputStream.readObject() and no ObjectInputFilter or class allow-list; the cast to KeyMetadata happens only after readObject() returns, so any readObject() side effects in a crafted object run before the type check. The same unfiltered legacy-migration read also remained in FileBasedKeyLifecycleManager (for the stored KeyPair and KeyMetadata). A principal who can write to the operator-controlled backend that holds these values - the HashiCorp Vault KV path, or the AWS Secrets Manager secret (requiring a Vault token or secretsmanager:PutSecretValue) - could store a crafted serialized object that is deserialized during normal key-lifecycle operations, potentially leading to code execution in the context of the application that manages the keys. This is an incomplete-remediation follow-on to CVE-2026-40048 (CAMEL-23200), which changed FileBasedKeyLifecycleManager to store metadata as JSON / PKCS#8 / X.509 but did not add an ObjectInputFilter, did not cover the Vault and AWS sibling managers, and left FileBasedKeyLifecycleManager's own legacy-migration deserialization unfiltered.\nThis issue affects Apache Camel: from 4.18.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.18.x LTS releases stream, then they are suggested to upgrade to 4.18.3. For deployments that cannot upgrade immediately, restrict write access to the key backend so that only the application's own identity can write the camel-pqc secrets (least-privilege HashiCorp Vault policies and secretsmanager:PutSecretValue IAM), and keep the PQC key material in a backend separate from any data that less-trusted principals can write.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.147"
   },
   {
     "id": "CVE-2026-46591",
     "description": "Improper Neutralization of Special Elements in Data Query Logic vulnerability in Apache Camel Neo4J component.\n\nThe camel-neo4j producer builds the Cypher WHERE clause for its match/retrieve and delete operations from the CamelNeo4jMatchProperties map. CVE-2025-66169 addressed Cypher injection through the property values by binding them as query parameters ($paramN), but the property names (the JSON keys of that map) were still concatenated into the query string verbatim in Neo4jProducer.retrieveNodes() and deleteNode(). A property name containing Cypher syntax therefore alters the structure of the executed query. Where a route maps untrusted input into the CamelNeo4jMatchProperties map - for example by passing a request body as the match map, or from a consumer that does not filter inbound Camel* headers - an attacker who controls the JSON key names can inject arbitrary Cypher and read, modify or delete any node or relationship in the Neo4j database. The CamelNeo4jMatchProperties header is itself Camel-prefixed and is filtered by the HTTP header-filter strategy, so a plain HTTP client cannot set it directly; the issue is reachable through routes that deliberately or inadvertently carry untrusted data into that header.\nThis issue affects Apache Camel: from 4.10.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. For deployments that cannot upgrade immediately, do not populate the CamelNeo4jMatchProperties map from untrusted input: validate or allow-list the property names (for example against ^[A-Za-z_][A-Za-z0-9_]*$) before the Neo4j producer, and ensure that any consumer feeding such a route filters inbound Camel* / camel* headers so the match header cannot be supplied by an external sender.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.263"
   },
   {
     "id": "CVE-2026-46592",
     "description": "Improper Input Validation, Unintended Proxy or Intermediary ('Confused Deputy') vulnerability in Apache Camel CXF SOAP component.\n\nThe camel-cxf producer selects which SOAP operation to invoke on the backend service from the operationName (and operationNamespace) Exchange header, whose constant values (CxfConstants.OPERATION_NAME / OPERATION_NAMESPACE) were the plain strings operationName / operationNamespace. Because these names do not start with the Camel / camel prefix, HttpHeaderFilterStrategy - which blocks only the Camel header namespace on the HTTP boundary - let them pass from an inbound HTTP request straight into the Exchange. In a route that bridges an HTTP consumer (for example platform-http) into a cxf: producer, any HTTP client could therefore set the operationName header and have CxfProducer resolve and invoke a different WSDL operation than the route intended - for example replacing a read operation with a destructive one - against the backend SOAP service (a confused-deputy redirection). The constant is defined in the shared camel-cxf-common module, so the same non-prefixed names also applied to camel-cxfrs. No credentials are required when the bridging consumer is unauthenticated.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, the operation-selection headers are named CamelCxfOperationName / CamelCxfOperationNamespace and are filtered at transport boundaries; see the 4.21 upgrade guide for the cross-transport carrier-header pattern. For deployments that cannot upgrade immediately, do not select the CXF operation from untrusted input: strip the operationName and operationNamespace headers from any untrusted ingress before the cxf: producer and set the operation from a trusted source in the route.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.380"
   },
   {
     "id": "CVE-2026-46726",
     "description": "Improper Input Validation, Exposure of Sensitive Information to an Unauthorized Actor, Server-Side Request Forgery (SSRF) vulnerability in Apache Camel in Vertx Websocket component.\n\nThe camel-vertx-websocket consumer mapped inbound WebSocket query and path parameters into the Camel Exchange header map without applying any HeaderFilterStrategy (VertxWebsocketConsumer.populateExchangeHeaders()). Because nothing blocked the Camel header namespace, a client connecting to the WebSocket endpoint could set Camel-internal control headers - including CamelHttpUri (Exchange.HTTP_URI) - simply by supplying them as query parameters. In a route where the WebSocket consumer feeds a downstream HTTP producer, the injected CamelHttpUri redirects the server-side HTTP request to an attacker-chosen destination (server-side request forgery - for example to an internal service or a cloud metadata endpoint). In addition, the HTTP producer resolves Camel property placeholders on the resulting (attacker-controlled) URI, so placeholders embedded in the injected value - such as an environment-variable reference, an application property, or a vault reference - are resolved to their real values and sent to the attacker, disclosing environment variables, application properties and vault secrets. When the WebSocket endpoint is exposed without authentication, this is reachable by an unauthenticated remote attacker.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. The fix makes the affected consumers apply a HeaderFilterStrategy that filters the Camel header namespace case-insensitively on inbound mapping, so externally-supplied Camel* / camel* headers are no longer copied into the Exchange. For deployments that cannot upgrade immediately, strip the Camel control headers from the inbound message before they reach any downstream producer (for example removeHeaders('Camel*') and removeHeaders('camel*') at the start of the route), require authentication on the WebSocket endpoint, and avoid bridging an untrusted consumer directly into an HTTP producer whose target URI can be driven from message headers.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.503"
   },
   {
     "id": "CVE-2026-48203",
     "description": "Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection'), Improper Input Validation, Server-Side Request Forgery (SSRF) vulnerability in Apache Camel Solr component.\n\nThe camel-solr producer copies Exchange message headers whose names begin with the SolrParam. prefix into the parameters of the Solr request, and headers whose names begin with the SolrField. prefix into the fields of the indexed Solr document. The prefix constants (SolrConstants.HEADER_PARAM_PREFIX / HEADER_FIELD_PREFIX) were the plain strings SolrParam. / SolrField.. Because these names do not start with the Camel / camel prefix, HttpHeaderFilterStrategy - which blocks only the Camel header namespace on the HTTP boundary - let them pass from an inbound HTTP request straight into the Exchange. In a route that bridges an HTTP consumer (for example platform-http) into a solr: producer, any HTTP client could therefore set SolrParam.* headers to inject arbitrary Solr request parameters - including shards or stream.url, which cause the Solr server to issue server-side requests to an attacker-chosen URL (server-side request forgery, for example to an internal service or a cloud metadata endpoint), or qt to reach administrative request handlers - and set SolrField.* headers to inject arbitrary fields into indexed documents. No credentials are required when the bridging consumer is unauthenticated.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, routes that set Solr parameters or fields via the raw header prefixes must use CamelSolrParam. / CamelSolrField. instead of SolrParam. / SolrField.. For deployments that cannot upgrade immediately, strip the SolrParam.* and SolrField.* headers from any untrusted ingress before the solr: producer, and set the required Solr parameters and fields from a trusted source in the route.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.633"
   },
   {
     "id": "CVE-2026-48204",
     "description": "Improper Input Validation, Improper Access Control vulnerability in Apache Camel in Camel Mongodb Gridfs component.\n\nThe camel-mongodb-gridfs producer selects the GridFS operation to perform from the gridfs.operation Exchange header when the endpoint's operation parameter is not set - which is the default. The control-header constants (GridFsConstants.GRIDFS_OPERATION, GRIDFS_OBJECT_ID, GRIDFS_METADATA, GRIDFS_CHUNKSIZE, GRIDFS_FILE_ID_PRODUCED) were the plain strings gridfs.operation, gridfs.objectid, gridfs.metadata, gridfs.chunksize and gridfs.fileid. Because these names do not start with the Camel / camel prefix, HttpHeaderFilterStrategy - which blocks only the Camel header namespace on the HTTP boundary - let them pass from an inbound HTTP request straight into the Exchange. In a route that bridges an HTTP consumer (for example platform-http) into a mongodb-gridfs: producer with no explicit operation, any HTTP client could therefore set the gridfs.operation header to override the route's intended operation - switching, for example, a file upload to remove (deleting a file identified by the attacker-supplied gridfs.objectid), listAll (enumerating every file in the bucket) or findOne (reading a file) - and supply a gridfs.metadata value that is parsed as a MongoDB document, enabling NoSQL operator injection. No credentials are required when the bridging consumer is unauthenticated.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, routes that drive GridFS operations or metadata via the raw header names must use CamelGridFsOperation / CamelGridFsObjectId / CamelGridFsMetadata / CamelGridFsChunkSize / CamelGridFsFileId instead of the gridfs.* names. For deployments that cannot upgrade immediately, set an explicit operation on the mongodb-gridfs: endpoint so the operation is not taken from a header, and strip the gridfs.* headers from any untrusted ingress before the producer.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.760"
   },
   {
     "id": "CVE-2026-48205",
     "description": "Improper Input Validation, Server-Side Request Forgery (SSRF) vulnerability in Apache Camel DNS component.\n\nThe camel-dns producers read DNS operation parameters - the resolver to query, the name or domain to look up, the record type and class, and the search term - from Exchange message headers whose constant values (DnsConstants.DNS_SERVER, DNS_NAME, DNS_DOMAIN, DNS_TYPE, DNS_CLASS, TERM) were the plain strings dns.server, dns.name, dns.domain, dns.type, dns.class and term. Because these names do not start with the Camel / camel prefix, HttpHeaderFilterStrategy - which blocks only the Camel header namespace on the HTTP boundary - let them pass from an inbound HTTP request straight into the Exchange. In a route that bridges an HTTP consumer (for example platform-http) into a dns: producer, any HTTP client could therefore set the dns.server header to make the dig producer build a SimpleResolver pointing at an attacker-controlled DNS server - a server-side request forgery via DNS, through which the attacker observes the queried name and can return poisoned responses - and set the dns.name / dns.domain headers to resolve arbitrary internal hostnames, disclosing whether they exist (internal network reconnaissance). No credentials are required when the bridging consumer is unauthenticated.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, routes that drive DNS operations via the raw header names must use CamelDnsServer / CamelDnsName / CamelDnsDomain / CamelDnsType / CamelDnsClass / CamelDnsTerm instead of the dns.* / term names. For deployments that cannot upgrade immediately, strip the dns.* and term headers from any untrusted ingress before the dns: producer, and set the DNS server and lookup parameters from a trusted source in the route.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:37.880"
   },
   {
     "id": "CVE-2026-48206",
     "description": "Improper Input Validation, Authorization Bypass Through User-Controlled Key vulnerability in Apache Camel JIRA component.\n\nThe camel-jira producers read their operation parameters - the issue key, project key, transition id, summary, type, assignee, components, watchers, link type, work-log minutes and others - from Exchange message headers. The header constants defined in JiraConstants (for example ISSUE_KEY = IssueKey, ISSUE_PROJECT_KEY = ProjectKey, ISSUE_TRANSITION_ID = IssueTransitionId, LINK_TYPE = linkType) used plain, non-Camel-prefixed values. Because these names do not start with the Camel / camel prefix, HttpHeaderFilterStrategy - which blocks only the Camel header namespace on the HTTP boundary - let them pass from an inbound HTTP request straight into the Exchange. In a route that bridges an HTTP consumer (for example platform-http) into a jira: producer, any HTTP client could therefore supply these headers and override the values the route intended, driving JIRA operations against the configured JIRA instance with the endpoint's configured service-account credentials - for example deleting or transitioning an arbitrary issue (via IssueKey / IssueTransitionId), creating an issue in a different project (via ProjectKey), modifying issue fields, adding or removing watchers, or logging work. The operations are bounded by what the configured service account is permitted to do. No credentials are required from the attacker when the bridging consumer is unauthenticated.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, routes that drive JIRA operations via the raw header names must use the CamelJira* names (for example CamelJiraIssueKey) instead of the old values. For deployments that cannot upgrade immediately, strip the camel-jira control headers from any untrusted ingress before the jira: producer (for example removing the IssueKey, ProjectKey, IssueTransitionId and related headers at the start of the route), and set the required JIRA operation parameters from a trusted source.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:38.000"
   },
   {
     "id": "CVE-2026-49086",
     "description": "Improper Input Validation, Unintended Proxy or Intermediary ('Confused Deputy') vulnerability in Apache Camel DAPR component.\n\nThe camel-dapr Dapr Pub/Sub consumer (DaprPubSubConsumer) copied two fields from each inbound CloudEvent - its Pub/Sub component name and its topic - into the CamelDaprPubSubName and CamelDaprTopic Exchange headers. These two headers are producer-direction routing headers: when the route republishes through a Dapr producer, DaprConfigurationOptionsProxy reads them back and prefers them over the destination configured on the endpoint. As a result, in a route that consumes from one Dapr Pub/Sub topic and republishes to another (for example from('dapr-pubsub:p:t').to('dapr-pubsub:p:other')), an actor able to publish a message to the subscribed topic could set the CloudEvent's pub/sub-name and topic to values of their choosing and cause the re-published message to be delivered to an arbitrary Dapr Pub/Sub component and topic instead of the configured destination - redirecting or exfiltrating the message and bypassing the route's intended routing and any topic-level access controls in the underlying broker. Exploitation requires the ability to publish to the topic the route subscribes to; no other authentication or user interaction is needed.\nThis issue affects Apache Camel: from 4.12.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. For deployments that cannot upgrade immediately, remove the CamelDaprPubSubName and CamelDaprTopic headers from the Exchange between the Dapr consumer and any Dapr producer in the route (for example removeHeaders('CamelDaprPubSubName', 'CamelDaprTopic')), and restrict who can publish to the subscribed Dapr Pub/Sub topic so that only trusted producers can send to it.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:38.120"
   },
@@ -52145,14 +52138,14 @@
   {
     "id": "CVE-2026-56139",
     "description": "Generation of Error Message Containing Sensitive Information vulnerability in Apache Camel Undertow Component.\n\nThe camel-undertow HTTP server consumer exposes a muteException option that controls what is returned to the client when a route processing error occurs. This option defaulted to false, whereas the other Camel HTTP server components (camel-http / camel-jetty / camel-servlet and camel-platform-http) default it to true. With muteException=false, when a request triggers an exception during route processing the consumer writes the full Throwable stack trace into the HTTP response body as text/plain instead of returning an empty body. Any unauthenticated client that can reach the endpoint and cause a processing error - for example by sending a malformed request body, an invalid parameter, or otherwise triggering a route-internal failure - therefore receives a complete Java stack trace. Such a stack trace can disclose sensitive internal information, including credentials embedded in exception messages, internal host names and IP addresses, filesystem paths, dependency and version details, database and class names, and the application's internal structure, which an attacker can use to plan further attacks. In addition, for Rest DSL consumers the muteException option was not honoured at all: the RestUndertowHttpBinding was created with a hard-coded false, so the stack trace was returned even when muteException=true had been configured.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.21.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. For deployments that cannot upgrade immediately, set muteException=true explicitly on the camel-undertow consumer (for example undertow: http://0.0.0.0:8080/api?muteException=true , or globally via the camel.component.undertow.mute-exception=true property), so that processing errors no longer return the stack trace to the client; note that on affected releases this workaround does not cover Rest DSL consumers, whose binding ignores the option until the fix is applied.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:39.157"
   },
   {
     "id": "CVE-2026-56140",
     "description": "Improper Input Validation vulnerability in Apache Camel AWS SNS component.\n\n\nThe camel-aws2-sns component filters Camel headers through a component-specific HeaderFilterStrategy, Sns2HeaderFilterStrategy. Like the sibling Sqs2HeaderFilterStrategy, it originally configured only an outbound filter (setOutFilterPattern, which blocks Camel*, breadcrumbId and org.apache.camel.* headers from being written out) and did not configure an inbound filter rule. For the related camel-aws2-sqs component this inbound gap was exploitable, because the Sqs2Consumer maps inbound SQS message attributes into the Camel Exchange via HeaderFilterStrategy.applyFilterToExternalHeaders, allowing a message sender to inject Camel control headers (tracked as CVE-2026-46456). camel-aws2-sns, by contrast, is producer-only: Sns2Endpoint does not support consumers (createConsumer throws UnsupportedOperationException, 'You cannot receive messages from this endpoint'), so no externally-supplied message attributes are ever mapped inbound into a Camel Exchange through SNS, and the missing inbound filter rule on Sns2HeaderFilterStrategy was therefore not reachable by an attacker. As part of the same fix (CAMEL-23506), an inbound filter rule (setInFilterStartsWith for the Camel namespace) was added to Sns2HeaderFilterStrategy so that its configuration matches the corrected Sqs2HeaderFilterStrategy and the other sibling strategies. This is a defense-in-depth alignment with no known exploit path in camel-aws2-sns.\n\n\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.21.0.\n\nThis is a defense-in-depth hardening change with no known exploit path in camel-aws2-sns, which is producer-only, so no urgent action or workaround is required. Users who want the aligned behaviour can upgrade to version 4.21.0, or to 4.14.8 on the 4.14.x LTS releases stream, or to 4.18.3 on the 4.18.x releases stream, which contain the change. As a general best practice, operators should continue to apply least-privilege IAM permissions on their SNS topics.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-06T09:16:39.280"
   },
@@ -52215,7 +52208,7 @@
   {
     "id": "CVE-2026-49297",
     "description": "Apache Airflow's Google provider operators `GCSToSFTPOperator` and `GCSTimeSpanFileTransformOperator` joined GCS object names returned by the bucket listing API directly to a destination filesystem path without normalisation or containment check. A user with write access to the source GCS bucket (typically a different trust principal than the DAG author — partner uploads, ingest-only service accounts, public-data buckets) could create an object whose name contains `..` segments and cause the DAG run to write the downloaded blob outside the configured destination (the SFTP `destination_path` for `GCSToSFTPOperator`; the worker-local temp directory for `GCSTimeSpanFileTransformOperator`), enabling overwrite of arbitrary files on the SFTP server or the worker host. Affects deployments that ingest from buckets writable by less-trusted principals. Users are advised to upgrade to `apache-airflow-providers-google` 22.2.1 or later.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T11:16:30.207"
   },
@@ -52271,7 +52264,7 @@
   {
     "id": "CVE-2026-13705",
     "description": "Imager versions before 1.032 for Perl have a heap out-of-bounds read in the bundled Imager::File::SGI reader via a 16-bit RLE literal run in read_rgb_16_rle.\n\nread_rgb_16_rle guards each literal run with if (count > data_left), but count is a pixel count while every 16-bit sample consumes two bytes. The copy loop reads inp[0] * 256 + inp[1] and advances two bytes per pixel, so a run with data_left / 2 < count <= data_left passes the guard yet consumes 2 * count bytes and reads past the end of the buffer. The 8-bit path is unaffected because there one pixel is one byte.\n\nReading a crafted SGI image through Imager->read triggers the over-read before the parser rejects the malformed image, which can crash the process.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T13:16:32.447"
   },
@@ -52432,7 +52425,7 @@
   {
     "id": "CVE-2026-43825",
     "description": "Untrusted Java Deserialization in Apache OpenNLP SvmDoccatModel\n\nVersions Affected:\n  before 3.0.0-M4 (libsvm document categorization module; introduced in\n  OPENNLP-1808 and only present on the 3.x line)\n\nDescription:\nSvmDoccatModel.deserialize(InputStream) reads an attacker-controlled\nstream with java.io.ObjectInputStream and calls readObject() without an\nObjectInputFilter installed. ObjectInputStream materialises every class\nreferenced in the stream before the resulting object is cast to\nSvmDoccatModel, so the cast that follows readObject() executes only\nafter the foreign object graph has already been deserialised in full.\n\nIf a Java deserialization gadget chain is available on the consumer's\nclasspath, a crafted payload supplied to\ndeserialize() executes arbitrary code in the JVM that loads it. Apache\nOpenNLP itself does not ship a known gadget chain, so the realistic\nrisk is to downstream applications that embed the libsvm module\nalongside vulnerable transitive dependencies. The method is public and\nstatic, so any caller can pass an untrusted stream to it directly.\n\nThe practical impact is remote code execution against processes that\nload SvmDoccatModel instances from untrusted or semi-trusted origins.\n\nMitigation:\n\n3.x users should upgrade to 3.0.0-M4.\n\nUsers who cannot upgrade immediately should treat all serialized\nSvmDoccatModel streams as untrusted input unless their provenance is\nverified, and should avoid invoking SvmDoccatModel.deserialize() on\nstreams supplied by end users or fetched from third-party sources\nwithout integrity checks.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T17:16:31.570"
   },
@@ -52467,7 +52460,7 @@
   {
     "id": "CVE-2026-13753",
     "description": "A missing authorization vulnerability exists in the embedded webserver of HP Deskjet 2800 Series Printers running firmware version <=TBP1CN2612AR. An unauthenticated attacker with network access can send GET requests to multiple exposed administrative API endpoints and retrieve sensitive configuration data such as plaintext Wi‑Fi Direct credentials, unique device identity information, and other administrative security state details. When accessed through the web interface, these setting pages explicitly require administrator credentials before sensitive information is displayed.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T19:16:55.963"
   },
@@ -52526,5 +52519,348 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-06T19:17:09.680"
+  },
+  {
+    "id": "CVE-2026-11405",
+    "description": "The web server binary /bin/httpd contains a hidden backdoor authentication mechanism in the login() function at 004c88b8.\r\n\r\n- The function contains a normal authentication path using MD5/hash-based password verification (prod_encode64/PasswordToMd5/check_rand_key).\r\n- After normal authentication fails, it calls GetValue(\"sys.rzadmin.password\") to read a backdoor password from the device configuration.\r\n- It performs a direct strcmp() comparison (plaintext, not hashed) between the config value and the user-supplied password.\r\n\r\nA successful match grants role=2 (admin-level access) and creates a valid session. The rzadmin username is never checked — any username works with the backdoor",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:29.450"
+  },
+  {
+    "id": "CVE-2026-14536",
+    "description": "Improper enforcement of a mandatory multi-factor authentication policy in Devolutions Server 2026.2.9.0 allows an attacker with valid user credentials to bypass the MFA Required policy and authenticate without completing multi-factor authentication. The problem occurs when DVLS encounters an invalid default MFA value.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:29.883"
+  },
+  {
+    "id": "CVE-2026-14898",
+    "description": "The OpenAI Codex desktop app for macOS rendered remote images from Markdown in model responses. An attacker who could place an indirect prompt injection in content processed by Codex, such as a connected-tool result or another untrusted source, could induce the model to construct a remote image URL containing sensitive data. The app automatically fetched that URL when rendering the response, sending the embedded data to an attacker-controlled server without a separate user click. Successful exploitation could exfiltrate secrets and other information accessible in the Codex session, including API keys, source code, and data returned by connected tools. No direct integrity or availability impact was demonstrated, and there is no known exploitation in the wild.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:30.580"
+  },
+  {
+    "id": "CVE-2026-41514",
+    "description": "OP-TEE is a Trusted Execution Environment (TEE) designed as companion to a non-secure Linux kernel running on Arm; Cortex-A cores using the TrustZone technology. Starting in version 4.5.0 and prior to version 4.11.0, the RSA-OAEP decryption implementation in the Hisilicon HPRE crypto driver uses non-constant-time `memcmp()` for label hash verification and has multiple distinguishable error paths. This creates a Manger-style padding oracle that allows an attacker to recover RSA-OAEP plaintext with approximately 1000-2000 adaptive chosen ciphertext queries. Only affects plat-d06 with `CFG_HISILICON_ACC_V3=y`, which seems to be disabled by default. Version 4.11.0 contains a patch. As a workaround, disable Hisilicon HPRE RSA driver with `CFG_HISILICON_ACC_V3=n`.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:31.917"
+  },
+  {
+    "id": "CVE-2026-41515",
+    "description": "OP-TEE is a Trusted Execution Environment (TEE) designed as companion to a non-secure Linux kernel running on Arm; Cortex-A cores using the TrustZone technology. Starting in version 3.9.0 and prior to version 4.11.0, the RSA-OAEP decryption implementation in the NXP CAAM crypto driver uses non-constant-time `memcmp()` for label hash verification and has multiple distinguishable error paths. This creates a Manger-style padding oracle that allows an attacker to recover RSA-OAEP plaintext with approximately 1000-2000 adaptive chosen ciphertext queries. Version 4.11.0 contains a patch. As a workaround, disable the NXP CAAM RSA driver with `CFG_CRYPTO_DRV_RSA=n`.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:32.060"
+  },
+  {
+    "id": "CVE-2026-41516",
+    "description": "OP-TEE is a Trusted Execution Environment (TEE) designed as companion to a non-secure Linux kernel running on Arm; Cortex-A cores using the TrustZone technology. Starting in version 4.5.0 and prior to version 4.11.0, the RSA PKCS#1 v1.5 decryption implementation in the Hisilicon HPRE crypto driver uses non-constant-time `memcmp()` for label hash verification and has multiple distinguishable error paths. This creates a Bleichenbacher-style padding oracle that allows an attacker to recover RSA PKCS#1 v1.5  plaintext. Version 4.11.0 contains a patch. As a workaround, disable Hisilicon HPRE RSA driver with `CFG_HISILICON_ACC_V3=n`.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:32.197"
+  },
+  {
+    "id": "CVE-2026-42546",
+    "description": "OP-TEE is a Trusted Execution Environment (TEE) designed as companion to a non-secure Linux kernel running on Arm; Cortex-A cores using the TrustZone technology. Starting in version 3.3.0 and prior to version 4.11.0, a resource leak exists in OP-TEE’s shared memory cleanup logic because the function `cleanup_shm_refs()` in `core/tee/entry_std.c`  fails to apply a required bitmask (`OPTEE_MSG_ATTR_TYPE_MASK`) to parameter attributes. When processing non-contiguous memory parameters from a normal-world caller, the system fails to match the attribute type in its internal switch statement and skips the necessary mobj_put() call. This results in a persistent reference leak of `mobj_reg_shm` objects, which remain on internal lists with dangling refcounts. This affects non-FF-A configurations that support non-contiguous, non-secure shared memory. Over time, these accumulated leaks progressively consume the secure-world heap, degrading the system's ability to service trusted application operations and eventually requiring a reboot to recover. Version 4.11.0 contains a patch. No known workarounds are available.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:33.257"
+  },
+  {
+    "id": "CVE-2026-44362",
+    "description": "OP-TEE is a Trusted Execution Environment (TEE) designed as companion to a non-secure Linux kernel running on Arm; Cortex-A cores using the TrustZone technology. Starting in version 3.20.0 and prior to version 4.11.0, a vulnerability in OP-TEE’s subkey rollback protection allows the use of revoked or older subkey versions because the system fails to propagate versioning data during the Trusted Application (TA) loading process. In `core/crypto/signed_hdr.c`, the function `shdr_load_pub_key()` parses subkey headers but does not assign the `subkey_version` to the runtime `shdr_pub_key` structure. As a result, the `key->version` field remains at zero regardless of the version specified in the header. When `ree_fs_ta_open()` in `core/kernel/ree_fs_ta.c` calls `check_update_version()`, it passes this zeroed version to the rollback database. Because the database never receives a non-zero version to record, it never advances, effectively bypassing the rollback check and allowing TAs signed with downgraded subkey chains to load successfully. This impacts OP-TEE mainline configurations that utilize subkey-based signing chains for Trusted Application (TA) authentication. Version 4.11.0 contains a patch. No known workarounds are available.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:33.950"
+  },
+  {
+    "id": "CVE-2026-50133",
+    "description": "Hugo is a static site generator. Prior to 0.162.0, Hugo accepts content files in several markup formats. Files mapped to the text/html media type (typically .html files under /content, or pages produced by a content adapter that sets content.mediaType = \"text/html\") had their body emitted verbatim into the rendered page. A site that ingests HTML content from an untrusted source could therefore be served stored cross-site scripting. This vulnerability is fixed in 0.162.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:37.043"
+  },
+  {
+    "id": "CVE-2026-50134",
+    "description": "Hugo is a static site generator. From 0.91.0 until 0.162.0, resources.GetRemote enforces security.http.urls on the URL it is called with, but it did not re-validate intermediate URLs on HTTP 3xx redirects. An allowed server (or an attacker controlling its DNS or response) could therefore redirect the request to a host that the policy was meant to forbid and Hugo would fetch from the redirected target. The same bypass also lifted any host-shape restriction the operator had put in place. This vulnerability is fixed in 0.162.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:37.197"
+  },
+  {
+    "id": "CVE-2026-53763",
+    "description": "OP-TEE is a Trusted Execution Environment (TEE) designed as companion to a non-secure Linux kernel running on Arm; Cortex-A cores using the TrustZone technology. Starting in version 3.0.0 and prior to version 4.11.0, 32-bit integer overflows in OP-TEE core's AES-GCM implementation cause the authentication tag to be computed with incorrect bit-length values after processing more than 512 megabytes of payload or Additional Authenticated Data (AAD). Version 4.11.0 contains a patch. No known workarounds are available.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:37.327"
+  },
+  {
+    "id": "CVE-2026-55646",
+    "description": "vLLM is an inference and serving engine for large language models. From 0.22.0 to 0.23.0, the /v1/audio/transcriptions and /v1/audio/translations routes call request.file.read() to fully materialize an uploaded audio file into memory before vLLM checks the documented VLLM_MAX_AUDIO_CLIP_FILESIZE_MB compressed upload size limit (default 25 MB) later in the speech-to-text preprocessing step, so an API caller who can reach those routes can submit an oversized multipart upload and cause vLLM to allocate memory proportional to the uploaded file size before the request is rejected as too large, creating memory pressure or terminating the process depending on deployment resource limits. This issue is fixed in version 0.24.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:37.663"
+  },
+  {
+    "id": "CVE-2026-58402",
+    "description": "Hugo is a static site generator. From 0.60.0 until 0.163.3, Hugo's default code-block renderer wrote the Markdown code-fence language or info-string into the code class=\"language-…\" data-lang=\"…\" wrapper without HTML escaping. A fence info-string containing a quote and a script payload breaks out of the attribute and injects a live script element. This issue is fixed in 0.163.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:38.040"
+  },
+  {
+    "id": "CVE-2026-58403",
+    "description": "Hugo is a static site generator. From v0.123.0 through v0.163.0, Hugo's virtual filesystem is designed so that files under a mount cannot reach outside the mount tree, but a regression caused RootMappingFs.statRoot to call Stat, which follows symlinks, instead of Lstat, so a direct os.ReadFile \"somefile\" where somefile was a symlink pointing outside the mount would return the target's contents. This effectively let a symlink planted inside a theme or local mount read arbitrary files reachable to the user running hugo. This issue is fixed in v0.163.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:38.173"
+  },
+  {
+    "id": "CVE-2026-58404",
+    "description": "Hugo is a static site generator. From v0.162.0 through v0.163.0, the default security.http.urls policy denies requests to loopback, internal, and cloud-metadata IPv4 literals, but the deny rule only matched dotted-decimal notation, so alternate IPv4 encodings of the same addresses, including integer, hex, or octal, passed the policy. When a template passes an untrusted or data-derived URL to resources.GetRemote and the host platform uses the cgo system resolver, these encodings resolve to the blocked address, allowing build-time server-side requests to loopback and internal services, including the cloud-metadata endpoint in hosted or CI builds; the same check is reused on redirects, so the gap also applies to each redirect hop. This issue is fixed in v0.163.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:38.307"
+  },
+  {
+    "id": "CVE-2026-59089",
+    "description": "A flaw was found in GIMP. The PlayStation TIM loader, responsible for handling PlayStation image files, incorrectly calculates the size of the Color Look-Up Table (CLUT) due to an integer overflow. This occurs when multiplying num_colors and num_cluts, both 16-bit unsigned short integers, resulting in a value exceeding the maximum integer limit. An attacker could exploit this by providing a specially crafted image file, leading to undefined behavior and causing the GIMP plug-in to abort, effectively resulting in a denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T20:16:38.433"
+  },
+  {
+    "id": "CVE-2025-59615",
+    "description": "Memory Corruption when invoking device input/output control operations for mapping and unmapping persistent memory buffers due to improper synchronization.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:52.077"
+  },
+  {
+    "id": "CVE-2025-59616",
+    "description": "Memory Corruption when processing multiple IOCTL calls with the same buffer file descriptor input due to accessing already freed memory.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:52.513"
+  },
+  {
+    "id": "CVE-2025-59617",
+    "description": "Memory Corruption when processing multiple IOCTL calls with the same buffer file descriptor input.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:52.653"
+  },
+  {
+    "id": "CVE-2026-14468",
+    "description": "HashiCorp Terraform Enterprise contained an issue in its version control system (VCS) ingestion of registry modules that did not correctly enforce the intended boundary on packaged module content. This may allow an authenticated user to include files from outside the intended repository content in a module and then download them, potentially exposing sensitive files readable by the ingestion process. This vulnerability, CVE-2026-14468, is fixed in Terraform Enterprise v2.0.4 and v1.2.4.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:53.000"
+  },
+  {
+    "id": "CVE-2026-14471",
+    "description": "Improper Neutralization of Special Elements in the metrics-service retention policy management component in Amazon mcp-gateway-registry before 1.0.13 might allow an authenticated remote user to execute arbitrary SQL queries via a crafted table_name value that is interpolated into SQL statements in identifier position.\n\n\n\nTo remediate this issue, users should upgrade to version 1.0.13 or later.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:53.123"
+  },
+  {
+    "id": "CVE-2026-21368",
+    "description": "Memory Corruption when parsing jpeg commands due to unaccounted extra writes to the buffer during validation checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:53.407"
+  },
+  {
+    "id": "CVE-2026-21369",
+    "description": "Memory Corruption when handling flash commands due to outdated LED count values being used after userspace modification.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:53.553"
+  },
+  {
+    "id": "CVE-2026-21370",
+    "description": "Memory Corruption when validating input batch size and buffer plane count exceeds maximum allowed values.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:53.707"
+  },
+  {
+    "id": "CVE-2026-21379",
+    "description": "Memory Corruption when allocating memory with sizes that exceed the maximum allowed value.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:53.850"
+  },
+  {
+    "id": "CVE-2026-21383",
+    "description": "Cryptographic Issue when using a static initialization vector for AES-GCM key wrapping, which requires a unique value for each call to ensure security.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:53.973"
+  },
+  {
+    "id": "CVE-2026-21384",
+    "description": "Memory Corruption when updating prepared commands with invalid port indices based on user space input exceeds supported read client limits.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:54.097"
+  },
+  {
+    "id": "CVE-2026-25268",
+    "description": "Memory Corruption when processing invalid HT40 channel layouts during dynamic channel switching operations.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:54.730"
+  },
+  {
+    "id": "CVE-2026-25271",
+    "description": "Memory Corruption when processing asynchronous input parameters due to improper handling of modified values between check and use.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:54.903"
+  },
+  {
+    "id": "CVE-2026-33734",
+    "description": "FOSSBilling is a free, open-source billing and client management system. Versions 0.6.0 through 0.7.2 have a SQL injection vulnerability in the `Massmailer` module filter functionality. An authenticated administrator can supply crafted filter values when updating a mass email message, causing untrusted input to be interpolated directly into SQL in the recipient selection query. Version 0.8.0 patches the issue. Some workarounds are available. Restrict administrator access to trusted users only, disable the `Massmailer` module if it is not required, audit existing records in the `mod_massmailer` table for suspicious filter values, and/or review administrator activity related to `Massmailer` message updates.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:55.227"
+  },
+  {
+    "id": "CVE-2026-34038",
+    "description": "Coolify is an open-source and self-hostable tool for managing servers, applications, and databases. Prior to 4.0.0-beta.469, an authenticated remote command injection vulnerability in application deployment handling allows users with application write permissions to achieve remote code execution and exfiltrate sensitive environment variables through deployment logs via fields such as dockerfile_location and deployment commands. This issue is fixed in version 4.0.0-beta.469.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:55.370"
+  },
+  {
+    "id": "CVE-2026-42331",
+    "description": "FOSSBilling is a free, open-source billing and client management system. Prior to version 0.8.0, the Guest API invoice/update endpoint is missing an authorization check present in other invoice-related endpoints, allowing an unauthenticated user with knowledge of an invoice hash to modify the payment gateway associated with an unpaid invoice. An attacker who obtains an invoice hash, which may leak through shared URLs, referrer headers, or email links,  can change the `gateway_id` on an unpaid invoice to any payment gateway configured in the system. This does not allow redirecting payments to an arbitrary external endpoint, as the gateway must already be installed and configured by an administrator. The practical impact is further limited by the `invoice_accessible_from_hash` system setting. Version 0.8.0 contains a patch. No known workarounds are available.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:55.617"
+  },
+  {
+    "id": "CVE-2026-42341",
+    "description": "FOSSBilling is a free, open-source billing and client management system. Versions 0.6.0 through 0.7.2 have an unauthenticated payment bypass vulnerability in FOSSBilling's IPN callback endpoint. When the Custom payment adapter is enabled, an attacker can mark any unpaid invoice as paid and credit the associated client account without making an actual payment, by sending a single crafted HTTP request. Version 0.8.0 patches the issue. Some workarounds are available. Disable the Custom payment gateway if not actively needed and/or restrict access to `/ipn.php` at the web server level (e.g., via IP allowlisting), noting that this may interfere with legitimate payment callback processing.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:55.740"
+  },
+  {
+    "id": "CVE-2026-48267",
+    "description": "DNG SDK versions 1.7.1 2536 and earlier are affected by a NULL Pointer Dereference vulnerability that could result in an application denial-of-service. An attacker could exploit this vulnerability to crash the application, leading to a denial-of-service condition. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:56.223"
+  },
+  {
+    "id": "CVE-2026-50135",
+    "description": "Hugo is a static site generator. From 0.123.0 to 0.161.1, a regression made  RootMappingFs.statRoot  use  Stat  (follows symlinks) instead of  Lstat , so a direct  resources.Get  of a symlink pointing outside its mount returned the target's contents — letting a symlink planted in a local mount (e.g. a vendored  themes/  theme) read arbitrary files accessible to the Hugo user. Go-module themes from GitHub (symlinks stripped) and directory walks were unaffected. Fixed in 0.162.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:56.347"
+  },
+  {
+    "id": "CVE-2026-54234",
+    "description": "vLLM is a high-throughput and memory-efficient inference and serving engine for LLMs. Prior to 0.24.0, a frontend-legal multi-request speculative decoding workload can cause the rejection sampler to produce a recovered token equal to the model vocabulary size boundary value, which is then converted to negative one when the engine selects the next live token for a request and is written back into the drafter's input ids; that out-of-vocabulary value is later consumed by the model's embedding and attention path and crashes the engine worker with a GPU device-side assertion. The same triggering request sequence is reachable through the public gRPC Generate and Abort endpoints, so a remote client that can send generation requests can crash the shared engine worker, aborting concurrent requests and causing a service-wide denial of service for other clients of the deployment until the worker is restarted. This issue is fixed in version 0.24.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:56.477"
+  },
+  {
+    "id": "CVE-2026-54709",
+    "description": "Rejected reason: ** REJECT ** DO NOT USE THIS CANDIDATE NUMBER. ConsultIDs: CVE-2026-54637. Reason: This candidate is a duplicate of CVE-2026-54637. Notes: All CVE users should reference CVE-2026-54637 instead of this candidate.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:56.707"
+  },
+  {
+    "id": "CVE-2026-54763",
+    "description": "Traefik is an HTTP reverse proxy and load balancer. Prior to v2.11.51, v3.6.22, and v3.7.6, Traefik's BasicAuth, DigestAuth, and ForwardAuth middlewares strip canonical-cased spoofed identity headers before writing Traefik's own value, but do not account for underscore-variant header names, which many backends normalize identically to dashed forms. An attacker able to reach a protected route can inject an underscore-variant header that survives Traefik's stripping and reaches the backend alongside, or on the unauthenticated ForwardAuth authResponseHeaders path instead of, the value Traefik intended to set, spoofing identity or authorization context. This issue is fixed in versions v2.11.51, v3.6.22, and v3.7.6.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:56.787"
+  },
+  {
+    "id": "CVE-2026-54764",
+    "description": "Traefik is an HTTP reverse proxy and load balancer. Prior to v2.11.51, v3.6.22, and v3.7.6, Traefik's ForwardAuth middleware, even when configured with trustForwardHeader: false, derives the X-Forwarded-Port header sent to the authentication service from the original incoming request instead of the sanitized forwarded request. As a result, an unauthenticated remote attacker can inject an X-Forwarded-Proto: https header over a plain HTTP connection and cause Traefik to forward X-Forwarded-Port: 443 to the authentication service, bypassing port-based authorization checks. This issue is fixed in versions v2.11.51, v3.6.22, and v3.7.6.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:56.930"
+  },
+  {
+    "id": "CVE-2026-54765",
+    "description": "Traefik is an open source HTTP reverse proxy and load balancer. From v3.7.0 prior to v3.7.6, Traefik's Kubernetes Gateway API provider may resolve two accepted HTTPRoutes that target the same backend Service:port but configure different backendRef filters to the same child service and apply only one route's filter set to all requests reaching that backend. In Gateway deployments where backendRef filters set security-sensitive headers, such as tenant identity, authorization context, or values the backend trusts, an attacker who can create an accepted HTTPRoute sharing the same backend Service:port may cause their route's filter context to be applied to another route's requests, potentially crossing namespace boundaries when a ReferenceGrant permits cross-namespace targeting. This issue is fixed in version v3.7.6.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:57.067"
+  },
+  {
+    "id": "CVE-2026-55514",
+    "description": "vLLM is a library for LLM inference and serving. From 0.12.0 to before 0.24.0, sending a pure prompt embeds payload in a /v1/completions request with a model using M-RoPE causes EngineCore to fail an assertion and fatally crash, shutting down the entire server application. Any remote user who is authorized to make a /v1/completions request can make such a request and induce a crash. This issue is fixed in version 0.24.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:57.207"
+  },
+  {
+    "id": "CVE-2026-55574",
+    "description": "vLLM is a high-throughput and memory-efficient inference and serving engine for LLMs. Prior to 0.24.0, the structured_outputs.regex API parameter passes a user-supplied regular expression string directly to the grammar compiler backends with no compilation timeout; in the xgrammar backend the string reaches the regex compiler with no guard, and in the outlines backend the validation step blocks structural issues such as lookarounds and backreferences but performs no complexity analysis, so a pattern with nested quantifiers passes all checks and causes exponential state-space expansion, allowing a single request containing an adversarial regex to hang an inference worker indefinitely and deny service. This issue is fixed in version 0.24.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:57.347"
+  },
+  {
+    "id": "CVE-2026-55727",
+    "description": "A flaw in the authentication mechanism for video stream requests in Genetec Security Center 5.14.0.0 prior to build 5.14.178.18 may allow an unauthenticated attacker to access live video streams.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:57.580"
+  },
+  {
+    "id": "CVE-2026-57571",
+    "description": "Crawl4AI is an open-source LLM-friendly web crawler and scraper. Prior to 0.9.0, when the crawler saves a downloaded file, the destination filename was taken from attacker-influenced input and joined to the downloads directory with no confinement. A filename containing an absolute path or traversal escaped the downloads directory, giving an arbitrary file write with attacker-controlled contents; the HTTP crawler path uses the response Content-Disposition filename and the browser crawler path uses the download's suggested filename. Because the written bytes are attacker-controlled, this can escalate to remote code execution. This issue is fixed in version 0.9.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:57.907"
+  },
+  {
+    "id": "CVE-2026-57572",
+    "description": "Crawl4AI is an open-source LLM-friendly web crawler and scraper. Prior to 0.9.0, the Docker API server accepted request-supplied browser_config.extra_args, which flowed into Chromium's launch arguments. An attacker could inject Chromium switches that replace a child-process launch command together with --no-zygote, causing Chromium to fork or exec an attacker-controlled command as the container's runtime user. The Docker API is unauthenticated by default, so a single request yields arbitrary command execution. This issue is fixed in version 0.9.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:58.047"
+  },
+  {
+    "id": "CVE-2026-57573",
+    "description": "Crawl4AI is an open-source LLM-friendly web crawler and scraper. Prior to 0.9.0, the Docker API server applied its SSRF destination check on the non-streaming /crawl path but not on the streaming path. handle_stream_crawl_request passed seed URLs straight to the crawler with no destination validation, allowing a remote unauthenticated client to call POST /crawl/stream or POST /crawl with crawler_config.stream=true with a URL pointing at an internal, private, or link-local address; the server fetched it and streamed the response body back. This issue is fixed in version 0.9.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:58.197"
+  },
+  {
+    "id": "CVE-2026-59711",
+    "description": "showdown contains a cross-site scripting vulnerability in metadata title handling that allows attackers to inject arbitrary HTML and JavaScript. When completeHTMLDocument option is enabled, unescaped less-than and greater-than characters in markdown frontmatter metadata are inserted directly into HTML title tags, enabling attackers to break out of the title context and execute malicious scripts in the rendered page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:58.660"
+  },
+  {
+    "id": "CVE-2026-59712",
+    "description": "Leantime's Users::getUser method in the JSON-RPC API lacks proper authorization checks, allowing authenticated users to retrieve full user credential rows including password hashes, TOTP secrets, and session tokens. Attackers can exploit this by calling users.getUser with arbitrary user IDs to enumerate all accounts and obtain credentials for offline password cracking, 2FA bypass, and session hijacking.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:58.793"
+  },
+  {
+    "id": "CVE-2026-59713",
+    "description": "Leantime contains an OIDC login CSRF vulnerability in the verifyState() method that unconditionally returns true without validating state parameters. Attackers can craft malicious callback URLs with attacker-controlled authorization codes to perform session fixation, logging victims in as the attacker.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-06T21:16:58.930"
   }
 ]
