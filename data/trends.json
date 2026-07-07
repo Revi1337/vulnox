@@ -1,19 +1,5 @@
 [
   {
-    "id": "CVE-2026-11460",
-    "description": "A flaw has been found in Boost Serialization up to 1.91. The impacted element is an unknown function. This manipulation causes improper validation of specified type of input. It is possible to initiate the attack remotely. The exploit has been published and may be used. The maintainer was notified on Aug 2025 and a disclosure deadline was set for 90 days. The maintainer acknowledged but postponed indefinitely citing time concerns. No patch is currently available and the disclosure deadline has expired.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-07T20:16:39.993"
-  },
-  {
-    "id": "CVE-2026-11461",
-    "description": "A vulnerability has been found in NousResearch hermes-agent up to 0.12.0. This affects the function resolve_session_by_title of the file hermes_state.py of the component resume Endpoint. Such manipulation of the argument Title leads to authorization bypass. It is possible to launch the attack remotely. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-07T22:16:22.547"
-  },
-  {
     "id": "CVE-2026-11462",
     "description": "A vulnerability was found in Chengdu Everbrite Network Technology BeikeShop up to 1.6.0.22. This impacts the function callback of the file plugins/Stripe/Controllers/StripeController.php of the component Stripe Plugin. Performing a manipulation of the argument Request results in improper authorization. The attack can be initiated remotely. The exploit has been made public and could be used. The patch is named 6719e0fc690ea0a998452092862e0f0a17c65968. It is suggested to install a patch to address this issue.",
     "severity": "High",
@@ -32776,15 +32762,15 @@
   {
     "id": "CVE-2026-53154",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm/hugetlb: restore reservation on error in hugetlb folio copy paths\n\nTwo sites in mm/hugetlb.c allocate a hugetlb folio via\nalloc_hugetlb_folio() (consuming a VMA reservation) and then call\ncopy_user_large_folio(), which became int-returning in commit 1cb9dc4b475c\n(\"mm: hwpoison: support recovery from HugePage copy-on-write faults\") and\ncan now fail (e.g.  -EHWPOISON on a hwpoisoned source page).  On the\nfailure path, folio_put() restores the global hugetlb pool count through\nfree_huge_folio(), but the per-VMA reservation map entry is left marked\nconsumed:\n\n  - hugetlb_mfill_atomic_pte() resubmission path (UFFDIO_COPY)\n  - copy_hugetlb_page_range() fork-time CoW path when\n    hugetlb_try_dup_anon_rmap() fails (rare: pinned hugetlb anon\n    folio under fork)\n\nUser-visible effect: on UFFDIO_COPY into a private hugetlb VMA where the\nresubmission copy fails, the reservation for that address is leaked from\nthe VMA's reserve map.  A subsequent fault at the same address takes the\nno-reservation path, and under hugetlb pool pressure the task is SIGBUSed\nat an address it had previously reserved.  The fork-time CoW path leaks\nthe same way in the child VMA's reserve map, though it requires the much\nrarer combination of pinned hugetlb anon page + hwpoisoned source.\n\nAdd the missing restore_reserve_on_error() call before folio_put() on both\nerror paths.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:32.770"
   },
   {
     "id": "CVE-2026-53155",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm/huge_memory: use correct flags for device private PMD entry\n\nCommit 65edfda6f3f2 (\"mm/rmap: extend rmap and migration support\ndevice-private entries\") updated set_pmd_migration_entry() to use\npmdp_huge_get_and_clear() in the softleaf case, but made no further\nadjustments to the function itself.\n\nTherefore this function continues to incorrectly use pmd_write(),\npmd_soft_dirty() and pmd_uffd_wp() to determine whether the installed\nmigration entry should be marked writable, softdirty or uffd-wp\nrespectively.\n\nWhilst all are incorrect, the most problematic of these is pmd_write(), as\nthis can lead to corrupted rmap state.\n\nOn x86-64 _PAGE_SWP_SOFT_DIRTY is aliased to _PAGE_RW.  So calling\npmd_write() on a softleaf will return the softdirty state encoded in the\nentry, assuming CONFIG_MEM_SOFT_DIRTY was enabled.\n\nThis was observed when running the hmm.hmm_device_private.anon_write_child\nselftest:\n\n1. The test faults in a range then migrates it such that a device-private\n   THP range is established.\n\n2. The parent then migrates it to a device-private writable PMD entry whose\n   folio is entirely AnonExclusive with entire_mapcount=1, softdirty set\n   (accidentally correct write state).\n\n3. The parent forks and the PMD entries are set to device-private read only\n   entries, entire_mapcount=2, softdirty still set.\n\n4. [BUG] The child writes to the range then migrates to RAM - intending to\n   install non-writable migration entries - but replacing parent and child\n   PMD mappings with WRITABLE entries due to misinterpreting the softdirty\n   bit.\n\n5. In remove_migration_pmd(), if !softleaf_is_migration_read(entry) we\n   set the RMAP_EXCLUSIVE flag when calling folio_add_anon_rmap_pmd() for\n   both parent and child, which are therefore AnonExclusive.\n\n6. [SPLAT] Child sets migrated folio entire_mapcount=1, parent sets\n   entire_mapcount=2 and we end up with an AnonExclusive folio with\n   entire_mapcount=2! Assert fires in __folio_add_anon_rmap():\n\n\t\tVM_WARN_ON_FOLIO(folio_test_large(folio) &&\n\t\t\t\t folio_entire_mapcount(folio) > 1 &&\n\t\t\t\t PageAnonExclusive(cur_page), folio)\n\nThis patch fixes the issue by correctly referencing the softleaf entry\nfields for writable, softdirty and uffd-wp in set_pmd_migration_entry().\n\nIt also only updates A/D flags if the entry is present as these are\notherwise not meaningful for a softleaf entry.\n\nThis patch also flips the if (!present) { ...  } else { ...  } logic in\nset_pmd_migration_entry() so it is easier to understand, and adds some\ncomments to make things clearer.\n\nI was able to bisect this to commit 775465fd26a3 (\"lib/test_hmm: add zone\ndevice private THP test infrastructure\") which first exposes this bug as\nit was the commit that permitted test_hmm to generate the test.\n\nHowever commit 65edfda6f3f2 (\"mm/rmap: extend rmap and migration support\ndevice-private entries\") is the commit that actually enabled this\nbehaviour.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:32.877"
   },
   {
@@ -33385,64 +33371,64 @@
   {
     "id": "CVE-2026-53241",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nALSA: seq: dummy: fix UMP event stack overread\n\nThe dummy sequencer port forwards events by copying an incoming\nstruct snd_seq_event into a stack temporary, rewriting source and\ndestination, and dispatching the temporary to subscribers. That legacy\nevent storage is smaller than struct snd_seq_ump_event.\n\nWhen a UMP event reaches the dummy client, the copy leaves the UMP flag\nset but only provides legacy-sized stack storage. The subscriber\ndelivery path then uses snd_seq_event_packet_size() and copies a\nUMP-sized packet from that stack object, reading past the end of the\ntemporary.\n\nUse the existing union __snd_seq_event storage and copy the packet size\nreported for the incoming event before rewriting the common routing\nfields. This preserves the full UMP packet for UMP events while keeping\nlegacy event handling unchanged.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.047"
   },
   {
     "id": "CVE-2026-53242",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nALSA: PCM: Fix wait queue list corruption in snd_pcm_drain() on linked streams\n\nsnd_pcm_drain() uses init_waitqueue_entry which does not clear\nentry.prev/next, and add_wait_queue with a conditional\nremove_wait_queue that is skipped when to_check is no longer\nin the group after concurrent UNLINK.  The orphaned wait entry\nremains on the unlinked substream sleep queue.  On the next\ndrain iteration, add_wait_queue adds the entry to a new queue\nwhile still linked on the old one, corrupting both lists.  A\nsubsequent wake_up dereferences NULL at the func pointer\n(mapped from the spinlock at offset 0 of the misinterpreted\nwait_queue_head_t), causing a kernel panic.\n\nReplace init_waitqueue_entry/add_wait_queue/conditional\nremove_wait_queue with init_wait_entry/prepare_to_wait/\nfinish_wait.  init_wait_entry clears prev/next via\nINIT_LIST_HEAD on each iteration and sets\nautoremove_wake_function which auto-removes the entry on\nwake-up.  finish_wait safely handles both the already-removed\nand still-queued cases.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.140"
   },
   {
     "id": "CVE-2026-53243",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nrseq: Fix using an uninitialized stack variable in rseq_exit_user_update()\n\nThere is an bug in which an uninitialized stack variable is used in\nrseq_exit_user_update() as reported by syzbot:\n\nBUG: KMSAN: kernel-infoleak in rseq_set_ids_get_csaddr include/linux/rseq_entry.h:502 [inline]\n\nThe local variable:\n\n\tstruct rseq_ids ids = {\n\t\t.cpu_id\t = task_cpu(t),\n\t\t.mm_cid\t = task_mm_cid(t),\n\t\t.node_id = cpu_to_node(ids.cpu_id),\n\t};\n\nAccording to the C standard, the evaluation order of expressions in an\ninitializer list is indeterminately sequenced. The compiler (Clang, in\nthis KMSAN build) evaluates `cpu_to_node(ids.cpu_id)` *before*\n`ids.cpu_id` is initialized with `task_cpu(t)`.\n\nThis is fixed by moving the assignment of ids.node_id outside the\nstructure initialization.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.260"
   },
   {
     "id": "CVE-2026-53244",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nVFS: fix possible failure to unlock in nfsd4_create_file()\n\natomic_create() in fs/namei.c drops the reference to the dentry\nwhen it returns an error.\nThis behaviour was imported into dentry_create() so that it\nwill drop the reference if an error is returned from atomic_create(),\nthough not if vfs_create() returns an error (in the case where\n->atomic_create is not supported).\n\nThe caller - nfsd4_create_file() - is made aware of this by checking\npath->dentry, which will either be a counted reference to a dentry, or\nan error pointer.\n\nHowever the change to use start_creating()/end_creating() (which landed\nshortly before the dentry_create() change landed, though was likely\ndeveloped around the same time) means that nfsd4_create_file() *needs* a\nvalid dentry so that it can unlock the parent.\n\nThe net result is that if NFSD exports a filesystem which uses\n->atomic_create, and if a call to ->atomic_create returns an error, then\nnfsd4_create_file() will pass an error pointer to end_creating()\nand the parent will not be unlocked.\n\nFix this by changing dentry_create() to make sure path->dentry is always\na valid dentry, never an error-pointer.  The actual error is already\nreturned a different way.\n\nNote that if ->atomic_create() returns a different dentry (which may not\nbe possible in practice) we are guaranteed (because it is only ever\nprovided by d_spliace_alias()) that it will have the same d_parent and\nso it will have the same effect when passed to end_creating().",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.350"
   },
   {
     "id": "CVE-2026-53245",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/802/mrp: fix vector attribute parsing in mrp_pdu_parse_vecattr\n\nIn mrp_pdu_parse_vecattr(), vector attribute events are encoded three\nper byte and valen tracks the number of events left to process.\n\nThe parser decrements valen after processing the first and second events\nfrom each event byte, but not after processing the third one. When valen\nis exactly a multiple of three, the loop continues after the last valid\nevent and consumes the next byte as a new event byte, applying a\nspurious event to the MRP applicant state.\n\nAdditionally, when valen is zero the parser unconditionally consumes\nattrlen bytes as FirstValue and advances the offset, even though per\nIEEE 802.1ak a VectorAttribute with only a LeaveAllEvent has valen of\nzero and no FirstValue or Vector fields. This corrupts the offset for\nsubsequent PDU parsing.\n\nAlso, when valen exceeds three the loop crosses byte boundaries but\nthe attribute value is not incremented between the last event of one\nbyte and the first event of the next. This causes the first event of\nthe next byte to use the same attribute value as the third event\nrather than the next consecutive value.\n\nDecrement valen after processing the third event, skip FirstValue\nconsumption when valen is zero, and increment the attribute value at\nthe end of each loop iteration.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.443"
   },
   {
     "id": "CVE-2026-53246",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsctp: validate cached peer INIT chunk length in COOKIE_ECHO processing\n\nWhen a listening SCTP server processes a COOKIE_ECHO chunk, the cached\npeer INIT chunk embedded after the cookie is parsed and its parameters\nare later walked by sctp_process_init() using sctp_walk_params().\n\nHowever, the chunk header length of this cached INIT chunk was not\nvalidated against the remaining buffer in the COOKIE_ECHO payload. If\nthe length field is inflated, the parameter walk can run beyond the\nactual received data, leading to out-of-bounds reads and potential\nmemory corruption during later parameter handling (e.g. STATE_COOKIE\nprocessing and kmemdup() copies).\n\nAdd a bounds check in sctp_unpack_cookie() to ensure the cached INIT\nchunk length does not exceed the available data in the COOKIE_ECHO\nbuffer before it is used.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.567"
   },
   {
     "id": "CVE-2026-53247",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: ethernet: mtk_eth_soc: Fix use-after-free in metadata dst teardown\n\nmtk_free_dev() calls metadata_dst_free() which frees the metadata_dst\nwith kfree() immediately, bypassing the RCU grace period.\nIn the RX path, skb_dst_set_noref() sets a non-refcounted pointer from\nthe skb to the metadata_dst. This function requires RCU read-side\nprotection and the dst must remain valid until all RCU readers complete.\nSince metadata_dst_free() calls kfree() directly, a use-after-free can\noccur if any skb still holds a noref pointer to the dst when the driver\ntears it down.\nReplace metadata_dst_free() with dst_release() which properly goes\nthrough the refcount path: when the refcount drops to zero, it schedules\nthe actual free via call_rcu_hurry(), ensuring all RCU readers have\ncompleted before the memory is freed.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.657"
   },
   {
     "id": "CVE-2026-53248",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: airoha: Fix use-after-free in metadata dst teardown\n\nairoha_metadata_dst_free() runs metadata_dst_free() which frees the\nmetadata_dst with kfree() immediately, bypassing the RCU grace period.\nIn the RX path, skb_dst_set_noref() sets a non-refcounted pointer from\nthe skb to the metadata_dst. This function requires RCU read-side\nprotection and the dst must remain valid until all RCU readers complete.\nSince metadata_dst_free() calls kfree() directly, an use-after-free can\noccur if any skb still holds a noref pointer to the dst when the driver\ntears it down.\nReplace metadata_dst_free() with dst_release() which properly goes\nthrough the refcount path: when the refcount drops to zero, it schedules\nthe actual free via call_rcu_hurry(), ensuring all RCU readers have\ncompleted before the memory is freed.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.753"
   },
   {
     "id": "CVE-2026-53249",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipv4: restrict IPOPT_SSRR and IPOPT_LSRR options\n\nThis patch restricts setting Loose Source and Record Route (LSRR)\nand Strict Source and Record Route (SSRR) IP options to users\nwith CAP_NET_RAW capability.\n\nThis prevents unprivileged applications from forcing packets to route\nthrough attacker-controlled nodes to leak TCP ISN and possibly other\nprotocol information.\n\nWhile LSRR and SSRR are commonly filtered in many network environments,\nthey may still be supported and forwarded along some network paths.\n\nRFC 7126 (Recommendations on Filtering of IPv4 Packets Containing\nIPv4 Options) recommend to drop these options in 4.3 and 4.4.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:42.847"
   },
   {
@@ -49416,14 +49402,14 @@
     "id": "CVE-2026-8925",
     "description": "The curl logic that works with SASL authentication could end up cleaning up\nthe GSASL context *twice* without clearing the pointer in between, making it\n`free()` the same pointer twice.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:24.950"
   },
   {
     "id": "CVE-2026-8926",
     "description": "When asking curl to use a `.netrc` file to find credentials and at the same\ntime specifying a URL with a username(without a password), like\n`https://user@example.com/`, curl could wrongly get and use the password for\n*another* user set in the `.netrc` file for that host if such a one exists and\nthere is no match for the specified user.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:25.037"
   },
   {
@@ -50396,7 +50382,7 @@
     "id": "CVE-2026-58300",
     "description": "Absolute path traversal in Microsoft Edge for Android allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:05.023"
   },
   {
@@ -50452,7 +50438,7 @@
     "id": "CVE-2026-58522",
     "description": "Relative path traversal in Microsoft Edge for Android allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:05.883"
   },
   {
@@ -50480,7 +50466,7 @@
     "id": "CVE-2026-58523",
     "description": "Improper access control in Microsoft Edge for Android allows an unauthorized attacker to bypass a security feature over a network.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T22:16:55.740"
   },
   {
@@ -51390,14 +51376,14 @@
     "id": "CVE-2026-14757",
     "description": "A vulnerability was determined in radareorg radare2 up to 6.1.6. This affects the function core_anal_bytes of the file libr/core/cmd_anal.inc. This manipulation causes integer overflow. The attack needs to be launched locally. The exploit has been publicly disclosed and may be utilized. It is suggested to install a patch to address this issue.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Radare2",
     "published": "2026-07-05T15:16:56.810"
   },
   {
     "id": "CVE-2026-14758",
     "description": "A vulnerability was identified in radareorg radare2 up to 6.1.6. This vulnerability affects the function cmd_anal_opcode of the file libr/core/cmd_anal.inc.c of the component hexpairs Parser. Such manipulation leads to integer overflow. The attack needs to be performed locally. The exploit is publicly available and might be used. The name of the patch is 84e773986e7e5bb30453a9384f498ec0ccc9d0a9. A patch should be applied to remediate this issue.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Radare2",
     "published": "2026-07-05T15:16:56.987"
   },
   {
@@ -51418,14 +51404,14 @@
     "id": "CVE-2026-14759",
     "description": "A security flaw has been discovered in radareorg radare2 up to 6.1.6. This issue affects the function r_bin_java_inner_classes_attr_calc_size of the file shlr/java/class.c of the component RBinJava Line Number Table Parser. Performing a manipulation results in heap-based buffer overflow. The attack requires a local approach. The exploit has been released to the public and may be used for attacks. The patch is named cd62d15a6cbecdc67fd03f3ebdbbbeb741d18f87. To fix this issue, it is recommended to deploy a patch.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Radare2",
     "published": "2026-07-05T16:19:44.583"
   },
   {
     "id": "CVE-2026-14760",
     "description": "A weakness has been identified in radareorg radare2 up to 6.1.6. Impacted is the function r_core_seek_arch_bits of the file libr/core/disasm.c of the component regprofile Handler. Executing a manipulation can lead to use after free. The attack requires local access. The exploit has been made available to the public and could be used for attacks. This patch is called 8b25c773785d85cb0103410a0905089d286921c2. It is advisable to implement a patch to correct this issue.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Radare2",
     "published": "2026-07-05T16:19:44.740"
   },
   {
@@ -53667,5 +53653,341 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-07T19:16:55.530"
+  },
+  {
+    "id": "CVE-2026-44877",
+    "description": "An unauthenticated remote disclosure vulnerability has been identified in HPE Networking Instant On 1830, 1930, and 1960 Switches. Successful exploitation of this vulnerability could allow an unauthenticated remote threat actor to access sensitive cryptographic secrets on a vulnerable system.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T20:16:28.693"
+  },
+  {
+    "id": "CVE-2026-58468",
+    "description": "NocoBase through 2.1.20 contains a server-side request forgery vulnerability in the serverRequest wrapper that allows authenticated administrators to issue arbitrary outbound HTTP requests by supplying malicious URLs to workflow request nodes, custom request action buttons, or the AI plugin. Attackers can target loopback addresses, RFC-1918 private ranges, and cloud instance metadata endpoints to perform internal network port enumeration, host discovery, and retrieval of IAM role credentials from the instance metadata service. v2.1.18 added a warning message for when SERVER_REQUEST_WHITELIST is not configured.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T20:16:29.240"
+  },
+  {
+    "id": "CVE-2026-44454",
+    "description": "Coder allows organizations to provision remote development environments via Terraform. Prior to versions 2.29.7 and 2.30.2, the `dotfiles` registry module passed unsanitized user input to shell commands, allowing arbitrary code execution inside a provisioned workspace. Any user who supplied a crafted `dotfiles_uri` value (for example, one containing shell command substitution such as `$(...)`) could achieve command execution in their own workspace. The Create Workspace page's `mode=auto` deep links amplified this into a one-click attack: an attacker could craft a URL that prefilled `param.dotfiles_uri` and silently provisioned a workspace with the attacker-controlled value, with no explicit user confirmation. In versions 2.29.7 and 2.30.2, input validation was added to the dotfiles module to reject URIs and usernames containing special characters, and the unsafe `eval`/`sh -c` usage was removed. This eliminated the command injection at its source.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:25.180"
+  },
+  {
+    "id": "CVE-2026-46672",
+    "description": "Actual is a local-first personal finance app. Prior to 26.6.0, @actual-app/cli ships a hand-rolled CSV serializer in packages/cli/src/output.ts used whenever the global --format csv option is passed, whose escapeCsv helper only handles RFC 4180 delimiter, quote, and newline escaping and does not neutralize standard CSV formula-injection prefixes. Any CLI command that streams an object array containing user-controlled strings, including transactions list, accounts list, payees list, categories list, tags list, category-groups list, rules list, schedules list, and query, can emit cells that auto-evaluate when the resulting CSV is opened in Excel, LibreOffice Calc, or Google Sheets, enabling data exfiltration and arbitrary formula execution. This issue is fixed in version 26.6.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:25.420"
+  },
+  {
+    "id": "CVE-2026-46700",
+    "description": "Actual is a local-first personal finance tool. Prior to 26.6.0, the GET /secret/:name endpoint in @actual-app/sync-server checks only that the caller has a valid session and does not verify the caller is an admin, while the sibling POST /secret/ handler enforces an admin check in OpenID mode. Any authenticated non-admin BASIC user in OpenID multi-user deployments can probe the secrets store and learn which admin-managed bank-sync integrations have been configured, including simplefin_accessKey, pluggyai_clientSecret, pluggyai_itemIds, and the gocardless secrets. This issue is fixed in version 26.6.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:25.560"
+  },
+  {
+    "id": "CVE-2026-49471",
+    "description": "Serena is a powerful MCP toolkit for coding that provides semantic retrieval and editing capabilities. Prior to v1.5.2, Serena's built-in web dashboard exposes an unauthenticated Flask API on a fixed, predictable port, with no authentication, no CSRF protection, and no Host header validation. A DNS rebinding attack allows a malicious webpage to reach this API from any browser and write arbitrary content to the agent's persistent memory store, which the agent reads and acts on autonomously. Combined with execute_shell_command using shell=True, this creates a remote code execution chain requiring only that the victim visit a malicious webpage while Serena is running. This issue is fixed in version v1.5.2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:25.833"
+  },
+  {
+    "id": "CVE-2026-50007",
+    "description": "Actual is an open-source personal finance application. Prior to 26.7.0, a missing authorization issue allows a shared user with user_access on a budget file to perform owner-only file management actions. A non-owner shared user can call file-management endpoints intended for higher-privilege users, including /delete-user-file, /reset-user-file, and /user-create-key, because requireFileAccess treats ordinary shared access as sufficient for file-management operations that should be restricted to the file owner or an administrator. This issue is fixed in version 26.7.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:25.977"
+  },
+  {
+    "id": "CVE-2026-50529",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, the /de2api/share/proxyInfo share interface generates and returns X-DE-LINK-TOKEN before validating the share password or ticket, allowing unauthenticated attackers who know a protected share UUID to obtain a valid link token for subsequent share-related API calls even with missing or invalid credentials. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:26.110"
+  },
+  {
+    "id": "CVE-2026-50530",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, a share mode chart data interface only validates that sceneId matches the resourceId in the link token and fails to validate whether tableId and field IDs in the request body belong to the shared resource, allowing an attacker with a valid share link token to replace dataset identifiers and retrieve unauthorized data through POST /de2api/chartData/getData. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:26.240"
+  },
+  {
+    "id": "CVE-2026-53511",
+    "description": "calibre is an e-book manager. Prior to 9.10.0, a malicious EPUB, OPF, or PDF file can execute arbitrary Python code when its metadata is read by calibre, including through Add books or Edit books, by embedding a custom column definition with a python: template in calibre:user_metadata that is passed unsanitized to exec() in the template formatter. This issue is fixed in version 9.10.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:26.380"
+  },
+  {
+    "id": "CVE-2026-53729",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, any authenticated user can download (/exportCenter/download/{id}), delete (/exportCenter/delete), retry (/exportCenter/retry/{id}), or generate download links (/exportCenter/generateDownloadUri/{id}) for export tasks belonging to other users by manipulating the task ID parameter, and the /exportCenter/download/{id} endpoint is whitelisted from authentication, allowing unauthenticated access to exported files. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:26.543"
+  },
+  {
+    "id": "CVE-2026-53730",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, the /de2api/datasetData/previewSql endpoint lacks the mandatory @DePermit permission validation annotation, allowing any authenticated user to specify datasourceId=-1, access the built-in engine database, execute arbitrary SQL statements, and read sensitive core data. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:26.700"
+  },
+  {
+    "id": "CVE-2026-53751",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, the H2 database JDBC URL validation logic can be bypassed with special Unicode characters whose case-conversion behavior differs between DataEase validation and H2 parsing, allowing attackers to smuggle dangerous parameters such as init in malicious H2 JDBC connection strings and achieve arbitrary code execution. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:26.857"
+  },
+  {
+    "id": "CVE-2026-53935",
+    "description": "Cilium is a networking, observability, and security solution. Prior to 1.17.16, from 1.18.2 to 1.18.9, and from 1.19.0 to 1.19.3, users with the ability to create CiliumLocalRedirectPolicies can specify arbitrary ClusterIPs via addressMatcher, enabling hijacking traffic to Services in any namespace and bypassing namespace scoping enforced by serviceMatcher; deleting such a policy can also corrupt Cilium internal service state and stop service translation for the affected Service. This issue is fixed in versions 1.17.16, 1.18.10, and 1.19.4.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:27.000"
+  },
+  {
+    "id": "CVE-2026-55417",
+    "description": "Chevereto is a self-hosted media-sharing platform. Starting in version 3.7.5 and prior to version 4.5.4, when a user enables the private profile option, visiting their profile HTML route (`/username`) correctly returns 404. However, the `/json` AJAX listing endpoint does not apply the same check. An unauthenticated caller who knows the target's user ID can retrieve all of that user's publicly-scoped images, revealing the username (which should be private). This is patched in Chevereto v4.5.4. No known workarounds are available.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:27.160"
+  },
+  {
+    "id": "CVE-2026-55434",
+    "description": "Coder allows organizations to provision remote development environments via Terraform. Starting in version 2.33.0 and prior to versions 2.33.8 and 2.34.2, AI Bridge provider handlers read request bodies with `io.ReadAll` without a maximum size so an authenticated user with AI Bridge access could send an arbitrarily large body and exhaust memory. Exploitation requires authenticated access to the AI Bridge endpoints and the impact is limited to availability (denial of service). Versions 2.33.8 and 2.34.2 patch the issue. No known workarounds are available.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:27.290"
+  },
+  {
+    "id": "CVE-2026-55592",
+    "description": "Dashy is a self-hostable personal dashboard. Prior to 4.3.7, Dashy's workspace view trusts the url query parameter and assigns it directly to an iframe source without scheme validation. If a logged-in user opens a crafted workspace link containing a javascript: URL, JavaScript runs on the Dashy origin and can read same-origin browser data, interact with the Dashy DOM, and send requests as the victim. This issue is fixed in version 4.3.7.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:27.433"
+  },
+  {
+    "id": "CVE-2026-55631",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, the font management module allows authenticated users to submit an arbitrary fileTransName when creating a font record; when the record is later deleted, the backend concatenates that stored value with the font storage directory and passes it to FileUtils.deleteFile() without path traversal sanitization, allowing deletion of arbitrary writable files in the application container. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:27.593"
+  },
+  {
+    "id": "CVE-2026-55633",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, a bypass of the H2 zip protocol and file dropper fix allows an authenticated attacker to upload a zip archive disguised with a .ttf extension through FontManage.saveFile and then exploit it through the zip protocol to achieve remote code execution. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:27.750"
+  },
+  {
+    "id": "CVE-2026-55635",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, chart quota and Y-axis filters embed attacker-controlled filter values directly into generated SQL in Quota2SQLObj.getYWheres() without applying the SQL literal validation and escaping used by other filter paths, allowing an authenticated user who can create or modify chart definitions or submit chart data requests containing quota filters to inject SQL into queries executed against configured datasources. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:27.903"
+  },
+  {
+    "id": "CVE-2026-55647",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, dashboard text components render stored component content with Vue v-html without server-side HTML sanitization, allowing an authenticated user who can edit dashboard component data to inject HTML with executable event handlers that execute when another user or shared-link visitor views the dashboard. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:28.060"
+  },
+  {
+    "id": "CVE-2026-57172",
+    "description": "DataEase is an open source data visualization and analysis tool. Prior to 2.10.24, ShareSecretManage uses a hardcoded default share link signature key, allowing an attacker who can obtain a passwordless share for a resource and user to use the known key link-pwd-fit2cloud to forge linkToken JWTs, bypass TokenFilter verification, and access backend resources as the share creator even if the original share has been revoked. This issue is fixed in version 2.10.24.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:28.223"
+  },
+  {
+    "id": "CVE-2026-58469",
+    "description": "GNU Wget through 1.25.0, fixed in commit 37a40fc, contains a heap buffer underread vulnerability in the clean_metalink_string() function within src/metalink.c that allows a malicious server to trigger memory corruption by serving a Metalink document containing a whitespace-only URL. Attackers can cause the function to decrement a pointer past the start of the buffer when processing an all-whitespace Metalink URL, potentially leading to abnormal program behavior.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:28.383"
+  },
+  {
+    "id": "CVE-2026-58470",
+    "description": "GNU Wget through 1.25.0, fixed in commit 43d3ba9, contains an integer overflow vulnerability in the parse_content_range() function within src/http.c that allows server-controlled values to cause signed integer arithmetic to overflow. Attackers can supply malicious Content-Range header values to trigger undefined behavior and download desynchronization in the affected client.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:28.553"
+  },
+  {
+    "id": "CVE-2026-58471",
+    "description": "GNU Wget through 1.25.0, fixed in commit c2640fe, contains a heap buffer overflow vulnerability in the convert_fname() function within src/url.c that allows remote attackers to trigger memory corruption through a server-supplied filename requiring character set conversion. When the output buffer is too small during iconv E2BIG reallocation, the reallocation logic miscalculates the remaining space, leading to a heap buffer overflow that can be exploited via a maliciously crafted server response.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:28.710"
+  },
+  {
+    "id": "CVE-2026-58472",
+    "description": "GNU Wget through 1.25.0, fixed in commit dd692d9, contains a heap buffer overflow vulnerability in the html_quote_string() function in src/convert.c that allows a remote attacker to trigger memory corruption by supplying a crafted HTML attribute with a large number of characters requiring entity encoding. A server-supplied HTML attribute causes a signed integer counter to overflow during output size accumulation, resulting in an undersized heap allocation and subsequent heap buffer overflow during the copy phase.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:28.873"
+  },
+  {
+    "id": "CVE-2026-58473",
+    "description": "Cognee before 1.2.0 contains an improper access control vulnerability that allows unauthenticated attackers to overwrite the global LLM provider configuration by self-registering an account and calling the settings endpoint, which performs no admin or superuser check. Attackers can redirect all LLM operations instance-wide to an attacker-controlled endpoint by exploiting the process-wide singleton configuration cache, enabling exfiltration of prompts, uploaded documents, extracted entities, and knowledge graph content from all users.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:29.007"
+  },
+  {
+    "id": "CVE-2026-58583",
+    "description": "FluxInk (formerly Sunia SPB Peripheral) Color Management Driver (TcnPeripheral64.sys) 1.0.7.2 allows local privilege escalation for a standard user account via arbitrary physical memory mapping at \\Device\\PhysicalMemory. Fixed in version 1.0.7.6. The fixed driver is currently available in the Windows 11 25H2 HLK (Hardware Lab Kit). The fixed driver may be available through Windows Update or from Lenovo directly.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:29.163"
+  },
+  {
+    "id": "CVE-2026-59707",
+    "description": "LocalAI contains an unauthenticated server-side request forgery vulnerability in the POST /models/apply endpoint that allows attackers to fetch arbitrary internal URLs. The endpoint passes unsanitized gallery URL fields directly to gallery.GetGalleryConfigFromURLWithContext without proper validation, enabling attackers to force the server to issue HTTP GET requests to private and loopback ranges with partial response content leaked through error messages.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T21:17:29.340"
+  },
+  {
+    "id": "CVE-2026-28378",
+    "description": "The public dashboard deletion endpoint does not enforce organization isolation, allowing an Org Admin in one organization to delete public dashboards belonging to a different organization by supplying the target dashboard's identifiers.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:50.607"
+  },
+  {
+    "id": "CVE-2026-42953",
+    "description": "The application contains an out-of-bounds write vulnerability that can be exploited by an attacker to cause the program to write data past the end of an allocated memory buffer. This can lead to arbitrary code execution.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:51.897"
+  },
+  {
+    "id": "CVE-2026-42958",
+    "description": "The application contains a use-after-free vulnerability that can be exploited to cause memory corruption while parsing specially crafted files. This could allow an attacker to execute arbitrary code in the context of the current process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:52.060"
+  },
+  {
+    "id": "CVE-2026-45796",
+    "description": "Coder allows organizations to provision remote development environments via Terraform. Versions prior tp 2.24.5, 2.29.13, 2.30.8, 2.31.12, 2.32.2, and 2.33.3 are vulnerable to unauthenticated semi-blind Server-Side Request Forgery (SSRF) via the Azure instance identity endpoint (`POST /api/v2/workspaceagents/azure-instance-identity`). An external attacker can force the Coder server to issue HTTP GET requests to arbitrary internal or external hosts by submitting a crafted PKCS#7 signature. The server does not return the target's response body, but error messages in the API response reveal whether the target is reachable and what type of failure occurred. Versions 2.24.5, 2.29.13, 2.30.8, 2.31.12, 2.32.2, and 2.33.3 patch the issue. As a workaround, if the Azure identity-auth mechanism is not being used then restrict access to the corresponding endpoint (`/api/v2/workspaceagents/azure-instance-identity`) using ingress firewall and/or proxy ACLs.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:52.317"
+  },
+  {
+    "id": "CVE-2026-46354",
+    "description": "Coder allows organizations to provision remote development environments via Terraform. In versions prior tp 2.24.5, 2.29.13, 2.30.8, 2.31.12, 2.32.2, and 2.33.3, `azureidentity.Validate()` verifies that the PKCS#7 signer certificate chains to a trusted Azure CA but never verifies the PKCS#7 signature itself. An attacker can embed a legitimate Azure certificate alongside arbitrary content e.g. `{\"vmId\":\"<target>\"}` and the forged `vmId` will be accepted returning the victim workspace agent's session token. No authentication is required. The attacker only needs to know a target VM's `vmId` which is a `UUIDv4`. That's a practical limitation which would typically require prior access to be exploited. Versions 2.24.5, 2.29.13, 2.30.8, 2.31.12, 2.32.2, and 2.33.3 patch the issue. As a workaround, reconfigure any Azure templates to use token authentication rather than `azure-instance-identity`.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:52.467"
+  },
+  {
+    "id": "CVE-2026-49033",
+    "description": "The application contains a stack-based buffer overflow vulnerability that can be exploited by an attacker to execute arbitrary code.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:52.637"
+  },
+  {
+    "id": "CVE-2026-49229",
+    "description": "Actual is a local-first personal finance app. Prior to 26.6.0, in OpenID multi-user mode, disabling a user only blocks future OpenID login for that identity, while existing Actual session tokens for the disabled user remain valid. The shared session validation path accepts any existing token row that has not expired without checking whether the associated user is still enabled, allowing a disabled user to continue calling authenticated server endpoints. This issue is fixed in version 26.6.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:52.780"
+  },
+  {
+    "id": "CVE-2026-50179",
+    "description": "Actual is a local-first personal finance tool. Prior to 26.6.0, exportToCSV and exportQueryToCSV in packages/loot-core/src/server/transactions/export/export-to-csv.ts pass user-controlled Payee, Notes, Account, and Category strings to csv-stringify with no cast callback and no formula-prefix neutralization. Strings that begin with equals sign, plus, minus, at sign, tab, or carriage return survive verbatim into the exported CSV, and when a recipient opens the file in Excel, LibreOffice Calc, or Google Sheets, the strings are interpreted as formulas, enabling transaction data exfiltration and attacker-chosen spreadsheet display values. This issue is fixed in version 26.6.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:52.923"
+  },
+  {
+    "id": "CVE-2026-54601",
+    "description": "FastGPT is an open source AI knowledge base platform. From 4.14.17 to before 4.15.0-beta4, FastGPT allows an authenticated tenant user to call POST /api/core/dataset/collection/create/reTrainingCollection in a way that persists a server-owned datasetId value from another tenant. This creates mixed dataset objects and downstream dataset, collection, and training endpoints then make authorization decisions from inconsistent ownership anchors, allowing cross-tenant read, update, and delete access when mixed object ids are known. This issue is fixed in version 4.15.0-beta4.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:53.060"
+  },
+  {
+    "id": "CVE-2026-54602",
+    "description": "FastGPT is a knowledge-based AI application platform. Prior to 4.15.0, GET /api/core/ai/record/getRecord authenticates the caller but loads LLM request and response traces only by requestId without team scoping, allowing any authenticated user to read another team's prompts, retrieved RAG chunks, and completions if the requestId is known. This issue is fixed in version 4.15.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:53.217"
+  },
+  {
+    "id": "CVE-2026-54607",
+    "description": "FastGPT is a knowledge-based AI application platform. Prior to 4.15.0-beta4, the HTTP-tool OpenAPI schema importer validates only the top-level URL before passing it to SwaggerParser.bundle, whose remote reference resolver fetches $ref URLs without FastGPT's internal-address guard and returns fetched content inline, allowing an authenticated team member to read internal services or cloud metadata. This issue is fixed in version 4.15.0-beta4.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:53.357"
+  },
+  {
+    "id": "CVE-2026-54698",
+    "description": "Hasura is an open-source product that provides users GraphQL or REST APIs. Prior to 2.49.2 and 2.45.5, a user can use a where clause on a table computed field (returning SETOF some_table) to infer row values that ought to be filtered for their role based on some_table's row-level permissions. While such rows cannot be returned directly, like predicates on strings for instance allow values to be brute forced efficiently with the where clause as an oracle. This issue is fixed in versions 2.49.2 and 2.45.5.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:53.500"
+  },
+  {
+    "id": "CVE-2026-55075",
+    "description": "Coder allows organizations to provision remote development environments via Terraform. Prior to versions 2.29.7, 2.32.7, 2.33.8, and 2.34.2, two flaws in Coder's OIDC login chained into account takeover. Email-based user matching fell back to linking by email without checking for an existing link to a different IdP subject and the `email_verified` claim was only enforced when present as a boolean `false` so an absent or non-boolean claim was treated as verified. The fix in versions 2.29.7, 2.32.7, 2.33.8, and 2.34.2 restricts the email fallback to first-time and legacy linking and defaults `email_verified` to false when the claim is absent or of an unexpected type. As a workaround, configure the OIDC provider to disallow self-registration or to require email verification before issuing tokens.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:53.650"
+  },
+  {
+    "id": "CVE-2026-55408",
+    "description": "Koodo Reader is an ebook reader. In version 2.3.0 and earlier, Koodo Reader is vulnerable to remote code execution through malicious EPUB files because the open-book IPC handler enables nodeIntegrationInSubFrames and EPUB chapter content is rendered with unsanitized innerHTML. An attacker can craft an EPUB book that, when imported and opened by the victim, instantiates a hidden iframe with Node.js API access and executes arbitrary operating system commands with the victim user's privileges. This issue is fixed in version 2.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:53.790"
+  },
+  {
+    "id": "CVE-2026-55418",
+    "description": "FastGPT is an open source AI knowledge base platform. Prior to v4.15.0-beta5, two FastGPT file handlers authorize an unrelated resource and then sign or read an S3 object using a key taken directly from the request, without checking that the key belongs to the caller's team. Because S3 object keys are global within the bucket and carry the tenant id only as a path segment, an attacker can supply another team's key and obtain its file contents through the chat-file presign endpoint or dataset preview endpoint. This issue is fixed in version v4.15.0-beta5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:53.930"
+  },
+  {
+    "id": "CVE-2026-55490",
+    "description": "OpenWrt is a Linux operating system targeting embedded devices. Before v25.12.5, an integer underflow in handle_send_a() of the Emergency Access Daemon allows any unauthenticated attacker on the local network to crash the daemon by sending a single crafted UDP packet. The message length underflows before a bounds check and is then passed to memcpy as a very large size. This issue is fixed v25.12.5.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:54.060"
+  },
+  {
+    "id": "CVE-2026-58266",
+    "description": "Anki is a program for creating and reviewing flashcards. Prior to 25.09.4, Anki's webview-based pages communicate with the Rust backend using an internal localhost API, and user scripts included via iframes in the editor can access this API despite protections intended to block reviewer and editor scripts. A malicious imported card package with an embedded iframe can use exposed API methods such as getImageForOcclusion to read arbitrary files accessible to the Anki process and exfiltrate them over the network. This issue is fixed in version 25.09.4.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:54.207"
+  },
+  {
+    "id": "CVE-2026-59153",
+    "description": "Anki is a program for creating and reviewing flashcards. Prior to 25.09.3, Anki launches a local HTTP server to serve media files and web pages for parts of its interface, but requests from other origins were not sufficiently blocked. A malicious website could potentially trigger side-effecting requests to the local server, with severity varying by browser depending on Private Network Access protections. This issue is fixed in version 25.09.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:54.363"
+  },
+  {
+    "id": "CVE-2026-59706",
+    "description": "mem0 contains unauthenticated config API endpoints that expose LLM API keys in plaintext and allow server-side request forgery via attacker-controlled ollama_base_url parameter. Unauthenticated attackers can retrieve stored secrets like OpenAI API keys via GET /api/v1/config/ or trigger SSRF attacks by setting ollama_base_url to internal addresses like cloud IMDS via PUT /api/v1/config/mem0/llm endpoint.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-07T22:16:54.503"
   }
 ]
