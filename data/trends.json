@@ -8325,8 +8325,8 @@
   {
     "id": "CVE-2026-0267",
     "description": "An information exposure vulnerability in the Palo Alto Networks GlobalProtect app on macOS enables a local user to learn the configured passcodes for disabling, disconnecting, or uninstalling the GlobalProtect app. After the passcode is known, the user can perform these actions even if the GlobalProtect app configuration would not normally permit them to do so.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Globalprotect",
     "published": "2026-06-10T22:16:53.187"
   },
   {
@@ -10397,8 +10397,8 @@
   {
     "id": "CVE-2026-45169",
     "description": "Idira Privileged Access Manager (PAM) Self-Hosted Vault versions prior to 15.0.3, 14.6.5, 14.2.7, and 14.0.8 exhibit a validation vulnerability. Under specific circumstances and configuration scenarios, processing unexpected input could potentially lead to an unexpected service termination, resulting in a localized denial of service (DoS). CyberArk Security Bulletin: CA26-17",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Idira privileged access manager vault",
     "published": "2026-06-12T05:16:32.703"
   },
   {
@@ -15508,7 +15508,7 @@
     "id": "CVE-2026-46331",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/sched: fix pedit partial COW leading to page cache corruption\n\ntcf_pedit_act() computes the COW range for skb_ensure_writable()\nonce before the key loop using tcfp_off_max_hint, but the hint does\nnot account for the runtime header offset added by typed keys. This\ncan leave part of the write region un-COW'd.\n\nFix by moving skb_ensure_writable() inside the per-key loop where\nthe actual write offset is known, and add overflow checking on the\noffset arithmetic. For negative offsets (e.g. Ethernet header edits\nat ingress), use skb_cow() to COW the headroom instead. Guard\noffset_valid() against INT_MIN, where negation is undefined.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-16T08:16:23.993"
   },
   {
@@ -32630,42 +32630,42 @@
     "id": "CVE-2026-53133",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nRDMA/umem: Fix truncation for block sizes >= 4G\n\nWhen the iommu is used the linearization of the mapping can give a single\nblock that is very large split across multiple SG entries.\n\nWhen __rdma_block_iter_next() reassembles the split SG entries it is\noverflowing the 32 bit stack values and computed the wrong DMA addresses\nfor blocks after the truncation.\n\nUse the right types to hold DMA addresses.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:30.537"
   },
   {
     "id": "CVE-2026-53134",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nft_fib: fix stale stack leak via the OIFNAME register\n\nFor NFT_FIB_RESULT_OIFNAME the destination register is declared with\nlen = IFNAMSIZ (four 32-bit registers), but on the lookup-fail,\nRTN_LOCAL and oif-mismatch paths nft_fib{4,6}_eval() only writes one\nregister via \"*dest = 0\". The remaining three registers are left as\nwhatever was on the stack in nft_do_chain()'s struct nft_regs, and a\ndownstream expression that loads the register span can leak that\nuninitialised kernel stack to userspace.\n\nThe NFTA_FIB_F_PRESENT existence check has the same shape: it is only\nmeaningful for NFT_FIB_RESULT_OIF, yet it was accepted for any result type\nwhile the eval stores a single byte via nft_reg_store8(), leaving the rest\nof the declared span stale.\n\nFix both:\n\n - replace the bare \"*dest = 0\" in the eval with nft_fib_store_result(),\n   which strscpy_pad()s the whole IFNAMSIZ for OIFNAME (and is already\n   used on the other early-return path), and\n\n - restrict NFTA_FIB_F_PRESENT to NFT_FIB_RESULT_OIF and declare its\n   destination as a single u8, so the marked span matches the one byte\n   the eval writes.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:30.657"
   },
   {
     "id": "CVE-2026-53135",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/display: Fix NULL deref and buffer over-read in SDP debugfs\n\n[Why & How]\ndp_sdp_message_debugfs_write() dereferences connector->base.state->crtc\nwithout checking for NULL. A connector can be connected but not bound to\nany CRTC (e.g. after hot-plug before the next atomic commit), causing a\nkernel crash when writing to the sdp_message debugfs node.\n\nThe function also ignores the user-provided size argument and always\npasses 36 bytes to copy_from_user(), reading past the user buffer when\nsize < 36.\n\nFix both issues by:\n- Returning -ENODEV when connector->base.state or state->crtc is NULL\n- Clamping write_size to min(size, sizeof(data))\n\n(cherry picked from commit 6ab4c36a522842ff70474a1c0af2e40e50fc8300)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:30.787"
   },
   {
     "id": "CVE-2026-53136",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/display: Clamp VBIOS HDMI retimer register count to array size\n\n[Why & How]\nThe VBIOS integrated info tables (v1_11 and v2_1) contain HdmiRegNum and\nHdmi6GRegNum fields that are used as loop bounds when copying retimer I2C\nregister settings into fixed-size arrays (dp*_ext_hdmi_reg_settings[9]\nand dp*_ext_hdmi_6g_reg_settings[3]). These u8 fields are not validated\nbefore use, so a malformed VBIOS can specify values up to 255, causing an\nout-of-bounds heap write during driver probe.\n\nClamp each register count to the destination array size using min_t()\nbefore the copy loops, in both get_integrated_info_v11() and\nget_integrated_info_v2_1().\n\n(cherry picked from commit 5a7f0ef90195940c54b0f5bb85b87da55f038c69)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:30.910"
   },
   {
     "id": "CVE-2026-53137",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/display: Clamp HDMI HDCP2 rx_id_list read to buffer size\n\n[Why & How]\nDuring HDCP 2.x repeater authentication over HDMI, the driver reads the\nsink's RxStatus register and extracts a 10-bit message size field (max\nvalue 1023). This value is used as the read length for the ReceiverID\nlist without being clamped to the size of the destination buffer\nrx_id_list[177]. A malicious HDMI repeater could advertise a message\nsize larger than the buffer, causing an out-of-bounds write during the\nI2C read.\n\nClamp the read length in mod_hdcp_read_rx_id_list() to the size of the\nrx_id_list buffer, matching the approach already used in the DP branch.\n\n(cherry picked from commit 229212219e4247d9486f8ba41ef087358490be09)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:31.030"
   },
   {
     "id": "CVE-2026-53138",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/display: Bound VBIOS record-chain walk loops\n\n[Why & How]\nAll record-chain walk loops in bios_parser.c and bios_parser2.c use\nfor(;;) and only terminate on a 0xFF record_type sentinel or zero\nrecord_size. A malformed VBIOS image missing the terminator record\ncauses unbounded iteration at probe time, potentially hundreds of\nthousands of iterations with record_size=1. In the final iterations\nnear the BIOS image boundary, struct casts beyond the 2-byte header\nvalidated by GET_IMAGE can also read out of bounds.\n\nCap all 14 record-chain walk loops to BIOS_MAX_NUM_RECORD (256)\niterations. The atombios.h defines up to 22 distinct record types\nand atomfirmware.h has 13. Assuming an average of less than 10\nrecords per type (which is reasonable since most are connector-\nbased) 256 is a generous upper bound.\n\n(cherry picked from commit 95700a3d660287ed657d6892f7be9ffc0e294a93)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:31.150"
   },
   {
@@ -32685,15 +32685,15 @@
   {
     "id": "CVE-2026-53141",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/v3d: Fix global performance monitor reference counting\n\nIn the SET_GLOBAL ioctl, v3d_perfmon_find() bumps the reference count on\nthe perfmon it returns, but v3d_perfmon_set_global_ioctl() and\nv3d_perfmon_delete() fail to release that reference on several paths:\n\n  1. v3d_perfmon_set_global_ioctl() leaks the reference on its error\n     paths.\n\n  2. CLEAR_GLOBAL leaks both the find reference and the reference\n     previously stashed in v3d->global_perfmon by the SET_GLOBAL ioctl\n     that configured it.\n\n  3. Destroying a perfmon that is the current global perfmon leaks the\n     reference stashed by the SET_GLOBAL ioctl.\n\nRelease each of these references explicitly.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:31.423"
   },
   {
     "id": "CVE-2026-53142",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/xe/display: fix oops in suspend/shutdown without display\n\nThe xe driver keeps track of whether to probe display, and whether\ndisplay hardware is there, using xe->info.probe_display. It gets set to\nfalse if there's no display after intel_display_device_probe(). However,\nthe display may also be disabled via fuses, detected at a later time in\nintel_display_device_info_runtime_init().\n\nIn this case, the xe driver does for_each_intel_crtc() on uninitialized\nmode config in xe_display_flush_cleanup_work(), leading to a NULL\npointer dereference, and generally calls display code with display info\ncleared.\n\nCheck for intel_display_device_present() after\nintel_display_device_info_runtime_init(), and reset\nxe->info.probe_display as necessary. Also do unset_display_features()\nfor completeness, although display runtime init has already done\nthat. This will need to be unified across all cases later.\n\nMove intel_display_device_info_runtime_init() call slightly earlier,\nsimilar to i915, to avoid a bunch of unnecessary setup for no display\ncases.\n\nNote #1: The xe driver has no business doing low level display plumbing\nlike for_each_intel_crtc() to begin with. It all needs to happen in\ndisplay code.\n\nNote #2: The actual bug is present already in commit 44e694958b95\n(\"drm/xe/display: Implement display support\"), but the oops was likely\nintroduced later at commit ddf6492e0e50 (\"drm/xe/display: Make display\nsuspend/resume work on discrete\").\n\n(cherry picked from commit 7c3eb9f47533220888a67266448185fd0775d4da)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:31.513"
   },
   {
@@ -32706,8 +32706,8 @@
   {
     "id": "CVE-2026-53144",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amdkfd: fix NULL dereference in get_queue_ids()\n\nWhen usr_queue_id_array is NULL and num_queues is non-zero,\nget_queue_ids() returns NULL. The callers check only IS_ERR() on the\nreturn value; since IS_ERR(NULL) == false the check passes, and\nsuspend_queues() calls q_array_invalidate() which immediately\ndereferences NULL while iterating num_queues times.\n\nUserspace can trigger this via kfd_ioctl_set_debug_trap() by supplying\nnum_queues > 0 with a zero queue_array_ptr, causing a kernel panic.\n\nA NULL usr_queue_id_array with num_queues == 0 is a legitimate no-op\n(q_array_invalidate never executes, and resume_queues already guards\nall queue_ids dereferences behind a NULL check). Return ERR_PTR(-EINVAL)\nonly when num_queues is non-zero and the pointer is absent; both callers\nalready propagate IS_ERR() returns correctly to userspace.\n\n(cherry picked from commit f165a82cdf503884bb1797771c61b2fcc72113d4)",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-25T09:16:31.710"
   },
   {
@@ -39208,14 +39208,14 @@
   },
   {
     "id": "CVE-2026-13573",
-    "description": "A vulnerability was found in llvm llvm-project up to 22.1.6. This affects the function llvm::StringMap::insert in the library /lib/IR/ValueSymbolTable.cpp of the component ValueSymbolTable Module. The manipulation results in stack-based buffer overflow. Attacking locally is a requirement. The exploit has been made public and could be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "description": "A vulnerability was found in llvm llvm-project up to 22.1.6. This affects the function llvm::StringMap::insert in the library /lib/IR/ValueSymbolTable.cpp of the component ValueSymbolTable Module. The manipulation results in stack-based buffer overflow. Attacking locally is a requirement. The exploit has been made public and could be used. The presence of this vulnerability remains uncertain at this time. The LLVM project explains, that the reported behavior is outside its documented security scope and therefore not considered a security vulnerability.",
     "severity": "Low",
     "tech": "Unknown",
     "published": "2026-06-29T15:16:38.687"
   },
   {
     "id": "CVE-2026-13574",
-    "description": "A vulnerability was determined in llvm llvm-project up to 22.1.6. This impacts the function GCRelocateInst::getBasePtr in the library llvm/lib/IR/IntrinsicInst.cpp of the component Bitcode File Handler. This manipulation causes heap-based buffer overflow. It is possible to launch the attack on the local host. The exploit has been publicly disclosed and may be utilized. The project was informed of the problem early through an issue report but has not responded yet.",
+    "description": "A vulnerability was determined in llvm llvm-project up to 22.1.6. This impacts the function GCRelocateInst::getBasePtr in the library llvm/lib/IR/IntrinsicInst.cpp of the component Bitcode File Handler. This manipulation causes heap-based buffer overflow. It is possible to launch the attack on the local host. The exploit has been publicly disclosed and may be utilized. There are still doubts about whether this vulnerability truly exists. The LLVM project explains, that the reported behavior is outside its documented security scope and therefore not considered a security vulnerability.",
     "severity": "Low",
     "tech": "Unknown",
     "published": "2026-06-29T15:16:38.857"
@@ -48569,14 +48569,14 @@
     "id": "CVE-2026-54408",
     "description": "A malicious actor with access to the network could exploit an Improper Access Control vulnerability found in UniFi Protect Application to bypass authentication for data streaming.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Unifi protect",
     "published": "2026-07-02T15:17:04.523"
   },
   {
     "id": "CVE-2026-54409",
     "description": "A malicious actor with access to the network and under certain conditions could exploit an Improper Initialization vulnerability found in UniFi Protect Application to bypass authentication in UniFi Protect Cameras.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Unifi protect",
     "published": "2026-07-02T15:17:04.627"
   },
   {
@@ -48618,7 +48618,7 @@
     "id": "CVE-2026-55115",
     "description": "A malicious actor with access to the network and low privileges could exploit a Server-Side Request Forgery (SSRF) in UniFi Protect Application to escalate privileges on the host device.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Unifi protect",
     "published": "2026-07-02T15:17:05.513"
   },
   {
@@ -48680,15 +48680,15 @@
   {
     "id": "CVE-2026-9272",
     "description": "In Progress Flowmon ADS versions prior to 12.5.6 and 13.0.5, a vulnerability exists whereby an adversary who is authenticated as a low-privileged user in the Anomaly Detection System (ADS) may send specially crafted requests that could result in unauthorized access to application data and its modification.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Flowmon anomaly detection system",
     "published": "2026-07-02T15:17:11.937"
   },
   {
     "id": "CVE-2026-44941",
     "description": "A relative path traversal in the \"keyhint\" option in repomd.xml parsing of libzypp before 17.38.12 can be used by attackers able to supply a malicious repository to inject or overwrite files in the target system as root.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Libzypp",
     "published": "2026-07-02T16:16:30.550"
   },
   {
@@ -48743,43 +48743,43 @@
   {
     "id": "CVE-2026-53422",
     "description": "Observable Response Discrepancy vulnerability in Erlang OTP ssh (ssh_sftpd module) allows an authenticated SFTP user to enumerate the existence of files and directories outside the configured root directory.\n\nThe SSH_FXP_REALPATH handler in ssh_sftpd calls relate_file_name/3 with Canonicalize=false, unlike every other SFTP operation handler. This allows .. components in the requested path to bypass the is_within_root/2 check without being resolved. The un-canonicalized path then enters resolve_symlinks/2, which walks up the directory tree above the configured root and issues read_link() syscalls on arbitrary filesystem paths.\n\nAn authenticated SFTP client can exploit this by sending a REALPATH request with a crafted traversal path. The server response differs depending on whether the target path exists on the host filesystem (SSH_FXP_NAME when the path resolves successfully, SSH_FX_NO_SUCH_FILE when it does not). This creates a path-existence oracle that an attacker can use to enumerate the filesystem structure outside the configured root, including the existence of sensitive files, directories, and mount points.\n\nThe vulnerability leaks only the existence of paths. No file contents, credentials, or write access are obtainable through this issue alone. The information gained may assist further attacks when combined with other vulnerabilities.\n\nThis vulnerability is associated with program files lib/ssh/src/ssh_sftpd.erl and program routine ssh_sftpd:handle_op/4.\n\nThis issue affects OTP from OTP 17.0 until OTP 29.0.3, 28.5.0.3, and 27.3.4.14 corresponding to ssh from 3.0.1 until 6.0.2, 5.5.2.2, and 5.2.11.9.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Erlang\\/otp",
     "published": "2026-07-02T17:17:01.473"
   },
   {
     "id": "CVE-2026-54886",
     "description": "Loop with Unreachable Exit Condition ('Infinite Loop') vulnerability in Erlang OTP ssh (ssh_sftpd module) allows an authenticated SFTP user to render an SFTP channel permanently unresponsive.\n\nThe handle_data/4 function in ssh_sftpd contains a catch-all clause that accepts channel data of any type. When channel data with a non-zero type code (SSH_MSG_CHANNEL_EXTENDED_DATA) arrives with an empty pending buffer and a payload at or below the SFTP packet size limit, the clause tail-calls itself with identical arguments, creating an infinite loop.\n\nThe SFTP protocol operates exclusively on normal channel data (type 0). Extended data (non-zero type) is meaningless for SFTP and is never sent by conforming clients. However, the SSH protocol permits any channel participant to send extended data on an open channel, so an authenticated SFTP client can trigger the loop by sending SSH_MSG_CHANNEL_EXTENDED_DATA with any data_type_code and any non-empty payload at or below the size limit.\n\nThe targeted ssh_sftpd process enters an infinite tail-recursive loop. It never processes another message, its message queue grows without bound, and it can only be stopped by killing the process. BEAM's reduction-based scheduler preemption continues to function, so other processes on the node are not starved, but each stuck channel process consumes its full CPU time share continuously and accumulates unbounded message queue memory. Opening many channels amplifies the CPU and memory impact.\n\nErlang/OTP SSH configurations using the default max_channels setting (infinity) allow an authenticated user to open unlimited channels per connection, amplifying the attack without requiring multiple TCP connections or authentications.\n\nNo file contents, credentials, or write access are obtainable through this issue. The impact is limited to denial of service on targeted SFTP channels, with secondary CPU degradation and memory growth.\n\nThis vulnerability is associated with program file lib/ssh/src/ssh_sftpd.erl and program routine ssh_sftpd:handle_data/4.\n\nThis issue affects OTP from OTP 17.0 until OTP 29.0.3, 28.5.0.3, and 27.3.4.14 corresponding to ssh from 3.0.1 until 6.0.2, 5.5.2.2, and 5.2.11.9.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Erlang\\/otp",
     "published": "2026-07-02T17:17:02.387"
   },
   {
     "id": "CVE-2026-54887",
     "description": "Use of Default Cryptographic Key vulnerability in Erlang/OTP ssl (DTLS server) allows predictable DTLS cookie computation during the startup window, enabling source address verification bypass.\n\nOn DTLS server startup, dtls_server_connection:initial_hello/3 initializes previous_cookie_secret to the empty binary (<<>>) instead of a random value. Because HMAC with an empty key is deterministic, anyone who observes the plaintext ClientHello can compute dtls_handshake:cookie(<<>>, IP, Port, Hello) and forge a valid DTLS cookie before the first rotation of the cookie secret. The DTLS cookie (RFC 6347 §4.2.1) is a denial-of-service mitigation that prevents spoofed source IPs from forcing the server to allocate state and perform expensive cryptographic operations; it is not an authentication mechanism. During the window from server startup until the first secret rotation (0 to 15 seconds), an attacker who can observe the plaintext ClientHello can bypass the source address verification, enabling DTLS handshake amplification with spoofed source addresses.\n\nThis vulnerability is associated with program file lib/ssl/src/dtls_server_connection.erl and program routine dtls_server_connection:initial_hello/3.\n\nThis issue affects OTP from OTP 20.0 before 29.0.3, 28.5.0.3 and 27.3.4.14 corresponding to ssl from 8.2 before 11.7.3, 11.6.0.3 and 11.2.12.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Erlang\\/otp",
     "published": "2026-07-02T17:17:02.570"
   },
   {
     "id": "CVE-2026-54891",
     "description": "Improper Enforcement of Message Integrity During Transmission in a Communication Channel vulnerability in Erlang/OTP ssl (tls_gen_connection module) allows a network-positioned attacker to inject unauthenticated plaintext that the TLS client application later treats as authenticated server data.\n\nThe function tls_gen_connection:handle_protocol_record/3 rejects APPLICATION_DATA records that arrive in pre-handshake states when the TLS endpoint acts as a server, but does not apply the same check when the endpoint acts as a client. A network-positioned attacker can send plaintext APPLICATION_DATA records to the client during the handshake. The records are buffered and, once the handshake completes successfully, delivered to the application as if they were authenticated post-handshake data. The attacker cannot observe the client's response or steer the connection, so the impact is limited to blind injection of unauthenticated bytes. The injection window is wider for TLS versions prior to TLS 1.3 than for TLS 1.3.\n\nThis vulnerability is associated with program file lib/ssl/src/tls_gen_connection.erl.\n\nThis issue affects OTP from OTP 17.0 before 29.0.3, 28.5.0.3 and 27.3.4.14 corresponding to ssl from 5.3.4 before 11.7.3, 11.6.0.3 and 11.2.12.10. TLS 1.3 is affected starting with OTP 22.0, when TLS 1.3 support was added.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Low",
+    "tech": "Erlang\\/otp",
     "published": "2026-07-02T17:17:02.747"
   },
   {
     "id": "CVE-2026-55950",
     "description": "Time-of-check Time-of-use (TOCTOU) race condition vulnerability in Erlang/OTP ssl (dtls_packet_demux module) allows an unauthenticated remote attacker to crash all active DTLS sessions on a listener.\n\nA DTLS server listener uses a single shared dtls_packet_demux gen_server process to route incoming UDP datagrams to the correct connection handler. When a DTLS client reconnects rapidly from the same source address and port (sending multiple ClientHello messages in quick succession), a race condition in the demux's internal gb_trees key-value store causes a {key_exists, {old, Client}} crash, terminating the demux process. Because the demux is shared across all DTLS associations on that listener, its crash immediately kills every active DTLS session, not just the attacker's.\n\nThe attack is pre-authentication: the attacker only needs to send UDP datagrams containing valid ClientHello messages from the same source IP and port before the intermediate DOWN monitor message is processed by the gen_server. No credentials, no completed handshake, and no special configuration are required, and the crash can be repeated indefinitely to create a persistent denial of service for all clients of that listener.\n\nThis vulnerability is associated with program file lib/ssl/src/dtls_packet_demux.erl.\n\nThis issue affects OTP from OTP 25.3 before 29.0.3, 28.5.0.3, and 27.3.4.14 corresponding to ssl from 10.9 before 11.7.3, 11.6.0.3, and 11.2.12.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Erlang\\/otp",
     "published": "2026-07-02T17:17:02.910"
   },
   {
     "id": "CVE-2026-55952",
     "description": "The Erlang/OTP ssl application does not validate that the PSK identity list and binder list carried in a TLS 1.3 ClientHello pre-shared key extension have equal length before passing them to the session ticket handler. In tls_handshake_1_3:handle_pre_shared_key/3, an OfferedPreSharedKeys record with a mismatched number of identities and binders is forwarded directly to tls_server_session_ticket:use/4, which crashes the session ticket handler process.\n\nAn unauthenticated remote attacker can send a single crafted ClientHello to a TLS 1.3 server with session tickets enabled (stateful or stateless mode) and permanently disrupt session ticket handling on that listener. New TLS 1.3 handshakes complete but subsequently crash when the server attempts to issue a session ticket, effectively making TLS 1.3 unusable on the affected listener until the ssl application is restarted. TLS 1.2 connections are not affected.\n\nThis issue affects OTP from 22.2 before 29.0.3, 28.5.0.3 and 27.3.4.14 corresponding to ssl from 9.5 before 11.7.3, 11.6.0.3 and 11.2.12.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Erlang\\/otp",
     "published": "2026-07-02T17:17:03.067"
   },
   {
@@ -48814,7 +48814,7 @@
     "id": "CVE-2025-71385",
     "description": "Netdata before 2.3.1 reflects the user-supplied love query parameter of the api/v2/ilove.svg and api/v3/ilove.svg endpoints verbatim into the generated SVG document (into a text element) without HTML or XML escaping, and serves the response with Content-Type image/svg+xml. An attacker can craft a URL such as /api/v2/ilove.svg?love=<script>...</script>; when a victim navigates to it the injected script executes in the victim browser in the origin of the Netdata instance (reflected cross-site scripting). These endpoints are registered with HTTP_ACL_NOCHECK and anonymous access and, because bearer-token protection is disabled by default, are reachable without authentication on a default Netdata agent. The issue was resolved by removing the ilove endpoint.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Netdata",
     "published": "2026-07-02T20:17:00.420"
   },
   {
@@ -48877,7 +48877,7 @@
     "id": "CVE-2026-59093",
     "description": "Weaviate before 1.38.0 does not verify that a principal performing an RBAC role assignment holds the permissions granted by the assigned role. The assignRoleToUser and assignRoleToGroup handlers (POST /authz/users/{id}/assign and /authz/groups/{id}/assign) authorize only that the caller may assign roles to the target user or group, not the permissions contained in the assigned roles, unlike role creation which enforces that a user can only create roles with permissions less than or equal to its own. A user holding only the delegated assign_and_revoke_users or assign_and_revoke_groups permission can assign the built-in admin role, or any high-privilege custom role, to itself or others, escalating to full administrative control of the database.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Weaviate",
     "published": "2026-07-02T20:17:07.410"
   },
   {
@@ -49367,7 +49367,7 @@
     "id": "CVE-2026-11586",
     "description": "By default, curl automatically responds to WebSocket PING frames. Because curl\nlacks an upper bound on memory allocation for unacknowledged frames, a\nmalicious server can exhaust all available memory by flooding curl with rapid,\nsequential PING messages.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:23.883"
   },
   {
@@ -49444,35 +49444,35 @@
     "id": "CVE-2026-9079",
     "description": "libcurl had a flaw that when instructed to clear proxy authentication\ncredentials which made it not do so, leaving the old credentials around to get\nused for subsequent transfers that should not know nor use them.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:25.620"
   },
   {
     "id": "CVE-2026-9080",
     "description": "Calling `curl_easy_pause()` within the event-based `CURLMOPT_SOCKETFUNCTION`\ncallback triggers a use-after-free vulnerability, where libcurl attempts to\nstore a flag using a dangling struct pointer immediately after that pointer's\nmemory has been freed.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:25.713"
   },
   {
     "id": "CVE-2026-9545",
     "description": "In this scenario, libcurl first uses a proper HTTP/3 server for the initial\ntransfers, and when it makes a second transfer to the same site it has been\nreplaced by the attacker's impostor machine - without a valid certificate.\n\nWhen libcurl returns to the hostname the second time with a cached SSL session\n(`CURLOPT_SSL_SESSIONID_CACHE` is not disabled) and early data enabled (the\n`CURLSSLOPT_EARLYDATA` bit is set in `CURLOPT_SSL_OPTIONS`), libcurl might\nsend off the second request's bytes on that new connection *before* enforcing\nthe certificate verification failure. Potentially leaking sensitive\ninformation.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:25.807"
   },
   {
     "id": "CVE-2026-9546",
     "description": "A vulnerability in libcurl caused the HTTP `Referer:` header to persist even\nwhen explicitly cleared. While the documentation states that passing NULL to\n`CURLOPT_REFERER` suppresses the header, the option failed to clear the\ninternal state. As a result the previous referrer string was erroneously\nreused and sent in subsequent requests, potentially leaking sensitive\ninformation to unintended servers.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:25.893"
   },
   {
     "id": "CVE-2026-9547",
     "description": "When a libcurl-based application performs transfers via `SCP://` or `SFTP://`\nand utilizes the `CURLOPT_SSH_KEYFUNCTION` callback, it may silently accept an\nuntrusted server. This vulnerability occurs when a server presents a host key\ntype that does not match the specific key type already recorded for that host\nin the `known_hosts` file. Instead of rejecting the mismatch, the callback\nmechanism fails to properly enforce the restriction, allowing the connection\nto succeed without warning and risking a potential man-in-the-middle attack.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Curl",
     "published": "2026-07-03T07:16:25.990"
   },
   {
@@ -49808,14 +49808,14 @@
     "id": "CVE-2026-14620",
     "description": "webpack-dev-server versions 5.2.5 and earlier expose two internal developer endpoints, /webpack-dev-server/open-editor and /webpack-dev-server/invalidate, that perform state-changing actions on any GET request without verifying that the request originated from the dev server's own page. Any website a developer visits while the dev server is running can trigger these endpoints cross-origin with no interaction beyond the visit. An attacker can open an arbitrary existing local file in the developer's editor, including files outside the project root, and repeated requests can spawn editor processes and force recompilations that degrade the developer's machine. Patches: upgrade to webpack-dev-server 5.2.6. Workarounds: none.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Webpack-dev-server",
     "published": "2026-07-03T17:16:53.620"
   },
   {
     "id": "CVE-2026-14631",
     "description": "webpack-dev-server versions 5.2.5 and earlier terminate the whole Node.js process when an unauthenticated peer sends either a normal HTTP request with a malformed Host header or a WebSocket upgrade to the default /ws endpoint with a malformed Origin header. The malformed value causes an uncaught exception in the host-validation path and crashes the dev server. Impact is limited to availability of the development server, no data disclosure, no code execution. Patches: upgrade to webpack-dev-server 5.2.6. Workarounds: keep the dev server bound to localhost (the default) and do not expose it to untrusted networks.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Webpack-dev-server",
     "published": "2026-07-03T18:16:24.687"
   },
   {
@@ -50186,28 +50186,28 @@
     "id": "CVE-2026-57981",
     "description": "Use after free in Microsoft Edge (Chromium-based) allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:01.313"
   },
   {
     "id": "CVE-2026-57983",
     "description": "Improper authorization in Microsoft Edge (Chromium-based) allows an unauthorized attacker to bypass a security feature over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:01.433"
   },
   {
     "id": "CVE-2026-57984",
     "description": "Use after free in Microsoft Edge (Chromium-based) allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:01.550"
   },
   {
     "id": "CVE-2026-57985",
     "description": "Improper input validation in Microsoft Edge (Chromium-based) allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:01.663"
   },
   {
@@ -50368,14 +50368,14 @@
     "id": "CVE-2026-58296",
     "description": "Exposure of private personal information to an unauthorized actor in Microsoft Edge for Android allows an unauthorized attacker to disclose information over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:04.547"
   },
   {
     "id": "CVE-2026-58297",
     "description": "Exposure of private personal information to an unauthorized actor in Microsoft Edge for Android allows an unauthorized attacker to disclose information over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:04.663"
   },
   {
@@ -50389,7 +50389,7 @@
     "id": "CVE-2026-58299",
     "description": "Time-of-check time-of-use (toctou) race condition in Microsoft Edge for Android allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Edge chromium",
     "published": "2026-07-03T21:17:04.907"
   },
   {
@@ -51810,21 +51810,21 @@
     "id": "CVE-2026-24012",
     "description": "Uncontrolled Resource Consumption vulnerability in Apache IoTDB. \n\nSome interface fails to impose reasonable\nlimits on the time span and aggregation interval of the query. An attacker\ncan construct a request with extreme parameters (e.g., a very large time\nrange combined with a minimal interval). This forces the DataNode to build\nan enormous result set in memory, which exhausts the Java heap and causes\nthe DataNode process to crash.\n\nThis issue affects Apache IoTDB: from 1.3.3 before 2.0.8.\n\nUsers are recommended to upgrade to version 2.0.8, which fixes the issue.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Iotdb",
     "published": "2026-07-06T09:16:35.037"
   },
   {
     "id": "CVE-2026-24013",
     "description": "Authentication Bypass by Spoofing vulnerability in Apache IoTDB.\nCertain Thrift RPC query handlers lack strict validation of the sessionId\nparameter. An attacker can construct requests with a forged sessionId and,\nwithout performing openSession authentication, receive valid query results.\nThis allows authentication bypass and unauthorized reading of time-series\ndata.\n\n\nThis issue affects Apache IoTDB: from 1.3.3 before 2.0.8.\n\nUsers are recommended to upgrade to version 2.0.8, which fixes the issue.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Iotdb",
     "published": "2026-07-06T09:16:35.163"
   },
   {
     "id": "CVE-2026-24014",
     "description": "Apache IoTDB DataNode’s internal RPC interface for creating Trigger instances uses the uploaded Trigger JAR name to build a file path without sufficient validation. If the internal DataNode RPC port is exposed to an untrusted network, an attacker may use path traversal sequences in the JAR name to write files outside the intended Trigger installation directory. This could allow arbitrary file write with the permissions of the IoTDB process.\n\nThis issue affects Apache IoTDB: from 1.3.3 before 2.0.8.\n\nUsers are recommended to upgrade to version 2.0.8, which fixes the issue.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Iotdb",
     "published": "2026-07-06T09:16:35.270"
   },
   {
@@ -51838,7 +51838,7 @@
     "id": "CVE-2026-40859",
     "description": "Deserialization of Untrusted Data vulnerability in Apache Camel.\n\nThe camel-vertx-http component deserializes HTTP response bodies carrying the Content-Type application/x-java-serialized-object using a raw java.io.ObjectInputStream, without applying any ObjectInputFilter (VertxHttpHelper.deserializeJavaObjectFromStream) This deserialization path is reached only when the producer endpoint is configured with transferException=true (or the component-level allowJavaSerializedObject=true) and throwExceptionOnFailure is left at its default value of true; in that case a backend HTTP response with a 5xx status and the application/x-java-serialized-object content type has its body deserialized with no class restrictions. An attacker who controls the backend the Camel producer talks to - through a man-in-the-middle position on an unencrypted (plain HTTP) connection, or by compromising the backend service - can return a crafted serialized Java object and, if a suitable gadget chain is present on the classpath, achieve remote code execution on the Camel application host. The path is not reachable in the default configuration, where transferException is false.\nThis issue affects Apache Camel: from 4.0.0 before 4.14.8, from 4.15.0 before 4.18.3, from 4.19.0 before 4.20.0.\n\nUsers are recommended to upgrade to version 4.20.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.8. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.3. After upgrading, the deserialization performed by both helper utilities is constrained by a default ObjectInputFilter (allow-list java.**;javax.**;org.apache.camel.**;!*), which can be customised through the new deserializationFilter endpoint option or the JVM-wide -Djdk.serialFilter system property. For deployments that cannot upgrade immediately: do not enable transferException=true (or allowJavaSerializedObject=true) on producers that talk to untrusted or network-reachable backends; ensure producer connections use TLS (https) so that a response cannot be substituted by a man-in-the-middle; and, where the option is required, set an explicit -Djdk.serialFilter allow-list (for example java.**;org.apache.camel.**;!*) to constrain deserialization.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Camel",
     "published": "2026-07-06T09:16:35.520"
   },
   {
@@ -52292,8 +52292,8 @@
   {
     "id": "CVE-2026-40138",
     "description": "A critical pre-authentication vulnerability exists in the authentication subsystem of BeyondTrust Remote Support and Privileged Remote Access. Improper validation of authentication data may allow a network-positioned attacker to bypass access controls and gain unauthorized access to the appliance, including accounts with elevated privileges. Exploitation requires a specific authentication configuration to be enabled",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Privileged remote access",
     "published": "2026-07-06T17:16:30.793"
   },
   {
@@ -52439,7 +52439,7 @@
   {
     "id": "CVE-2026-14898",
     "description": "The OpenAI Codex desktop app for macOS rendered remote images from Markdown in model responses. An attacker who could place an indirect prompt injection in content processed by Codex, such as a connected-tool result or another untrusted source, could induce the model to construct a remote image URL containing sensitive data. The app automatically fetched that URL when rendering the response, sending the embedded data to an attacker-controlled server without a separate user click. Successful exploitation could exfiltrate secrets and other information accessible in the Codex session, including API keys, source code, and data returned by connected tools. No direct integrity or availability impact was demonstrated, and there is no known exploitation in the wild.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-06T20:16:30.580"
   },
@@ -52538,21 +52538,21 @@
     "id": "CVE-2025-59615",
     "description": "Memory Corruption when invoking device input/output control operations for mapping and unmapping persistent memory buffers due to improper synchronization.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6700 firmware",
     "published": "2026-07-06T21:16:52.077"
   },
   {
     "id": "CVE-2025-59616",
     "description": "Memory Corruption when processing multiple IOCTL calls with the same buffer file descriptor input due to accessing already freed memory.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6700 firmware",
     "published": "2026-07-06T21:16:52.513"
   },
   {
     "id": "CVE-2025-59617",
     "description": "Memory Corruption when processing multiple IOCTL calls with the same buffer file descriptor input.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6700 firmware",
     "published": "2026-07-06T21:16:52.653"
   },
   {
@@ -52573,56 +52573,56 @@
     "id": "CVE-2026-21368",
     "description": "Memory Corruption when parsing jpeg commands due to unaccounted extra writes to the buffer during validation checks.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6700 firmware",
     "published": "2026-07-06T21:16:53.407"
   },
   {
     "id": "CVE-2026-21369",
     "description": "Memory Corruption when handling flash commands due to outdated LED count values being used after userspace modification.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6200 firmware",
     "published": "2026-07-06T21:16:53.553"
   },
   {
     "id": "CVE-2026-21370",
     "description": "Memory Corruption when validating input batch size and buffer plane count exceeds maximum allowed values.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6700 firmware",
     "published": "2026-07-06T21:16:53.707"
   },
   {
     "id": "CVE-2026-21379",
     "description": "Memory Corruption when allocating memory with sizes that exceed the maximum allowed value.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Aqt1000 firmware",
     "published": "2026-07-06T21:16:53.850"
   },
   {
     "id": "CVE-2026-21383",
     "description": "Cryptographic Issue when using a static initialization vector for AES-GCM key wrapping, which requires a unique value for each call to ensure security.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6900 firmware",
     "published": "2026-07-06T21:16:53.973"
   },
   {
     "id": "CVE-2026-21384",
     "description": "Memory Corruption when updating prepared commands with invalid port indices based on user space input exceeds supported read client limits.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fastconnect 6700 firmware",
     "published": "2026-07-06T21:16:54.097"
   },
   {
     "id": "CVE-2026-25268",
     "description": "Memory Corruption when processing invalid HT40 channel layouts during dynamic channel switching operations.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Wsa8835 firmware",
     "published": "2026-07-06T21:16:54.730"
   },
   {
     "id": "CVE-2026-25271",
     "description": "Memory Corruption when processing asynchronous input parameters due to improper handling of modified values between check and use.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Cologne firmware",
     "published": "2026-07-06T21:16:54.903"
   },
   {
@@ -52817,7 +52817,7 @@
   {
     "id": "CVE-2026-38976",
     "description": "mrubyc through 3.4.1 was found to contain a NULL pointer dereference in src/vm.c in op_super() / OP_SUPER due to a missing runtime guard for top-level super.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-06T22:16:48.900"
   },
@@ -53160,7 +53160,7 @@
   {
     "id": "CVE-2026-12277",
     "description": "The Frontend File Manager Plugin WordPress plugin through 23.6 does not validate a file path derived from user input before deleting the referenced file, allowing unauthenticated users to delete arbitrary files on the server (such as wp-config.php) when guest upload mode is enabled. Deleting wp-config.php forces the site into its setup routine, which can be leveraged toward a full site takeover.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-07T06:16:21.893"
   },
@@ -53321,7 +53321,7 @@
   {
     "id": "CVE-2026-33264",
     "description": "A bug in `BaseSerialization.deserialize()` allowed unrestricted `import_string()` of attacker-controlled class paths when the Scheduler / API Server loaded a serialized DAG: a DAG author could embed a malicious trigger into a DAG to gain remote code execution on the API Server / Scheduler process, crossing the Airflow security boundary that DAG-author code must never execute in those processes. Users are advised to upgrade to `apache-airflow` 3.3.0 or later. As a defense-in-depth mitigation, deployments where DAG-author trust is limited can restrict the `[core] allowed_deserialization_classes` config to a narrow allowlist.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-07T10:16:40.443"
   },
@@ -53370,7 +53370,7 @@
   {
     "id": "CVE-2011-10043",
     "description": "Module::Load versions before 0.22 for Perl allow arbitrary modules outside of @INC to be loaded.\n\nModule names starting with \"::\" could be passed to the load function to specify arbitrary module paths.\n\nAttackers able to influence module names passed to load could use that bug to execute arbitrary code.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-07T12:16:24.880"
   },
@@ -53429,5 +53429,131 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-07T14:16:34.543"
+  },
+  {
+    "id": "CVE-2026-12352",
+    "description": "This vulnerability allows an unauthenticated actor to bypass authentication and gain access to restricted resources on the device.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T15:16:42.283"
+  },
+  {
+    "id": "CVE-2026-12948",
+    "description": "A stored cross-site scripting (XSS) vulnerability in the web management interface of the Digi PortServer TS, Digi One SP, Digi One SP IA, and Digi One IA allows a remote, authenticated administrator to inject script into certain system configuration fields. The script subsequently executes in the browser of a user who views the affected pages (CWE-79).",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T15:16:42.413"
+  },
+  {
+    "id": "CVE-2026-14940",
+    "description": "A heap-buffer-overflow flaw was found in 389 Directory Server (389-ds-base). When\nnormalizing a Distinguished Name (DN) that contains a legacy-quoted value encoding a\nmultivalued nested Relative Distinguished Name (RDN), the server can write past the\nend of a heap allocation while sorting RDN attribute-value pairs. An unauthenticated\nremote attacker can trigger this condition by sending an LDAP operation whose DN\nreaches the DN normalization routine, such as a search with a crafted base DN. This\ncan corrupt heap memory and may cause denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T15:16:43.193"
+  },
+  {
+    "id": "CVE-2026-48588",
+    "description": "An issue was discovered in Django 6.0 before 6.0.7 and 5.2 before 5.2.16.\n`UpdateCacheMiddleware` and the `cache_page()` decorator cache responses that vary on cookies when the incoming request carries unrelated cookies, which allows remote attackers to read private data from the shared cache.\nEarlier, unsupported Django series (such as 5.0.x, 4.1.x, and 3.2.x) were not evaluated and may also be affected.\nDjango would like to thank Chris Whyland for reporting this issue.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-07T15:16:47.447"
+  },
+  {
+    "id": "CVE-2026-53877",
+    "description": "An issue was discovered in Django 6.0 before 6.0.7 and 5.2 before 5.2.16.\n`django.contrib.gis.gdal.GDALRaster` over-reads its in-memory buffer when constructed from a bytes object, which can disclose adjacent memory or cause service degradation via a potential segmentation fault when the `vsi_buffer` property is accessed.\nEarlier, unsupported Django series (such as 5.0.x, 4.1.x, and 3.2.x) were not evaluated and may also be affected.\nDjango would like to thank Bence Nagy for reporting this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T15:16:48.453"
+  },
+  {
+    "id": "CVE-2026-53878",
+    "description": "An issue was discovered in Django 6.0 before 6.0.7 and 5.2 before 5.2.16.\n`DomainNameValidator` does not prohibit newlines in domain names (unless used via a form field, since `CharField` strips newlines). If an application uses values with newlines in an HTTP response, header injection can occur. Django itself is unaffected because `HttpResponse` prohibits newlines in HTTP headers.\nEarlier, unsupported Django series (such as 5.0.x, 4.1.x, and 3.2.x) were not evaluated and may also be affected.\nDjango would like to thank Bence Nagy for reporting this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T15:16:48.583"
+  },
+  {
+    "id": "CVE-2026-59709",
+    "description": "Ghostfolio's PUT /api/v1/portfolio/holding/:dataSource/:symbol/tags endpoint fails to verify Access.permissions field when processing the Impersonation-Id header, allowing read-only access grantees to modify portfolio holding tags. Attackers with valid read-only share tokens can assign or remove tags on victim holdings, corrupting portfolio categorization and reports.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T15:16:49.430"
+  },
+  {
+    "id": "CVE-2026-14935",
+    "description": "A logic vulnerability was found in GStreamer's webrtcbin component. The _check_sdp_crypto() function contains an inverted boolean condition that causes it to accept remote SDP offers or answers that lack the required a=fingerprint attribute, while incorrectly rejecting those that include it. An attacker with the ability to intercept and modify WebRTC signaling messages could exploit this to bypass the SDP-level DTLS certificate fingerprint binding, weakening defenses against man-in-the-middle attacks on media streams.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-07T16:16:38.010"
+  },
+  {
+    "id": "CVE-2026-14969",
+    "description": "A flaw was found in 389-ds-base where the LDBM backend attribute encryption uses a hardcoded static initialization vector for AES-CBC and 3DES-CBC operations, allowing an attacker with privileged filesystem access to detect plaintext equality across encrypted entries by comparing ciphertext blocks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T16:16:38.310"
+  },
+  {
+    "id": "CVE-2026-56811",
+    "description": "Allocation of Resources Without Limits or Throttling vulnerability in phoenixframework phoenix (Phoenix.Socket module) allows an unauthenticated attacker to cause a denial of service against any endpoint that mounts a Phoenix socket with a reachable channel transport (WebSocket or LongPoll).\n\nThis vulnerability is associated with program files lib/phoenix/socket.ex and program routine 'Elixir.Phoenix.Socket':handle_in/4.\n\nPhoenix transports do not limit the number of channels that a single transport process may join. Every phx_join message a client sends over one connection starts a persistent channel process, and the socket process accepts an unbounded number of them. A single unauthenticated client can therefore open one WebSocket or LongPoll connection and stream a large number of phx_join messages, spawning hundreds of thousands of channel processes over that one connection and eventually reaching the BEAM maximum process limit. Once the process table is exhausted the virtual machine can no longer start new processes, denying service to legitimate traffic across the whole node. Because the amplification happens inside a single connection, network-layer connection caps and rate limiting do not mitigate it.\n\nThe fix adds a :max_channels_per_transport option (default 100) that bounds the number of channels a single transport process can join, forcing abusive clients to open many connections instead, where external load balancers and reverse proxies can throttle them.\n\nThis issue affects phoenix: from 0.11.0 before 1.5.15, from 1.6.0-rc.0 before 1.6.17, from 1.7.0-rc.0 before 1.7.24, and from 1.8.0-rc.0 before 1.8.9.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T16:16:40.710"
+  },
+  {
+    "id": "CVE-2026-56812",
+    "description": "Improper Check for Unusual or Exceptional Conditions vulnerability in phoenixframework phoenix (Presence JavaScript client) allows an attacker with ordinary channel access to cause a persistent client-side denial of service against every viewer of a presence channel topic.\n\nThis vulnerability is associated with program files assets/js/phoenix/presence.js and program routines Presence.syncState and Presence.syncDiff.\n\nThe Phoenix JavaScript presence client checks whether a presence already exists with a bare truthiness test (state[key]) instead of an own-property check. Presence keys can be attacker-controlled, because applications track presences under a username or id supplied by the client. A user who joins a channel choosing a key that is an Object.prototype member name (__proto__, constructor, toString, hasOwnProperty, and similar) makes that lookup return JavaScript's built-in Object.prototype instead of undefined. Because the prototype is truthy, the code treats it as an existing presence and reads .metas.map(...) off it, which throws an uncaught TypeError.\n\nThe exception propagates out of the presence message handler, so the local state is never updated and onSync() never fires. Because the malicious key is tracked on the server, it is re-pushed on every presence update and keeps re-throwing, so presence sync stays broken for every viewer of that channel topic until the attacker leaves. Both syncState and syncDiff use the same unsafe existence-check pattern. The impact is limited to the affected topic and is a read-time confusion of the prototype object, not a mutation of Object.prototype (it is not prototype pollution).\n\nThis issue affects phoenix: from 1.2.0-rc.0 before 1.5.15, from 1.6.0-rc.0 before 1.6.17, from 1.7.0-rc.0 before 1.7.24, and from 1.8.0-rc.0 before 1.8.9.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T16:16:40.920"
+  },
+  {
+    "id": "CVE-2025-12799",
+    "description": "A flaw was found in Jastow. Jastow is vulnerable to Cross-Site Scripting (XSS) attack. If using a set of combined configuration to allow unescaped characters in URL with embedded Undertow and Jastow, a server might be vulnerable to improper input handling.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T17:16:34.640"
+  },
+  {
+    "id": "CVE-2026-13019",
+    "description": "Esri Portal for ArcGIS versions 12.1 and earlier on Windows, Linux and Kubernetes have a missing authentication for critical function vulnerability allows a remote, unauthenticated attacker to access an unprotected API.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-07T17:16:35.400"
+  },
+  {
+    "id": "CVE-2026-13020",
+    "description": "A Weak Password Recovery Mechanism for Forgotten Password exists in Esri Portal for ArcGIS versions 12.1 and earlier on Windows, Linux and Kubernetes. A remote, unauthorized attacker may assume ownership of a user’s account by manipulating this mechanism. ArcGIS Administrators should configure an email server with ArcGIS Enterprise to facilitate user self-service password recovery. The ability for an administrator to reset a user’s password remains unchanged.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T17:16:35.510"
+  },
+  {
+    "id": "CVE-2026-14904",
+    "description": "AWS Research and Engineering Studio (RES) is an open-source solution that enables researchers and engineers to create and manage secure virtual desktops and computing resources on AWS.\n\n\n\nImproper link resolution before file access issue (CWE-59) in the Auth.GetUserPrivateKey API. An authenticated remote user could read arbitrary files on the cluster-manager EC2 instance by replacing their SSH private key file (~/.ssh/id_rsa) with a symbolic link targeting any file on the host. Because the cluster-manager process runs as root, any file readable by root is exposed, including other users' SSH private keys and application configuration secrets.\n\n\n\nIt's recommended to upgrade to RES version 2026.06.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T17:16:35.627"
+  },
+  {
+    "id": "CVE-2026-23697",
+    "description": "Vtiger CRM before 8.4.0 contains an authenticated file upload vulnerability that allows low-privileged users to achieve remote code execution by uploading a .phar file containing arbitrary PHP code through the Documents module, bypassing the extension denylist in config.inc.php which omits the .phar extension. The uploaded file is stored with its original .phar extension under the web-accessible storage directory, and a misconfigured .htaccess using Apache 2.2 syntax is silently ignored on Apache 2.4 deployments, allowing unauthenticated HTTP requests to directly execute the uploaded PHP payload.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T17:16:35.977"
+  },
+  {
+    "id": "CVE-2026-23698",
+    "description": "Vtiger CRM through 8.4.0 contains an authenticated remote code execution vulnerability in the admin module import feature that allows administrator-level attackers to upload arbitrary PHP files by submitting a crafted zip archive through the ModuleManager import function, which extracts contents directly into the modules/ directory under the web root without validating file types beyond the manifest.xml descriptor. Attackers can place executable PHP files in the modules/ directory that become directly accessible via HTTP, bypassing Vtiger's authentication and authorization layer entirely since Apache resolves the path and invokes the PHP interpreter before the application routing layer is involved, resulting in a persistent web shell independent of the originating session.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T17:16:36.123"
+  },
+  {
+    "id": "CVE-2026-57851",
+    "description": "MSI Feature Manager contains a local privilege escalation vulnerability in the KernCoreLib64.sys kernel driver that allows any locally logged-on user to perform arbitrary physical memory read/write and unrestricted I/O port operations by accessing exposed IOCTL handlers without administrator privileges. Attackers can exploit the accessible device object through IOCTL handlers to manipulate kernel objects, tamper with kernel-mode callbacks, bypass Protected Process Light protections, and disable security software.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T17:16:36.880"
   }
 ]
