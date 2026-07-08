@@ -1,5 +1,138 @@
 [
   {
+    "id": "CVE-2026-49487",
+    "description": "In Apache Airflow before 3.3.0, the REST API task-instance detail and list\nendpoints returned a deferred task's trigger kwargs without masking. When a\ndeferred operator passed a secret (for example a provider API key) into its\ntrigger, any authenticated user with DAG-scoped task-instance read access for\nthat DAG could read that secret in clear text while the task was deferred.\nUsers should upgrade to apache-airflow 3.3.0 or later, which masks sensitive\nvalues in trigger kwargs returned by the API.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:41.723"
+  },
+  {
+    "id": "CVE-2026-49296",
+    "description": "Before apache-airflow 3.3.0, a user authorized to read one Dag could disclose the source of other Dags co-located in the same source file. `GET /api/v2/dagSources/{dag_id}` — and the equivalent Dag-source view in the UI — returned the entire source file without redacting Dags the caller was not authorized to read, bypassing per-DAG read authorization. Deployments that co-locate multiple Dags in a single file and rely on per-DAG access control to limit source visibility are affected; single-Dag-per-file deployments are not. Upgrade to apache-airflow 3.3.0 or later.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:41.603"
+  },
+  {
+    "id": "CVE-2026-48892",
+    "description": "The Config API in Apache Airflow surfaced per-key secrets-backend overrides (environment variables like `AIRFLOW__SECRETS__BACKEND_KWARG__SECRET_ID` and `AIRFLOW__WORKERS__SECRETS_BACKEND_KWARG__SECRET_ID`) as synthetic config options whose option names were not in `sensitive_config_values`, so the masker did not redact them. An authenticated UI/API user with Config read permission could retrieve plaintext secrets-backend credentials (Vault `role_id` / `secret_id`, etc.) from the Config API output. Affects deployments that configure secrets backends via per-key environment overrides. Users are advised to upgrade to `apache-airflow` 3.3.0 or later.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:41.480"
+  },
+  {
+    "id": "CVE-2026-48891",
+    "description": "A bug in Apache Airflow's `/ui/dependencies` scheduling graph endpoint applied the caller's readable-Dag filter to the top-level serialized Dag key but still emitted referenced Dag IDs through the `dep.source` and `dep.target` fields of trigger / sensor dependency entries. An authenticated UI user with read permission on some Dags could enumerate the identifiers of other Dags they were not authorized to read by inspecting the dependency graph for trigger / sensor references. Affects deployments that rely on per-Dag read scoping to keep Dag identifiers private across teams. This is a residual gap in the fix for CVE-2026-28563, which filtered the top-level Dag key but did not propagate the filter into the trigger / sensor dep-source / dep-target fields. Users who already upgraded for CVE-2026-28563 should additionally upgrade to `apache-airflow` 3.3.0 or later to cover the residual trigger / sensor dependency leak.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:41.373"
+  },
+  {
+    "id": "CVE-2026-48828",
+    "description": "The Bulk Variables API in Apache Airflow called the redactor without passing the variable's key, so the key-based `should_hide_value_for_key` check (which triggers on secret-suffixed key names like `*_password` / `*_token` / `*_secret`) could not fire for JSON-decodable variable values. An authenticated UI/API user with bulk Variable read permission could retrieve plaintext values from JSON variables whose key would otherwise trigger redaction. Affects deployments that store sensitive values in JSON-typed Airflow Variables under secret-suffixed key names. Users are advised to upgrade to `apache-airflow` 3.3.0 or later (the fix landed on `main` after 3.2.2; no 3.2.x backport).",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:41.260"
+  },
+  {
+    "id": "CVE-2026-33264",
+    "description": "A bug in `BaseSerialization.deserialize()` allowed unrestricted `import_string()` of attacker-controlled class paths when the Scheduler / API Server loaded a serialized DAG: a DAG author could embed a malicious trigger into a DAG to gain remote code execution on the API Server / Scheduler process, crossing the Airflow security boundary that DAG-author code must never execute in those processes. Users are advised to upgrade to `apache-airflow` 3.3.0 or later. As a defense-in-depth mitigation, deployments where DAG-author trust is limited can restrict the `[core] allowed_deserialization_classes` config to a narrow allowlist.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:40.443"
+  },
+  {
+    "id": "CVE-2026-14868",
+    "description": "The encryption algorithm used to protect the configuration of user accounts, stored in the built-in user directory of PcVue projects, all versions prior to 17.0.0, is not strong enough for the level of protection required. A local attacker could alter the existing configuration and ultimately gain privileged access to the PcVue application.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:40.273"
+  },
+  {
+    "id": "CVE-2026-14867",
+    "description": "Credentials of built-in users are insecurely stored in the User directory of PcVue projects, all versions prior to 17.0.0. A local attacker could retrieve users’ credentials. \n\nActive Directory accounts are not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:40.120"
+  },
+  {
+    "id": "CVE-2026-14476",
+    "description": "A path traversal flaw was found in SSSD's AD GPO provider. The ad_gpo_extract_smb_components() function does not sanitize .. sequences in the gPCFileSysPath LDAP attribute, allowing an attacker with AD GPO management access to write files outside the GPO cache directory as root. On default RHEL configurations with SELinux enforcing, this can be used to inject Kerberos configuration leading to authentication bypass.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:39.993"
+  },
+  {
+    "id": "CVE-2026-14474",
+    "description": "A flaw was found in SSSD's LDAP sudo provider. When the ldap_sudo_search_base option is not explicitly configured, SSSD searches the entire LDAP directory tree for sudoRole objects. An authenticated attacker with write access to any subtree can inject a sudoRole object granting root-level sudo privileges on all SSSD-enrolled hosts.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:39.870"
+  },
+  {
+    "id": "CVE-2026-11610",
+    "description": "A heap buffer overflow flaw was found in the SASL I/O layer of 389 Directory Server\n(389-ds-base). After a successful SASL bind with integrity protection (SSF > 0),\nan authenticated attacker can send a specially crafted oversized LDAP UNBIND packet\nthat is copied into a 512-byte heap receive buffer without a bounds check in\nsasl_io_recv() in sasl_io.c. This allows up to approximately 2 megabytes of\nattacker-controlled data to overflow the buffer, causing a denial of service (server\ncrash). In FreeIPA and Red Hat Identity Management deployments, any domain user with\na valid Kerberos ticket, any enrolled host, or any service account can trigger this\nvulnerability over the network after authenticating via GSSAPI.\nThe vulnerable code path has existed since approximately 2013 (389-ds-base 1.3.2) and\nwas not addressed by the CVE-2025-14905 fix, which patched a separate heap overflow\nin schema.c only.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T10:16:39.690"
+  },
+  {
+    "id": "CVE-2026-58384",
+    "description": "A flaw was found in GIMP's PSD parser. An integer overflow in read_RLE_channel() can cause an undersized heap allocation for the RLE row-length table, after which subsequent per-row writes corrupt heap memory. This could lead to memory corruption, potentially resulting in denial of service or arbitrary code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T09:16:30.003"
+  },
+  {
+    "id": "CVE-2026-13199",
+    "description": "EEPROM firmware on Raspberry Pi 5 and Compute Module 5 devices produced non-random KASLR and RNG seed values. This resulted in consistent kernel addresses across boots and devices, potentially making it easier to exploit other vulnerabilities. Additionally, the low-quality RNG seed may affect the quality of random numbers or delay booting while sufficient entropy is accumulated from other sources.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T09:16:29.857"
+  },
+  {
+    "id": "CVE-2026-8377",
+    "description": "Missing Authorization vulnerability in Armiya Information Technologies Ltd. Co. Access Control System (GKS) allows Collect Data from Common Resource Locations.\n\nThis issue affects Access Control System (GKS): before Version 2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T08:16:26.127"
+  },
+  {
+    "id": "CVE-2026-8309",
+    "description": "Improper neutralization of input during web page generation ('cross-site scripting') vulnerability in Armiya Information Technologies Ltd. Co. Access Control System (GKS) allows Reflected XSS.\n\nThis issue affects Access Control System (GKS): before Version 2.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T08:16:26.023"
+  },
+  {
+    "id": "CVE-2026-8306",
+    "description": "Improper neutralization of input during web page generation ('cross-site scripting') vulnerability in Armiya Information Technologies Ltd. Co. Access Control System (GKS) allows Stored XSS.\n\nThis issue affects Access Control System (GKS): before Version 2.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T08:16:25.910"
+  },
+  {
+    "id": "CVE-2026-7380",
+    "description": "Improper neutralization of Script-Related HTML tags in a web page (basic XSS) vulnerability in Armiya Information Technologies Ltd. Co. Access Control System (GKS) allows XSS Targeting HTML Attributes.\n\nThis issue affects Access Control System (GKS): before Version 2.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-07T08:16:25.793"
+  },
+  {
+    "id": "CVE-2026-5799",
+    "description": "Authorization bypass through User-Controlled key vulnerability in Idvlabs Software and Consulting Services Inc. Ontime allows Exploitation of Trusted Identifiers.\n\nThis issue affects Ontime: through 04052026.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T08:16:25.677"
+  },
+  {
+    "id": "CVE-2026-5730",
+    "description": "Authorization bypass through User-Controlled key vulnerability in Idvlabs Software and Consulting Services Inc. Ontime allows Exploitation of Trusted Identifiers.\n\nThis issue affects Ontime: through 04052026.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-07T08:16:25.540"
+  },
+  {
     "id": "CVE-2026-58315",
     "description": "Cross-site request forgery vulnerability exists in SEIKO EPSON Web Config. If a user views a malicious page while logged into Web Config, unintended operations may be performed.",
     "severity": "Medium",
@@ -2567,47 +2700,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-04T11:16:47.613"
-  },
-  {
-    "id": "CVE-2026-14623",
-    "description": "A vulnerability was determined in omec-project amf up to 2.1.1. This issue affects the function RRCInactiveTransitionReport of the component NGAP Message Handler. Executing a manipulation can lead to denial of service. The attack may be performed from remote. The exploit has been publicly disclosed and may be utilized. This patch is called 34bc6724acc97dba1f8691e586da95b042cb612d. A patch should be applied to remediate this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-04T10:16:27.623"
-  },
-  {
-    "id": "CVE-2026-14622",
-    "description": "A vulnerability was found in jairiidriss restaurant-website-php-mysql up to 521428b5b612449df0cf4a5d15ee40cba67f3d35. This vulnerability affects unknown code of the file /admin/ajax_files of the component AJAX Endpoint. Performing a manipulation results in missing authentication. The attack is possible to be carried out remotely. The exploit has been made public and could be used. This product adopts a rolling release strategy to maintain continuous delivery. Therefore, version details for affected or updated releases cannot be specified. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-04T09:16:27.767"
-  },
-  {
-    "id": "CVE-2026-14621",
-    "description": "A vulnerability has been found in FederatedAI FATE up to 2.2.0. This affects the function QueuePushReqStreamObserver.initEggroll of the file java/osx/osx-broker/src/main/java/org/fedai/osx/broker/grpc/QueuePushReqStreamObserver.java of the component OSX Broker. Such manipulation of the argument rollSiteSessionId/dstRole/dstPartyId leads to exposure of data element to wrong session. The attack can be executed remotely. A high complexity level is associated with this attack. It is indicated that the exploitability is difficult. The exploit has been disclosed to the public and may be used. The pull request to fix this issue awaits acceptance.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-04T09:16:27.543"
-  },
-  {
-    "id": "CVE-2026-14619",
-    "description": "A flaw has been found in itsourcecode Hospital Management System 1.0. Affected by this issue is some unknown functionality of the file /medicine.php. This manipulation of the argument editid causes sql injection. Remote exploitation of the attack is possible. The exploit has been published and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-04T08:16:21.647"
-  },
-  {
-    "id": "CVE-2026-12194",
-    "description": "PHPIPAM is affected by an authenticated local file inclusion vulnerability that allows users with access to the API to execute/include arbitrary PHP files on the web server's file system. The API is not enabled by default on installations.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-04T08:16:20.643"
-  },
-  {
-    "id": "CVE-2026-14618",
-    "description": "A vulnerability was detected in Open5GS up to 2.7.7. Affected by this vulnerability is the function amf_nnrf_handle_nf_discover of the file src/amf/nnrf-handler.c of the component AMF. The manipulation results in denial of service. The attack may be launched remotely. The exploit is now public and may be used. The patch is identified as fb5f67703de0213fb9c6e6ef3b48b6c1707e9503. It is best practice to apply a patch to resolve this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-04T07:16:24.503"
   }
 ]
