@@ -1,26 +1,5 @@
 [
   {
-    "id": "CVE-2026-11585",
-    "description": "A vulnerability was determined in CodeAstro Student Attendance Management System 1.0. Affected is an unknown function of the file /attendance-php/Admin/createClassArms.php. This manipulation of the argument classId causes sql injection. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-08T21:16:28.177"
-  },
-  {
-    "id": "CVE-2026-40215",
-    "description": "A race condition in OpenVPN 2.6.0 through 2.6.19 and 2.7_alpha1 through 2.7.1 allows remote attackers to potentially cause a server crash or leak heap memory via a use-after-free triggered during TLS session promotion.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-08T21:16:45.453"
-  },
-  {
-    "id": "CVE-2026-44541",
-    "description": "Fides is an open-source privacy engineering platform. From version 2.33.0 to before version 2.84.5, there is a DOM-based XSS vulnerability in fides.js via the fides_description override. This issue has been patched in version 2.84.5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-08T21:16:45.673"
-  },
-  {
     "id": "CVE-2026-9669",
     "description": "bz2.BZ2Decompressor objects could be reused after a decompression error. If an application caught the resulting OSError and retried with the same decompressor, crafted input could cause the decompressor to resume from an invalid internal state and perform out-of-bounds writes to a stack buffer. This could crash the process when processing untrusted data.",
     "severity": "Unknown",
@@ -1592,7 +1571,7 @@
     "id": "CVE-2026-46319",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/sched: act_ct: Only release RCU read lock after ct_ft\n\nWhen looking up a flow table in act_ct in tcf_ct_flow_table_get(),\nrhashtable_lookup_fast() internally opens and closes an RCU read critical\nsection before returning ct_ft.\nThe tcf_ct_flow_table_cleanup_work() can complete before refcount_inc_not_zero()\nis invoked on the returned ct_ft resulting in a UAF on the already freed ct_ft\nobject. This vulnerability can lead to privilege escalation.\n\nAnalysis from zdi-disclosures@trendmicro.com:\nWhen initializing act_ct, tcf_ct_init() is called, which internally triggers\ntcf_ct_flow_table_get().\n\nstatic int tcf_ct_flow_table_get(struct net *net, struct tcf_ct_params *params)\n\n{\n                struct zones_ht_key key = { .net = net, .zone = params->zone };\n                struct tcf_ct_flow_table *ct_ft;\n                int err = -ENOMEM;\n\n                mutex_lock(&zones_mutex);\n                ct_ft = rhashtable_lookup_fast(&zones_ht, &key, zones_params); // [1]\n                if (ct_ft && refcount_inc_not_zero(&ct_ft->ref)) // [2]\n                                goto out_unlock;\n                ...\n}\n\nstatic __always_inline void *rhashtable_lookup_fast(\n                struct rhashtable *ht, const void *key,\n                const struct rhashtable_params params)\n{\n                void *obj;\n\n                rcu_read_lock();\n                obj = rhashtable_lookup(ht, key, params);\n                rcu_read_unlock();\n\n                return obj;\n}\n\nAt [1], rhashtable_lookup_fast() looks up and returns the corresponding ct_ft\nfrom zones_ht . The lookup is performed within an RCU read critical section\nthrough rcu_read_lock() / rcu_read_unlock(), which prevents the object from\nbeing freed. However, at the point of function return, rcu_read_unlock() has\nalready been called, and there is nothing preventing ct_ft from being freed\nbefore reaching refcount_inc_not_zero(&ct_ft->ref) at [2]. This interval becomes\nthe race window, during which ct_ft can be freed.\n\nFree Process:\n\ntcf_ct_flow_table_put() is executed through the path tcf_ct_cleanup() call_rcu()\ntcf_ct_params_free_rcu() tcf_ct_params_free() tcf_ct_flow_table_put().\n\nstatic void tcf_ct_flow_table_put(struct tcf_ct_flow_table *ct_ft)\n{\n                if (refcount_dec_and_test(&ct_ft->ref)) {\n                                rhashtable_remove_fast(&zones_ht, &ct_ft->node, zones_params);\n                                INIT_RCU_WORK(&ct_ft->rwork, tcf_ct_flow_table_cleanup_work); // [3]\n                                queue_rcu_work(act_ct_wq, &ct_ft->rwork);\n                }\n}\n\nAt [3], tcf_ct_flow_table_cleanup_work() is scheduled as RCU work\n\nstatic void tcf_ct_flow_table_cleanup_work(struct work_struct *work)\n\n{\n                struct tcf_ct_flow_table *ct_ft;\n                struct flow_block *block;\n\n                ct_ft = container_of(to_rcu_work(work), struct tcf_ct_flow_table,\n                                                                rwork);\n                nf_flow_table_free(&ct_ft->nf_ft);\n                block = &ct_ft->nf_ft.flow_block;\n                down_write(&ct_ft->nf_ft.flow_block_lock);\n                WARN_ON(!list_empty(&block->cb_list));\n                up_write(&ct_ft->nf_ft.flow_block_lock);\n                kfree(ct_ft); // [4]\n\n                module_put(THIS_MODULE);\n}\n\ntcf_ct_flow_table_cleanup_work() frees ct_ft at [4]. When this function executes\nbetween [1] and [2], UAF occurs.\n\nThis race condition has a very short race window, making it generally\ndifficult to trigger. Therefore, to trigger the vulnerability an msleep(100) was\ninserted after[1]",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-09T13:16:37.210"
   },
   {
@@ -1725,14 +1704,14 @@
     "id": "CVE-2026-46330",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nRevert \"net/smc: Introduce TCP ULP support\"\n\nThis reverts commit d7cd421da9da2cc7b4d25b8537f66db5c8331c40.\n\nAs reported by Al Viro, the TCP ULP support for SMC is fundamentally\nbroken. The implementation attempts to convert an active TCP socket\ninto an SMC socket by modifying the underlying `struct file`, dentry,\nand inode in-place, which violates core VFS invariants that assume\nthese structures are immutable for an open file, creating a risk of\nuse after free errors and general system instability.\n\nGiven the severity of this design flaw and the fact that cleaner\nalternatives (e.g., LD_PRELOAD, BPF) exist for legacy application\ntransparency, the correct course of action is to remove this feature\nentirely.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-09T14:16:42.723"
   },
   {
     "id": "CVE-2026-46332",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ngreybus: gb-beagleplay: bound bootloader receive buffering\n\ncc1352_bootloader_rx() appends each serdev chunk into the fixed\nrx_buffer before parsing bootloader packets. The helper can keep\nleftover bytes between callbacks and may receive multiple packets in one\ncallback, so a single count value is not constrained by one packet\nlength.\n\nCheck that the incoming chunk fits in the remaining receive buffer space\nbefore memcpy(). If it does not, drop the staged data and consume the\nbytes instead of overflowing rx_buffer.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-09T14:16:42.817"
   },
   {
@@ -1766,22 +1745,22 @@
   {
     "id": "CVE-2026-52904",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/nouveau: fix nvkm_device leak on aperture removal failure\n\nWhen aperture_remove_conflicting_pci_devices() fails during probe, the\nerror path returns directly without unwinding the nvkm_device that was\njust allocated by nvkm_device_pci_new(). This leaks both the device\nwrapper and the pci_enable_device() reference taken inside it.\n\nJump to the existing fail_nvkm label so nvkm_device_del() runs and\nbalances both. The leak was introduced when the intermediate\nnvkm_device_del() between detection and aperture removal was dropped\nin favor of creating the pci device once.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-09T14:16:44.830"
   },
   {
     "id": "CVE-2026-52905",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm/damon/core: disallow non-power of two min_region_sz on damon_start()\n\nCommit d8f867fa0825 (\"mm/damon: add damon_ctx->min_sz_region\") introduced\na bug that allows unaligned DAMON region address ranges.  Commit\nc80f46ac228b (\"mm/damon/core: disallow non-power of two min_region_sz\")\nfixed it, but only for damon_commit_ctx() use case.  Still, DAMON sysfs\ninterface can emit non-power of two min_region_sz via damon_start().  Fix\nthe path by adding the is_power_of_2() check on damon_start().\n\nThe issue was discovered by sashiko [1].",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-09T14:16:44.950"
   },
   {
     "id": "CVE-2026-52906",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\n9p: fix access mode flags being ORed instead of replaced\n\nSince commit 1f3e4142c0eb (\"9p: convert to the new mount API\"),\nv9fs_apply_options() applies parsed mount flags with |= onto flags\nalready set by v9fs_session_init(). For 9P2000.L, session_init sets\nV9FS_ACCESS_CLIENT as the default, so when the user mounts with\n\"access=user\", both bits end up set. Access mode checks compare\nagainst exact values, so having both bits set matches neither mode.\n\nThis causes v9fs_fid_lookup() to fall through to the default switch\ncase, using INVALID_UID (nobody/65534) instead of current_fsuid()\nfor all fid lookups. Root is then unable to chown or perform other\nprivileged operations.\n\nFix by clearing the access mask before applying the user's choice.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-09T14:16:45.047"
   },
   {
@@ -54077,7 +54056,7 @@
   {
     "id": "CVE-2026-36027",
     "description": "An issue in Code27 Companion Hub SQ3A.220705.003.A1 allows a physically proximate attacker to execute arbitrary code via the USB debugging (ADB) and Android Debug Bridge components",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-08T20:16:48.817"
   },
@@ -54367,5 +54346,474 @@
     "severity": "Low",
     "tech": "Unknown",
     "published": "2026-07-08T20:17:01.027"
+  },
+  {
+    "id": "CVE-2025-12506",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 16.5 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an authenticated user to create a repository where the content displayed in the web interface differed from the content available for download, due to improper handling of Git reference name resolution.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:44.493"
+  },
+  {
+    "id": "CVE-2026-0288",
+    "description": "Multiple buffer overflow vulnerabilities in the User-ID Terminal Server Agent (TSA) component of Palo Alto Networks PAN-OS software allow an unauthenticated attacker with network access to cause a denial of service (DoS) condition or potentially execute arbitrary code by sending specially crafted network traffic.\n\nThe security risk posed by this issue is minimized when the User-ID Terminal Server Agent connectivity is restricted to only trusted internal IP addresses according to our recommended  best practice deployment guidelines https://docs.paloaltonetworks.com/ngfw/help/10-2/user-identification/device-user-identification-terminal-services-agents#:~:text=To%20minimize%20security%20risk%2C%20restrict%20TS%20Agent%20connectivity%20to%20trusted%20internal%20IP%20addresses%20only. .\n\nPanorama is not impacted by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:45.590"
+  },
+  {
+    "id": "CVE-2026-11827",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 9.5 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an authenticated user with maintainer-role permissions to obtain another user's stored credentials due to improper authorization controls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:46.397"
+  },
+  {
+    "id": "CVE-2026-13151",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 16.10 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an authenticated user to modify group-level settings beyond their intended permissions due to improper authorization controls.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:46.520"
+  },
+  {
+    "id": "CVE-2026-13320",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 15.7 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an authenticated user to execute arbitrary scripts in another user's browser session due to improper sanitization of user-supplied input.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:46.630"
+  },
+  {
+    "id": "CVE-2026-14896",
+    "description": "HashiCorp Nomad and Nomad Enterprise are vulnerable to a cross-namespace authorization bypass in the dynamic host volumes feature that may allow an operator holding the host volume delete permission in one namespace to delete a sticky volume claim belonging to a job in another namespace. This vulnerability, CVE-2026-14896, is fixed in Nomad Community Edition 2.0.4 and Nomad Enterprise 2.0.4, 1.11.8, and 1.10.14.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.030"
+  },
+  {
+    "id": "CVE-2026-15163",
+    "description": "Multiple protocol dissector infinite loops in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allow denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.227"
+  },
+  {
+    "id": "CVE-2026-15164",
+    "description": "Crash in ciscodump 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.343"
+  },
+  {
+    "id": "CVE-2026-15165",
+    "description": "TLS ECH decryptor crash in Wireshark 4.6.0 to 4.6.6 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.450"
+  },
+  {
+    "id": "CVE-2026-15166",
+    "description": "IEEE 802.11 protocol dissector crash in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.560"
+  },
+  {
+    "id": "CVE-2026-15167",
+    "description": "DBS Etherwatch file parser crash in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.667"
+  },
+  {
+    "id": "CVE-2026-15169",
+    "description": "UMTS FP protocol dissector crash in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.777"
+  },
+  {
+    "id": "CVE-2026-15170",
+    "description": "Z39.50 protocol dissector crash in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.880"
+  },
+  {
+    "id": "CVE-2026-15171",
+    "description": "SSH protocol dissector crash in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:47.990"
+  },
+  {
+    "id": "CVE-2026-15172",
+    "description": "FMP/NOTIFY protocol dissector crash in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:48.097"
+  },
+  {
+    "id": "CVE-2026-15173",
+    "description": "pcapng file parser crash in Wireshark 4.6.0 to 4.6.6 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:48.203"
+  },
+  {
+    "id": "CVE-2026-15174",
+    "description": "Catapult DCT2000 protocol dissector crash in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows denial of service",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:48.310"
+  },
+  {
+    "id": "CVE-2026-35210",
+    "description": "OpenCTI is an open source platform for managing cyber threat intelligence knowledge and observables. Prior to 7.260326.0, an authorization bypass vulnerability in OpenCTI allows any authenticated user with KNOWLEDGE_KNUPDATE permission to bypass Confidence Level validation and Object Marking restrictions by injecting the synchronized-upsert: true HTTP header, enabling attackers to downgrade confidence levels, remove security markings such as TLP:RED, manipulate relationships, and affect STIX object types including Indicators, ThreatActors, Malware, and Reports. This issue is fixed in version 7.260326.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:48.487"
+  },
+  {
+    "id": "CVE-2026-35211",
+    "description": "OpenCTI is an open source platform for managing cyber threat intelligence knowledge and observables. Prior to 7.260401.0, the OpenCTI GraphQL API exposes a script filter operator in its FilterOperator enum that allows any authenticated user with the KNOWLEDGE capability to pass user-supplied Elasticsearch Painless script values directly into search queries without validation or sanitization, allowing computationally expensive scripts to consume cluster CPU resources and degrade or deny service for all users. This issue is fixed in version 7.260401.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:48.630"
+  },
+  {
+    "id": "CVE-2026-49866",
+    "description": "libp2p is a JavaScript Implementation of libp2p networking stack. Prior to 16.0.0, @libp2p/gossipsub defaultDecodeRpcLimits set maxIhaveMessageIDs and maxIwantMessageIDs to Infinity, allowing oversized IHAVE and IWANT control message arrays in message/decodeRpc.ts and gossipsub.ts to synchronously iterate roughly 180,000 message IDs per 4 MB frame and block the Node.js event loop. This issue is fixed in version 16.0.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:49.137"
+  },
+  {
+    "id": "CVE-2026-54527",
+    "description": "JupyterLab Git is a Git extension for JupyterLab. From 0.30.0b3 before 0.54.0, the PlainTextDiff.ts createHeader() method passes Git filenames directly to innerHTML when rendering renamed files in commit history, allowing a crafted filename to execute JavaScript when a victim views the rename diff in the Git History tab. This issue is fixed in version 0.54.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:49.273"
+  },
+  {
+    "id": "CVE-2026-54528",
+    "description": "JupyterLab Git is a Git extension for JupyterLab. Prior to 0.54.0, jupyterlab-git uses fnmatch.fnmatchcase() in GitHandler.prepare() in jupyterlab_git/handlers.py to enforce excluded_paths, allowing an authenticated user on a case-insensitive filesystem to vary URL path casing and read excluded directories. This issue is fixed in version 0.54.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:49.407"
+  },
+  {
+    "id": "CVE-2026-54590",
+    "description": "AsyncSSH is a Python package which provides an asynchronous client and server implementation of the SSHv2 protocol on top of the Python asyncio framework. Version 2.23.0 contains an incomplete fix for CVE-2026-45309 in SSHServerConfig._set_tokens that blocks /, , and .. before %u substitution in AuthorizedKeysFile but does not block a leading ~ or ${ENV}, allowing later expansion in _expand_val and Path(filename).expanduser() to escape the intended authorized-keys directory. This issue is fixed in version 2.23.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:49.523"
+  },
+  {
+    "id": "CVE-2026-54591",
+    "description": "AsyncSSH is a Python package which provides an asynchronous client and server implementation of the SSHv2 protocol on top of the Python asyncio framework. Prior to 2.23.1, a malicious SSH server can write arbitrary files on the asyncssh SCP client's filesystem by sending filenames containing ../ traversal sequences because _parse_cd_args in scp.py returns server-provided names verbatim and _recv_files joins them to the destination path without enforcing the target directory boundary. This issue is fixed in version 2.23.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:49.657"
+  },
+  {
+    "id": "CVE-2026-55195",
+    "description": "py7zr is a Python-based library and utility to support 7zip archive compression, decompression, encryption and decryption. Prior to 1.1.3, py7zr's Worker.decompress() extracted archive entries without tracking total decompressed size, allowing a crafted .7z file such as a 15.6 KB archive that expands to 100 MB to exhaust disk or memory before extraction completes. This issue is fixed in version 1.1.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:49.840"
+  },
+  {
+    "id": "CVE-2026-55206",
+    "description": "py7zr is a Python-based library and utility to support 7zip archive compression, decompression, encryption and decryption. Prior to 1.1.3, PackInfo._read() in archiveinfo.py used an O(n^2) cumulative sum pattern for attacker-controlled numstreams values parsed from archive headers, allowing a crafted .7z archive to cause excessive CPU consumption during SevenZipFile.init() before extraction. This issue is fixed in version 1.1.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:49.987"
+  },
+  {
+    "id": "CVE-2026-55542",
+    "description": "Snipe-IT is an IT asset/license management system. Prior to version 8.6.1, Snipe-IT S3 signature image retrieval lacks authorization before temporary URL. On S3-backed deployments, authenticated users who know a signature filename can obtain a 5-minute signed S3 URL because the S3 branch returns before the `authorize()` call used by the local-file branch. Version 8.6.1 contains a patch.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:50.117"
+  },
+  {
+    "id": "CVE-2026-55596",
+    "description": "Plate is a rich-text editor with AI and shadcn/ui. From 53.0.0 until 53.1.4, the media embed renderer trusts serialized provider or sourceUrl metadata in useMediaState and skips parseMediaUrl protocol validation, allowing a crafted Plate document to set a known video provider while keeping url as a javascript: iframe source that the registry MediaEmbedElement renders directly as an iframe src when a victim opens the document. This issue is fixed in version 53.1.4.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:50.247"
+  },
+  {
+    "id": "CVE-2026-55778",
+    "description": "Parse Server is an open source backend that can be deployed to any infrastructure that can run Node.js. Prior to 9.9.1-alpha.11 and 8.6.81, the default fileUpload.fileExtensions blocklist could be bypassed by uploading a file with a non-standard or compound extension and dangerous content type, allowing storage adapters such as S3 and GCS to serve attacker-supplied active content and enable stored cross-site scripting. This issue is fixed in versions 9.9.1-alpha.11 and 8.6.81.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:50.387"
+  },
+  {
+    "id": "CVE-2026-56669",
+    "description": "Elysia is a Typescript framework for request validation, type inference, OpenAPI documentation, and client-server communication. Prior to 1.4.29, Elysia uses getAll in form data normalization for multipart/form-data endpoints, causing the amount of work to grow quadratically with the number of unique key-value pairs and allowing CPU exhaustion. This issue is fixed in version 1.4.29.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:50.690"
+  },
+  {
+    "id": "CVE-2026-57480",
+    "description": "Parse Server is an open source backend that can be deployed to any infrastructure that can run Node.js. Prior to 9.9.1-alpha.12 and 8.6.82, deeply nested $or, $and, and $nor query condition operators in the REST API or LiveQuery query handling could trigger exponential-time processing in the internal query-traversal helper and block the Node.js event loop. This issue is fixed in versions 9.9.1-alpha.12 and 8.6.82.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:50.890"
+  },
+  {
+    "id": "CVE-2026-57481",
+    "description": "Parse Server is an open source backend that can be deployed to any infrastructure that can run Node.js. Prior to 9.9.1-alpha.13 and 8.6.83, a LiveQuery subscriber could receive object field values they were not authorized to read when a single save changed both an object field and the subscriber's ACL read access, because leave and enter events included the wrong object state. This issue is fixed in versions 9.9.1-alpha.13 and 8.6.83.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:51.043"
+  },
+  {
+    "id": "CVE-2026-58191",
+    "description": "Appium is a cross-platform automation framework for all kinds of apps, built on top of the W3C WebDriver protocol. Prior to 10.7.0, Appium's base-driver unconditionally mounts the /test/guinea-pig, /test/guinea-pig-scrollable, and /test/guinea-pig-app-banner routes, and compileLodashTemplate reflects the throwError query parameter, comments POST field, and User-Agent request header into HTML without escaping, allowing reflected cross-site scripting and arbitrary JavaScript execution on the server origin. This issue is fixed in version 10.7.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:52.013"
+  },
+  {
+    "id": "CVE-2026-58192",
+    "description": "Appium is a cross-platform automation framework for all kinds of apps, built on top of the W3C WebDriver protocol. Prior to 1.1.6, the Appium storage plugin exposes POST /storage/delete, whose handler passes the user-supplied name value directly into path.join(storageRoot, name) and fs.rimraf() without path sanitization, allowing an unauthenticated remote client to escape the storage root with ../ sequences and recursively delete arbitrary writable files or directories. This issue is fixed in version 1.1.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:52.150"
+  },
+  {
+    "id": "CVE-2026-58207",
+    "description": "NATS Server is a high-performance server for NATS.io, the cloud and edge native messaging system. Prior to 2.14.3 and 2.12.12, a client able to send account-scoped connection monitoring requests could crash the server by supplying Connz pagination Offset and Limit values that overflowed internal arithmetic before the response window was safely bounded. This issue is fixed in versions 2.14.3 and 2.12.12.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:52.293"
+  },
+  {
+    "id": "CVE-2026-58208",
+    "description": "NATS Server is a high-performance server for NATS.io, the cloud and edge native messaging system. Prior to 2.14.3 and 2.12.12, a WebSocket listener could route requests for the MQTT-over-WebSocket path into MQTT handling even when MQTT was not configured, allowing an unauthenticated client with access to the WebSocket listener to reach uninitialized MQTT state and crash the server process. This issue is fixed in versions 2.14.3 and 2.12.12.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:52.440"
+  },
+  {
+    "id": "CVE-2026-58211",
+    "description": "NATS Server is a high-performance server for NATS.io, the cloud and edge native messaging system. Prior to 2.14.3 and 2.12.12, a client could be registered as the configured no_auth_user through a parser path used when the first client operation was not CONNECT, bypassing user-level connection restrictions such as allowed_connection_types or proxy_required that normal authentication would apply. This issue is fixed in versions 2.14.3 and 2.12.12.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:52.610"
+  },
+  {
+    "id": "CVE-2026-58494",
+    "description": "Wasmtime is a runtime for WebAssembly. Prior to 24.0.11, 36.0.12, 45.0.3, and 46.0.1, wasmtime-wasi hard-link creation and renaming check directory permissions but not matching FilePerms on source and destination preopens, allowing a WASI guest with a read-only source file capability to overwrite host files exposed as FilePerms::READ through wasip1, wasip2, or wasip3 filesystem interfaces. This issue is fixed in versions 24.0.11, 36.0.12, 45.0.3, and 46.0.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:54.000"
+  },
+  {
+    "id": "CVE-2026-58525",
+    "description": "Improper access control in Microsoft Edge (Chromium-based) allows an unauthorized attacker to bypass a security feature over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:54.300"
+  },
+  {
+    "id": "CVE-2026-59818",
+    "description": "etcd is a distributed key-value store for the data of a distributed system. Prior to 3.5.32 and 3.6.13, when etcd is configured with --listen-client-http-urls to split HTTP and gRPC client endpoints onto separate listeners, the --client-crl-file Certificate Revocation List is not enforced on the gRPC listener, allowing a client with a revoked certificate to authenticate successfully over gRPC. This issue is fixed in versions 3.5.32 and 3.6.13.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:54.503"
+  },
+  {
+    "id": "CVE-2026-60105",
+    "description": "Monsta FTP before 2.14.5 contains a server-side request forgery vulnerability in the fetchRemoteFile action caused by an incomplete IP blocklist check in the isBlockedIP() function, which fails to detect embedded IPv4 addresses within IPv4-mapped IPv6 addresses. An unauthenticated attacker can obtain a CSRF token from the public getSystemVars endpoint and submit a fetchRemoteFile request with a source URL resolving to an IPv4-mapped address, causing the server to issue HTTP requests to internal services and write responses to an attacker-controlled FTP destination, enabling retrieval of cloud instance metadata credentials.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:54.813"
+  },
+  {
+    "id": "CVE-2026-6352",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.2 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an authenticated user with auditor-level access to modify compliance violation records due to improper authorization on certain GraphQL operations.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:54.960"
+  },
+  {
+    "id": "CVE-2026-6896",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 13.11 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to execute arbitrary scripts in another user's browser session due to improper sanitization of user-supplied input.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:55.097"
+  },
+  {
+    "id": "CVE-2026-7492",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 9.1 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an unauthenticated user to determine the existence of a private project due to improper authorization controls on cross-project reference pages.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:55.213"
+  },
+  {
+    "id": "CVE-2026-8472",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.9 before 18.11.7, 19.0 before 19.0.4, and 19.1 before 19.1.2 that under certain conditions could have allowed an authenticated user with minimal access permissions to read work item metadata from private projects due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T21:16:55.327"
+  },
+  {
+    "id": "CVE-2026-10037",
+    "description": "A sandbox escape vulnerability exists in the OpenJDK packages provided in Ubuntu. The .jar MIME handlers installed by these packages execute files marked as executable when the mailcap package is installed. A compromised or malicious sandboxed application with access to the OpenURI portal via xdg-desktop-portal-gtk can write a malicious .jar file to the host file system, set its executable bit, and trigger the handler to execute arbitrary code outside of the sandbox environment.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:12.500"
+  },
+  {
+    "id": "CVE-2026-15168",
+    "description": "BLF file parser in Wireshark 4.6.0 to 4.6.6 and 4.4.0 to 4.4.16 allows possible information disclosure",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:13.717"
+  },
+  {
+    "id": "CVE-2026-31309",
+    "description": "Improper authorization in the /tequilapi/config/user endpoint of Mysterium Node before v1.36.0 allows unauthenticated attackers to arbitrarily overwrite the node's configuration and achieve a full node takeover via supplying a crafted POST request.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:13.840"
+  },
+  {
+    "id": "CVE-2026-35552",
+    "description": "In CAXperts UPVWebServices 2.4.2212.603 through 2.7.6 and UDiTH Portal 2026.0.0 through 2026.2.0, an authenticated remote user can invoke an administrative API endpoint intended for privileged users. Due to missing authorization checks, this allows the attacker to deactivate the application's license.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:13.980"
+  },
+  {
+    "id": "CVE-2026-39178",
+    "description": "A SQL injection vulnerability in SOGo before 5.12.7 allows authenticated users to execute arbitrary SQL statements via the search parameter of the allContactSearch endpoint.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:14.103"
+  },
+  {
+    "id": "CVE-2026-39179",
+    "description": "A SQL injection vulnerability in SOGo before 5.12.7 allows authenticated users to execute arbitrary SQL statements via the newPassword parameter in the password change functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:14.230"
+  },
+  {
+    "id": "CVE-2026-44024",
+    "description": "Fluentd collects events from various data sources and writes them to files, RDBMS, NoSQL, IaaS, SaaS, Hadoop and so on. Prior to 1.19.3, Fluentd allows dynamically constructing file paths using the ${tag} placeholder, and insufficient validation of ${tag} in file configurations such as the path parameter of the out_file plugin allows attackers sending untrusted tags containing path traversal characters to write or overwrite arbitrary files and potentially achieve remote code execution. This issue is fixed in version 1.19.3.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:14.337"
+  },
+  {
+    "id": "CVE-2026-44025",
+    "description": "Fluentd collects events from various data sources and writes them to files, RDBMS, NoSQL, IaaS, SaaS, Hadoop and so on. Prior to 1.19.3, Fluentd's Monitor Agent plugin in_monitor_agent exposes internal metrics and plugin information via a REST API, and responses from /api/plugins.json and related endpoints unintentionally include internal instance variables that may contain database passwords, API keys, or cloud credentials. This issue is fixed in version 1.19.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:14.473"
+  },
+  {
+    "id": "CVE-2026-44160",
+    "description": "Fluentd collects events from various data sources and writes them to files, RDBMS, NoSQL, IaaS, SaaS, Hadoop and so on. Prior to 1.19.3, Fluentd's in_http and in_forward plugins support gzip-compressed data but enforce limits only on compressed payloads through settings such as body_size_limit and chunk_size_limit, allowing crafted compressed payloads to decompress in memory to an excessive size and cause denial of service through memory exhaustion. This issue is fixed in version 1.19.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:14.600"
+  },
+  {
+    "id": "CVE-2026-44161",
+    "description": "Fluentd collects events from various data sources and writes them to files, RDBMS, NoSQL, IaaS, SaaS, Hadoop and so on. Prior to 1.19.3, the Fluentd out_http output plugin allows placeholders such as ${tag} in the endpoint configuration parameter, and if a placeholder value is derived from untrusted input an attacker can control the destination hostname of outbound HTTP requests and force requests to arbitrary internal services. This issue is fixed in version 1.19.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:14.737"
+  },
+  {
+    "id": "CVE-2026-48492",
+    "description": "Snipe-IT is an IT asset/license management system. Prior to version 8.6.1, the GET /api/v1/{object}/selectlist API endpoint is missing an authorization check. Any user who can log into Snipe-IT - regardless of permissions - can retrieve a paginated list of all user accounts using only their web session cookie. No API token or elevated permissions are required. This exposes usernames, display names, employee numbers, and user IDs for every active account in the system if FMCS is not enabled, and within the company they belong to if FMCS is enabled. Version 8.6.1 contains a patch.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:14.870"
+  },
+  {
+    "id": "CVE-2026-51535",
+    "description": "In OpENer 2.3.0 (commit 76b95cf), a resource exhaustion (Denial of Service) vulnerability exists in its network processing loop.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.000"
+  },
+  {
+    "id": "CVE-2026-52200",
+    "description": "An issue in Generic OEM UZ801_v2.1 4G LTE Router V3.4.3 allows a remote attacker to execute arbitrary code via the /ajax web management API endpoint in MifiService.apk",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.127"
+  },
+  {
+    "id": "CVE-2026-54777",
+    "description": "CoreWCF is a port of the service side of Windows Communication Foundation (WCF) to .NET Core. Prior to 1.8.1 and 1.9.1, CoreWCF NetNamedPipe transport accepts attachment to a pre-existing named pipe instance, allowing local interception of NetNamedPipe traffic when an attacker races NamedPipeListener startup between shared memory GUID publication and service named pipe creation. This issue is fixed in versions 1.8.1 and 1.9.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.240"
+  },
+  {
+    "id": "CVE-2026-55470",
+    "description": "HAPI FHIR is a complete implementation of the HL7 FHIR standard for healthcare interoperability in Java. Prior to 6.9.10, the fix for CVE-2026-45367 incompletely patched the DSTU2 module, leaving FHIRPathEngine.matches() in org.hl7.fhir.dstu2/utils/FHIRPathEngine.java to call raw String.matches(sw) without RegexTimeout protection while replaceMatches() was updated, allowing an unauthenticated attacker to trigger catastrophic regex backtracking and exhaust server CPU. This issue is fixed in version 6.9.10.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.377"
+  },
+  {
+    "id": "CVE-2026-55471",
+    "description": "HAPI FHIR is a complete implementation of the HL7 FHIR standard for healthcare interoperability in Java. Prior to 6.9.10, org.hl7.fhir.utilities.XsltUtilities saxonTransform(...) overloads instantiated a bare net.sf.saxon.TransformerFactoryImpl() without ACCESS_EXTERNAL_DTD or ACCESS_EXTERNAL_STYLESHEET restrictions, allowing an attacker who controls or can tamper with transformed XML to trigger XML External Entity injection for local file disclosure and blind XXE or SSRF to arbitrary URLs reachable from the host. This issue is fixed in version 6.9.10.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.520"
+  },
+  {
+    "id": "CVE-2026-55830",
+    "description": "RestrictedPython is a tool that helps to define a subset of the Python language which allows to provide a program input into a trusted environment. Prior to 8.3, check_function_argument_names() rejected protected guard hook names for regular, variadic, and keyword-only arguments but omitted positional-only arguments, allowing __getattr__, _getitem_, _write_, or _print_ to be shadowed by a local parameter and bypass the embedding application's access policy. This issue is fixed in version 8.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.653"
+  },
+  {
+    "id": "CVE-2026-55849",
+    "description": "@cyclonedx/cyclonedx-npm creates CycloneDX Software Bill of Materials from npm projects. From 2.1.0 before 5.0.0, the CLI passes user-supplied --workspace values to a subshell without proper sanitization when npm_execpath is unset or empty, allowing arbitrary OS command execution with the privileges of the invoking user. This issue is fixed in version 5.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.783"
+  },
+  {
+    "id": "CVE-2026-55877",
+    "description": "Symfony UX is a JavaScript ecosystem for Symfony. From 2.17.0 before 2.36.1 and from 3.0.0 before 3.2.0, the ux_icon() Twig function is marked is_safe=['html'] and Icon::toHtml() inlines SVG source verbatim, allowing unsanitized local SVG files or Iconify on-demand JSON body responses containing nested script elements, on* event handlers, or dangerous URL schemes to execute cross-site scripting. This issue is fixed in versions 2.36.1 and 3.2.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:15.920"
+  },
+  {
+    "id": "CVE-2026-55878",
+    "description": "Symfony UX is a JavaScript ecosystem for Symfony. From 2.32.0 before 2.36.1 and from 3.0.0 before 3.2.0, the ux:install console command installs files from a recipe kit by copying paths listed in a copy-files map, and because Path::isRelative() accepts paths like ../../../etc, a crafted or compromised kit can write attacker-controlled content to arbitrary locations or read local files outside the recipe directory. This issue is fixed in versions 2.36.1 and 3.2.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:16.050"
+  },
+  {
+    "id": "CVE-2026-5922",
+    "description": "The IP phone might use malicious input stored in configuration parameters and render it as content for the WebUI’s webpage.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:16.193"
+  },
+  {
+    "id": "CVE-2026-5923",
+    "description": "Malicious use of a stolen cookie might allow modifications to the contents of the IP phone’s webpage.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-08T22:17:16.480"
   }
 ]
