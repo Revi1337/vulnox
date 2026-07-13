@@ -1,5 +1,54 @@
 [
   {
+    "id": "CVE-2026-10668",
+    "description": "The Nuvoton NuMaker HSUSBD USB device-controller driver (drivers/usb/udc/udc_numaker.c) armed the control Data IN stage unconditionally (base->CEPTXCNT = len in numaker_hsusbd_ep_trigger). Because the HSUSBD hardware cannot disarm a control Data IN already armed for a previous transfer, a USB host that cancels an in-flight control transfer (timeout) and then issues a new SETUP packet can drive the driver out of sync: stale data may be transmitted in the new transfer and the control endpoint can become permanently stuck NAK'ing every subsequent control transfer.\n\nA malicious or buggy host (physical/adjacent attacker driving the bus) can repeatedly cancel-and-re-SETUP to wedge the device's USB control endpoint, denying service to the device's USB function (the device stops enumerating/responding on the control pipe) until a USB reset or re-plug. The flaw is an availability-only denial of service; the FIFO copy loops (bounded by net_buf length and the hardware BUFFULL flag) and the net_buf lifecycle are independent of the arming desync, so there is no out-of-bounds access, use-after-free, or information leak.\n\nThe fix monitors the IN-token and new-SETUP events (k_event) and only arms control Data IN when an IN token is present and no new SETUP has arrived, cancelling the current transfer on a new SETUP. Affects boards using the Nuvoton NuMaker HSUSBD controller (CONFIG_UDC_NUMAKER with DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED); shipped in v4.4.0.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-12T17:16:24.787"
+  },
+  {
+    "id": "CVE-2026-10667",
+    "description": "Zephyr's dynamic kernel-object tracking (kernel/userspace/userspace.c, formerly kernel/userspace.c) maintains a doubly-linked list (obj_list) of dynamically allocated kernel objects. Iteration over this list in k_object_wordlist_foreach() was performed under lists_lock using the SAFE iterator (which caches the next node), but list removal and freeing of nodes was performed under different, disjoint spinlocks: objfree_lock in k_object_free() and obj_lock in unref_check(). On an SMP system, while one CPU iterated obj_list under lists_lock, another CPU could unlink and k_free() the dyn_obj node that the iterator had cached as its next pointer, causing the iterator to dereference freed kernel memory (use-after-free / dangling list traversal). All of the racing operations are reachable from unprivileged user-mode threads via system calls: k_object_alloc/k_object_alloc_size and k_object_release drive removals through unref_check() (under obj_lock), while k_thread_abort and thread creation drive the iteration through k_thread_perms_all_clear()/k_thread_perms_inherit() (under lists_lock). A deprivileged user thread on a CONFIG_SMP + CONFIG_USERSPACE build can therefore corrupt the kernel's object-tracking structures across the userspace security boundary, yielding kernel memory corruption (potential privilege escalation) or a kernel crash (denial of service). The fix removes objfree_lock and serializes every obj_list modification under lists_lock, including holding it across find+remove in k_object_free() and around unref_check() in k_thread_perms_clear(). Affects CONFIG_SMP+CONFIG_USERSPACE+CONFIG_DYNAMIC_OBJECTS configurations; the defect dates to the 2019 spinlockification (commit 8a3d57b6cc6, first released in v1.14.0) and shipped through v4.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-12T17:16:24.670"
+  },
+  {
+    "id": "CVE-2026-10666",
+    "description": "parse_ipv4() in subsys/net/ip/utils.c (reached via net_ipaddr_parse() for strings of the form \"a.b.c.d:port\") copies the port substring into a fixed 17-byte stack buffer (char ipaddr[NET_IPV4_ADDR_LEN + 1]) using a length of str_len - end - 1, where str_len is the full, unbounded input length and end is only the (<=15-byte) offset of the ':' delimiter. Because the destination size is never consulted, a crafted address string with a long suffix after the colon (e.g. \"1.2.3.4:\" followed by hundreds of bytes) causes an out-of-bounds stack write whose length and contents are fully attacker-controlled (memcpy of the suffix plus a trailing NUL), enabling memory corruption and at minimum a denial of service, and potentially control-flow hijack. The parser is reached from the standard socket API (zsock_getaddrinfo / literal-address resolution), DNS server-string configuration, and the eswifi Wi-Fi co-processor DNS-response path, so an application that resolves a network-influenced address string is exposed. The bug was introduced when the parser was added (Zephyr v1.9.0) and shipped in all releases through v4.4.0. The fix removes the unbounded copy and validates the port length before copying into a small dedicated buffer. Note: the equivalent IPv6 \"[addr]:port\" path in parse_ipv6() retains the same unbounded copy at this commit and remains a separate, still-reachable instance of the defect.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-12T17:16:24.550"
+  },
+  {
+    "id": "CVE-2026-10665",
+    "description": "In Zephyr's WireGuard subsystem (subsys/net/lib/wireguard), wg_process_data_message() in wg_crypto.c linearizes an inbound transport-data payload into a fixed pool buffer of CONFIG_WIREGUARD_BUF_LEN bytes before decryption. The call net_buf_linearize(buf->data, data_len, pkt->buffer, ..., data_len) passed the attacker-derived data_len as both the destination capacity and the copy length, defeating the function's internal len = min(len, dst_len) bound. data_len is derived from the received UDP datagram length and is only lower-bounded by wg_ctrl_recv() (no upper bound). When data_len exceeds CONFIG_WIREGUARD_BUF_LEN — e.g. when the buffer length is lowered below the link MTU, on links with MTU above the buffer size, or via reassembled IPv4/IPv6 fragments that exceed it — the underlying memcpy writes past the end of the pool buffer, an out-of-bounds write (CWE-787). The overflow occurs before the Poly1305 authentication check, so it requires only a valid receiver session index rather than a valid authenticator, and is reachable by a malicious or compromised peer (or an on-path attacker driving an established session) over the network, yielding remote memory corruption and at minimum a reliable denial of service. The defect was present in the WireGuard implementation shipped in Zephyr 4.4.0. The fix adds an explicit data_len > CONFIG_WIREGUARD_BUF_LEN rejection and corrects the linearize call to pass net_buf_max_len(buf) as the destination capacity.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-12T17:16:24.433"
+  },
+  {
+    "id": "CVE-2026-10664",
+    "description": "The nRF70 Wi-Fi driver's power-save event handler nrf_wifi_event_proc_get_power_save_info() in drivers/wifi/nrf_wifi/src/wifi_mgmt.c copied TWT (Target Wake Time) flow entries from an nrf_wifi_umac_event_power_save_info event into the fixed-size twt_flows[WIFI_MAX_TWT_FLOWS] (8-element) array of a caller-supplied struct wifi_ps_config, looping over event-provided num_twt_flows without validating it against WIFI_MAX_TWT_FLOWS or checking event_len. When num_twt_flows exceeds 8, the handler writes past the destination array (which is typically on the caller's stack, e.g. the wifi ps shell command) -- an out-of-bounds write of ~40-byte TWT entries -- and reads twt_flow_info[i] past the event buffer. The event is delivered by the nRF70 co-processor firmware in response to a host-initiated power-save GET, so reaching the overflow requires the firmware to emit a malformed or out-of-range event; the trust boundary is host-to-trusted-coprocessor rather than a direct remote-AP write, with over-the-air influence on the flow count being indirect and bounded by the 3-bit TWT flow-id space. Affected: builds with CONFIG_NRF70_STA_MODE on releases through v4.4.0. The fix rejects events with num_twt_flows > WIFI_MAX_TWT_FLOWS or with event_len shorter than the claimed entries, and adds a NULL check on the caller buffer.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-12T17:16:24.317"
+  },
+  {
+    "id": "CVE-2026-10663",
+    "description": "In Zephyr's experimental USB host stack (CONFIG_USB_HOST_STACK), usbh_device_disconnect() (subsys/usb/host/usbh_device.c) freed the root usb_device slab object without clearing the cached pointer ctx->root. The bus removal handler dev_removed_handler() (subsys/usb/host/usbh_core.c) decides what to tear down solely from ctx->root, checking only that it is non-NULL.\n\nBecause UHC controller drivers (e.g. uhc_max3421e, uhc_mcux_common) synthesize UHC_EVT_DEV_REMOVED directly from physical bus line state with no debounce or state guard, an attacker with physical USB access (or a rogue device that bounces its connection) can deliver a second device-removed event after a root device disconnect. The handler then re-enters usbh_device_disconnect() with the dangling pointer, locking a mutex inside the freed object (use-after-free), removing the freed node from the device list, and calling k_mem_slab_free() on the already-freed block (double-free). If the slab block has been reissued to a newly attached device in between, this corrupts a live object.\n\nImpact is denial of service (crash) and memory corruption; the attack vector is physical/local. The flaw was introduced in v4.4.0 by the connect/disconnect refactor and is fixed by clearing ctx->root in usbh_device_disconnect() before freeing.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-12T17:16:23.120"
+  },
+  {
+    "id": "CVE-2026-58596",
+    "description": "Untrusted pointer dereference in Microsoft Edge (Chromium-based) allows an unauthorized attacker to elevate privileges over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-12T16:16:31.350"
+  },
+  {
     "id": "CVE-2026-15502",
     "description": "A vulnerability was detected in AojiaoZero Antaris 1.0. This affects the function _rewardPurchase of the file /ipn.php of the component PayPal IPN Payment Handler. The manipulation of the argument item_number results in sql injection. The attack may be performed from remote. The vendor was contacted early about this disclosure but did not respond in any way.",
     "severity": "Medium",
@@ -989,14 +1038,14 @@
   {
     "id": "CVE-2026-58588",
     "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Drupal Canvas allows Cross-Site Scripting (XSS). This issue affects Drupal Canvas versions: from 0.0.0 to 1.4.2, from 1.5.0 to 1.5.2, from 1.6.0 to 1.6.1, from 1.7.0 to 1.7.1.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:45.070"
   },
   {
     "id": "CVE-2026-58587",
     "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Drupal Canvas allows Cross-Site Scripting (XSS). This issue affects Drupal Canvas versions: from 0.0.0 to 1.4.2, from 1.5.0 to 1.5.2, from 1.6.0 to 1.6.1, from 1.7.0 to 1.7.1.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:44.953"
   },
@@ -1045,14 +1094,14 @@
   {
     "id": "CVE-2026-55810",
     "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Plotly.js Graphing allows Object Injection. This issue affects Plotly.js Graphing versions: from 0.0.0 to 3.0.2.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:43.867"
   },
   {
     "id": "CVE-2026-55809",
     "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Flag attendance field allows Object Injection. This issue affects Flag attendance field versions: from 0.0.0 to 1.2.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:43.763"
   },
@@ -1234,112 +1283,112 @@
   {
     "id": "CVE-2026-13244",
     "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Tealium iQ Tag Management allows Object Injection. This issue affects Tealium iQ Tag Management versions: from 0.0.0 to 2.4.0.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:40.523"
   },
   {
     "id": "CVE-2026-13243",
     "description": "Cross-Site Request Forgery (CSRF) vulnerability in Drupal Salesforce Suite allows Cross Site Request Forgery. This issue affects Salesforce Suite versions: from 0.0.0 to 5.1.3.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:40.420"
   },
   {
     "id": "CVE-2026-13242",
     "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in Drupal Geolocation Field allows SQL Injection. This issue affects Geolocation Field versions: from 0.0.0 to 3.15.0.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:40.320"
   },
   {
     "id": "CVE-2026-13241",
     "description": "Missing Authorization vulnerability in Drupal Paragraphs allows Forceful Browsing. This issue affects Paragraphs versions: from 0.0.0 to 1.21.0.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:40.217"
   },
   {
     "id": "CVE-2026-13240",
     "description": "Missing Authorization vulnerability in Drupal Paragraphs allows Forceful Browsing. This issue affects Paragraphs versions: from 0.0.0 to 1.21.0.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:40.113"
   },
   {
     "id": "CVE-2026-13239",
     "description": "Missing Authorization vulnerability in Drupal WissKI allows Forceful Browsing. This issue affects WissKI versions: from 0.0.0 to 4.2.0.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:40.010"
   },
   {
     "id": "CVE-2026-13238",
     "description": "Incorrect Authorization vulnerability in Drupal Commerce Realex / Global Payments allows Forceful Browsing. This issue affects Commerce Realex / Global Payments versions: from 0.0.0 to 3.0.2.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.900"
   },
   {
     "id": "CVE-2026-13237",
     "description": "Incorrect Authorization vulnerability in Drupal AI Agents allows Forceful Browsing. This issue affects AI Agents versions: from 0.0.0 to 1.1.4, from 1.2.0 to 1.2.5, from 1.3.0 to 1.3.1.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.797"
   },
   {
     "id": "CVE-2026-13236",
     "description": "Missing Authorization vulnerability in Drupal AI Agents allows Forceful Browsing. This issue affects AI Agents versions: from 0.0.0 to 1.1.4, from 1.2.0 to 1.2.5, from 1.3.0 to 1.3.1.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.700"
   },
   {
     "id": "CVE-2026-13235",
     "description": "Missing Authorization vulnerability in Drupal AI (Artificial Intelligence) allows Forceful Browsing. This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.2.17, from 1.3.0 to 1.3.8, from 1.4.0 to 1.4.3.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.597"
   },
   {
     "id": "CVE-2026-13234",
     "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal AI (Artificial Intelligence) allows Cross-Site Scripting (XSS). This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.2.17, from 1.3.0 to 1.3.8, from 1.4.0 to 1.4.3.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.500"
   },
   {
     "id": "CVE-2026-13233",
     "description": "Server-Side Request Forgery (SSRF) vulnerability in Drupal OpenAI Provider allows Server Side Request Forgery. This issue affects OpenAI Provider versions: from 0.0.0 to 1.1.1, from 1.2.0 to 1.2.2.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.397"
   },
   {
     "id": "CVE-2026-13232",
     "description": "Incorrect Authorization vulnerability in Drupal Advanced Content Feedback (aka admin_feedback) allows Forceful Browsing. This issue affects Advanced Content Feedback (aka admin_feedback) versions: from 0.0.0 to 2.8.0.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.297"
   },
   {
     "id": "CVE-2026-13231",
     "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Advanced Content Feedback (aka admin_feedback) allows Stored XSS. This issue affects Advanced Content Feedback (aka admin_feedback) versions: from 0.0.0 to 2.8.0.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.187"
   },
   {
     "id": "CVE-2026-12535",
     "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Formatter Field allows Object Injection. This issue affects Formatter Field versions: from 0.0.0 to 2.0.0.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:39.077"
   },
   {
     "id": "CVE-2026-11909",
     "description": "Missing Authorization vulnerability in Drupal Examples for Developers allows Forceful Browsing. This issue affects Examples for Developers versions: from 0.0.0 to 4.0.6.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-10T22:16:38.973"
   },
@@ -2418,14 +2467,14 @@
     "id": "CVE-2026-59796",
     "description": "In JetBrains TeamCity before 2026.1.2 pipeline modification was possible due to improper permission checks",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Teamcity",
     "published": "2026-07-10T15:16:48.683"
   },
   {
     "id": "CVE-2026-59795",
     "description": "In JetBrains TeamCity before 2026.1.2 stored XSS via unauthenticated agent registration was possible",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Teamcity",
     "published": "2026-07-10T15:16:48.573"
   },
   {
@@ -2459,8 +2508,8 @@
   {
     "id": "CVE-2026-58661",
     "description": "n8n before 2.28.0 (and before 1.123.58 on the 1.x branch) contains a disk space exhaustion vulnerability in the data-table file upload endpoint. The per-request quota check does not account for files already written to the shared temporary directory, allowing an authenticated user to repeatedly upload files that accumulate on disk until the periodic cleanup runs, potentially exhausting available disk space on the host.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "N8n",
     "published": "2026-07-10T15:16:47.987"
   },
   {
@@ -2488,21 +2537,21 @@
     "id": "CVE-2026-56373",
     "description": "ImageMagick before 7.1.2-15 contains a use-after-free vulnerability in the PDB decoder that uses a stale pointer when memory allocation fails. Attackers can trigger this vulnerability by processing malicious PDB files to cause crashes or write a single zero byte to freed memory.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Imagemagick",
     "published": "2026-07-10T15:16:43.450"
   },
   {
     "id": "CVE-2026-56366",
     "description": "ImageMagick before 7.1.2-18 contains a memory leak vulnerability in the META reader when processing APP1JPEG input paths. Attackers can trigger this memory leak by providing specially crafted APP1JPEG image files, causing denial of service through resource exhaustion.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Imagemagick",
     "published": "2026-07-10T15:16:43.217"
   },
   {
     "id": "CVE-2026-56354",
     "description": "n8n before 1.123.24, 2.10.4, and 2.12.0 (across its 1.x and 2.x branches) contains cross-site scripting and open redirect vulnerabilities in the Form Node due to unsanitized HTML description fields and overly permissive iframe sandbox policies. Authenticated users with workflow creation permissions can inject malicious scripts or redirect parameters to perform stored XSS attacks or phishing redirects against end users.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "N8n",
     "published": "2026-07-10T15:16:43.030"
   },
   {
@@ -2551,7 +2600,7 @@
     "id": "CVE-2026-56261",
     "description": "Crawl4AI before 0.8.7 contains a server-side request forgery (SSRF) vulnerability in the Docker API server's /crawl/job and /llm/job endpoints, which accept webhook URLs without destination validation. An attacker can supply webhook URLs pointing to private or internal IP ranges, Docker networks, or cloud metadata endpoints (e.g. 169.254.169.254), causing the server to make requests to internal services and potentially expose cloud metadata.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Crawl4ai",
     "published": "2026-07-10T15:16:42.017"
   },
   {
@@ -3510,7 +3559,7 @@
     "id": "CVE-2026-59828",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, post revisions that should be hidden from regular users could be leaked through visible diffs on adjacent revisions serialized by PostRevisionSerializer. This issue is fixed in versions 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Discourse",
     "published": "2026-07-09T22:17:09.973"
   },
   {
@@ -3971,8 +4020,8 @@
   {
     "id": "CVE-2026-55590",
     "description": "CakePHP Authentication is an authentication plugin for CakePHP that can also be used in PSR-7 based applications. Prior to 2.11.1, 3.3.6, and 4.1.1, the getLoginRedirect() method contains a weakness to backslash bypasses that allows redirect targets with attacker-controlled hostnames through the redirect query string parameter. This issue is fixed in versions 2.11.1, 3.3.6, and 4.1.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Cakephp",
     "published": "2026-07-09T19:17:06.670"
   },
   {
@@ -4189,7 +4238,7 @@
     "id": "CVE-2026-55420",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, under certain non-default configurations, processing of PDF uploads could be exploited to obtain RCE on the server. This issue is patched in 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Discourse",
     "published": "2026-07-09T18:16:54.440"
   },
   {
@@ -4226,460 +4275,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-09T18:16:50.230"
-  },
-  {
-    "id": "CVE-2026-59715",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.6.16 before 0.10.0, the Socket.IO server is configured with always_connect=True. The ydoc:awareness:update and ydoc:document:leave Socket.IO handlers accepted collaborative-document events without requiring an authenticated user, allowing unauthorized manipulation of document collaboration state. This issue is fixed in version 0.10.0.",
-    "severity": "Low",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:04.353"
-  },
-  {
-    "id": "CVE-2026-59227",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.8.11 before 0.10.0, POST /api/v1/images/edit required only a verified account and did not enforce the global image-edit switch or the per-user image-generation permission, allowing a non-admin user to invoke server-side image editing with administrator-configured provider credentials. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:04.223"
-  },
-  {
-    "id": "CVE-2026-59226",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.9.0 before 0.10.0, execute_automation rehydrated automation owners without rechecking that they were still active or still had features.automations, and check_model_access only enforced private-model grants for the exact user role, allowing deactivated pending users to continue scheduled model execution. This issue is fixed in version 0.10.0.",
-    "severity": "Low",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:04.067"
-  },
-  {
-    "id": "CVE-2026-59225",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.8.12 before 0.10.0, an authenticated non-admin user with read access to an arena wrapper model can reach a restricted underlying model through task endpoints such as /api/v1/tasks/moa/completions. The normal chat route resolves arena models before the final chat dispatch and therefore re-checks the selected underlying model. The task routes call utils.chat.generate_chat_completion() directly. In that direct path, arena fallback resolution happens after the wrapper access check and then recurses with bypass_filter=True, skipping the selected submodel's access check. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:03.903"
-  },
-  {
-    "id": "CVE-2026-59224",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.10.0, backend/open_webui/routers/terminals.py built the ws_terminal upstream URL from an unencoded session_id and appended user_id as a query parameter, allowing query injection to make the terminal backend resolve another user identity; the HTTP proxy path also forwarded X-User-Id as an integrity-unbound identity claim. This issue is fixed in version 0.10.0.",
-    "severity": "High",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:03.770"
-  },
-  {
-    "id": "CVE-2026-59223",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.10.0, WEB_FETCH_FILTER_LIST matching compared configured host entries against URL strings and non-label-boundary suffixes, allowing path-based blocklist bypasses such as !internal.example.com in a URL path and sibling-domain matches that did not reflect the intended hostname policy. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:03.603"
-  },
-  {
-    "id": "CVE-2026-59222",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.7.0 before 0.10.0, GET /api/v1/channels//members returned full UserModelResponse objects for channel members, including settings.ui.toolServers[].key and webhook configuration, allowing a normal channel participant to retrieve other users’ sensitive settings. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:03.353"
-  },
-  {
-    "id": "CVE-2026-59220",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.9.2 before 0.10.0, the SKILL_MENTION_RE and strip_re regular expressions in backend/open_webui/utils/middleware.py parsed <$skillId|label> skill mentions with overlapping quantifiers, allowing an authenticated chat message containing <$ without a closing > to trigger quadratic backtracking and block the asyncio event loop. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:03.040"
-  },
-  {
-    "id": "CVE-2026-59219",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.9.0 before 0.10.0 with Redis configured, Socket.IO connect, user-join, join-channels, join-note, and the terminal websocket first-message authentication used decode_token without the Redis-backed is_valid_token revocation check, allowing revoked JWTs to continue authenticating realtime connections. This issue is fixed in version 0.10.0.",
-    "severity": "High",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:02.877"
-  },
-  {
-    "id": "CVE-2026-59218",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.10.0, the /api/v1/auths/signin endpoint looked users up by email and only ran bcrypt password verification when a credential existed, making registered-account attempts measurably slower than missing-email attempts and allowing unauthenticated account enumeration. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:02.750"
-  },
-  {
-    "id": "CVE-2026-59217",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.10.0, the file upload path accepted metadata.knowledge_id and auto-linked uploaded files to a target knowledge base without applying the write-access check used by /api/v1/knowledge//file/add, allowing read-only knowledge-base users to add arbitrary files. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:02.613"
-  },
-  {
-    "id": "CVE-2026-59216",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.10.0, get_event_call delivered execute:python and execute:tool Socket.IO events to a client-supplied session_id after checking only that the session was connected, allowing authenticated users who learned another socket ID through ydoc:document:join to run code interpreter Python or tools in that user session. This issue is fixed in version 0.10.0.",
-    "severity": "High",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:02.467"
-  },
-  {
-    "id": "CVE-2026-59215",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.10.0, channel thread parent and reply handling did not bind parent_id to the channel in the URL, allowing an authenticated user to reference a message from another private or DM channel and disclose thread context across channels. This issue is fixed in version 0.10.0.",
-    "severity": "Low",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:02.340"
-  },
-  {
-    "id": "CVE-2026-59214",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.10.0, Open WebUI runs client-side Python with Pyodide in a same-origin web worker, allowing stored chat payloads that use pyodide.http.pyfetch or the js module fetch and XMLHttpRequest APIs to issue authenticated same-origin requests when a victim clicks Run, which can reach admin-only endpoints and execute server-side code through configured tools. This issue is fixed in version 0.10.0.",
-    "severity": "High",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:02.177"
-  },
-  {
-    "id": "CVE-2026-59213",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.6.27 before 0.10.0, get_all_models handlers in routers/openai.py and routers/ollama.py passed a lambda to aiocache key instead of key_builder, causing permission-filtered per-user model lists to share a static cache entry and exposing one user’s model list to another caller during the TTL window. This issue is fixed in version 0.10.0.",
-    "severity": "Low",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:02.030"
-  },
-  {
-    "id": "CVE-2026-59212",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.9.6 before 0.10.0, _verify_knowledge_file_access only checked read access while file write and delete routes later trusted object-derived access through writable model meta.knowledge entries, allowing a user with read-only knowledge file access to upgrade to file write or delete operations. This issue is fixed in version 0.10.0.",
-    "severity": "Medium",
-    "tech": "Open webui",
-    "published": "2026-07-09T17:17:01.903"
-  },
-  {
-    "id": "CVE-2026-59209",
-    "description": "n8n is an open source workflow automation platform. Prior to 1.123.61, 2.27.4, and, 2.28.1, an authenticated member with use-only editor access to a shared workflow could read credential-populated headers exposed via the $request object inside an HTTP Request node's pagination expression and exfiltrate the secret through item data. This issue is fixed in versions 1.123.61, 2.27.4, and 2.28.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:17:01.780"
-  },
-  {
-    "id": "CVE-2026-58459",
-    "description": "gpsd through release-3.27.5, fixed at commit 4c06658, contains a command injection vulnerability in gpsprof that allows attackers who control the GPS device subtype value to execute arbitrary shell commands by embedding backtick payloads in the gnuplot plot title without proper escaping. The subtype field sourced from a DEVICES JSON log entry or NMEA PGRMT sentence is written into a generated gnuplot program via a set title statement with only double-quote characters escaped, enabling arbitrary shell command execution as the user running gnuplot when the victim renders the generated plot through the gpsprof and gnuplot workflow.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:17:01.493"
-  },
-  {
-    "id": "CVE-2026-53987",
-    "description": "The Tag plugin for GLPI 11 before 2.14.4 stores the tag name without HTML sanitization and renders it into the Kanban badge markup via PluginTagTag::preKanbanContent() without output escaping, resulting in stored cross-site scripting. An authenticated user with TAG MANAGEMENT create or update rights can set a tag name containing HTML, which then executes in the browser of any user who opens the Kanban view of a ticket, problem, change, or project the tag is attached to.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:17:01.277"
-  },
-  {
-    "id": "CVE-2026-51606",
-    "description": "An improper input handling vulnerability in the RTSP service of Tenda CP3 V3.0 (firmware V31.1.9.91) causes the device to abruptly terminate the TCP connection with a RST packet when a request containing an oversized field value is received, without returning any RFC 2326-compliant error response. This behavior affects the request-line URL field and header field values across multiple RTSP request types.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:17:01.173"
-  },
-  {
-    "id": "CVE-2026-51605",
-    "description": "A stack-based buffer overflow vulnerability in the RTSP service of Tenda CP3 V3.0 (firmware V31.1.9.991) allows an unauthenticated remote attacker to cause a denial of service via a crafted TEARDOWN request.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:17:01.070"
-  },
-  {
-    "id": "CVE-2026-51604",
-    "description": "A stack-based buffer overflow vulnerability in the RTSP service of Tenda CP3 V3.0 (firmware V31.1.9.91) allows an unauthenticated remote attacker to cause a denial of service via a crafted PLAY request.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:17:00.970"
-  },
-  {
-    "id": "CVE-2026-51603",
-    "description": "A stack-based buffer overflow vulnerability in the RTSP service of Tenda CP3 V3.0 (firmware V31.1.9.91) allows an unauthenticated remote attacker to cause a denial of service via a crafted second SETUP request. After completing the OPTIONS, DESCRIBE, and a legitimate first SETUP request to obtain a valid session ID, the RTSP service's second-stage URL routing parser fails to validate the length of the URL field in the subsequent SETUP request. By supplying a URL consisting of exactly four consecutive repetitions of a valid RTSP URL, an attacker can bypass first-stage format validation and trigger a stack buffer overflow, causing an immediate crash of the RTSP service process and rendering the device inaccessible to all clients on the local network.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:17:00.867"
-  },
-  {
-    "id": "CVE-2026-51602",
-    "description": "A stack-based buffer overflow vulnerability in the RTSP service of Tenda CP3 V3.0 (firmware V31.1.9.91) allows an unauthenticated remote attacker to cause a denial of service via a crafted SETUP request. The RTSP service's second-stage URL routing parser fails to validate the length of the URL field in the first SETUP request. By supplying a URL consisting of exactly four consecutive repetitions of a valid RTSP URL, an attacker can bypass first-stage format validation and trigger a stack buffer overflow, causing an immediate crash of the RTSP service process and rendering the device inaccessible to all clients on the local network.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:59.930"
-  },
-  {
-    "id": "CVE-2026-51601",
-    "description": "Tenda CP3 V3.0 firmware V31.1.9.91 contains a stack-based buffer overflow in the RTSP service. The device fails to validate the length of the clock= value in the Range header field when processing a PLAY request. An unauthenticated remote attacker who has completed a standard RTSP session handshake can send a PLAY request with an excessively long clock= value to cause the RTSP service to crash.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:59.810"
-  },
-  {
-    "id": "CVE-2026-51600",
-    "description": "Tenda CP3 V3.0 firmware V31.1.9.91 does not validate the Content-Length header field in RTSP requests (including DESCRIBE, SETUP, and PLAY methods). When a request carrying a Content-Length header is received without a corresponding message body, the RTSP parser enters a persistent body-awaiting state, causing the affected TCP connection to become permanently non-functional. The device does not actively close the connection, resulting in a TCP resource leak. This issue can be exploited by an unauthenticated remote attacker to cause a denial-of-service condition.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:59.693"
-  },
-  {
-    "id": "CVE-2026-51599",
-    "description": "An insufficient input validation vulnerability in the RTSP service of MERCURY MIPC252W v1.0.5 Build 230306 Rel.79931n allows an unauthenticated remote attacker to render an individual TCP connection temporarily unusable via sending an RTSP request with a Content-Length header but no corresponding message body. The affected RTSP parser enters a body-waiting state instead of rejecting the malformed request, causing all subsequent data on the connection to be silently consumed as body content until a server-side timeout closes the connection.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:59.577"
-  },
-  {
-    "id": "CVE-2026-51598",
-    "description": "An input validation vulnerability in the RTSP service of MERCURY MIPC252W IP Camera v1.0.5 Build 230306 Rel.79931n) allows an unauthenticated, network-adjacent attacker to cause a denial of service via a crafted DESCRIBE request with a malformed URL in the request line.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:59.457"
-  },
-  {
-    "id": "CVE-2026-51597",
-    "description": "MERCURY MIPC252W IP camera v1.0.5 Build 230306 Rel.79931n does not implement nonce expiration in RTSP Digest authentication. An adjacent network attacker can capture a legitimate authentication exchange and replay the nonce and response values in a new connection to bypass authentication without knowledge of the device credentials, gaining unauthorized access to the live video stream.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:59.333"
-  },
-  {
-    "id": "CVE-2026-15308",
-    "description": "The incremental HTML parser (html.parser.HTMLParser) allows for CPU\ndenial-of-service through repeated unterminated markup declarations when\nprocessing uncontrolled data.",
-    "severity": "High",
-    "tech": "Python",
-    "published": "2026-07-09T17:16:58.260"
-  },
-  {
-    "id": "CVE-2026-15194",
-    "description": "A security flaw has been discovered in Open5GS 2.7.7. This affects the function amf_context_final of the file src/amf/context.c of the component AMF. Performing a manipulation results in use after free. The attack is only possible with local access. The exploit has been released to the public and may be used for attacks.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:58.097"
-  },
-  {
-    "id": "CVE-2026-15193",
-    "description": "A vulnerability was determined in AidanPark openclaw-android up to 0.4.0. The affected element is an unknown function of the file android/app/src/main/java/com/openclaw/android/JsBridge.kt of the component Android WebView Bridge. This manipulation causes os command injection. The attack can only be executed locally. The exploit has been publicly disclosed and may be utilized. The pull request to fix this issue awaits acceptance.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:57.947"
-  },
-  {
-    "id": "CVE-2026-15192",
-    "description": "A vulnerability has been found in mettle sendportal up to 3.0.1. This issue affects the function sendgrid/postmark/postal/mailjet of the component APIv1 Webhooks. The manipulation leads to missing authentication. The attack is possible to be carried out remotely. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:57.783"
-  },
-  {
-    "id": "CVE-2026-15191",
-    "description": "A flaw has been found in mettle sendportal up to 3.0.1. This vulnerability affects unknown code of the file vendor/mettle/sendportal-core/src/Http/Requests/CampaignStoreRequest.php of the component Campaign Creation Endpoint. Executing a manipulation can lead to authorization bypass. The attack can be executed remotely. The exploit has been published and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:57.620"
-  },
-  {
-    "id": "CVE-2026-15190",
-    "description": "A vulnerability was detected in SourceCodester Simple and Nice Shopping Cart Script 1.0. This affects an unknown part of the file /login.php. Performing a manipulation of the argument Username results in sql injection. Remote exploitation of the attack is possible. The exploit is now public and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:57.437"
-  },
-  {
-    "id": "CVE-2026-13462",
-    "description": "PayRange Android app, version 7.0.7 and below, contains an SSL bypass vulnerability that allows invalid certificates to be accepted in application webviews. A remote and unauthenticated attacker can steal information that the user sends.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:57.090"
-  },
-  {
-    "id": "CVE-2026-13461",
-    "description": "When coupled with the SSL bypass vulnerability, JavaScript can be injected into a WebView in the PayRange version 7.0.7 app. The injection of specific JavaScript function calls allows the attacker to escape the WebView sandbox and perform a number of dangerous actions on the user's device.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-09T17:16:56.997"
-  },
-  {
-    "id": "CVE-2026-61474",
-    "description": "An improper authorization check in MISP’s attribute creation endpoint allowed an authenticated user with permission to add attributes to submit a sharing_group_id without triggering the corresponding sharing group authorization check, as long as the attribute distribution value was not explicitly set to 4 — “sharing group”.\n\n\nAs a result, a user could reference or associate an attribute with a sharing group they were not authorized to use. This could lead to an access-control bypass affecting the integrity of attribute sharing metadata and potentially expose or misuse restricted sharing group relationships.\n\n\nThe patch changes the authorization logic so that the sharing group permission check is performed whenever a non-empty sharing_group_id is provided, regardless of the selected distribution value.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:49.250"
-  },
-  {
-    "id": "CVE-2026-59208",
-    "description": "n8n is an open source workflow automation platform. Prior to 2.27.4 and from 2.28.0 prior to 2.28.1, n8n instances configured with more than one trusted token-exchange issuer resolved external identities to local accounts using only the JWT sub claim and ignored the iss claim, allowing an attacker with a valid token from one trusted issuer and a sub matching a victim under another issuer to authenticate as that victim. This issue is fixed in versions 2.27.4 and 2.28.1.",
-    "severity": "Medium",
-    "tech": "N8n",
-    "published": "2026-07-09T16:16:46.610"
-  },
-  {
-    "id": "CVE-2026-59207",
-    "description": "n8n is an open source workflow automation platform. Prior to 2.27.4 and 2.28.1, the AI Agents feature did not enforce the Allowed HTTP Request Domains restriction configured on credentials when an MCP tool was pointed at an arbitrary URL, allowing a member-level user with use-only access to a shared credential to send its secret to an external server they control. This issue is fixed in versions 2.27.4 and 2.28.1.",
-    "severity": "Medium",
-    "tech": "N8n",
-    "published": "2026-07-09T16:16:46.470"
-  },
-  {
-    "id": "CVE-2026-59206",
-    "description": "n8n is an open source workflow automation platform. Prior to 1.123.61, 2.27.4, and, 2.28.1, an authenticated user with the default workflow:create permission could pollute Object.prototype through a crafted workflow saved, updated, or imported via the workflow API, allowing unauthenticated requests to be treated as a privileged user and exposing user and project listing endpoints. This issue is fixed in versions 1.123.61, 2.27.4, and 2.28.1.",
-    "severity": "High",
-    "tech": "N8n",
-    "published": "2026-07-09T16:16:46.323"
-  },
-  {
-    "id": "CVE-2026-58125",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:45.723"
-  },
-  {
-    "id": "CVE-2026-42486",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.]\nXAPI can configure different users with different roles, using Role\nBased Access Control.  For more details, see:\n\n  https://docs.xenserver.com/en-us/xencenter/current-release/rbac-overview.html#rbac-roles\n\nThe pool-admin role is fully privileged.  Notably, users with this role\ncan also SSH into the host as root.\n\nThe other administrator roles are pool-operator, vm-power-admin and\nvm-admin, each of which are authorised to configure and manage various\naspects of the system.\n\nSome settings are inadequately restricted, and can be set by a lower\nprivilege of administrator than expected.\n\n * CVE-2026-23559: A vm-admin can set VBD.other_config:backend-local and\n   turn arbitrary files in dom0 into VDIs (virtual disks) and give said\n   disks to a VM they control.  This is an arbitrary read and/or modify\n   of files in dom0.\n\n * CVE-2026-23560: A vm-admin can set VM.other-config:is_system_domain\n   and mark a VM as a system domain.  System domains are ignored and\n   left running during certain other host/pool operations, and may be\n   hidden from view in tooling.\n\n * CVE-2026-23561: A vm-admin can set VM.other_config:storage_driver_domain\n   and mark a VM as the storage domain for a particular host storage\n   connection (PBD). Shutting down the VM can cause the PBD to be\n   erroneously marked as unplugged when it is not.\n\n * CVE-2026-23562: Configuration of PCI passthrough is normally\n   restricted to the pool-admin role.  However one API was missing this\n   check, allowing a vm-admin access to unintended host hardware.\n\n * CVE-2026-42486: A vm-admin can set the VM.platform:hvm_serial\n   parameter, which should be restricted to the pool-admin role, as it\n   can allow arbitrary dom0 file write.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:41.443"
-  },
-  {
-    "id": "CVE-2026-23562",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.]\nXAPI can configure different users with different roles, using Role\nBased Access Control.  For more details, see:\n\n  https://docs.xenserver.com/en-us/xencenter/current-release/rbac-overview.html#rbac-roles\n\nThe pool-admin role is fully privileged.  Notably, users with this role\ncan also SSH into the host as root.\n\nThe other administrator roles are pool-operator, vm-power-admin and\nvm-admin, each of which are authorised to configure and manage various\naspects of the system.\n\nSome settings are inadequately restricted, and can be set by a lower\nprivilege of administrator than expected.\n\n * CVE-2026-23559: A vm-admin can set VBD.other_config:backend-local and\n   turn arbitrary files in dom0 into VDIs (virtual disks) and give said\n   disks to a VM they control.  This is an arbitrary read and/or modify\n   of files in dom0.\n\n * CVE-2026-23560: A vm-admin can set VM.other-config:is_system_domain\n   and mark a VM as a system domain.  System domains are ignored and\n   left running during certain other host/pool operations, and may be\n   hidden from view in tooling.\n\n * CVE-2026-23561: A vm-admin can set VM.other_config:storage_driver_domain\n   and mark a VM as the storage domain for a particular host storage\n   connection (PBD). Shutting down the VM can cause the PBD to be\n   erroneously marked as unplugged when it is not.\n\n * CVE-2026-23562: Configuration of PCI passthrough is normally\n   restricted to the pool-admin role.  However one API was missing this\n   check, allowing a vm-admin access to unintended host hardware.\n\n * CVE-2026-42486: A vm-admin can set the VM.platform:hvm_serial\n   parameter, which should be restricted to the pool-admin role, as it\n   can allow arbitrary dom0 file write.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:39.233"
-  },
-  {
-    "id": "CVE-2026-23561",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.]\nXAPI can configure different users with different roles, using Role\nBased Access Control.  For more details, see:\n\n  https://docs.xenserver.com/en-us/xencenter/current-release/rbac-overview.html#rbac-roles\n\nThe pool-admin role is fully privileged.  Notably, users with this role\ncan also SSH into the host as root.\n\nThe other administrator roles are pool-operator, vm-power-admin and\nvm-admin, each of which are authorised to configure and manage various\naspects of the system.\n\nSome settings are inadequately restricted, and can be set by a lower\nprivilege of administrator than expected.\n\n * CVE-2026-23559: A vm-admin can set VBD.other_config:backend-local and\n   turn arbitrary files in dom0 into VDIs (virtual disks) and give said\n   disks to a VM they control.  This is an arbitrary read and/or modify\n   of files in dom0.\n\n * CVE-2026-23560: A vm-admin can set VM.other-config:is_system_domain\n   and mark a VM as a system domain.  System domains are ignored and\n   left running during certain other host/pool operations, and may be\n   hidden from view in tooling.\n\n * CVE-2026-23561: A vm-admin can set VM.other_config:storage_driver_domain\n   and mark a VM as the storage domain for a particular host storage\n   connection (PBD). Shutting down the VM can cause the PBD to be\n   erroneously marked as unplugged when it is not.\n\n * CVE-2026-23562: Configuration of PCI passthrough is normally\n   restricted to the pool-admin role.  However one API was missing this\n   check, allowing a vm-admin access to unintended host hardware.\n\n * CVE-2026-42486: A vm-admin can set the VM.platform:hvm_serial\n   parameter, which should be restricted to the pool-admin role, as it\n   can allow arbitrary dom0 file write.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:39.100"
-  },
-  {
-    "id": "CVE-2026-23560",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.]\nXAPI can configure different users with different roles, using Role\nBased Access Control.  For more details, see:\n\n  https://docs.xenserver.com/en-us/xencenter/current-release/rbac-overview.html#rbac-roles\n\nThe pool-admin role is fully privileged.  Notably, users with this role\ncan also SSH into the host as root.\n\nThe other administrator roles are pool-operator, vm-power-admin and\nvm-admin, each of which are authorised to configure and manage various\naspects of the system.\n\nSome settings are inadequately restricted, and can be set by a lower\nprivilege of administrator than expected.\n\n * CVE-2026-23559: A vm-admin can set VBD.other_config:backend-local and\n   turn arbitrary files in dom0 into VDIs (virtual disks) and give said\n   disks to a VM they control.  This is an arbitrary read and/or modify\n   of files in dom0.\n\n * CVE-2026-23560: A vm-admin can set VM.other-config:is_system_domain\n   and mark a VM as a system domain.  System domains are ignored and\n   left running during certain other host/pool operations, and may be\n   hidden from view in tooling.\n\n * CVE-2026-23561: A vm-admin can set VM.other_config:storage_driver_domain\n   and mark a VM as the storage domain for a particular host storage\n   connection (PBD). Shutting down the VM can cause the PBD to be\n   erroneously marked as unplugged when it is not.\n\n * CVE-2026-23562: Configuration of PCI passthrough is normally\n   restricted to the pool-admin role.  However one API was missing this\n   check, allowing a vm-admin access to unintended host hardware.\n\n * CVE-2026-42486: A vm-admin can set the VM.platform:hvm_serial\n   parameter, which should be restricted to the pool-admin role, as it\n   can allow arbitrary dom0 file write.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:38.943"
-  },
-  {
-    "id": "CVE-2026-23559",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.]\n\n\nXAPI can configure different users with different roles, using Role\nBased Access Control.  For more details, see:\n\n   https://docs.xenserver.com/en-us/xencenter/current-release/rbac-overview.html#rbac-roles \n\nThe pool-admin role is fully privileged.  Notably, users with this role\ncan also SSH into the host as root.\n\nThe other administrator roles are pool-operator, vm-power-admin and\nvm-admin, each of which are authorised to configure and manage various\naspects of the system.\n\nSome settings are inadequately restricted, and can be set by a lower\nprivilege of administrator than expected.\n\n * CVE-2026-23559: A vm-admin can set VBD.other_config:backend-local and\n   turn arbitrary files in dom0 into VDIs (virtual disks) and give said\n   disks to a VM they control.  This is an arbitrary read and/or modify\n   of files in dom0.\n\n * CVE-2026-23560: A vm-admin can set VM.other-config:is_system_domain\n   and mark a VM as a system domain.  System domains are ignored and\n   left running during certain other host/pool operations, and may be\n   hidden from view in tooling.\n\n * CVE-2026-23561: A vm-admin can set VM.other_config:storage_driver_domain\n   and mark a VM as the storage domain for a particular host storage\n   connection (PBD). Shutting down the VM can cause the PBD to be\n   erroneously marked as unplugged when it is not.\n\n * CVE-2026-23562: Configuration of PCI passthrough is normally\n   restricted to the pool-admin role.  However one API was missing this\n   check, allowing a vm-admin access to unintended host hardware.\n\n * CVE-2026-42486: A vm-admin can set the VM.platform:hvm_serial\n   parameter, which should be restricted to the pool-admin role, as it\n   can allow arbitrary dom0 file write.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:38.807"
-  },
-  {
-    "id": "CVE-2026-23556",
-    "description": "When oxenstored is tearing a domain down, the node data is cleaned up\nbut the usage counts are leaked.\n\nWhen the domain ID is eventually reused, the new domain can create fewer\nnodes before beeing deemed to be over quota.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:38.690"
-  },
-  {
-    "id": "CVE-2026-15189",
-    "description": "A security vulnerability has been detected in aerostackdev aerostack-mcp up to 6315dfde7df0a15aaf743f88d91347115e09ba23. Affected by this issue is the function upload_media of the component mcp-whatsapp. Such manipulation of the argument media_url leads to server-side request forgery. The attack may be launched remotely. This product operates on a rolling release basis, ensuring continuous delivery. Consequently, there are no version details for either affected or updated releases. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:38.520"
-  },
-  {
-    "id": "CVE-2026-15188",
-    "description": "A weakness has been identified in manjurulhoque django-job-portal up to dfa352f305bba44445ac5dc12e9b2a98c9dcd71f. Affected by this vulnerability is the function EditEmployeeProfileAPIView of the file accounts/api/views.py of the component Employee Dashboard Endpoint. This manipulation of the argument role causes improper access controls. The attack may be initiated remotely. The exploit has been made available to the public and could be used for attacks. This product uses a rolling release model to deliver continuous updates. As a result, specific version information for affected or updated releases is not available. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:38.350"
-  },
-  {
-    "id": "CVE-2026-15187",
-    "description": "A security flaw has been discovered in enquirer up to 2.4.1. Affected is the function Enquirer.set of the component Public Package API. The manipulation of the argument question.name results in improperly controlled modification of object prototype attributes. The attack can be launched remotely. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:38.190"
-  },
-  {
-    "id": "CVE-2026-11404",
-    "description": "Cesanta Mongoose before 7.22 contains an out-of-bounds read in the built-in TLS server function mg_tls_server_recv_hello(), which uses an attacker-controlled session_id_len byte from a TLS ClientHello as a buffer index without validating it against the length of received data. A remote, unauthenticated attacker can send a single crafted ClientHello with an oversized session id length to read past the receive buffer, crashing any HTTPS, MQTTS, or WSS service built on MG_TLS_BUILTIN.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:34.640"
-  },
-  {
-    "id": "CVE-2025-58151",
-    "description": "varstored is a component of the Xapi toolstack handling UEFI Variables\nfor a VM.  It has a communication path with OVMF inside the VM involving\nmapping a buffer prepared by OVMF.\n\nWithin varstored, there were insufficient compiler barriers, creating\nTOCTOU issues with data in the shared buffer.\n\nThe exact vulnerable behaviour depends on the code generated by the\ncompiler.  In a build of varstored using default settings, the attacker\ncan control an index used in a jump table.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:33.817"
-  },
-  {
-    "id": "CVE-2025-58146",
-    "description": "There are multiple issues.\n\n 1. Updates to the XAPI database sanitise input strings, but try\n    generating the notification using the unsanitised input.  This\n    causes the database's event thread to terminate and cease further\n    processing.\n\n 2. XAPI's UTF-8 encoder implements v3.0 of the Unicode spec, but XAPI\n    uses libraries which conform to the stricter v3.1 of the Unicode\n    spec.  This causes some strings to be accepted as valid UTF-8 by\n    XAPI, but rejected by other libraries in use.  Notably, such strings\n    can be entered into the database, after which the database can no\n    longer be loaded.\n\n 3. There is no input sanitisation for Map/Set updates on objects in the\n    XAPI database.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:33.687"
-  },
-  {
-    "id": "CVE-2025-27464",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.] The Windows PV drivers expose various facilities to userspace. Several of these have no security descriptor, and are therefore fully accessible to unprivileged users. These are: 1. XenCons, CVE-2025-27462 2. XenIface, CVE-2025-27463 3. XenBus, CVE-2025-27464",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:33.313"
-  },
-  {
-    "id": "CVE-2025-27463",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.] The Windows PV drivers expose various facilities to userspace. Several of these have no security descriptor, and are therefore fully accessible to unprivileged users. These are: 1. XenCons, CVE-2025-27462 2. XenIface, CVE-2025-27463 3. XenBus, CVE-2025-27464",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:33.203"
-  },
-  {
-    "id": "CVE-2025-27462",
-    "description": "[This CNA information record relates to multiple CVEs; the text explains which aspects/vulnerabilities correspond to which CVE.]\n\n\nThe Windows PV drivers expose various facilities to userspace.  Several\nof these have no security descriptor, and are therefore fully accessible\nto unprivileged users.  These are:\n\n  1. XenCons,  CVE-2025-27462\n  2. XenIface, CVE-2025-27463\n  3. XenBus,   CVE-2025-27464",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-09T16:16:33.070"
-  },
-  {
-    "id": "CVE-2026-60109",
-    "description": "Zeek before 8.0.9 contains a null pointer dereference vulnerability in its Kerberos protocol analyzer that allows unauthenticated remote attackers to crash the sensor by sending a crafted KRB_ERROR message with error-code 25 (KDC_ERR_PREAUTH_REQUIRED) containing a PA-DATA element with padata-type 2, 3, 11, or 19. Attackers can exploit a parser and analyzer state mismatch where proc_padata() dereferences an uninitialized pa_data_element field selected by the wrong parsing arm, triggering a crash via a single UDP or TCP packet to port 88 without any credentials or prior authentication.",
-    "severity": "High",
-    "tech": "Zeek",
-    "published": "2026-07-09T15:16:41.757"
-  },
-  {
-    "id": "CVE-2026-60108",
-    "description": "Zeek before 8.0.9 contains an uncontrolled memory consumption vulnerability in the FTP analyzer that allows unauthenticated remote attackers to cause process termination by sending a crafted FTP control session negotiating AUTH GSSAPI followed by a large ADAT control line. Attackers can exploit the NVT_Analyzer component's lack of a maximum line length check, causing it to continuously double its internal buffer without bounds during base64 decoding of an attacker-controlled ADAT token, resulting in denial of service of the Zeek sensor.",
-    "severity": "High",
-    "tech": "Zeek",
-    "published": "2026-07-09T15:16:41.627"
-  },
-  {
-    "id": "CVE-2026-5005",
-    "description": "Improper neutralization of input during web page generation ('cross-site scripting') vulnerability in Twiser Informatics Technology Consulting, Trade and Education Inc. OKRs & Goals allows Stored XSS.\n\nThis issue affects OKRs & Goals: from 28220 before 28398.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T15:16:40.943"
-  },
-  {
-    "id": "CVE-2026-56292",
-    "description": "A SQLi vulnerability in AcyMailing component < 10.11.1 for Joomla was discovered. Exploiting this flaw can lead to unauthorized database access and data leakage.",
-    "severity": "High",
-    "tech": "Acymailing",
-    "published": "2026-07-09T15:16:37.937"
-  },
-  {
-    "id": "CVE-2026-54801",
-    "description": "A vulnerability has been identified in CPCI85 Central Processing/Communication (All versions < V26.20), SICORE Base system (All versions < V26.20.0). The affected application contains insufficient validation of authentication credentials when processing administrative account modifications through the web API. This could allow an authenticated attacker to bypass security controls and gain unauthorized elevated privileges.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-09T15:16:36.830"
-  },
-  {
-    "id": "CVE-2026-54800",
-    "description": "A vulnerability has been identified in CPCI85 Central Processing/Communication (All versions < V26.20), SICORE Base system (All versions < V26.20.0). The affected application ships with a default configuration that disables all OPC UA security mechanisms. This could allow an attacker to gain unauthorized access and control over critical system functions.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T15:16:36.707"
-  },
-  {
-    "id": "CVE-2026-54799",
-    "description": "A vulnerability has been identified in CPCI85 Central Processing/Communication (All versions < V26.20), SICORE Base system (All versions < V26.20.0). The affected application contains a vulnerability in its firmware update mechanism's signature validation process. This could allow an attacker to install malicious firmware, leading to persistent code execution and system compromise.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T15:16:36.580"
-  },
-  {
-    "id": "CVE-2026-54798",
-    "description": "A vulnerability has been identified in CPCI85 Central Processing/Communication (All versions < V26.20), SICORE Base system (All versions < V26.20.0). The affected application includes a debugging interface that is accessible through HTTP endpoints. This could allow an authenticated attacker to disrupt the system by crashing the web process causing denial of service conditions.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-09T15:16:36.443"
   }
 ]
