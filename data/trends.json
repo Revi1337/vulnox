@@ -17509,50 +17509,50 @@
   {
     "id": "CVE-2026-52965",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/ttm: Fix ttm_bo_swapout() infinite LRU walk on swapout failure\n\nWhen ttm_tt_swapout() fails, the current code calls\nttm_resource_add_bulk_move() followed by ttm_resource_move_to_lru_tail()\nto restore the resource's bulk_move membership.\n\nHowever, ttm_resource_move_to_lru_tail() places the resource at the tail\nof the LRU list which, relative to the walk cursor's hitch node (placed\nimmediately after the resource when it was yielded), puts the resource\n*in front of the* the hitch. The next list_for_each_entry_continue() from\nthe hitch finds the same resource again, causing an infinite loop.\n\nFix by deferring del_bulk_move to the success path only.\n\nOn the success path, TTM_TT_FLAG_SWAPPED has just been set by\nttm_tt_swapout() but the resource is still tracked in the bulk_move range,\nso ttm_resource_del_bulk_move()'s !ttm_resource_unevictable() guard would\nincorrectly skip the removal. Introduce\nttm_resource_del_bulk_move_unevictable() which bypasses that guard.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.937"
   },
   {
     "id": "CVE-2026-52966",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm: Replace old pointer to new idr\n\nCommit 5e28b7b94408 introduced a logical error by failing to replace the\nnewly generated IDR pointer to old id's pointer at the correct location\nwithin the \"change handle\" logic; this resulted in the issue reported by\nsyzbot [1].\n\nSpecifically, the new IDR object pointer is intended to replace the original\nid's pointer during the normal execution flow.\n\nAdditionally, an unnecessary conditional check for the ret exit path has\nbeen removed.\n\n[1]\n!RB_EMPTY_ROOT(&prime_fpriv->dmabufs)\nWARNING: drivers/gpu/drm/drm_prime.c:224 at drm_prime_destroy_file_private+0x48/0x60 drivers/gpu/drm/drm_prime.c:224, CPU#0: syz.0.17/5833\nCall Trace:\n drm_file_free.part.0+0x7e6/0xcc0 drivers/gpu/drm/drm_file.c:269\n drm_file_free drivers/gpu/drm/drm_file.c:237 [inline]\n drm_close_helper.isra.0+0x186/0x200 drivers/gpu/drm/drm_file.c:290\n drm_release+0x1ab/0x360 drivers/gpu/drm/drm_file.c:438",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.030"
   },
   {
     "id": "CVE-2026-52967",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsmb/client: fix possible infinite loop and oob read in symlink_data()\n\nOn 32-bit architectures, the infinite loop is as follows:\n\n  len = p->ErrorDataLength == 0xfffffff8\n  u8 *next = p->ErrorContextData + len\n  next == p\n\nOn 32-bit architectures, the out-of-bounds read is as follows:\n\n  len = p->ErrorDataLength == 0xfffffff0\n  u8 *next = p->ErrorContextData + len\n  next == (u8 *)p - 8",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.127"
   },
   {
     "id": "CVE-2026-52968",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: s390: pci: fix GAIT table indexing due to double-scaling pointer arithmetic\n\nkvm_s390_pci_aif_enable(), kvm_s390_pci_aif_disable(), and\naen_host_forward() index the GAIT by manually multiplying the index\nwith sizeof(struct zpci_gaite).\n\nSince aift->gait is already a struct zpci_gaite pointer, this\ndouble-scales the offset, accessing element aisb*16 instead of aisb.\n\nThis causes out-of-bounds accesses when aisb >= 32 (with\nZPCI_NR_DEVICES=512)\n\nFix by removing the erroneous sizeof multiplication.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.243"
   },
   {
     "id": "CVE-2026-52969",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: Reject wrapped offset in kvm_reset_dirty_gfn()\n\nkvm_reset_dirty_gfn() guards the gfn range with\n\n\tif (!memslot || (offset + __fls(mask)) >= memslot->npages)\n\t\treturn;\n\nbut offset is u64 and the addition is unchecked.  The check can be\nsilently bypassed by a u64 wrap.\n\nThe dirty ring backing those entries is MAP_SHARED at\nKVM_DIRTY_LOG_PAGE_OFFSET of the vcpu fd, so the VMM can rewrite the\nslot and offset fields of any entry between when the kernel pushes\nthem and when KVM_RESET_DIRTY_RINGS consumes them.  On reset,\nkvm_dirty_ring_reset() re-reads the values via READ_ONCE() and feeds\nthem straight back into this check; only the flags handshake is\ntreated as the handover, the slot/offset payload is taken on trust.\n\nCrafting two entries\n\n\tentry[i].offset   = 0xffffffffffffffc1\n\tentry[i+1].offset = 0\n\nmakes the coalescing loop in kvm_dirty_ring_reset() compute\n\n\tdelta = (s64)(0 - 0xffffffffffffffc1) = 63\n\nwhich falls in [0, BITS_PER_LONG), so it folds entry[i+1] into the\nexisting mask by setting bit 63.  The trailing kvm_reset_dirty_gfn()\ncall then sees offset = 0xffffffffffffffc1 and __fls(mask) = 63;\nthe sum is 0 in u64 and the bounds check passes.\n\nThat offset propagates into kvm_arch_mmu_enable_log_dirty_pt_masked()\nunchanged.  On the legacy MMU path -- kvm_memslots_have_rmaps() ==\ntrue, i.e. shadow paging, any VM that has allocated shadow roots, or\na write-tracked slot -- it reaches gfn_to_rmap(), which indexes\nslot->arch.rmap[0][] with a near-U64_MAX gfn.  That is an\nout-of-bounds load of a kvm_rmap_head, followed by a conditional\nclear of PT_WRITABLE_MASK in whatever the loaded pointer points at.\nThe path is reachable from any process holding /dev/kvm.\n\nRange-check offset on its own first, so the addition cannot wrap.\nmemslot->npages is bounded well below U64_MAX, so once offset <\nnpages holds, offset + __fls(mask) (with __fls(mask) < BITS_PER_LONG)\nstays in range.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.367"
   },
   {
     "id": "CVE-2026-52970",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nft_ct: fix missing expect put in obj eval\n\nnft_ct_expect_obj_eval() allocates an expectation and may call\nnf_ct_expect_related(), but never drops its local reference.\n\nAdd nf_ct_expect_put(exp) before return to balance allocation.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.500"
   },
   {
     "id": "CVE-2026-52971",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: ena: PHC: Fix potential use-after-free in get_timestamp\n\nMove the phc->active check and resp pointer assignment to after\nacquiring the spinlock. Previously, phc->active was checked without\nholding the lock, and resp was cached from ena_dev->phc.virt_addr\nbefore the lock was acquired.\n\nIf ena_com_phc_destroy() runs between the lockless active check and\nthe lock acquisition, it sets active=false, releases the lock, frees\nthe DMA memory, and sets virt_addr=NULL. The get_timestamp path would\nthen read a NULL virt_addr and dereference it.\n\nWith both the active check and the pointer read under the lock,\ndestroy cannot free the memory while get_timestamp is using it.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.630"
   },
   {
@@ -17698,15 +17698,15 @@
   {
     "id": "CVE-2026-52992",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfs/adfs: validate nzones in adfs_validate_bblk()\n\nReject ADFS disc records with a zero zone count during boot block\nvalidation, before the disc record is used.\n\nWhen nzones is 0, adfs_read_map() passes it to kmalloc_array(0, ...)\nwhich returns ZERO_SIZE_PTR, and adfs_map_layout() then writes to\ndm[-1], causing an out-of-bounds write before the allocated buffer.\n\nadfs_validate_dr0() already rejects nzones != 1 for old-format\nimages.  Add the equivalent check to adfs_validate_bblk() for\nnew-format images so that a crafted image with nzones == 0 is\nrejected at probe time.\n\nFound by syzkaller.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:10.083"
   },
   {
     "id": "CVE-2026-52993",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ntipc: fix double-free in tipc_buf_append()\n\ntipc_msg_validate() can potentially reallocate the skb it is validating,\nfreeing the old one.  In tipc_buf_append(), it was being called with a\npointer to a local variable which was a copy of the caller's skb\npointer.\n\nIf the skb was reallocated and validation subsequently failed, the error\nhandling path would free the original skb pointer, which had already\nbeen freed, leading to double-free.\n\nFix this by checking if head now points to a newly allocated reassembled\nskb.  If it does, reassign *headbuf for later freeing operations.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:10.203"
   },
   {
@@ -17755,49 +17755,49 @@
     "id": "CVE-2026-53000",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nat: use kfree_rcu to release ops\n\nFlorian Westphal says:\n\n\"Historically this is not an issue, even for normal base hooks: the data\npath doesn't use the original nf_hook_ops that are used to register the\ncallbacks.\n\nHowever, in v5.14 I added the ability to dump the active netfilter\nhooks from userspace.\n\nThis code will peek back into the nf_hook_ops that are available\nat the tail of the pointer-array blob used by the datapath.\n\nThe nat hooks are special, because they are called indirectly from\nthe central nat dispatcher hook. They are currently invisible to\nthe nfnl hook dump subsystem though.\n\nBut once that changes the nat ops structures have to be deferred too.\"\n\nUpdate nf_nat_register_fn() to deal with partial exposition of the hooks\nfrom error path which can be also an issue for nfnetlink_hook.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:11.047"
   },
   {
     "id": "CVE-2026-53001",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: xtables: restrict several matches to inet family\n\nThis is a partial revert of:\n\n  commit ab4f21e6fb1c (\"netfilter: xtables: use NFPROTO_UNSPEC in more extensions\")\n\nto allow ipv4 and ipv6 only.\n\n- xt_mac\n- xt_owner\n- xt_physdev\n\nThese extensions are not used by ebtables in userspace.\n\nMoreover, xt_realm is only for ipv4, since dst->tclassid is ipv4\nspecific.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:11.143"
   },
   {
     "id": "CVE-2026-53002",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: conntrack: remove sprintf usage\n\nReplace it with scnprintf, the buffer sizes are expected to be large enough\nto hold the result, no need for snprintf+overflow check.\n\nIncrease buffer size in mangle_content_len() while at it.\n\nBUG: KASAN: stack-out-of-bounds in vsnprintf+0xea5/0x1270\nWrite of size 1 at addr [..]\n vsnprintf+0xea5/0x1270\n sprintf+0xb1/0xe0\n mangle_content_len+0x1ac/0x280\n nf_nat_sdp_session+0x1cc/0x240\n process_sdp+0x8f8/0xb80\n process_invite_request+0x108/0x2b0\n process_sip_msg+0x5da/0xf50\n sip_help_tcp+0x45e/0x780\n nf_confirm+0x34d/0x990\n [..]",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:11.263"
   },
   {
     "id": "CVE-2026-53003",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\npppoe: drop PFC frames\n\nRFC 2516 Section 7 states that Protocol Field Compression (PFC) is NOT\nRECOMMENDED for PPPoE. In practice, pppd does not support negotiating\nPFC for PPPoE sessions, and the current PPPoE driver assumes an\nuncompressed (2-byte) protocol field. However, the generic PPP layer\nfunction ppp_input() is not aware of the negotiation result, and still\naccepts PFC frames.\n\nIf a peer with a broken implementation or an attacker sends a frame with\na compressed (1-byte) protocol field, the subsequent PPP payload is\nshifted by one byte. This causes the network header to be 4-byte\nmisaligned, which may trigger unaligned access exceptions on some\narchitectures.\n\nTo reduce the attack surface, drop PPPoE PFC frames. Introduce\nppp_skb_is_compressed_proto() helper function to be used in both\nppp_generic.c and pppoe.c to avoid open-coding.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:11.383"
   },
   {
     "id": "CVE-2026-53004",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsctp: fix OOB write to userspace in sctp_getsockopt_peer_auth_chunks\n\nsctp_getsockopt_peer_auth_chunks() checks that the caller's optval\nbuffer is large enough for the peer AUTH chunk list with\n\n    if (len < num_chunks)\n            return -EINVAL;\n\nbut then writes num_chunks bytes to p->gauth_chunks, which lives\nat offset offsetof(struct sctp_authchunks, gauth_chunks) == 8\ninside optval.  The check is missing the sizeof(struct\nsctp_authchunks) = 8-byte header.  When the caller supplies\nlen == num_chunks (for any num_chunks > 0) the test passes but\ncopy_to_user() writes sizeof(struct sctp_authchunks) = 8 bytes\npast the declared buffer.\n\nThe sibling function sctp_getsockopt_local_auth_chunks() at the\nnext line already has the correct check:\n\n    if (len < sizeof(struct sctp_authchunks) + num_chunks)\n            return -EINVAL;\n\nAlign the peer variant with its sibling.\n\nReproducer confirms on v7.0-13-generic: an unprivileged userspace\ncaller that opens a loopback SCTP association with AUTH enabled,\nqueries num_chunks with a short optval, then issues the real\ngetsockopt with len == num_chunks and sentinel bytes painted past\nthe buffer observes those sentinel bytes overwritten with the\npeer's AUTH chunk type.  The bytes written are under the peer's\ncontrol but land in the caller's own userspace; this is not a\nkernel memory corruption, but it is a kernel-side contract\nviolation that can silently corrupt adjacent userspace data.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:11.510"
   },
   {
     "id": "CVE-2026-53005",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\naf_unix: Drop all SCM attributes for SOCKMAP.\n\nSOCKMAP can hide inflight fd from AF_UNIX GC.\n\nWhen a socket in SOCKMAP receives skb with inflight fd,\nsk_psock_verdict_data_ready() looks up the mapped socket and\nenqueue skb to its psock->ingress_skb.\n\nSince neither the old nor the new GC can inspect the psock\nqueue, the hidden skb leaks the inflight sockets.  Note that\nthis cannot be detected via kmemleak because inflight sockets\nare linked to a global list.\n\nIn addition, SOCKMAP redirect breaks the Tarjan-based GC's\nassumption that unix_edge.successor is always alive, which\nis no longer true once skb is redirected, resulting in\nuse-after-free below. [0]\n\nMoreover, SOCKMAP does not call scm_stat_del() properly,\nso unix_show_fdinfo() could report an incorrect fd count.\n\nsk_msg_recvmsg() does not support any SCM attributes in the\nfirst place.\n\nLet's drop all SCM attributes before passing skb to the\nSOCKMAP layer.\n\n[0]:\nBUG: KASAN: slab-use-after-free in unix_del_edges (net/unix/garbage.c:118 net/unix/garbage.c:181 net/unix/garbage.c:251)\nRead of size 8 at addr ffff888125362670 by task kworker/56:1/496\n\nCPU: 56 UID: 0 PID: 496 Comm: kworker/56:1 Not tainted 7.0.0-rc7-00263-gb9d8b856689d #3 PREEMPT(lazy)\nHardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.17.0-debian-1.17.0-1 04/01/2014\nWorkqueue: events sk_psock_backlog\nCall Trace:\n <TASK>\n dump_stack_lvl (lib/dump_stack.c:122)\n print_report (mm/kasan/report.c:379)\n kasan_report (mm/kasan/report.c:597)\n unix_del_edges (net/unix/garbage.c:118 net/unix/garbage.c:181 net/unix/garbage.c:251)\n unix_destroy_fpl (net/unix/garbage.c:317)\n unix_destruct_scm (./include/net/scm.h:80 ./include/net/scm.h:86 net/unix/af_unix.c:1976)\n sk_psock_backlog (./include/linux/skbuff.h:?)\n process_scheduled_works (kernel/workqueue.c:?)\n worker_thread (kernel/workqueue.c:?)\n kthread (kernel/kthread.c:438)\n ret_from_fork (arch/x86/kernel/process.c:164)\n ret_from_fork_asm (arch/x86/entry/entry_64.S:258)\n </TASK>\n\nAllocated by task 955:\n kasan_save_track (mm/kasan/common.c:58 mm/kasan/common.c:78)\n __kasan_slab_alloc (mm/kasan/common.c:369)\n kmem_cache_alloc_noprof (mm/slub.c:4539)\n sk_prot_alloc (net/core/sock.c:2240)\n sk_alloc (net/core/sock.c:2301)\n unix_create1 (net/unix/af_unix.c:1099)\n unix_create (net/unix/af_unix.c:1169)\n __sock_create (net/socket.c:1606)\n __sys_socketpair (net/socket.c:1811)\n __x64_sys_socketpair (net/socket.c:1863 net/socket.c:1860 net/socket.c:1860)\n do_syscall_64 (arch/x86/entry/syscall_64.c:?)\n entry_SYSCALL_64_after_hwframe (arch/x86/entry/entry_64.S:130)\n\nFreed by task 496:\n kasan_save_track (mm/kasan/common.c:58 mm/kasan/common.c:78)\n kasan_save_free_info (mm/kasan/generic.c:587)\n __kasan_slab_free (mm/kasan/common.c:287)\n kmem_cache_free (mm/slub.c:6165)\n __sk_destruct (net/core/sock.c:2282 net/core/sock.c:2384)\n sk_psock_destroy (./include/net/sock.h:?)\n process_scheduled_works (kernel/workqueue.c:?)\n worker_thread (kernel/workqueue.c:?)\n kthread (kernel/kthread.c:438)\n ret_from_fork (arch/x86/kernel/process.c:164)\n ret_from_fork_asm (arch/x86/entry/entry_64.S:258)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:11.637"
   },
   {
     "id": "CVE-2026-53006",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipv6: fix possible UAF in icmpv6_rcv()\n\nCaching saddr and daddr before pskb_pull() is problematic\nsince skb->head can change.\n\nRemove these temporary variables:\n\n- We only access &ipv6_hdr(skb)->saddr and &ipv6_hdr(skb)->daddr\n  when net_dbg_ratelimited() is called in the slow path.\n\n- Avoid potential future misuse after pskb_pull() call.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:11.750"
   },
   {
@@ -17964,8 +17964,8 @@
   {
     "id": "CVE-2026-53030",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ni3c: master: renesas: Fix memory leak in renesas_i3c_i3c_xfers()\n\nThe xfer structure allocated by renesas_i3c_alloc_xfer() was never freed\nin the renesas_i3c_i3c_xfers() function. Use the __free(kfree) cleanup\nattribute to automatically free the memory when the variable goes out of\nscope.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:14.393"
   },
   {
@@ -17978,8 +17978,8 @@
   {
     "id": "CVE-2026-53032",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbpf: Fix NULL deref in map_kptr_match_type for scalar regs\n\nCommit ab6c637ad027 (\"bpf: Fix a bpf_kptr_xchg() issue with local\nkptr\") refactored map_kptr_match_type() to branch on btf_is_kernel()\nbefore checking base_type(). A scalar register stored into a kptr\nslot has no btf, so the btf_is_kernel(reg->btf) call dereferences\nNULL.\n\nMove the base_type() != PTR_TO_BTF_ID guard before any reg->btf\naccess.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:14.590"
   },
   {
@@ -18013,57 +18013,57 @@
   {
     "id": "CVE-2026-53037",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nHID: usbhid: fix deadlock in hid_post_reset()\n\nYou can build a USB device that includes a HID component\nand a storage or UAS component. The components can be reset\nonly together. That means that hid_pre_reset() and hid_post_reset()\nare in the block IO error handling. Hence no memory allocation\nused in them may do block IO because the IO can deadlock\non the mutex held while resetting a device and calling the\ninterface drivers.\nUse GFP_NOIO for all allocations in them.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:15.263"
   },
   {
     "id": "CVE-2026-53038",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nima_fs: Correctly create securityfs files for unsupported hash algos\n\nima_tpm_chip->allocated_banks[i].crypto_id is initialized to\nHASH_ALGO__LAST if the TPM algorithm is not supported. However there\nare places relying on the algorithm to be valid because it is accessed\nby hash_algo_name[].\n\nOn 6.12.40 I observe the following read out-of-bounds in hash_algo_name:\n  ==================================================================\n  BUG: KASAN: global-out-of-bounds in create_securityfs_measurement_lists+0x396/0x440\n  Read of size 8 at addr ffffffff83e18138 by task swapper/0/1\n\n  CPU: 4 UID: 0 PID: 1 Comm: swapper/0 Not tainted 6.12.40 #3\n  Call Trace:\n   <TASK>\n   dump_stack_lvl+0x61/0x90\n   print_report+0xc4/0x580\n   ? kasan_addr_to_slab+0x26/0x80\n   ? create_securityfs_measurement_lists+0x396/0x440\n   kasan_report+0xc2/0x100\n   ? create_securityfs_measurement_lists+0x396/0x440\n   create_securityfs_measurement_lists+0x396/0x440\n   ima_fs_init+0xa3/0x300\n   ima_init+0x7d/0xd0\n   init_ima+0x28/0x100\n   do_one_initcall+0xa6/0x3e0\n   kernel_init_freeable+0x455/0x740\n   kernel_init+0x24/0x1d0\n   ret_from_fork+0x38/0x80\n   ret_from_fork_asm+0x11/0x20\n   </TASK>\n\n  The buggy address belongs to the variable:\n   hash_algo_name+0xb8/0x420\n\n  Memory state around the buggy address:\n   ffffffff83e18000: 00 01 f9 f9 f9 f9 f9 f9 00 01 f9 f9 f9 f9 f9 f9\n   ffffffff83e18080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00\n  >ffffffff83e18100: 00 00 00 00 00 00 00 f9 f9 f9 f9 f9 00 05 f9 f9\n                                          ^\n   ffffffff83e18180: f9 f9 f9 f9 00 00 00 00 00 00 00 04 f9 f9 f9 f9\n   ffffffff83e18200: 00 00 00 00 00 00 00 00 04 f9 f9 f9 f9 f9 f9 f9\n  ==================================================================\n\nSeems like the TPM chip supports sha3_256, which isn't yet in\ntpm_algorithms:\n  tpm tpm0: TPM with unsupported bank algorithm 0x0027\n\nThat's TPM_ALG_SHA3_256 == 0x0027 from \"Trusted Platform Module 2.0\nLibrary Part 2: Structures\", page 51 [1].\nSee also the related U-Boot algorithms update [2].\n\nThus solve the problem by creating a file name with \"_tpm_alg_<ID>\"\npostfix if the crypto algorithm isn't initialized.\n\nThis is how it looks on the test machine (patch ported to v6.12 release):\n  # ls -1 /sys/kernel/security/ima/\n  ascii_runtime_measurements\n  ascii_runtime_measurements_tpm_alg_27\n  ascii_runtime_measurements_sha1\n  ascii_runtime_measurements_sha256\n  binary_runtime_measurements\n  binary_runtime_measurements_tpm_alg_27\n  binary_runtime_measurements_sha1\n  binary_runtime_measurements_sha256\n  policy\n  runtime_measurements_count\n  violations\n\n[1]: https://trustedcomputinggroup.org/wp-content/uploads/Trusted-Platform-Module-2.0-Library-Part-2-Version-184_pub.pdf\n[2]: https://lists.denx.de/pipermail/u-boot/2024-July/558835.html",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:15.403"
   },
   {
     "id": "CVE-2026-53039",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nocfs2: validate group add input before caching\n\n[BUG]\nOCFS2_IOC_GROUP_ADD can trigger a BUG_ON in\nocfs2_set_new_buffer_uptodate():\n\nkernel BUG at fs/ocfs2/uptodate.c:509!\nOops: invalid opcode: 0000 [#1] SMP KASAN NOPTI\nRIP: 0010:ocfs2_set_new_buffer_uptodate+0x194/0x1e0 fs/ocfs2/uptodate.c:509\nCode: ffffe88f 42b9fe4c 89e64889 dfe8b4df\nCall Trace:\n ocfs2_group_add+0x3f1/0x1510 fs/ocfs2/resize.c:507\n ocfs2_ioctl+0x309/0x6e0 fs/ocfs2/ioctl.c:887\n vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl fs/ioctl.c:597 [inline]\n __se_sys_ioctl fs/ioctl.c:583 [inline]\n __x64_sys_ioctl+0x197/0x1e0 fs/ioctl.c:583\n x64_sys_call+0x1144/0x26a0 arch/x86/include/generated/asm/syscalls_64.h:17\n do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]\n do_syscall_64+0x93/0xf80 arch/x86/entry/syscall_64.c:94\n entry_SYSCALL_64_after_hwframe+0x76/0x7e\nRIP: 0033:0x7bbfb55a966d\n\n[CAUSE]\nocfs2_group_add() calls ocfs2_set_new_buffer_uptodate() on a\nuser-controlled group block before ocfs2_verify_group_and_input()\nvalidates that block number. That helper is only valid for newly\nallocated metadata and asserts that the block is not already present in\nthe chosen metadata cache. The code also uses INODE_CACHE(inode) even\nthough the group descriptor belongs to main_bm_inode and later journal\naccesses use that cache context instead.\n\n[FIX]\nValidate the on-disk group descriptor before caching it, then add it to\nthe metadata cache tracked by INODE_CACHE(main_bm_inode). Keep the\nvalidation failure path separate from the later cleanup path so we only\nremove the buffer from that cache after it has actually been inserted.\nThis keeps the group buffer lifetime consistent across validation,\njournaling, and cleanup.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:15.540"
   },
   {
     "id": "CVE-2026-53040",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nocfs2: validate bg_bits during freefrag scan\n\n[BUG]\nA crafted filesystem can trigger an out-of-bounds bitmap walk when\nOCFS2_IOC_INFO is issued with OCFS2_INFO_FL_NON_COHERENT.\n\nBUG: KASAN: use-after-free in instrument_atomic_read include/linux/instrumented.h:68 [inline]\nBUG: KASAN: use-after-free in _test_bit include/asm-generic/bitops/instrumented-non-atomic.h:141 [inline]\nBUG: KASAN: use-after-free in test_bit_le include/asm-generic/bitops/le.h:21 [inline]\nBUG: KASAN: use-after-free in ocfs2_info_freefrag_scan_chain fs/ocfs2/ioctl.c:495 [inline]\nBUG: KASAN: use-after-free in ocfs2_info_freefrag_scan_bitmap fs/ocfs2/ioctl.c:588 [inline]\nBUG: KASAN: use-after-free in ocfs2_info_handle_freefrag fs/ocfs2/ioctl.c:662 [inline]\nBUG: KASAN: use-after-free in ocfs2_info_handle_request+0x1c66/0x3370 fs/ocfs2/ioctl.c:754\nRead of size 8 at addr ffff888031bce000 by task syz.0.636/1435\nCall Trace:\n __dump_stack lib/dump_stack.c:94 [inline]\n dump_stack_lvl+0xbe/0x130 lib/dump_stack.c:120\n print_address_description mm/kasan/report.c:378 [inline]\n print_report+0xd1/0x650 mm/kasan/report.c:482\n kasan_report+0xfb/0x140 mm/kasan/report.c:595\n check_region_inline mm/kasan/generic.c:186 [inline]\n kasan_check_range+0x11c/0x200 mm/kasan/generic.c:200\n __kasan_check_read+0x11/0x20 mm/kasan/shadow.c:31\n instrument_atomic_read include/linux/instrumented.h:68 [inline]\n _test_bit include/asm-generic/bitops/instrumented-non-atomic.h:141 [inline]\n test_bit_le include/asm-generic/bitops/le.h:21 [inline]\n ocfs2_info_freefrag_scan_chain fs/ocfs2/ioctl.c:495 [inline]\n ocfs2_info_freefrag_scan_bitmap fs/ocfs2/ioctl.c:588 [inline]\n ocfs2_info_handle_freefrag fs/ocfs2/ioctl.c:662 [inline]\n ocfs2_info_handle_request+0x1c66/0x3370 fs/ocfs2/ioctl.c:754\n ocfs2_info_handle+0x18d/0x2a0 fs/ocfs2/ioctl.c:828\n ocfs2_ioctl+0x632/0x6e0 fs/ocfs2/ioctl.c:913\n vfs_ioctl fs/ioctl.c:51 [inline]\n __do_sys_ioctl fs/ioctl.c:597 [inline]\n __se_sys_ioctl fs/ioctl.c:583 [inline]\n __x64_sys_ioctl+0x197/0x1e0 fs/ioctl.c:583\n ...\n\n[CAUSE]\nocfs2_info_freefrag_scan_chain() uses on-disk bg_bits directly as the\nbitmap scan limit. The coherent path reads group descriptors through\nocfs2_read_group_descriptor(), which validates the descriptor before\nuse. The non-coherent path uses ocfs2_read_blocks_sync() instead and\nskips that validation, so an impossible bg_bits value can drive the\nbitmap walk past the end of the block.\n\n[FIX]\nCompute the bitmap capacity from the filesystem format with\nocfs2_group_bitmap_size(), report descriptors whose bg_bits exceeds\nthat limit, and clamp the scan to the computed capacity. This keeps the\nfreefrag report going while avoiding reads beyond the buffer.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:15.687"
   },
   {
     "id": "CVE-2026-53041",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nocfs2: fix listxattr handling when the buffer is full\n\n[BUG]\nIf an OCFS2 inode has both inline and block-based xattrs, listxattr()\ncan return a size larger than the caller's buffer when the inline names\nconsume that buffer exactly.\n\nkernel BUG at mm/usercopy.c:102!\nOops: invalid opcode: 0000 [#1] SMP KASAN NOPTI\nRIP: 0010:usercopy_abort+0xb7/0xd0 mm/usercopy.c:102\nCall Trace:\n __check_heap_object+0xe3/0x120 mm/slub.c:8243\n check_heap_object mm/usercopy.c:196 [inline]\n __check_object_size mm/usercopy.c:250 [inline]\n __check_object_size+0x5c5/0x780 mm/usercopy.c:215\n check_object_size include/linux/ucopysize.h:22 [inline]\n check_copy_size include/linux/ucopysize.h:59 [inline]\n copy_to_user include/linux/uaccess.h:219 [inline]\n listxattr+0xb0/0x170 fs/xattr.c:926\n filename_listxattr fs/xattr.c:958 [inline]\n path_listxattrat+0x137/0x320 fs/xattr.c:988\n __do_sys_listxattr fs/xattr.c:1001 [inline]\n __se_sys_listxattr fs/xattr.c:998 [inline]\n __x64_sys_listxattr+0x7f/0xd0 fs/xattr.c:998\n ...\n\n[CAUSE]\nCommit 936b8834366e (\"ocfs2: Refactor xattr list and remove\nocfs2_xattr_handler().\") replaced the old per-handler list accounting\nwith ocfs2_xattr_list_entry(), but it kept using size == 0 to detect\nprobe mode.\n\nThat assumption stops being true once ocfs2_listxattr() finishes the\ninline-xattr pass. If the inline names fill the caller buffer exactly,\nthe block-xattr pass runs with a non-NULL buffer and a remaining size of\nzero. ocfs2_xattr_list_entry() then skips the bounds check, keeps\ncounting block names, and returns a positive size larger than the\nsupplied buffer.\n\n[FIX]\nDetect probe mode by testing whether the destination buffer pointer is\nNULL instead of whether the remaining size is zero.\n\nThat restores the pre-refactor behavior and matches the OCFS2 getxattr\nhelpers. Once the remaining buffer reaches zero while more names are\nleft, the block-xattr pass now returns -ERANGE instead of reporting a\nsize larger than the allocated list buffer.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:15.830"
   },
   {
     "id": "CVE-2026-53042",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfwctl: Fix class init ordering to avoid NULL pointer dereference on device removal\n\nCXL is linked before fwctl in drivers/Makefile. Both use `module_init, so\n`cxl_pci_driver_init()` runs first. When `cxl_pci_probe()` calls\n`fwctl_register()` and then `device_add()`, fwctl_class is not yet\nregistered because fwctl_init() hasn't run, causing `class_to_subsys()` to\nreturn NULL and skip knode_class initialization.\n\nOn device removal, `class_to_subsys()` returns non-NULL, and\n`device_del()` calls `klist_del()` on the uninitialized knode, triggering\na NULL pointer dereference.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:15.967"
   },
   {
     "id": "CVE-2026-53043",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nocfs2/dlm: validate qr_numregions in dlm_match_regions()\n\nPatch series \"ocfs2/dlm: fix two bugs in dlm_match_regions()\".\n\nIn dlm_match_regions(), the qr_numregions field from a DLM_QUERY_REGION\nnetwork message is used to drive loops over the qr_regions buffer without\nsufficient validation.  This series fixes two issues:\n\n- Patch 1 adds a bounds check to reject messages where qr_numregions\n  exceeds O2NM_MAX_REGIONS. The o2net layer only validates message\n  byte length; it does not constrain field values, so a crafted message\n  can set qr_numregions up to 255 and trigger out-of-bounds reads past\n  the 1024-byte qr_regions buffer.\n\n- Patch 2 fixes an off-by-one in the local-vs-remote comparison loop,\n  which uses '<=' instead of '<', reading one entry past the valid range\n  even when qr_numregions is within bounds.\n\n\nThis patch (of 2):\n\nThe qr_numregions field from a DLM_QUERY_REGION network message is used\ndirectly as loop bounds in dlm_match_regions() without checking against\nO2NM_MAX_REGIONS.  Since qr_regions is sized for at most O2NM_MAX_REGIONS\n(32) entries, a crafted message with qr_numregions > 32 causes\nout-of-bounds reads past the qr_regions buffer.\n\nAdd a bounds check for qr_numregions before entering the loops.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:16.063"
   },
   {
     "id": "CVE-2026-53044",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsoc/tegra: cbb: Fix incorrect ARRAY_SIZE in fabric lookup tables\n\nFix incorrect ARRAY_SIZE usage in fabric lookup tables which could\ncause out-of-bounds access during target timeout lookup.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:16.200"
   },
   {
@@ -45783,42 +45783,42 @@
     "id": "CVE-2026-44787",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, the signup flow could allow newly registered users to set primary_group_id and gain whisper-group privileges without legitimate group membership on sites with whispers_allowed_groups configured. This issue is fixed in versions 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Discourse",
     "published": "2026-07-09T22:17:04.607"
   },
   {
     "id": "CVE-2026-45780",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, EventSerializer could expose invited group names, sample invitees, and attendance statistics to users who could view the topic but were not entitled to view the private event invitee list. This issue is fixed in versions 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Discourse",
     "published": "2026-07-09T22:17:04.770"
   },
   {
     "id": "CVE-2026-45788",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, secure uploads could be exposed by pull_hotlinked_images when an attacker knew the secured upload URL and the secure_uploads site setting was enabled. This issue is fixed in versions 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Discourse",
     "published": "2026-07-09T22:17:04.933"
   },
   {
     "id": "CVE-2026-46413",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, regular users could route direct S3 multipart uploads through ExternalUploadManager into the admin backup store. This issue is fixed in versions 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Discourse",
     "published": "2026-07-09T22:17:05.090"
   },
   {
     "id": "CVE-2026-49256",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, restricted tag and tag-group names attached to publicly readable categories as allowed_tags, allowed_tag_groups, or required tag groups could leak to anonymous and unauthorized users through category and group endpoints. This issue is fixed in versions 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Discourse",
     "published": "2026-07-09T22:17:05.260"
   },
   {
     "id": "CVE-2026-53961",
     "description": "Discourse is an open-source discussion platform. Prior to 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5, the AWS SES bounce webhook at POST /webhooks/aws verified that SNS messages were signed by Amazon but did not bind them to trusted TopicArn values, allowing any AWS account holder to publish validly signed forged Bounce notifications that revoke a targeted user email. This issue is fixed in versions 2026.6.0, 2026.5.1, 2026.4.2, and 2026.1.5.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Discourse",
     "published": "2026-07-09T22:17:05.440"
   },
   {
@@ -47335,7 +47335,7 @@
   },
   {
     "id": "CVE-2026-39903",
-    "description": "Simple Machines Forum 2.1 prior to 2.1.8 and 3.0 prior to 3.0 Alpha 5 contains an authorization bypass vulnerability in Sources/Actions/AttachmentApprove.php where a single-character operator error causes the permission check to always pass regardless of user permissions. An authenticated low-privileged user can approve, reject, or delete any pending attachments on any board without holding the required approve_posts permission, bypass moderation queues for their own uploads, and enumerate and delete other users' pending attachments.",
+    "description": "Simple Machines Forum 2.1 prior to commit 7d048f8 and 3.0 prior to commit a7875e8 contains an authorization bypass vulnerability in Sources/Actions/AttachmentApprove.php where a single-character operator error causes the permission check to always pass regardless of user permissions. An authenticated low-privileged user can approve, reject, or delete any pending attachments on any board without holding the required approve_posts permission, bypass moderation queues for their own uploads, and enumerate and delete other users' pending attachments.",
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-10T17:16:57.230"
@@ -47967,7 +47967,7 @@
     "id": "CVE-2026-55233",
     "description": "OpenResty is a high performance web platform. From 1.29.2.1 to before 1.29.2.5, an out-of-bounds write vulnerability exists in the upstream PROXY protocol v2 implementation. When OpenResty is configured to send PROXY protocol version 2 headers to upstream servers, constructing the header in the stream proxy protocol v2 patch can write beyond the bounds of the allocated buffer, causing the worker process to crash and resulting in a denial of service. Only configurations that explicitly enable PROXY protocol v2 for upstream connections are impacted. This issue is fixed in version 1.29.2.5.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openresty",
     "published": "2026-07-10T21:16:55.760"
   },
   {
@@ -48393,22 +48393,22 @@
   {
     "id": "CVE-2026-49844",
     "description": "Improper encoding of non-finite floating-point values during MapMessage JSON serialization in Apache Log4j API produces output that is not valid JSON. This issue affects Apache Log4j API versions 2.13.1 through 2.25.4 and version 2.26.0.\n\nThe fix for CVE-2026-34481 did not cover all code paths: when a MapMessage contains a non-finite IEEE 754 value (NaN, Infinity, or -Infinity), MapMessage.asJson() emits the corresponding bare token. RFC 8259 does not permit these tokens, so a conformant parser rejects the resulting document.\n\nThe defect is reachable only when both of the following conditions hold:\n\n  *  The application uses the  message resolver https://logging.apache.org/log4j/2.x/manual/json-template-layout.html#event-template-resolver-message  of JsonTemplateLayout or any other layout that relies on MapMessage.asJson() or MapMessage.getFormattedMessage(new String[]{\"JSON\"}).\n  *  The application logs a MapMessage that contains an attacker-controlled floating-point value.\n\n\nAn attacker who can supply a non-finite value can cause the affected layout to emit malformed JSON, which may corrupt the enclosing log record or disrupt downstream log ingestion and parsing.\n\nUsers are advised to upgrade to Apache Log4j API 2.25.5 or 2.26.1, both of which emit RFC 8259-compliant JSON for non-finite values.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Log4j",
     "published": "2026-07-10T22:16:42.540"
   },
   {
     "id": "CVE-2026-52747",
     "description": "ModSecurity is an open source, cross platform web application firewall (WAF) engine for Apache, IIS and Nginx. Prior to 3.0.16, the multipart/form-data request body parser in libmodsecurity silently removes embedded line breaks from non-file form-field values before exporting them to ARGS and ARGS_POST because src/request_body_processor/multipart.cc overwrites reserved bytes in m_reserve instead of appending the current buffer. This creates a parser differential between ModSecurity and backend applications that preserve line breaks in form fields, allowing rules that inspect ARGS or ARGS_POST to miss payloads whose dangerous syntax depends on a line break. This issue is fixed in version 3.0.16.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Modsecurity",
     "published": "2026-07-10T22:16:42.697"
   },
   {
     "id": "CVE-2026-52761",
     "description": "ModSecurity is an open source, cross platform web application firewall (WAF) engine for Apache, IIS and Nginx. From 3.0.0 through 3.0.15, the t:utf8toUnicode transformation in src/actions/transformations/utf8_to_unicode.cc produces wrong output on i386 architecture because snprintf uses sizeof on a char pointer rather than the length of the unicode buffer, allowing rules that use this transformation to be bypassed on i386 architecture. This issue is fixed in version 3.0.16.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Modsecurity",
     "published": "2026-07-10T22:16:42.833"
   },
   {
@@ -48464,14 +48464,14 @@
     "id": "CVE-2026-55809",
     "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Flag attendance field allows Object Injection. This issue affects Flag attendance field versions: from 0.0.0 to 1.2.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Flag attendance field",
     "published": "2026-07-10T22:16:43.763"
   },
   {
     "id": "CVE-2026-55810",
     "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Plotly.js Graphing allows Object Injection. This issue affects Plotly.js Graphing versions: from 0.0.0 to 3.0.2.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Plotly.js graphing",
     "published": "2026-07-10T22:16:43.867"
   },
   {
@@ -48534,7 +48534,7 @@
     "id": "CVE-2026-58589",
     "description": "Missing Authorization vulnerability in Drupal FlowDrop allows Forceful Browsing. This issue affects FlowDrop versions: from 0.0.0 to 1.6.0.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Flowdrop",
     "published": "2026-07-10T22:16:45.183"
   },
   {
@@ -51642,14 +51642,14 @@
     "id": "CVE-2026-15681",
     "description": "AnyDesk Screen Recording Link Following Denial-of-Service Vulnerability. This vulnerability allows local attackers to create a denial-of-service condition on affected installations of AnyDesk. An attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\n\nThe specific flaw exists within the handling of screen recording files. By creating a junction, an attacker can abuse the service to create arbitrary files. An attacker can leverage this vulnerability to create a denial-of-service condition on the system. Was ZDI-CAN-26591.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Anydesk",
     "published": "2026-07-13T22:16:45.510"
   },
   {
     "id": "CVE-2026-15682",
     "description": "AnyDesk Support Information Link Following Denial-of-Service Vulnerability. This vulnerability allows local attackers to create a denial-of-service condition on affected installations of AnyDesk. An attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\n\nThe specific flaw exists within the Send Support Information feature. By creating a junction, an attacker can abuse the service to create arbitrary files. An attacker can leverage this vulnerability to create a denial-of-service condition on the system. Was ZDI-CAN-26645.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Anydesk",
     "published": "2026-07-13T22:16:45.630"
   },
   {
@@ -51670,7 +51670,7 @@
     "id": "CVE-2026-15685",
     "description": "Ollama downloadBlob Improper Validation of Array Index Denial-of-Service Vulnerability. This vulnerability allows remote attackers to create a denial-of-service condition on affected installations of Ollama. Authentication is not required to exploit this vulnerability.\n\nThe specific flaw exists within the downloadBlob function. The issue results from the lack of proper validation of user-supplied data, which can result in a memory access past the end of an allocated array. An attacker can leverage this vulnerability to create a denial-of-service condition on the system. Was ZDI-CAN-27277.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Ollama",
     "published": "2026-07-13T22:16:46.123"
   },
   {
@@ -51894,14 +51894,14 @@
     "id": "CVE-2026-62199",
     "description": "OpenClaw versions before 2026.6.6 contain a flaw in host exec environment filtering that can miss interpreter startup variables. When the affected feature is enabled and reachable, a lower-trust caller or configured input path can supply crafted environment variables to execute or persist actions beyond the caller's intended authorization.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-07-13T22:16:51.673"
   },
   {
     "id": "CVE-2026-62200",
     "description": "OpenClaw versions before 2026.6.6 contain a flaw in host exec environment filtering that could allow Git ext transport to be abused. When the affected feature is enabled and reachable, a lower-trust caller or configured input path could execute or persist actions beyond the caller's intended authorization.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Openclaw",
     "published": "2026-07-13T22:16:51.813"
   },
   {
@@ -52314,7 +52314,7 @@
     "id": "CVE-2024-7708",
     "description": "For requests that have a body, but reading the body may end up in reading 0 bytes, there is a buffer leak.\nThis is particularly the case for 100-Continue, but any request where the network is slow can leak.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Jetty",
     "published": "2026-07-14T09:16:39.453"
   },
   {
@@ -52334,29 +52334,29 @@
   {
     "id": "CVE-2026-12606",
     "description": "Eclipse Grizzly in versions before 5.0.2, cannot properly parse the trailer section in malformed trailer header's line, which can be leveraged to perform HTTP request smuggling.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Grizzly",
     "published": "2026-07-14T09:16:39.920"
   },
   {
     "id": "CVE-2026-13699",
     "description": "In Eclipse KUKSA Databroker version 0.6.1, the kuksa.val.v2.VAL/PublishValue gRPC handler fails to validate the existence of the optional data_point field in PublishValueRequest. When a request contains a valid signal_id but omits data_point, the server directly calls unwrap() on request.data_point, triggering a panic in the Tokio worker thread. This issue can be triggered by any client holding a valid JWT token. Unauthenticated or invalid-token requests are rejected and do not reach the vulnerable path. The panic causes the individual gRPC call to be cancelled but does not terminate the Databroker process, which remains available for subsequent requests.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Kuksa",
     "published": "2026-07-14T09:16:40.050"
   },
   {
     "id": "CVE-2026-15075",
     "description": "In Eclipse Vert.x versions up to and including 4.5.29 (4.x branch) and 5.1.4 (5.x branch), DefaultRedirectHandler (vertx-core) propagates all request headers as-is across cross-origin HTTP 30x redirects. Only Content-Length is stripped; no origin comparison (scheme, host, port) is performed before copying headers to the redirect target.\nAs a result, credential headers, including Authorization, Cookie, Proxy-Authorization, and arbitrary custom headers such as X-API-Token, are forwarded to the redirect destination without the caller's knowledge.\n\n\n\n\nAn attacker who can cause a Vert.x HttpClient to issue a request that is redirected to an attacker-controlled host (for example, by supplying a URL to a webhook dispatcher, image proxy, or microservice URL fetcher) can capture bearer tokens, basic-auth credentials, session cookies, and API keys attached to the original request.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Vert.x",
     "published": "2026-07-14T09:16:40.180"
   },
   {
     "id": "CVE-2026-15076",
     "description": "In versions up to and including 4.5.29 (4.x branch) and 5.1.4 (5.x branch), the WebClientSession component of Eclipse Vert.x Web Client does not validate that the Domain attribute of a Set-Cookie response header matches the originating server's domain, in violation of RFC 6265 section 5.3.\nAn attacker who controls any server that the victim application contacts can inject a cookie scoped to an arbitrary third-party domain; because the session store performs no cross-domain ownership check, it stores and later transmits that cookie to the targeted domain.\n\n\n\n\nWhen the victim application subsequently sends a request to the targeted domain using the same WebClientSession, it presents the attacker-injected cookie, causing the receiving service to process the request under the attacker's account. Sensitive data included in the victim application's requests, such as payment amounts, card details, or other API payloads, may then be accessible to the attacker through their own account on that service.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Vert.x",
     "published": "2026-07-14T09:16:40.313"
   },
   {
@@ -52873,8 +52873,8 @@
   {
     "id": "CVE-2026-11944",
     "description": "openSIS Classic 9.3 contains an authenticated path traversal vulnerability in the legacy messaging sent-mail attachment download functionality that allows an authenticated attacker to read arbitrary files on the server via crafted path traversal sequences.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Opensis",
     "published": "2026-07-14T16:16:44.917"
   },
   {
@@ -52937,7 +52937,7 @@
     "id": "CVE-2026-23573",
     "description": "An Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability [CWE-79] vulnerability in Fortinet FortiOS 7.6.0 through 7.6.6, FortiOS 7.4 all versions, FortiOS 7.2 all versions, FortiPAM 1.8.0, FortiPAM 1.7 all versions, FortiPAM 1.6 all versions, FortiPAM 1.5 all versions, FortiPAM 1.4 all versions, FortiPAM 1.3 all versions, FortiPAM 1.2 all versions, FortiPAM 1.1 all versions, FortiPAM 1.0 all versions, FortiProxy 7.4.0 through 7.4.3, FortiProxy 7.2.0 through 7.2.9 may allow an authenticated remote user to execute code or commands via crafted requests.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Fortiproxy",
     "published": "2026-07-14T16:16:51.823"
   },
   {
@@ -52993,35 +52993,35 @@
     "id": "CVE-2026-59198",
     "description": "Pillow is a Python imaging library. From 5.2.0 until 12.3.0, Pillow's TGA RLE encoder reads past its packed row buffer when saving a mode 1 image with TGA RLE compression, allowing adjacent process heap bytes to be copied into the generated TGA file. This issue is fixed in version 12.3.0.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Pillow",
     "published": "2026-07-14T16:17:01.797"
   },
   {
     "id": "CVE-2026-59199",
     "description": "Pillow is a Python imaging library. Prior to 12.3.0, Pillow public image coordinate APIs can trigger a native heap out-of-bounds write when given coordinates near the signed 32-bit integer limits in Image.paste(), Image.crop(), or Image.alpha_composite(). This issue is fixed in version 12.3.0.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Pillow",
     "published": "2026-07-14T16:17:01.937"
   },
   {
     "id": "CVE-2026-59203",
     "description": "Pillow is a Python imaging library. From 12.0.0 through 12.2.0, Pillow's EPS parser in PIL/EpsImagePlugin.py accepts a negative byte count in the %%BeginBinary directive, allowing a crafted EPS file to cause Image.open() to seek backwards to the same directive and parse it repeatedly in an infinite loop. This issue is fixed in version 12.3.0.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Pillow",
     "published": "2026-07-14T16:17:02.063"
   },
   {
     "id": "CVE-2026-59204",
     "description": "Pillow is a Python imaging library. From 8.2.0 through 12.2.0, src/libImaging/Jpeg2KDecode.c accumulates total_component_width across every tile in a JPEG2000 image instead of recomputing it per tile, allowing a crafted tiled JPEG2000 file to force substantially higher transient memory usage and trigger out-of-memory failures during decoding. This issue is fixed in version 12.3.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Pillow",
     "published": "2026-07-14T16:17:02.227"
   },
   {
     "id": "CVE-2026-59205",
     "description": "Pillow is a Python imaging library. Prior to 12.3.0, Pillow's ImageCms.ImageCmsTransform.apply(im, imOut) API can trigger controlled native heap corruption when the caller supplies an output image whose mode does not match the transform's declared output mode. This issue is fixed in version 12.3.0.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Pillow",
     "published": "2026-07-14T16:17:02.370"
   },
   {
@@ -53082,14 +53082,14 @@
   },
   {
     "id": "CVE-2026-60118",
-    "description": "Hi.Events through v1.10.0-beta contains a missing server-side visibility enforcement vulnerability that allows unauthenticated attackers to purchase hidden tickets by referencing hidden product and price IDs in order creation requests without authorization checks. Attackers can enumerate sequential hidden ticket IDs from visible ones and submit order creation requests referencing those IDs to purchase VIP, invite-only, or discounted tickets intentionally withheld from public sale.",
+    "description": "Hi.Events before 1.11.0 contains a missing server-side visibility enforcement vulnerability that allows unauthenticated attackers to purchase hidden tickets by referencing hidden product and price IDs in order creation requests without authorization checks. Attackers can enumerate sequential hidden ticket IDs from visible ones and submit order creation requests referencing those IDs to purchase VIP, invite-only, or discounted tickets intentionally withheld from public sale.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-14T16:17:04.090"
   },
   {
     "id": "CVE-2026-60119",
-    "description": "Hi.Events through v1.10.0-beta contains a cross-site scripting vulnerability that allows authenticated attackers with event creation or edit permissions to inject arbitrary HTML and JavaScript by embedding a malicious event title containing the </script> sequence, which is not escaped by JSON.stringify() when embedded in inline script tags. Attackers can craft an event title that breaks out of the script context in the application/ld+json structured data block or server-side rehydrated state, causing the payload to execute in the browser of any user who views the public event page, including unauthenticated visitors and authenticated administrators.",
+    "description": "Hi.Events before 1.11.0 contains a cross-site scripting vulnerability that allows authenticated attackers with event creation or edit permissions to inject arbitrary HTML and JavaScript by embedding a malicious event title containing the </script> sequence, which is not escaped by JSON.stringify() when embedded in inline script tags. Attackers can craft an event title that breaks out of the script context in the application/ld+json structured data block or server-side rehydrated state, causing the payload to execute in the browser of any user who views the public event page, including unauthenticated visitors and authenticated administrators.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-14T16:17:04.250"
@@ -57366,7 +57366,7 @@
   },
   {
     "id": "CVE-2026-15712",
-    "description": "A heap buffer over-read vulnerability was discovered in libsoup's HTTP/2 connection tracking framework. When the library processes an HTTP/2 GOAWAY frame, it improperly handles the \"Additional Debug Data\" payload by assuming the data stream is a safely NUL-terminated C-string. Because the parser lacks strict length-boundary verification before reading this data, a remote, unauthenticated attacker can intentionally send a malformed GOAWAY frame missing the appropriate null delimiter. This causes the library to read past the end of the allocated buffer, triggering an application crash that results in a denial of service (DoS), or potentially exposing fragments of memory contents.",
+    "description": "A heap buffer over-read vulnerability was discovered in libsoup's (versions: libsoup 3.0 to 3.7.0) HTTP/2 connection tracking framework. When the library processes an HTTP/2 GOAWAY frame, it improperly handles the \"Additional Debug Data\" payload by assuming the data stream is a safely NUL-terminated C-string. Because the parser lacks strict length-boundary verification before reading this data, a remote, unauthenticated attacker can intentionally send a malformed GOAWAY frame missing the appropriate null delimiter. This causes the library to read past the end of the allocated buffer, triggering an application crash that results in a denial of service (DoS), or potentially exposing fragments of memory contents.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-14T19:16:51.313"
@@ -57524,5 +57524,537 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-14T19:18:03.213"
+  },
+  {
+    "id": "CVE-2026-13001",
+    "description": "The Podlove Podcast Publisher plugin for WordPress is vulnerable to arbitrary file uploads due to missing file type validation in the 'podlove_handle_cache_files' function in all versions up to, and including, 4.5.1. This makes it possible for unauthenticated attackers to upload arbitrary files on the affected site's server which may make remote code execution possible.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:16:56.610"
+  },
+  {
+    "id": "CVE-2026-15409",
+    "description": "A Server-side request forgery (SSRF) vulnerability has been identified in the SMA1000 Appliance Work Place interface. A remote unauthenticated attacker could potentially cause the appliance to make requests to unintended location.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:16:56.783"
+  },
+  {
+    "id": "CVE-2026-15410",
+    "description": "Post-authentication improper control of generation of code ('Code Injection') vulnerability has been identified in the SMA1000 Appliance Management Console (AMC) which in specific conditions could potentially enable a remote authenticated attacker as administrator to execute arbitrary OS commands.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:16:56.903"
+  },
+  {
+    "id": "CVE-2026-15709",
+    "description": "A flaw was found in libsoup's WebSocket implementation when using the permessage-deflate extension. The extension's decompression loop (inflate()) processes data in chunks without enforcing an upper boundary limit on the output buffer size. While libsoup limits the incoming compressed frame size via max_incoming_payload_size, it fails to track or limit memory allocation during decompression. A separate check for decompressed size (max_total_message_size) exists but executes only after inflation is complete, and it is entirely disabled by default for client connections. A remote, unauthenticated attacker can exploit this by sending a small, highly compressed payload (a decompression bomb), causing unbounded memory allocation that triggers an Out-of-Memory (OOM) crash and a Denial of Service (DoS).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:16:57.027"
+  },
+  {
+    "id": "CVE-2026-15711",
+    "description": "A vulnerability was found in libsoup's WebSocket frame parsing implementation. The library fails to validate length rules specified in RFC 6455 §5.5, which mandates that all WebSocket control frames (e.g., PING, PONG, CLOSE) contain a payload of 125 bytes or less. A remote, unauthenticated attacker can exploit this by sending a non-compliant, oversized control frame. Because the parser handles this protocol violation improperly instead of throwing an immediate connection termination error, it triggers a internal processing crash, resulting in a remote denial of service (DoS) for applications utilizing libsoup WebSockets.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:16:57.177"
+  },
+  {
+    "id": "CVE-2026-15713",
+    "description": "A vulnerability was found in libsoup's HTTP/2 protocol implementation. The library fails to correctly release memory context blocks under specific stream termination conditions, such as when an HTTP/2 connection encounters window exhaustion or explicit stream resets. A remote, unauthenticated attacker acting as a malicious network peer can trick the connection engine into allocating stream states that are subsequently leaked during cleanup. Over a sustained period, this flaw allows the remote attacker to consume the system's heap allocations incrementally, triggering a denial of service (DoS) through an ultimate Out-of-Memory (OOM) application crash.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:16:57.430"
+  },
+  {
+    "id": "CVE-2026-15714",
+    "description": "An out-of-bounds read vulnerability was found in libsoup's multipart processing subsystem. The flaw exists in the soup_multipart_input_stream_read_headers() function inside soup-multipart-input-stream.c, which does not adequately restrict or validate the size of incoming multipart boundary strings. When processing a crafted HTTP response containing a malformed or oversized boundary parameter, the internal stream reader reads past the allocated buffer bounds. A remote, unauthenticated attacker can exploit this behavior to cause a service denial (DoS) through application failure or potentially read fragments of unauthorized memory metadata.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:16:57.560"
+  },
+  {
+    "id": "CVE-2026-45068",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. Prior to 5.4.52, 6.4.40, 7.4.12, and 8.0.12, SendmailTransport in -t mode appended recipient addresses to the sendmail command line without a -- end-of-options separator, allowing an address beginning with - to be interpreted as a sendmail command-line option instead of an address. This issue is fixed in versions 5.4.52, 6.4.40, 7.4.12, and 8.0.12.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:00.107"
+  },
+  {
+    "id": "CVE-2026-45071",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. Prior to 5.4.52, 6.4.40, 7.4.12, and 8.0.12, Crawler::addXmlContent() set DOMDocument::$validateOnParse = true before loadXML(), re-enabling external entity resolution and allowing attacker-supplied XML to expand file:// entities such as local files. This issue is fixed in versions 5.4.52, 6.4.40, 7.4.12, and 8.0.12.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:00.370"
+  },
+  {
+    "id": "CVE-2026-47212",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. Prior to 6.4.40, 7.4.12, and 8.0.12, TwilioRequestParser::doParse() received the configured webhook secret but ignored the X-Twilio-Signature HMAC header, allowing unauthenticated POST requests to inject forged Twilio status payloads. This issue is fixed in versions 6.4.40, 7.4.12, and 8.0.12.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:01.187"
+  },
+  {
+    "id": "CVE-2026-47423",
+    "description": "DOMPurify is a DOM-only cross-site scripting sanitizer for HTML, MathML, and SVG. In 3.4.4, DOMPurify allowed selectedcontent by default, allowing browsers to re-clone an XSS payload after sanitization so that unsanitized markup inside <selectedcontent> is returned. This issue is fixed in version 3.4.5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:02.143"
+  },
+  {
+    "id": "CVE-2026-47428",
+    "description": "Vitest is a testing framework powered by Vite. From 4.0.17 until 4.1.6 and 5.0.0-beta.3, Vitest Browser Mode served /__vitest_test__/ with the otelCarrier query parameter inserted directly into an inline module script, allowing a crafted browser-runner URL to execute arbitrary JavaScript in the Vitest server origin and recover VITEST_API_TOKEN for authenticated API calls. This issue is fixed in versions 4.1.6 and 5.0.0-beta.3.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:02.307"
+  },
+  {
+    "id": "CVE-2026-47429",
+    "description": "Vitest is a testing framework powered by Vite. Prior to 3.2.5 and 4.1.0, the Vitest UI/API server on Windows used isFileServingAllowed incorrectly for /__vitest_attachment__, allowing \\\\?\\\\..\\\\ path traversal to read files outside the project; exposed API write and rerun features such as saveTestFile and rerun could also allow arbitrary script execution. This issue is fixed in versions 3.2.5 and 4.1.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:02.460"
+  },
+  {
+    "id": "CVE-2026-47476",
+    "description": "NVIDIA Triton Inference Server for Linux contains a vulnerability where an attacker can cause uncontrolled resource consumption. A successful exploit of this vulnerability might lead to denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:02.620"
+  },
+  {
+    "id": "CVE-2026-47477",
+    "description": "NVIDIA Triton Inference Server for Linux contains a vulnerability where an attacker can cause a stack-based buffer overflow. A successful exploit of this vulnerability might lead to denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:02.770"
+  },
+  {
+    "id": "CVE-2026-47478",
+    "description": "NVIDIA Triton Inference Server for Linux contains a vulnerability where an attacker can cause the use of an expired file descriptor. A successful exploit of this vulnerability might lead to denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:02.890"
+  },
+  {
+    "id": "CVE-2026-47479",
+    "description": "NVIDIA Triton Inference Server for Linux contains a vulnerability where an attacker can cause uncontrolled resource consumption. A successful exploit of this vulnerability might lead to denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:03.003"
+  },
+  {
+    "id": "CVE-2026-47480",
+    "description": "NVIDIA Triton Inference Server for Linux contains a vulnerability where an attacker can cause an uncaught exception. A successful exploit of this vulnerability might lead to denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:03.120"
+  },
+  {
+    "id": "CVE-2026-47481",
+    "description": "NVIDIA Triton Inference Server for Linux contains a vulnerability where an attacker can cause an authentication bypass through an alternative path or channel. A successful exploit of this vulnerability might lead to code execution, escalation of privileges, information disclosure, and data tampering.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:03.243"
+  },
+  {
+    "id": "CVE-2026-47482",
+    "description": "NVIDIA Triton Inference Server for Linux contains a vulnerability where an attacker can cause missing release of memory after effective lifetime. A successful exploit of this vulnerability might lead to denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:03.367"
+  },
+  {
+    "id": "CVE-2026-47736",
+    "description": "Puma is a Ruby/Rack web server built for parallelism. From 5.5.0 until 7.2.1 and 8.0.2, when PROXY protocol v1 support is enabled, Puma reads incoming bytes into an internal buffer while waiting for CRLF to determine whether a PROXY v1 line is present, allowing an attacker that continuously sends bytes without CRLF to cause unbounded in-process memory growth and additional CPU cost from repeatedly scanning the growing buffer. This issue is fixed in versions 7.2.1 and 8.0.2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:03.620"
+  },
+  {
+    "id": "CVE-2026-47737",
+    "description": "Puma is a Ruby/Rack web server built for parallelism. From 5.5.0 until 7.2.1 and 8.0.2, Puma is vulnerable to source IP spoofing when set_remote_address proxy_protocol: :v1 is enabled and persistent connections are used because Puma incorrectly re-parses PROXY protocol headers after each keep-alive request on the same connection, allowing an attacker to inject a second PROXY header and overwrite REMOTE_ADDR. This issue is fixed in versions 7.2.1 and 8.0.2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:03.767"
+  },
+  {
+    "id": "CVE-2026-47984",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read and write access. Exploitation of this issue does not require user interaction.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:04.223"
+  },
+  {
+    "id": "CVE-2026-47988",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read and write access. Exploitation of this issue does not require user interaction.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:04.347"
+  },
+  {
+    "id": "CVE-2026-47992",
+    "description": "Adobe Commerce is affected by an Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability that could result in arbitrary code execution in the context of the current user. A high-privileged attacker could exploit this vulnerability to execute malicious SQL commands, potentially gaining elevated access or control over the victim's account or session. Exploitation of this issue does not require user interaction.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:04.470"
+  },
+  {
+    "id": "CVE-2026-47994",
+    "description": "Adobe Commerce is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a low-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field, potentially gaining elevated access or control over the victim's account or session. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:04.597"
+  },
+  {
+    "id": "CVE-2026-47995",
+    "description": "Adobe Commerce is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a high-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field, potentially gaining elevated access or control over the victim's account or session. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:04.727"
+  },
+  {
+    "id": "CVE-2026-47996",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. A high-privileged attacker could leverage this vulnerability to bypass security measures and gain unauthorized read access. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:04.840"
+  },
+  {
+    "id": "CVE-2026-47997",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read access. Exploit depends on conditions beyond the attacker's control. Exploitation of this issue does not require user interaction.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:04.960"
+  },
+  {
+    "id": "CVE-2026-47998",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read access. Exploit depends on conditions beyond the attacker's control. Exploitation of this issue does not require user interaction.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:05.080"
+  },
+  {
+    "id": "CVE-2026-47999",
+    "description": "Adobe Commerce is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a high-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:05.200"
+  },
+  {
+    "id": "CVE-2026-48000",
+    "description": "Adobe Commerce is affected by an Improper Redirect (Open Redirect) vulnerability that could result in a Security feature bypass. An attacker could construct a malicious URL that redirects a victim to an attacker-controlled site, potentially enabling credential theft and account takeover. Exploitation of this issue requires user interaction in that a victim must click on a malicious link.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:05.320"
+  },
+  {
+    "id": "CVE-2026-48001",
+    "description": "Adobe Commerce is affected by an Information Exposure vulnerability that could lead to a limited disclosure of sensitive information. Exploit depends on conditions beyond the attacker's control. Exploitation of this issue does not require user interaction.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:05.443"
+  },
+  {
+    "id": "CVE-2026-48038",
+    "description": "joi is a schema description language and data validator for JavaScript. Prior to 17.13.4 and 18.2.1, denial of service is possible via an untrapped exception in services validating user-supplied JSON or object input with recursive link() schemas. When validate() is called without try/catch in a request handler, deeply nested input can trigger an unhandled RangeError and potentially crash the process; lower-impact paths using validateAsync() or try/catch produce a RangeError instead of a structured ValidationError. This issue is fixed in versions 17.13.4 and 18.2.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:05.563"
+  },
+  {
+    "id": "CVE-2026-48068",
+    "description": "@grpc/grps-js implements the core functionality of gRPC purely in JavaScript, without a C++ addon. Prior to 1.9.16, 1.10.12, 1.11.4, 1.12.7, 1.13.5, and 1.14.4, an invalid incoming HTTP/2 stream initiation can cause a server process created using @grpc/grpc-js to crash. This issue is fixed in versions 1.9.16, 1.10.12, 1.11.4, 1.12.7, 1.13.5, and 1.14.4.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:05.710"
+  },
+  {
+    "id": "CVE-2026-48069",
+    "description": "@grpc/grps-js implements the core functionality of gRPC purely in JavaScript, without a C++ addon. Prior to 1.9.16, 1.10.12, 1.11.4, 1.12.7, 1.13.5, and 1.14.4, an invalid incoming compressed message can cause a client or server process that uses @grpc/grpc-js to crash. This issue is fixed in versions 1.9.16, 1.10.12, 1.11.4, 1.12.7, 1.13.5, and 1.14.4.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:05.867"
+  },
+  {
+    "id": "CVE-2026-48252",
+    "description": "Adobe Experience Manager is affected by a Missing Authentication for Critical Function vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized write access. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.053"
+  },
+  {
+    "id": "CVE-2026-48253",
+    "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.197"
+  },
+  {
+    "id": "CVE-2026-48254",
+    "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.320"
+  },
+  {
+    "id": "CVE-2026-48255",
+    "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.443"
+  },
+  {
+    "id": "CVE-2026-48257",
+    "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.570"
+  },
+  {
+    "id": "CVE-2026-48259",
+    "description": "Adobe Experience Manager is affected by a Server-Side Request Forgery (SSRF) vulnerability that could result in arbitrary code execution in the context of the current user. A low-privileged attacker could leverage this vulnerability to issue unauthorized server-side requests, potentially gaining elevated access or control over the victim's account or session. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.697"
+  },
+  {
+    "id": "CVE-2026-48260",
+    "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.820"
+  },
+  {
+    "id": "CVE-2026-48261",
+    "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:06.950"
+  },
+  {
+    "id": "CVE-2026-48262",
+    "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:07.073"
+  },
+  {
+    "id": "CVE-2026-48263",
+    "description": "Adobe Experience Manager is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a low-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:07.213"
+  },
+  {
+    "id": "CVE-2026-48310",
+    "description": "Adobe Experience Manager is affected by an Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability that could lead to arbitrary file system read. An attacker could exploit this vulnerability to access sensitive files and directories outside the intended access scope. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:07.450"
+  },
+  {
+    "id": "CVE-2026-48345",
+    "description": "Animate is affected by an Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:07.573"
+  },
+  {
+    "id": "CVE-2026-48346",
+    "description": "Animate is affected by an Untrusted Search Path vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:07.700"
+  },
+  {
+    "id": "CVE-2026-48347",
+    "description": "Animate is affected by an Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:07.820"
+  },
+  {
+    "id": "CVE-2026-48348",
+    "description": "Animate is affected by an Incorrect Authorization vulnerability that could result in arbitrary code execution in the context of the current user. Exploit depends on conditions beyond the attacker's control. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:07.940"
+  },
+  {
+    "id": "CVE-2026-48349",
+    "description": "Animate is affected by an Incorrect Authorization vulnerability that could result in arbitrary code execution in the context of the current user. Exploit depends on conditions beyond the attacker's control. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:08.067"
+  },
+  {
+    "id": "CVE-2026-48350",
+    "description": "Animate is affected by an Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability that could result in arbitrary code execution in the context of the current user. An attacker could exploit this vulnerability to access sensitive files or directories outside the intended restrictions. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:08.180"
+  },
+  {
+    "id": "CVE-2026-48355",
+    "description": "Adobe Experience Manager is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a low-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:08.300"
+  },
+  {
+    "id": "CVE-2026-48356",
+    "description": "Adobe Commerce is affected by an Unrestricted Upload of File with Dangerous Type vulnerability that could result in arbitrary code execution in the context of the current user. An attacker could exploit this vulnerability to inject malicious scripts into a web page, potentially gaining elevated access or control over the victim's account or session. Exploitation of this issue requires user interaction in that a victim must visit a maliciously crafted URL or interact with a compromised web page. Scope is changed.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:08.437"
+  },
+  {
+    "id": "CVE-2026-48358",
+    "description": "Adobe Commerce is affected by an Improper Encoding or Escaping of Output vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:08.653"
+  },
+  {
+    "id": "CVE-2026-48359",
+    "description": "Adobe Experience Manager is affected by an Improper Restriction of XML External Entity Reference ('XXE') vulnerability that could result in arbitrary code execution in the context of the current user. A low-privileged attacker could exploit this vulnerability to read sensitive files, potentially gaining elevated access or control over the victim's account or session. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:08.810"
+  },
+  {
+    "id": "CVE-2026-48371",
+    "description": "Adobe Commerce is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a low-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field. Scope is changed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:09.200"
+  },
+  {
+    "id": "CVE-2026-48489",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. Prior to 5.4.53, 6.4.41, 7.4.13, and 8.0.13, DefaultAuthenticationFailureHandler honored the request-supplied _failure_path parameter when failure_forward: true was enabled, allowing an unauthenticated failing login request to dispatch a subrequest to access_control-protected GET routes that skipped firewall listeners. This issue is fixed in versions 5.4.53, 6.4.41, 7.4.13, and 8.0.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:09.330"
+  },
+  {
+    "id": "CVE-2026-48736",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. From 5.4.0 to 5.4.53, 6.4.41, 7.4.13, and 8.0.13, NoPrivateNetworkHttpClient and IpUtils::PRIVATE_SUBNETS omitted IPv6 transition prefixes such as 6to4, NAT64, Teredo, and IPv4-compatible IPv6, allowing attacker-supplied URLs to represent private IPv4 targets in forms that IpUtils::isPrivateIp() did not block. This issue is fixed in versions 5.4.53, 6.4.41, 7.4.13, and 8.0.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:09.943"
+  },
+  {
+    "id": "CVE-2026-48747",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. Prior to 7.4.13 and 8.0.13, MailomatRequestParser::validateSignature() parsed X-MOM-Webhook-Signature as algo=signature and passed the request-selected algorithm to hash_hmac(), allowing a signature algorithm downgrade instead of enforcing Mailomat's documented SHA-256 webhook signature. This issue is fixed in versions 7.4.13 and 8.0.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:10.080"
+  },
+  {
+    "id": "CVE-2026-48760",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. From 6.1.0 until 6.4.41, 7.4.13, and 8.0.13, UrlSanitizer::parse() rejected raw BiDi formatting characters but not percent-encoded forms and used an ASCII-only whitespace check, allowing sanitized URLs to retain visual-spoofing characters that downstream consumers could decode or display. This issue is fixed in versions 6.4.41, 7.4.13, and 8.0.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:10.220"
+  },
+  {
+    "id": "CVE-2026-48761",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. From 6.1.0 until 6.4.41, 7.4.13, and 8.0.13, UrlAttributeSanitizer::getSupportedAttributes() omitted URL-bearing attributes on <object>, <applet>, <iframe>, and <img>, and <meta http-equiv=\"refresh\"> URLs inside content bypassed URL sanitization, allowing explicitly enabled elements or attributes to pass javascript: and similar payloads into sanitized output. This issue is fixed in versions 6.4.41, 7.4.13, and 8.0.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:10.363"
+  },
+  {
+    "id": "CVE-2026-48784",
+    "description": "Symfony is a PHP framework for web and console applications and a set of reusable PHP components. Prior to 5.4.53, 6.4.41, 7.4.13, and 8.0.13, UrlGenerator::doGenerate() used strtr() dot-segment encoding that skipped every other chained ../ or ./ segment, allowing attacker-controlled route parameters to generate URLs that collapse to a different path under RFC 3986 normalization. This issue is fixed in versions 5.4.53, 6.4.41, 7.4.13, and 8.0.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:10.517"
+  },
+  {
+    "id": "CVE-2026-50524",
+    "description": "Improper validation of specified type of input in .NET Framework allows an unauthorized attacker to deny service over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:37.000"
+  },
+  {
+    "id": "CVE-2026-50525",
+    "description": "Allocation of resources without limits or throttling in .NET allows an unauthorized attacker to deny service over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:37.120"
+  },
+  {
+    "id": "CVE-2026-50526",
+    "description": "Improper link resolution before file access ('link following') in .NET allows an authorized attacker to perform tampering locally.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:37.240"
+  },
+  {
+    "id": "CVE-2026-50527",
+    "description": "Stack-based buffer overflow in .NET Framework allows an unauthorized attacker to deny service over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:37.363"
+  },
+  {
+    "id": "CVE-2026-50528",
+    "description": "Incorrect authorization in .NET allows an unauthorized attacker to bypass a security feature over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:37.533"
+  },
+  {
+    "id": "CVE-2026-50646",
+    "description": "Protection mechanism failure in .NET Framework allows an unauthorized attacker to execute code locally.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:37.670"
+  },
+  {
+    "id": "CVE-2026-50648",
+    "description": "Allocation of resources without limits or throttling in .NET Framework allows an unauthorized attacker to deny service over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:37.937"
+  },
+  {
+    "id": "CVE-2026-50649",
+    "description": "Deserialization of untrusted data in .NET allows an unauthorized attacker to execute code locally.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:38.103"
+  },
+  {
+    "id": "CVE-2026-50650",
+    "description": "Improper control of generation of code ('code injection') in .NET Framework allows an unauthorized attacker to elevate privileges locally.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:38.230"
+  },
+  {
+    "id": "CVE-2026-50651",
+    "description": "Allocation of resources without limits or throttling in .NET allows an unauthorized attacker to deny service over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:38.387"
+  },
+  {
+    "id": "CVE-2026-50659",
+    "description": "Improper encoding or escaping of output in .NET allows an authorized attacker to perform spoofing over a network.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:38.917"
+  },
+  {
+    "id": "CVE-2026-53633",
+    "description": "Vitest is a testing framework powered by Vite. From 3.0.0 until 3.2.5, 4.1.8, and 5.0.0-beta.4, Vitest Browser Mode exposed a cdp() API that forwarded raw Chrome DevTools Protocol methods without being gated by allowWrite or allowExec, allowing a remote client with exposed browser API metadata to use CDP Page.setDownloadBehavior and Runtime.evaluate to overwrite vite.config.ts and execute attacker-controlled Node.js code. This issue is fixed in versions 3.2.5, 4.1.8, and 5.0.0-beta.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-14T20:17:42.173"
   }
 ]
