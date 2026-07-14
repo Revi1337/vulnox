@@ -13148,8 +13148,8 @@
   {
     "id": "CVE-2026-6653",
     "description": "Use After Free in libxml2's xmlParseInternalSubset from GNOME libxml2 version 2.9.11 to 2.11.0 allows a remote attacker to cause a denial-of-service via maliciously crafted XML input with improper entity resolution handling.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Libxml2",
     "published": "2026-06-22T14:17:51.113"
   },
   {
@@ -17398,140 +17398,140 @@
     "id": "CVE-2026-52945",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nRevert \"wireguard: device: enable threaded NAPI\"\n\nThis reverts commit 933466fc50a8e4eb167acbd0d8ec96a078462e9c which is\ncommit db9ae3b6b43c79b1ba87eea849fd65efa05b4b2e upstream.\n\nWe have had three independent production user reports in combination\nwith Cilium utilizing WireGuard as encryption underneath that k8s Pod\nE/W traffic to certain peer nodes fully stalled. The situation appears\nas follows:\n\n  - Occurs very rarely but at random times under heavy networking load.\n  - Once the issue triggers the decryption side stops working completely\n    for that WireGuard peer, other peers keep working fine. The stall\n    happens also for newly initiated connections towards that particular\n    WireGuard peer.\n  - Only the decryption side is affected, never the encryption side.\n  - Once it triggers, it never recovers and remains in this state,\n    the CPU/mem on that node looks normal, no leak, busy loop or crash.\n  - bpftrace on the affected system shows that wg_prev_queue_enqueue\n    fails, thus the MAX_QUEUED_PACKETS (1024 skbs!) for the peer's\n    rx_queue is reached.\n  - Also, bpftrace shows that wg_packet_rx_poll for that peer is never\n    called again after reaching this state for that peer. For other\n    peers wg_packet_rx_poll does get called normally.\n  - Commit db9ae3b (\"wireguard: device: enable threaded NAPI\")\n    switched WireGuard to threaded NAPI by default. The default has\n    not been changed for triggering the issue, neither did CPU\n    hotplugging occur (i.e. 5bd8de2 (\"wireguard: queueing: always\n    return valid online CPU in wg_cpumask_choose_online()\")).\n  - The issue has been observed with stable kernels of v5.15 as well as\n    v6.1. It was reported to us that v5.10 stable is working fine, and\n    no report on v6.6 stable either (somewhat related discussion in [0]\n    though).\n  - In the WireGuard driver the only material difference between v5.10\n    stable and v5.15 stable is the switch to threaded NAPI by default.\n\n    [0] https://lore.kernel.org/netdev/CA+wXwBTT74RErDGAnj98PqS=wvdh8eM1pi4q6tTdExtjnokKqA@mail.gmail.com/\n\nBreakdown of the problem:\n\n  1) skbs arriving for decryption are enqueued to the peer->rx_queue in\n     wg_packet_consume_data via wg_queue_enqueue_per_device_and_peer.\n  2) The latter only moves the skb into the MPSC peer queue if it does\n     not surpass MAX_QUEUED_PACKETS (1024) which is kept track in an\n     atomic counter via wg_prev_queue_enqueue.\n  3) In case enqueueing was successful, the skb is also queued up\n     in the device queue, round-robin picks a next online CPU, and\n     schedules the decryption worker.\n  4) The wg_packet_decrypt_worker, once scheduled, picks these up\n     from the queue, decrypts the packets and once done calls into\n     wg_queue_enqueue_per_peer_rx.\n  5) The latter updates the state to PACKET_STATE_CRYPTED on success\n     and calls napi_schedule on the per peer->napi instance.\n  6) NAPI then polls via wg_packet_rx_poll. wg_prev_queue_peek checks\n     on the peer->rx_queue. It will wg_prev_queue_dequeue if the\n     queue->peeked skb was not cached yet, or just return the latter\n     otherwise. (wg_prev_queue_drop_peeked later clears the cache.)\n  7) From an ordering perspective, the peer->rx_queue has skbs in order\n     while the device queue with the per-CPU worker threads from a\n     global ordering PoV can finish the decryption and signal the skb\n     PACKET_STATE_CRYPTED out of order.\n  8) A situation can be observed that the first packet coming in will\n     be stuck waiting for the decryption worker to be scheduled for\n     a longer time when the system is under pressure.\n  9) While this is the case, the other CPUs in the meantime finish\n     decryption and call into napi_schedule.\n 10) Now in wg_packet_rx_poll it picks up the first in-order skb\n     from the peer->rx_queue and sees that its state is still\n     PACKET_STATE_UNCRYPTED. The NAPI poll routine then exits e\n---truncated---",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:04.430"
   },
   {
     "id": "CVE-2026-52946",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfs/fcntl: fix SOFTIRQ-unsafe lock order in fasync signaling\n\nA SOFTIRQ-safe to SOFTIRQ-unsafe lock order deadlock can occur in\nsend_sigio() and send_sigurg() when a process group receives a signal.\n\nWhen FASYNC is configured for a process group (PIDTYPE_PGID), both\nfunctions use read_lock(&tasklist_lock) to traverse the task list.\nHowever, they are frequently called from softirq context:\n- send_sigio() via input_inject_event -> kill_fasync\n- send_sigurg() via tcp_check_urg -> sk_send_sigurg (NET_RX_SOFTIRQ)\n\nThe deadlock is caused by the rwlock writer fairness mechanism:\n1. CPU 0 (process context) holds read_lock(&tasklist_lock) in do_wait().\n2. CPU 1 (process context) attempts write_lock(&tasklist_lock) in\n   fork() or exit() and spins, which blocks all new readers.\n3. CPU 0 is interrupted by a softirq (e.g., TCP URG packet reception).\n4. The softirq calls send_sigurg() and attempts to acquire\n   read_lock(&tasklist_lock), deadlocking because CPU 1 is waiting.\n\nSince PID hashing and do_each_pid_task() traversals are already\nRCU-protected, the read_lock on tasklist_lock is no longer strictly\nrequired for safe traversal. Fix this by replacing tasklist_lock with\nrcu_read_lock(), aligning the process group signaling path with the\nsingle-PID path. This also mitigates a potential remote denial of\nservice vector via TCP URG packets.\n\nLockdep splat:\n=====================================================\nWARNING: SOFTIRQ-safe -> SOFTIRQ-unsafe lock order detected\n[...]\nChain exists of:\n  &dev->event_lock --> &f_owner->lock --> tasklist_lock\n\nPossible interrupt unsafe locking scenario:\n       CPU0                    CPU1\n       ----                    ----\n  lock(tasklist_lock);\n                           local_irq_disable();\n                           lock(&dev->event_lock);\n                           lock(&f_owner->lock);\n  <Interrupt>\n    lock(&dev->event_lock);\n\n*** DEADLOCK ***",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:04.610"
   },
   {
     "id": "CVE-2026-52947",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: qrtr: fix refcount saturation and potential UAF in qrtr_port_remove\n\nIn qrtr_port_remove(), the socket reference count is decremented via\n__sock_put() before the port is removed from the qrtr_ports XArray and\nbefore the RCU grace period elapses.\n\nThis breaks the fundamental RCU update paradigm. It exposes a race\nwindow where a concurrent RCU reader (such as qrtr_reset_ports() or\nqrtr_port_lookup()) can obtain a pointer to the socket from the XArray,\nand attempt to call sock_hold() on a socket whose reference count has\nalready dropped to zero.\n\nThis exact race condition was hit during syzkaller fuzzing, leading to\nthe following refcount saturation warning and a potential Use-After-Free:\n\n  refcount_t: saturated; leaking memory.\n  WARNING: CPU: 3 PID: 1273 at lib/refcount.c:22 refcount_warn_saturate+0xae/0x1d0\n  Modules linked in: qrtr(+) bochs drm_shmem_helper ...\n  Call Trace:\n   <TASK>\n   qrtr_reset_ports net/qrtr/af_qrtr.c:768 [inline] [qrtr]\n   __qrtr_bind.isra.0+0x48b/0x570 net/qrtr/af_qrtr.c:805 [qrtr]\n   qrtr_bind+0x17d/0x210 net/qrtr/af_qrtr.c:901 [qrtr]\n   kernel_bind+0xe4/0x120 net/socket.c:3592\n   qrtr_ns_init+0x1a6/0x380 net/qrtr/ns.c:715 [qrtr]\n   qrtr_proto_init+0x3b/0xff0 net/qrtr/af_qrtr.c:169 [qrtr]\n   do_one_initcall+0xf5/0x5e0 init/main.c:1283\n   ...\n   </TASK>\n\nFix this by deferring the reference count decrement until after the\nxa_erase() and the synchronize_rcu() complete.\n\n(Note: The v1 of this patch incorrectly replaced __sock_put() with\nsock_put(). As Simon Horman pointed out, the callers of qrtr_port_remove()\nstill hold a reference to the socket, so freeing the socket memory here\nwould lead to a subsequent UAF in the caller. Thus, the __sock_put() is\nkept, but only repositioned to close the RCU race.)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:04.760"
   },
   {
     "id": "CVE-2026-52948",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ni2c: dev: prevent integer overflow in I2C_TIMEOUT ioctl\n\nWhile fuzzing with Syzkaller, a persistent `schedule_timeout: wrong\ntimeout value` warning was observed, accompanied by SMBus controller\nstate machine corruption.\n\nThe I2C_TIMEOUT ioctl accepts a user-provided timeout in multiples of\n10 ms. The user argument is checked against INT_MAX, but it is\nsubsequently multiplied by 10 before being passed to msecs_to_jiffies().\n\nA malicious user can pass a large value (e.g., 429496729) that passes\nthe `arg > INT_MAX` check but overflows when multiplied by 10. This\nresults in a truncated 32-bit unsigned value that bypasses the\ninternal `(int)m < 0` check in `msecs_to_jiffies()`.\n\nThe truncated value is then assigned to `client->adapter->timeout`\n(a signed 32-bit int), which is reinterpreted as a negative number.\nWhen passed to wait_for_completion_timeout(), this negative value\nundergoes sign extension to a 64-bit unsigned long, triggering the\n`schedule_timeout` warning and causing premature returns. This leaves\nthe SMBus state machine in an unrecoverable state, constituting a\nlocal Denial of Service (DoS).\n\nFix this by bounding the user argument to `INT_MAX / 10`.\n\n[wsa: move the comment as well]",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:04.900"
   },
   {
     "id": "CVE-2026-52949",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/ttm: Fix ttm_bo_shrink() infinite LRU walk on backup failure\n\nApply the same fix as b2ed01e7ad (\"drm/ttm: Fix ttm_bo_swapout()\ninfinite LRU walk on swapout failure\") to the ttm_bo_shrink() path.\n\nMove del_bulk_move from before the backup to after success only,\nusing ttm_resource_del_bulk_move_unevictable() since the resource\nis now unevictable once fully backed up.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.033"
   },
   {
     "id": "CVE-2026-52950",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/xe/dma-buf: fix UAF with retry loop\n\nRetry doesn't work here, since bo will be freed on error, leading to\nUAF. However, now that we do the alloc & init before the attach, we can\nnow combine this as one unit and have the init do the alloc for us. This\nshould make the retry safe.\n\nReported by Sashiko.\n\nv2: Fix up the error unwind (CI)\n\n(cherry picked from commit 479669418253e0f27f8cf5db01a731352ea592e7)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.127"
   },
   {
     "id": "CVE-2026-52951",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/xe/dma-buf: handle empty bo and UAF races\n\nThere look to be some nasty races here when triggering the\ninvalidate_mappings hook:\n\n1) We do xe_bo_alloc() followed by the attach, before the actual full bo\n   init step in xe_dma_buf_init_obj(). However the bo is visible on the\n   attachments list after the attach.  This is bad since exporter driver,\n   say amdgpu, can at any time call back into our invalidate_mappings hook,\n   with an empty/bogus bo, leading to potential bugs/crashes.\n\n2) Similar to 1) but here we get a UAF, when the invalidate_mappings\n   hook is triggered. For example, we get as far as xe_bo_init_locked()\n   but this fails in some way. But here the bo will be freed on error, but\n   we still have it attached from dma-buf pov, so if the\n   invalidate_mappings is now triggered then the bo we access is gone and\n   we trigger UAF and more bugs/crashes.\n\nTo fix this, move the attach step until after we actually have a fully\nset up buffer object. Note that the bo is not published to userspace\nuntil later, so not sure what the comment \"Don't publish the bo\nuntil we have a valid attachment\", is referring to.\n\nWe have at least two different customers reporting hitting a NULL ptr\nderef in evict_flags when importing something from amdgpu, followed by\ntriggering the evict flow. Hit rate is also pretty low, which would\nhint at some kind of race, so something like 1) or 2) might explain\nthis.\n\nv2:\n  - Shuffle the order of the ops slightly (no functional change)\n  - Improve the comment to better explain the ordering (Matt B)\n\n(cherry picked from commit af1f2ad0c59fe4e2f924c526f66e968289d77971)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.230"
   },
   {
     "id": "CVE-2026-52952",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu: Fix WARN_ON in __iommu_group_set_domain_nofail() due to reset\n\nIn __iommu_group_set_domain_internal(), concurrent domain attachments are\nrejected when any device in the group is recovering. This is necessary to\nfence concurrent attachments to a multi-device group where devices might\nshare the same RID due to PCI DMA alias quirks, but triggers the WARN_ON in\n__iommu_group_set_domain_nofail().\n\nOther IOMMU_SET_DOMAIN_MUST_SUCCEED callers in detach/teardown paths, such\nas __iommu_group_set_core_domain and __iommu_release_dma_ownership, should\nnot be rejected, as the domain would be freed anyway in these nofail paths\nwhile group->domain is still pointing to it. So pci_dev_reset_iommu_done()\ncould trigger a UAF when re-attaching group->domain.\n\nHonor the IOMMU_SET_DOMAIN_MUST_SUCCEED flag, allowing the callers through\nthe group->recovery_cnt fence, so as to update the group->domain pointer.\nInstead add a gdev->blocked check in the device iteration loop, to prevent\nany concurrent per-device detachment.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.333"
   },
   {
     "id": "CVE-2026-52953",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu/vt-d: Fix oops due to out of scope access\n\nBelow oops triggers when kill QEMU process:\n\n  Oops: general protection fault, probably for non-canonical address 0x7fffffff844eaaa7: 0000 [#1] SMP NOPTI\n  Call Trace:\n   <TASK>\n   do_raw_spin_lock+0xaa/0xc0\n   _raw_spin_lock_irqsave+0x21/0x40\n   domain_remove_dev_pasid+0x52/0x160\n   intel_nested_set_dev_pasid+0x1b9/0x1e0\n   __iommu_set_group_pasid+0x56/0x120\n   pci_dev_reset_iommu_done+0xe3/0x180\n   pcie_flr+0x65/0x160\n   __pci_reset_function_locked+0x5b/0x120\n   vfio_pci_core_close_device+0x63/0xe0 [vfio_pci_core]\n   vfio_df_close+0x4f/0xa0\n   vfio_df_unbind_iommufd+0x2d/0x60\n   vfio_device_fops_release+0x3e/0x40\n   __fput+0xe5/0x2c0\n   task_work_run+0x58/0xa0\n   do_exit+0x2c8/0x600\n   do_group_exit+0x2f/0xa0\n   get_signal+0x863/0x8c0\n   arch_do_signal_or_restart+0x24/0x100\n   exit_to_user_mode_loop+0x87/0x380\n   do_syscall_64+0x2ff/0x11e0\n   entry_SYSCALL_64_after_hwframe+0x76/0x7e\n\nThe global static blocked domain is a dummy domain without corresponding\ndmar_domain structure, accessing beyond iommu_domain structure triggers\noops easily. Fix it by return early in domain_remove_dev_pasid() like\nidentity domain.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.430"
   },
   {
     "id": "CVE-2026-52954",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nlibceph: handle rbtree insertion error in decode_choose_args()\n\nA message of type CEPH_MSG_OSD_MAP contains an OSD map that itself\ncontains a CRUSH map. The received CRUSH map may optionally contain\nchoose_args that get decoded in decode_choose_args(). In this function,\nnum_choose_arg_maps is read from the message, and a corresponding number\nof crush_choose_arg_maps gets decoded afterwards. Each\ncrush_choose_arg_map has a choose_args_index, which serves as the key\nwhen inserting it into the choose_args rbtree of the decoded crush_map.\nIf a (potentially corrupted) message contains two crush_choose_arg_maps\nwith the same index, the assertion in insert_choose_arg_map() triggers a\nkernel BUG when trying to insert the second crush_choose_arg_map.\n\nThis patch fixes the issue by switching to the non-asserting rbtree\ninsertion function and rejecting the message if the insertion fails.\n\n[ idryomov: changelog ]",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.530"
   },
   {
     "id": "CVE-2026-52955",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nlibceph: Fix potential out-of-bounds access in crush_decode()\n\nA message of type CEPH_MSG_OSD_MAP containing a crush map with at least\none bucket has two fields holding the bucket algorithm. If the values\nin these two fields differ, an out-of-bounds access can occur. This is\nthe case because the first algorithm field (alg) is used to allocate\nthe correct amount of memory for a bucket of this type, while the second\nalgorithm field inside the bucket (b->alg) is used in the subsequent\nprocessing.\n\nThis patch fixes the issue by adding a check that compares alg and\nb->alg and aborts the processing in case they differ. Furthermore,\nb->alg is set to 0 in this case, because the destruction of the crush\nmap also uses this field to determine the bucket type, which can again\nresult in an out-of-bounds access when trying to free the memory pointed\nto by the fields of the bucket. To correctly free the memory allocated\nfor the bucket in such a case, the corresponding call to kfree is moved\nfrom the algorithm-specific crush_destroy_bucket functions to the\ngeneric crush_destroy_bucket().",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.670"
   },
   {
     "id": "CVE-2026-52956",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nlibceph: Fix potential out-of-bounds access in __ceph_x_decrypt()\n\nIn __ceph_x_decrypt(), a part of the buffer p is interpreted as a\nceph_x_encrypt_header, and the magic field of this struct is accessed.\nThis happens without any guarantee that the buffer is large enough to\nhold this struct. The function parameter ciphertext_len represents the\nlength of the ciphertext to decrypt and is guaranteed to be at most the\nremaining size of the allocated buffer p. However, this value is not\nnecessarily greater than sizeof(ceph_x_encrypt_header). E.g., a message\nframe of type FRAME_TAG_AUTH_REPLY_MORE, that is just as long to hold\nthe ciphertext at its end with a ciphertext_len of 8 or less, can\ntrigger an out-of-bounds memory access when accessing hdr->magic.\n\nThis patch fixes the issue by adding a check to ensure that the\ndecrypted plaintext in the buffer is large enough to represent at least\nthe ceph_x_encrypt_header.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.807"
   },
   {
     "id": "CVE-2026-52957",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nlibceph: Fix potential null-ptr-deref in decode_choose_args()\n\nA message of type CEPH_MSG_OSD_MAP contains an OSD map that itself\ncontains a CRUSH map. When decoding this CRUSH map in crush_decode(), an\narray of max_buckets CRUSH buckets is decoded, where some indices may\nnot refer to actual buckets and are therefore set to NULL. The received\nCRUSH map may optionally contain choose_args that get decoded in\ndecode_choose_args(). When decoding a crush_choose_arg_map, a series of\nchoose_args for different buckets is decoded, with the bucket_index\nbeing read from the incoming message. It is only checked that the bucket\nindex does not exceed max_buckets, but not that it doesn't point to an\nindex with a NULL bucket. If a (potentially corrupted) message contains\na crush_choose_arg_map including such a bucket_index, a null pointer\ndereference may occur in the subsequent processing when attempting to\naccess the bucket with the given index.\n\nThis patch fixes the issue by extending the affected check. Now, it is\nonly attempted to access the bucket if it is not NULL.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:05.900"
   },
   {
     "id": "CVE-2026-52958",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nlibceph: Fix potential out-of-bounds access in osdmap_decode()\n\nWhen decoding osd_state and osd_weight from an incoming osdmap in\nosdmap_decode(), both are decoded for each osd, i.e., map->max_osd\ntimes. The ceph_decode_need() check only accounts for\nsizeof(*map->osd_weight) once. This can potentially result in an\nout-of-bounds memory access if the incoming message is corrupted such\nthat the max_osd value exceeds the actual content of the osdmap message.\n\nThis patch fixes the issue by changing the corresponding part in the\nceph_decode_need() check to account for\nmap->max_osd*sizeof(*map->osd_weight).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.033"
   },
   {
     "id": "CVE-2026-52959",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nvirt: sev-guest: Do not use host-controlled page order in cleanup path\n\nWhen issuing an extended guest request (SVM_VMGEXIT_EXT_GUEST_REQUEST),\nget_ext_report() allocates a buffer to retrieve a certificate blob from the\nhost, keeping track of its size in report_req->certs_len.\n\nHowever, the host may return SNP_GUEST_VMM_ERR_INVALID_LEN, indicating\nan invalid buffer size, as well as the expected length of such buffer.\nget_ext_report() subsequently updates report_req->certs_len with the\nhost-controlled value, and cleans up the buffer by computing a page order\nfrom such value. This is incorrect, as the host-provided length may not\nmatch the page order of the original allocation, potentially resulting\nin corruption in the page allocator.\n\nFix this by using alloc_pages_exact() instead, and reusing @npages to\ncompute the size passed to free_pages_exact(). For consistency, also\nuse @npages to compute the size when allocating the pages, even though\nthis last change has no functional effect.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.157"
   },
   {
     "id": "CVE-2026-52960",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nceph: put folios not suitable for writeback\n\nThe batch holds references to the folios (see `filemap_get_folios`,\n`folio_batch_release`), so we need to `folio_put` the folios we remove.\n\nTested on v6.18.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.260"
   },
   {
     "id": "CVE-2026-52961",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nceph: fix BUG_ON in __ceph_build_xattrs_blob() due to stale blob size\n\nThe generic/642 test-case can reproduce the kernel crash:\n\n[40243.605254] ------------[ cut here ]------------\n[40243.605956] kernel BUG at fs/ceph/xattr.c:918!\n[40243.607142] Oops: invalid opcode: 0000 [#1] SMP PTI\n[40243.608067] CPU: 7 UID: 0 PID: 498762 Comm: kworker/7:1 Not tainted 7.0.0-rc7+ #3 PREEMPT(full)\n[40243.609700] Hardware name: QEMU Ubuntu 25.10 PC v2 (i440FX + PIIX, + 10.1 machine, 1996), BIOS 1.16.3-debian-1.16.3-2 04/01/2014\n[40243.611820] Workqueue: ceph-msgr ceph_con_workfn\n[40243.612715] RIP: 0010:__ceph_build_xattrs_blob+0x1b8/0x1e0\n[40243.613731] Code: 0f 84 82 fe ff ff e9 cf 8e 56 ff 48 8d 65 e8 31 c0 5b 41 5c 41 5d 5d 31 d2 31 c9 31 f6 31 ff 45 31 c0 45 31 c9 c3 cc cc cc cc <0f> 0b 4c 8b 62 08 41 8b 85 24 07 00 00 49 83 c4 04 41 89 44 24 fc\n[40243.616888] RSP: 0018:ffffcc80c4d4b688 EFLAGS: 00010287\n[40243.617773] RAX: 0000000000010026 RBX: 0000000000000001 RCX: 0000000000000000\n[40243.618928] RDX: ffff8a773798dee0 RSI: 0000000000000000 RDI: 0000000000000000\n[40243.620158] RBP: ffffcc80c4d4b6a0 R08: 0000000000000000 R09: 0000000000000000\n[40243.621573] R10: 0000000000000000 R11: 0000000000000000 R12: ffff8a75f3b58000\n[40243.622907] R13: ffff8a75f3b58000 R14: 0000000000000080 R15: 000000000000bffd\n[40243.624054] FS:  0000000000000000(0000) GS:ffff8a787d1b4000(0000) knlGS:0000000000000000\n[40243.625331] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033\n[40243.626269] CR2: 000072f390b623c0 CR3: 000000011c02a003 CR4: 0000000000372ef0\n[40243.627408] Call Trace:\n[40243.627839]  <TASK>\n[40243.628188]  __prep_cap+0x3fd/0x4a0\n[40243.628789]  ? do_raw_spin_unlock+0x4e/0xe0\n[40243.629474]  ceph_check_caps+0x46a/0xc80\n[40243.630094]  ? __lock_acquire+0x4a2/0x2650\n[40243.630773]  ? find_held_lock+0x31/0x90\n[40243.631347]  ? handle_cap_grant+0x79f/0x1060\n[40243.632068]  ? lock_release+0xd9/0x300\n[40243.632696]  ? __mutex_unlock_slowpath+0x3e/0x340\n[40243.633429]  ? lock_release+0xd9/0x300\n[40243.634052]  handle_cap_grant+0xcf6/0x1060\n[40243.634745]  ceph_handle_caps+0x122b/0x2110\n[40243.635415]  mds_dispatch+0x5bd/0x2160\n[40243.636034]  ? ceph_con_process_message+0x65/0x190\n[40243.636828]  ? lock_release+0xd9/0x300\n[40243.637431]  ceph_con_process_message+0x7a/0x190\n[40243.638184]  ? kfree+0x311/0x4f0\n[40243.638749]  ? kfree+0x311/0x4f0\n[40243.639268]  process_message+0x16/0x1a0\n[40243.639915]  ? sg_free_table+0x39/0x90\n[40243.640572]  ceph_con_v2_try_read+0xf58/0x2120\n[40243.641255]  ? lock_acquire+0xc8/0x300\n[40243.641863]  ceph_con_workfn+0x151/0x820\n[40243.642493]  process_one_work+0x22f/0x630\n[40243.643093]  ? process_one_work+0x254/0x630\n[40243.643770]  worker_thread+0x1e2/0x400\n[40243.644332]  ? __pfx_worker_thread+0x10/0x10\n[40243.645020]  kthread+0x109/0x140\n[40243.645560]  ? __pfx_kthread+0x10/0x10\n[40243.646125]  ret_from_fork+0x3f8/0x480\n[40243.646752]  ? __pfx_kthread+0x10/0x10\n[40243.647316]  ? __pfx_kthread+0x10/0x10\n[40243.647919]  ret_from_fork_asm+0x1a/0x30\n[40243.648556]  </TASK>\n[40243.648902] Modules linked in: overlay hctr2 libpolyval chacha libchacha adiantum libnh libpoly1305 essiv intel_rapl_msr intel_rapl_common intel_uncore_frequency_common skx_edac_common nfit kvm_intel kvm irqbypass joydev ghash_clmulni_intel aesni_intel rapl input_leds mac_hid psmouse vga16fb serio_raw vgastate floppy i2c_piix4 pata_acpi bochs qemu_fw_cfg i2c_smbus sch_fq_codel rbd dm_crypt msr parport_pc ppdev lp parport efi_pstore\n[40243.654766] ---[ end trace 0000000000000000 ]---\n\nCommit d93231a6bc8a (\"ceph: prevent a client from exceeding the MDS\nmaximum xattr size\") moved the required_blob_size computation to before\nthe __build_xattrs() call, introducing a race.\n\n__build_xattrs() releases and reacquires i_ceph_lock during execution.\nIn that window, handle_cap_grant() may update i_xattrs.blob with a\nnewer MDS-provided blob and bump i_xattrs.version.  When\n__bui\n---truncated---",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.360"
   },
   {
     "id": "CVE-2026-52962",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nceph: fix a buffer leak in __ceph_setxattr()\n\nThe old_blob in __ceph_setxattr() can store\nci->i_xattrs.prealloc_blob value during the retry.\nHowever, it is never called the ceph_buffer_put()\nfor the old_blob object. This patch fixes the issue of\nthe buffer leak.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.520"
   },
   {
     "id": "CVE-2026-52963",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nALSA: usb-audio: Bound MIDI endpoint descriptor scans\n\nsnd_usbmidi_get_ms_info() validates the internal MIDIStreaming endpoint\ndescriptor size before using baAssocJackID[], but the descriptor walker can\nstill return a class-specific endpoint descriptor whose bLength exceeds the\nremaining bytes in the endpoint-extra scan.\n\nThat leaves later flexible-array reads bounded by bLength, but not by the\nremaining bytes in the endpoint-extra scan.\n\nStop walking when bLength is zero or\nextends past the remaining endpoint-extra scan.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.650"
   },
   {
     "id": "CVE-2026-52964",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nALSA: usb-audio: Bound MIDI 2.0 endpoint descriptor scans\n\nThe USB MIDI 2.0 endpoint parser has the same descriptor walking\npattern as the legacy MIDI parser. It validates bLength against\nbNumGrpTrmBlock before reading baAssoGrpTrmBlkID[], but not against the\nremaining bytes in the endpoint-extra scan.\n\nA malformed device can therefore make later baAssoGrpTrmBlkID[] reads\nconsume bytes past the walked descriptor.\n\nReject zero-length and overlong descriptors while walking endpoint\nextras.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:06.837"
   },
   {
@@ -17586,141 +17586,141 @@
   {
     "id": "CVE-2026-52972",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: af_alg - Cap AEAD AD length to 0x80000000\n\nIn order to prevent arithmetic overflows when checking the TX\nbuffer size, cap the associated data length to 0x80000000.",
-    "severity": "High",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.727"
   },
   {
     "id": "CVE-2026-52973",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfutex: Drop CLONE_THREAD requirement for private default hash alloc\n\nCurrently need_futex_hash_allocate_default() depends on strict pthread\nsemantics, abusing CLONE_THREAD.  This breaks the non-concurrency\nassumptions when doing the mm->futex_ref pcpu allocations, leading to\nbugs[0] when sharing the mm in other ways; ie:\n\n    BUG: KASAN: slab-use-after-free in futex_hash_put\n\n... where the +1 bias can end up on a percpu counter that mm->futex_ref\nno longer points at.\n\nLoosen the check to cover any CLONE_VM clone, except vfork().  Excluding\nvfork keeps the existing paths untouched (no overhead), and we can't\nrace in the first place: either the parent is suspended and the child\nruns alone, or mm->futex_ref is already allocated from an earlier\nCLONE_VM.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.840"
   },
   {
     "id": "CVE-2026-52974",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: tls: fix strparser anchor skb leak on offload RX setup failure\n\nWhen tls_set_device_offload_rx() fails at tls_dev_add(), the error path\ncalls tls_sw_free_resources_rx() to clean up the SW context that was\ninitialized by tls_set_sw_offload(). This function calls\ntls_sw_release_resources_rx() (which stops the strparser via\ntls_strp_stop()) and tls_sw_free_ctx_rx() (which kfrees the context),\nbut never frees the anchor skb that was allocated by alloc_skb(0) in\ntls_strp_init().\n\nNote that tls_sw_free_resources_rx() is exclusively used for this\n\"failed to start offload\" code path, there's no other caller.\n\nThe leak did not exist before commit 84c61fe1a75b (\"tls: rx: do not use\nthe standard strparser\"), because the standard strparser doesn't try\nto pre-allocate an skb.\n\nThe normal close path in tls_sk_proto_close() handles cleanup by calling\ntls_sw_strparser_done() (which calls tls_strp_done()) after dropping\nthe socket lock, because tls_strp_done() does cancel_work_sync() and\nthe strparser work handler takes the socket lock.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:07.933"
   },
   {
     "id": "CVE-2026-52975",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbonding: 3ad: implement proper RCU rules for port->aggregator\n\nsyzbot found a data-race in bond_3ad_get_active_agg_info /\nbond_3ad_state_machine_handler [1] which hints at lack of proper\nRCU implementation.\n\nAdd __rcu qualifier to port->aggregator, and add proper RCU API.\n\n[1]\n\nBUG: KCSAN: data-race in bond_3ad_get_active_agg_info / bond_3ad_state_machine_handler\n\nwrite to 0xffff88813cf5c4b0 of 8 bytes by task 36 on cpu 0:\n  ad_port_selection_logic drivers/net/bonding/bond_3ad.c:1659 [inline]\n  bond_3ad_state_machine_handler+0x9d5/0x2d60 drivers/net/bonding/bond_3ad.c:2569\n  process_one_work kernel/workqueue.c:3302 [inline]\n  process_scheduled_works+0x4f0/0x9c0 kernel/workqueue.c:3385\n  worker_thread+0x58a/0x780 kernel/workqueue.c:3466\n  kthread+0x22a/0x280 kernel/kthread.c:436\n  ret_from_fork+0x146/0x330 arch/x86/kernel/process.c:158\n  ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245\n\nread to 0xffff88813cf5c4b0 of 8 bytes by task 22063 on cpu 1:\n  __bond_3ad_get_active_agg_info drivers/net/bonding/bond_3ad.c:2858 [inline]\n  bond_3ad_get_active_agg_info+0x8c/0x230 drivers/net/bonding/bond_3ad.c:2881\n  bond_fill_info+0xe0f/0x10f0 drivers/net/bonding/bond_netlink.c:853\n  rtnl_link_info_fill net/core/rtnetlink.c:906 [inline]\n  rtnl_link_fill+0x1d7/0x4e0 net/core/rtnetlink.c:927\n  rtnl_fill_ifinfo+0xf8e/0x1380 net/core/rtnetlink.c:2168\n  rtmsg_ifinfo_build_skb+0x11c/0x1b0 net/core/rtnetlink.c:4453\n  rtmsg_ifinfo_event net/core/rtnetlink.c:4486 [inline]\n  rtmsg_ifinfo+0x6d/0x110 net/core/rtnetlink.c:4495\n  __dev_notify_flags+0x76/0x390 net/core/dev.c:9790\n  netif_change_flags+0xac/0xd0 net/core/dev.c:9823\n  do_setlink+0x905/0x2950 net/core/rtnetlink.c:3180\n  rtnl_group_changelink net/core/rtnetlink.c:3813 [inline]\n  __rtnl_newlink net/core/rtnetlink.c:3981 [inline]\n  rtnl_newlink+0xf55/0x1400 net/core/rtnetlink.c:4109\n  rtnetlink_rcv_msg+0x64b/0x720 net/core/rtnetlink.c:6995\n  netlink_rcv_skb+0x123/0x220 net/netlink/af_netlink.c:2550\n  rtnetlink_rcv+0x1c/0x30 net/core/rtnetlink.c:7022\n  netlink_unicast_kernel net/netlink/af_netlink.c:1318 [inline]\n  netlink_unicast+0x5a8/0x680 net/netlink/af_netlink.c:1344\n  netlink_sendmsg+0x5c8/0x6f0 net/netlink/af_netlink.c:1894\n  sock_sendmsg_nosec net/socket.c:787 [inline]\n  __sock_sendmsg net/socket.c:802 [inline]\n  ____sys_sendmsg+0x563/0x5b0 net/socket.c:2698\n  ___sys_sendmsg+0x195/0x1e0 net/socket.c:2752\n  __sys_sendmsg net/socket.c:2784 [inline]\n  __do_sys_sendmsg net/socket.c:2789 [inline]\n  __se_sys_sendmsg net/socket.c:2787 [inline]\n  __x64_sys_sendmsg+0xd4/0x160 net/socket.c:2787\n  x64_sys_call+0x194c/0x3020 arch/x86/include/generated/asm/syscalls_64.h:47\n  do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]\n  do_syscall_64+0x12c/0x3b0 arch/x86/entry/syscall_64.c:94\n entry_SYSCALL_64_after_hwframe+0x77/0x7f\n\nvalue changed: 0x0000000000000000 -> 0xffff88813cf5c400\n\nReported by Kernel Concurrency Sanitizer on:\nCPU: 1 UID: 0 PID: 22063 Comm: syz.0.31122 Tainted: G        W           syzkaller #0 PREEMPT(full)\nTainted: [W]=WARN\nHardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 04/18/2026",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.050"
   },
   {
     "id": "CVE-2026-52976",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/xe: Fix error cleanup in xe_exec_queue_create_ioctl()\n\nTwo error handling issues exist in xe_exec_queue_create_ioctl():\n\n1. When xe_hw_engine_group_add_exec_queue() fails, the error path jumps\n   to put_exec_queue which skips xe_exec_queue_kill(). If the VM is in\n   preempt fence mode, xe_vm_add_compute_exec_queue() has already added\n   the queue to the VM's compute exec queue list. Skipping the kill\n   leaves the queue on that list, leading to a dangling pointer after\n   the queue is freed.\n\n2. When xa_alloc() fails after xe_hw_engine_group_add_exec_queue() has\n   succeeded, the error path does not call\n   xe_hw_engine_group_del_exec_queue() to remove the queue from the hw\n   engine group list. The queue is then freed while still linked into\n   the hw engine group, causing a use-after-free.\n\nFix both by:\n- Changing the xe_hw_engine_group_add_exec_queue() failure path to jump\n  to kill_exec_queue so that xe_exec_queue_kill() properly removes the\n  queue from the VM's compute list.\n- Adding a del_hw_engine_group label before kill_exec_queue for the\n  xa_alloc() failure path, which removes the queue from the hw engine\n  group before proceeding with the rest of the cleanup.\n\n(cherry picked from commit 37c831f401746a45d510b312b0ed7a77b1e06ec8)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.183"
   },
   {
     "id": "CVE-2026-52977",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfutex: Prevent lockup in requeue-PI during signal/ timeout wakeup\n\nDuring wait-requeue-pi (task A) and requeue-PI (task B) the following\nrace can happen:\n\n     Task A                             Task B\n  futex_wait_requeue_pi()\n    futex_setup_timer()\n    futex_do_wait()\n                                   futex_requeue()\n                                        CLASS(hb, hb1)(&key1);\n                                        CLASS(hb, hb2)(&key2);\n        *timeout*\n    futex_requeue_pi_wakeup_sync()\n        requeue_state = Q_REQUEUE_PI_IGNORE\n\n    *blocks on hb->lock*\n\n                                        futex_proxy_trylock_atomic()\n                                          futex_requeue_pi_prepare()\n                                            Q_REQUEUE_PI_IGNORE => -EAGAIN\n                                        double_unlock_hb(hb1, hb2)\n                                         *retry*\n\nTask B acquires both hb locks and attempts to acquire the PI-lock of the\ntop most waiter (task B). Task A is leaving early due to a signal/\ntimeout and started removing itself from the queue. It updates its\nrequeue_state but can not remove it from the list because this requires\nthe hb lock which is owned by task B.\n\nUsually task A is able to swoop the lock after task B unlocked it.\nHowever if task B is of higher priority then task A may not be able to\nwake up in time and acquire the lock before task B gets it again.\nEspecially on a UP system where A is never scheduled.\n\nAs a result task A blocks on the lock and task B busy loops, trying to\nmake progress but live locks the system instead. Tragic.\n\nThis can be fixed by removing the top most waiter from the list in this\ncase. This allows task B to grab the next top waiter (if any) in the\nnext iteration and make progress.\n\nRemove the top most waiter if futex_requeue_pi_prepare() fails.\nLet the waiter conditionally remove itself from the list in\nhandle_early_requeue_pi_wakeup().",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.293"
   },
   {
     "id": "CVE-2026-52978",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: psp: require admin permission for dev-set and key-rotate\n\nThe dev-set and key-rotate netlink operations modify shared device\nstate (PSP version configuration and cryptographic key material,\nrespectively) but do not require CAP_NET_ADMIN. The only access\ncontrol is psp_dev_check_access() which merely verifies netns\nmembership.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.417"
   },
   {
     "id": "CVE-2026-52979",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: psp: check for device unregister when creating assoc\n\npsp_assoc_device_get_locked() obtains a psp_dev reference via\npsp_dev_get_for_sock() (which uses psp_dev_tryget() under RCU);\nit then acquires psd->lock and drops the reference. Before\nthe lock is taken, psp_dev_unregister() can run to completion:\ntake psd->lock, clear out state, unlock, drop the registration\nreference.\n\nThe expectation is that the lock prevents device unregistration,\nbut much like with netdevs special care has to be taken when\n\"upgrading\" a reference to a locked device. Add the missing\ncheck if device is still alive. psp_dev_is_registered() exists\nalready but had no callers, which makes me wonder if I either\nforgot to add this or lost the check during refactoring...",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.513"
   },
   {
     "id": "CVE-2026-52980",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsched/fair: Clear rel_deadline when initializing forked entities\n\nA yield-triggered crash can happen when a newly forked sched_entity\nenters the fair class with se->rel_deadline unexpectedly set.\n\nThe failing sequence is:\n\n  1. A task is forked while se->rel_deadline is still set.\n  2. __sched_fork() initializes vruntime, vlag and other sched_entity\n     state, but does not clear rel_deadline.\n  3. On the first enqueue, enqueue_entity() calls place_entity().\n  4. Because se->rel_deadline is set, place_entity() treats se->deadline\n     as a relative deadline and converts it to an absolute deadline by\n     adding the current vruntime.\n  5. However, the forked entity's deadline is not a valid inherited\n     relative deadline for this new scheduling instance, so the conversion\n     produces an abnormally large deadline.\n  6. If the task later calls sched_yield(), yield_task_fair() advances\n     se->vruntime to se->deadline.\n  7. The inflated vruntime is then used by the following enqueue path,\n     where the vruntime-derived key can overflow when multiplied by the\n     entity weight.\n  8. This corrupts cfs_rq->sum_w_vruntime, breaks EEVDF eligibility\n     calculation, and can eventually make all entities appear ineligible.\n     pick_next_entity() may then return NULL unexpectedly, leading to a\n     later NULL dereference.\n\nA captured trace shows the effect clearly. Before yield, the entity's\nvruntime was around:\n\n  9834017729983308\n\nAfter yield_task_fair() executed:\n\n  se->vruntime = se->deadline\n\nthe vruntime jumped to:\n\n  19668035460670230\n\nand the deadline was later advanced further to:\n\n  19668035463470230\n\nThis shows that the deadline had already become abnormally large before\nyield_task_fair() copied it into vruntime.\n\nrel_deadline is only meaningful when se->deadline really carries a\nrelative deadline that still needs to be placed against vruntime. A\nfreshly forked sched_entity should not inherit or retain this state.\nClear se->rel_deadline in __sched_fork(), together with the other\nsched_entity runtime state, so that the first enqueue does not interpret\nthe new entity's deadline as a stale relative deadline.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.610"
   },
   {
     "id": "CVE-2026-52981",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nneigh: let neigh_xmit take skb ownership\n\nneigh_xmit always releases the skb, except when no neighbour table is\nfound. But even the first added user of neigh_xmit (mpls) relied on\nneigh_xmit to release the skb (or queue it for tx).\n\nsashiko reported:\n If neigh_xmit() is called with an uninitialized neighbor table (for\n example, NEIGH_ND_TABLE when IPv6 is disabled), it returns -EAFNOSUPPORT\n and bypasses its internal out_kfree_skb error path.  Because the return\n value of neigh_xmit() is ignored here, does this leak the SKB?\n\nAssume full ownership and remove the last code path that doesn't\nxmit or free skb.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.723"
   },
   {
     "id": "CVE-2026-52982",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: usb: rtl8150: fix use-after-free in rtl8150_start_xmit()\n\nsyzbot reported a KASAN slab-use-after-free read in rtl8150_start_xmit()\nwhen accessing skb->len for tx statistics after usb_submit_urb() has\nbeen called:\n\n  BUG: KASAN: slab-use-after-free in rtl8150_start_xmit+0x71f/0x760\n    drivers/net/usb/rtl8150.c:712\n  Read of size 4 at addr ffff88810eb7a930 by task kworker/0:4/5226\n\nThe URB completion handler write_bulk_callback() frees the skb via\ndev_kfree_skb_irq(dev->tx_skb). The URB may complete on another CPU\nin softirq context before usb_submit_urb() returns in the submitter,\nso by the time the submitter reads skb->len the skb has already been\nqueued to the per-CPU completion_queue and freed by net_tx_action():\n\n  CPU A (xmit)                      CPU B (USB completion softirq)\n  ------------                      ------------------------------\n  dev->tx_skb = skb;\n  usb_submit_urb()      --+\n                          |-------> write_bulk_callback()\n                          |           dev_kfree_skb_irq(dev->tx_skb)\n                          |         net_tx_action()\n                          |           napi_skb_cache_put()   <-- free\n  netdev->stats.tx_bytes  |\n    += skb->len;          <-- UAF read\n\nFix it by caching skb->len before submitting the URB and using the\ncached value when updating the tx_bytes counter.\n\nThe pre-existing tx_bytes semantics are preserved: the counter tracks\nthe original frame length (skb->len), not the ETH_ZLEN/USB-alignment\npadded \"count\" value that is handed to the device.  Changing that\nwould be a user-visible accounting change and is out of scope for\nthis UAF fix.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:08.887"
   },
   {
     "id": "CVE-2026-52983",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: airoha: fix BQL imbalance in TX path\n\nFix a possible BQL imbalance in airoha_dev_xmit(), where inflight\npackets are accounted only for the AIROHA_NUM_TX_RING netdev TX\nqueues. The queue index is computed as:\n\n    qid = skb_get_queue_mapping(skb) % ARRAY_SIZE(qdma->q_tx)\n    txq = netdev_get_tx_queue(dev, qid);\n\nHowever, airoha_qdma_tx_napi_poll() accounts completions across all\nnetdev TX queues (num_tx_queues), leading to inconsistent BQL\naccounting.\n\nAlso reset all netdev TX queues in the ndo_stop callback.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.030"
   },
   {
     "id": "CVE-2026-52984",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/sched: netem: fix queue limit check to include reordered packets\n\nThe queue limit check in netem_enqueue() uses q->t_len which only\ncounts packets in the internal tfifo. Packets placed in sch->q by\nthe reorder path (__qdisc_enqueue_head) are not counted, allowing\nthe total queue occupancy to exceed sch->limit under reordering.\n\nInclude sch->q.qlen in the limit check.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.127"
   },
   {
     "id": "CVE-2026-52985",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetdevsim: zero initialize struct iphdr in dummy sk_buff\n\nSyzbot reports a KMSAN uninit-value originating from\nnsim_dev_trap_skb_build, with the allocation also\nbeing performed in the same function.\n\nFix this by calling skb_put_zero instead of skb_put to\nguarantee zero initialization of the whole IP header.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.260"
   },
   {
     "id": "CVE-2026-52986",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nf_conntrack_sip: don't use simple_strtoul\n\nReplace unsafe port parsing in epaddr_len(), ct_sip_parse_header_uri(),\nand ct_sip_parse_request() with a new sip_parse_port() helper that\nvalidates each digit against the buffer limit, eliminating the use of\nsimple_strtoul() which assumes NUL-terminated strings.\n\nThe previous code dereferenced pointers without bounds checks after\nsip_parse_addr() and relied on simple_strtoul() on non-NUL-terminated\nskb data. A port that reaches the buffer limit without a trailing\ncharacter is also rejected as malformed.\n\nAlso get rid of all simple_strtoul() usage in conntrack, prefer a\nstricter version instead.  There are intentional changes:\n\n- Bail out if number is > UINT_MAX and indicate a failure, same for\n  too long sequences.\n  While we do accept 05535 as port 5535, we will not accept e.g.\n  'sip:10.0.0.1:005060'.  While its syntactically valid under RFC 3261,\n  we should restrict this to not waste cycles when presented with\n  malformed packets with 64k '0' characters.\n\n- Force base 10 in ct_sip_parse_numerical_param(). This is used to fetch\n  'expire=' and 'rports='; both are expected to use base-10.\n\n- In nf_nat_sip.c, only accept the parsed value if its within the 1k-64k\n  range.\n\n- epaddr_len now returns 0 if the port is invalid, as it already does\n  for invalid ip addresses.  This is intentional. nf_conntrack_sip\n  performs lots of guesswork to find the right parts of the message\n  to parse.  Being stricter could break existing setups.\n  Connection tracking helpers are designed to allow traffic to\n  pass, not to block it.\n\nBased on an earlier patch from Jenny Guanni Qu <qguanni@gmail.com>.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.383"
   },
   {
     "id": "CVE-2026-52987",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amdgpu: avoid double drm_exec_fini() in userq validate\n\nWhen new_addition is true, amdgpu_userq_vm_validate() calls\ndrm_exec_fini(&exec) before iterating over the collected HMM ranges and\ncalling amdgpu_ttm_tt_get_user_pages().\n\nIf amdgpu_ttm_tt_get_user_pages() fails in that path, the code jumps to\nunlock_all and calls drm_exec_fini(&exec) a second time on the same\nexec object. drm_exec_fini() is not idempotent: it frees exec->objects\nand may also drop exec->contended and finalize the ww acquire context.\n\nRoute that error path directly to the range cleanup once exec has\nalready been finalized.\n\nIssue found using a prototype static analysis tool\nand confirmed by code review.\n\n(cherry picked from commit 2802952e4a07306da6ebe813ff1acacc5691851a)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.517"
   },
   {
     "id": "CVE-2026-52988",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nf_tables: join hook list via splice_list_rcu() in commit phase\n\nPublish new hooks in the list into the basechain/flowtable using\nsplice_list_rcu() to ensure netlink dump list traversal via rcu is safe\nwhile concurrent ruleset update is going on.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.610"
   },
   {
     "id": "CVE-2026-52989",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnvmet-tcp: propagate nvmet_tcp_build_pdu_iovec() errors to its callers\n\nCurrently, when nvmet_tcp_build_pdu_iovec() detects an out-of-bounds\nPDU length or offset, it triggers nvmet_tcp_fatal_error(cmd->queue)\nand returns early. However, because the function returns void, the\ncallers are entirely unaware that a fatal error has occurred and\nthat the cmd->recv_msg.msg_iter was left uninitialized.\n\nCallers such as nvmet_tcp_handle_h2c_data_pdu() proceed to blindly\noverwrite the queue state with queue->rcv_state = NVMET_TCP_RECV_DATA\nConsequently, the socket receiving loop may attempt to read incoming\nnetwork data into the uninitialized iterator.\n\nFix this by shifting the error handling responsibility to the callers.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.707"
   },
   {
     "id": "CVE-2026-52990",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfsnotify: fix inode reference leak in fsnotify_recalc_mask()\n\nfsnotify_recalc_mask() fails to handle the return value of\n__fsnotify_recalc_mask(), which may return an inode pointer that needs\nto be released via fsnotify_drop_object() when the connector's HAS_IREF\nflag transitions from set to cleared.\n\nThis manifests as a hung task with the following call trace:\n\n  INFO: task umount:1234 blocked for more than 120 seconds.\n  Call Trace:\n   __schedule\n   schedule\n   fsnotify_sb_delete\n   generic_shutdown_super\n   kill_anon_super\n   cleanup_mnt\n   task_work_run\n   do_exit\n   do_group_exit\n\nThe race window that triggers the iref leak:\n\n  Thread A (adding mark)              Thread B (removing mark)\n  ──────────────────────              ────────────────────────\n  fsnotify_add_mark_locked():\n    fsnotify_add_mark_list():\n      spin_lock(conn->lock)\n      add mark_B(evictable) to list\n      spin_unlock(conn->lock)\n    return\n\n    /* ---- gap: no lock held ---- */\n\n                                      fsnotify_detach_mark(mark_A):\n                                        spin_lock(mark_A->lock)\n                                        clear ATTACHED flag on mark_A\n                                        spin_unlock(mark_A->lock)\n                                        fsnotify_put_mark(mark_A)\n\n    fsnotify_recalc_mask():\n      spin_lock(conn->lock)\n      __fsnotify_recalc_mask():\n        /* mark_A skipped: ATTACHED cleared */\n        /* only mark_B(evictable) remains */\n        want_iref = false\n        has_iref = true  /* not yet cleared */\n        -> HAS_IREF transitions true -> false\n        -> returns inode pointer\n      spin_unlock(conn->lock)\n      /* BUG: return value discarded!\n       * iput() and fsnotify_put_sb_watched_objects()\n       * are never called */\n\nFix this by deferring the transition true -> false of HAS_IREF flag from\nfsnotify_recalc_mask() (Thread A) to fsnotify_put_mark() (thread B).",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.833"
   },
   {
     "id": "CVE-2026-52991",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsched/psi: fix race between file release and pressure write\n\nA potential race condition exists between pressure write and cgroup file\nrelease regarding the priv member of struct kernfs_open_file, which\ntriggers the uaf reported in [1].\n\nConsider the following scenario involving execution on two separate CPUs:\n\n   CPU0\t\t\t\t\tCPU1\n   ====\t\t\t\t\t====\n\t\t\t\t\tvfs_rmdir()\n\t\t\t\t\tkernfs_iop_rmdir()\n\t\t\t\t\tcgroup_rmdir()\n\t\t\t\t\tcgroup_kn_lock_live()\n\t\t\t\t\tcgroup_destroy_locked()\n\t\t\t\t\tcgroup_addrm_files()\n\t\t\t\t\tcgroup_rm_file()\n\t\t\t\t\tkernfs_remove_by_name()\n\t\t\t\t\tkernfs_remove_by_name_ns()\n vfs_write()\t\t\t\t__kernfs_remove()\n new_sync_write()\t\t\tkernfs_drain()\n kernfs_fop_write_iter()\t\tkernfs_drain_open_files()\n cgroup_file_write()\t\t\tkernfs_release_file()\n pressure_write()\t\t\tcgroup_file_release()\n ctx = of->priv;\n\t\t\t\t\tkfree(ctx);\n \t\t\t\t\tof->priv = NULL;\n\t\t\t\t\tcgroup_kn_unlock()\n cgroup_kn_lock_live()\n cgroup_get(cgrp)\n cgroup_kn_unlock()\n if (ctx->psi.trigger)  // here, trigger uaf for ctx, that is of->priv\n\nThe cgroup_rmdir() is protected by the cgroup_mutex, it also safeguards\nthe memory deallocation of of->priv performed within cgroup_file_release().\nHowever, the operations involving of->priv executed within pressure_write()\nare not entirely covered by the protection of cgroup_mutex. Consequently,\nif the code in pressure_write(), specifically the section handling the\nctx variable executes after cgroup_file_release() has completed, a uaf\nvulnerability involving of->priv is triggered.\n\nTherefore, the issue can be resolved by extending the scope of the\ncgroup_mutex lock within pressure_write() to encompass all code paths\ninvolving of->priv, thereby properly synchronizing the race condition\noccurring between cgroup_file_release() and pressure_write().\n\nAnd, if an live kn lock can be successfully acquired while executing\nthe pressure write operation, it indicates that the cgroup deletion\nprocess has not yet reached its final stage; consequently, the priv\npointer within open_file cannot be NULL. Therefore, the operation to\nretrieve the ctx value must be moved to a point *after* the live kn\nlock has been successfully acquired.\n\nIn another situation, specifically after entering cgroup_kn_lock_live()\nbut before acquiring cgroup_mutex, there exists a different class of\nrace condition:\n\nCPU0: write memory.pressure               CPU1: write cgroup.pressure=0\n===========================\t\t  =============================\n\nkernfs_fop_write_iter()\n kernfs_get_active_of(of)\n pressure_write()\n   cgroup_kn_lock_live(memory.pressure)\n     cgroup_tryget(cgrp)\n     kernfs_break_active_protection(kn)\n     ... blocks on cgroup_mutex\n\n                                     \t  cgroup_pressure_write()\n                                     \t  cgroup_kn_lock_live(cgroup.pressure)\n                                     \t  cgroup_file_show(memory.pressure, false)\n                                     \t    kernfs_show(false)\n                                     \t      kernfs_drain_open_files()\n                                     \t        cgroup_file_release(of)\n                                     \t          kfree(ctx)\n                                     \t            of->priv = NULL\n                                     \t  cgroup_kn_unlock()\n\n   ... acquires cgroup_mutex\n   ctx = of->priv;        // may now be NULL\n   if (ctx->psi.trigger)  // NULL dereference\n\nConsequently, there is a possibility that of->priv is NULL, the pressure\nwrite needs to check for this.\n\nNow that the scope of the cgroup_mutex has been expanded, the original\nexplicit cgroup_get/put operations are no longer necessary, this is\nbecause acquiring/releasing the live kn lock inherently executes a\ncgroup get/put operation.\n\n[1]\nBUG: KASAN: slab-use-after-free in pressure_write+0xa4/0x210 kernel/cgroup/cgroup.c:4011\nCall Trace:\n pressure_write+0xa4/0x210 kernel/cgroup/cgroup.c:4011\n cgroup_file_write+0x36f/0x790 kernel/cgroup/cgroup.c:43\n---truncated---",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-06-24T17:17:09.953"
   },
   {
@@ -21933,15 +21933,15 @@
   {
     "id": "CVE-2026-9650",
     "description": "CWE-522 Insufficiently Protected Credentials vulnerability that could cause unauthorized access and exposure of sensitive information when unauthenticated attacker accesses credentials stored within firmware or system files. With this credential an attacker could subsequently compromise the device if they have physical access to the device.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Easylogic t150 firmware",
     "published": "2026-06-25T16:16:43.867"
   },
   {
     "id": "CVE-2026-9651",
     "description": "CWE-732 Incorrect Permission Assignment for Critical Resource vulnerability that could cause unauthorized disclosure of password hashes and potential account compromise when an attacker with privileged local access reads improperly protected system files.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Easylogic t150 firmware",
     "published": "2026-06-25T16:16:43.990"
   },
   {
@@ -22627,14 +22627,14 @@
     "id": "CVE-2026-37453",
     "description": "Insecure Permissions vulnerability in MSI NBFoundation Service v.2.0.2506.1201 allows a remote attacker to obtain sensitive information via the MSI_SERVICE_2 pipe",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Center",
     "published": "2026-06-25T20:17:11.603"
   },
   {
     "id": "CVE-2026-37454",
     "description": "Insecure Permissions vulnerability in MSI NBFoundation Service v.2.0.2506.1201 allows a remote attacker to obtain sensitive information via the 3DES-ECB encryption",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Center",
     "published": "2026-06-25T20:17:11.720"
   },
   {
@@ -45600,8 +45600,8 @@
   {
     "id": "CVE-2026-0275",
     "description": "A local privilege escalation vulnerability in Palo Alto Networks Prisma® Browser allows a locally authenticated administrator with access to the macOS local filesystem to perform actions on the device with root privileges. \n\nThis issue only affects Prisma® Browser on macOS.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Prisma browser",
     "published": "2026-07-09T20:16:24.537"
   },
   {
@@ -45769,7 +45769,7 @@
     "id": "CVE-2026-33802",
     "description": "A Missing Authorization vulnerability in the CLI of Juniper Networks Junos OS on EX Series allows a local, authenticated attacker to cause a Denial-of-Service (DoS).\n\n\n\nOn EX2300, EX4000, EX4100, EX4300-MP (Multigigabit) and EX4400 switches, an authenticated, local attacker with no specific permissions or class can execute a specific, privileged CLI 'request' command which will cause complete traffic impact until the system automatically recovers.\n\nThis issue affects Junos OS on EX2300, EX4000, EX4100, EX4300-MP (Multigigabit) and EX4400:\n\n\n  *  23.2R2 versions before 23.2R2-S6,\n  *  23.4 versions before 23.4R2-S8,\n  *  24.2 versions before 24.2R2-S4,\n  *  24.4 versions before 24.4R2-S3,\n  *  25.2 versions before 25.2R2,\n  *  25.4 versions before 25.4R1-S1.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Junos",
     "published": "2026-07-09T22:17:03.633"
   },
   {
@@ -45923,7 +45923,7 @@
     "id": "CVE-2026-57022",
     "description": "An Improper Check for Unusual or Exceptional Conditions vulnerability in the Packet Forwarding Engine (PFE) of Juniper Networks Junos OS on MX with SPC3 and SRX Series allows an unauthenticated, network-based attacker to cause a Denial-of-Service (DoS).\n\nWhen an affected device initiates a TCP connection to an attacker-controlled system that responds with a specific packet, this causes a PFE crash and restart, which affects all services until the system has automatically recovered.\nThis issue can happen among others in the following scenarios: ALG, SSL proxy, UTM, RTLOG, AppQoE probing, AAMW, ICAP, URL filtering.\n\nThis issue affects Junos OS on MX Series with SPC3, SRX5k Series with SPC3, SRX1600 Series, SRX2300 Series, SRX4000 Series, and vSRX Series:\n\n  *  all versions before 23.2R2-S4,\n  *  23.4 versions before 23.4R2-S5,\n  *  24.2 versions before 24.2R2.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Junos",
     "published": "2026-07-09T22:17:07.233"
   },
   {
@@ -51614,14 +51614,14 @@
     "id": "CVE-2026-48363",
     "description": "ColdFusion versions 2025.9, 2023.20 and earlier are affected by an Uncontrolled Search Path Element vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Coldfusion",
     "published": "2026-07-13T21:16:47.857"
   },
   {
     "id": "CVE-2026-48364",
     "description": "ColdFusion versions 2025.9, 2023.20 and earlier are affected by an Uncontrolled Search Path Element vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Coldfusion",
     "published": "2026-07-13T21:16:48.337"
   },
   {
@@ -52419,14 +52419,14 @@
     "id": "CVE-2026-59083",
     "description": "Improper Handling of URL Encoding (Hex Encoding) vulnerability in Apache Tomcat's rewrite valve allowed security constraint bypass for some configurations.\n\nThis issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.23, from 10.1.0-M1 through 10.1.56, from 9.0.0.M1 through 9.0.119, from 8.5.0 through 8.5.100. Other versions that have reached end of support may also be affected.\n\nUsers are recommended to upgrade to version 11.0.24, 10.1.57 or 9.0.120, which fix the issue.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Tomcat",
     "published": "2026-07-14T09:16:41.483"
   },
   {
     "id": "CVE-2026-59084",
     "description": "Insufficient Technical Documentation vulnerability in Apache Tomcat since the requirements to securely configure the EncryptInterceptor were not clearly documented.\n\nThis issue affects Apache Tomcat: from 11.0.0-M1 through 11.0.23, from 10.1.0-M1 through 10.1.56, from 9.0.13 through 9.0.119, from 8.5.38 through 8.5.100, from 7.0.100 through 7.0.109. Other versions that have reached end of support may also be affected.\n\nUsers are recommended to upgrade to version 11.0.24, 10.1.57 or 9.0.120 which fix the issue.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Tomcat",
     "published": "2026-07-14T09:16:41.607"
   },
   {
@@ -52509,8 +52509,8 @@
   {
     "id": "CVE-2026-58319",
     "description": "Certain Apache Doris FE HTTP REST administrative APIs were accessible without proper authentication. An unauthenticated attacker with network access to the FE HTTP service could perform unauthorized administrative operations, potentially affecting cluster integrity and availability and leading to cluster instability or denial of service. \n\nThis issue affects Apache Doris versions prior to 3.1.0. Users are advised to upgrade to Apache Doris 3.1.0 or later.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Doris",
     "published": "2026-07-14T10:16:33.430"
   },
   {
@@ -52593,8 +52593,8 @@
   {
     "id": "CVE-2026-49488",
     "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Apache OpenMeetings.\n\nThis issue affects Apache OpenMeetings: from 5.0.0 before 9.1.0.\nAn attacker with moderator rights in any room can read arbitrary files accessible to the OS account running the OM server, including credentials and secrets, via a crafted download request.\n\nUsers are recommended to upgrade to version 9.1.0, which fixes the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Openmeetings",
     "published": "2026-07-14T13:18:57.313"
   },
   {
@@ -52607,22 +52607,22 @@
   {
     "id": "CVE-2026-62390",
     "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in Apache Kylin. A backend API refreshing table catalog may cause the injection to the generated SQL.\n\nThis issue affects Apache Kylin: from 4 through 5.0.3.\n\nUsers are recommended to upgrade to version 5.0.4, which fixes the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Kylin",
     "published": "2026-07-14T13:19:08.307"
   },
   {
     "id": "CVE-2026-62392",
     "description": "Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') vulnerability in Apache Kylin. A backend API may bring job config parameters to OS command line.\n\nThis issue affects Apache Kylin: from 4 through 5.0.3.\n\nUsers are recommended to upgrade to version 5.0.4, which fixes the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Kylin",
     "published": "2026-07-14T13:19:08.447"
   },
   {
     "id": "CVE-2026-62393",
     "description": "Improper Handling of Insufficient Permissions or Privileges vulnerability in Apache Kylin. Improper authorization in job information retrieval, where an attacker may get access to unauthorized jobs in other projects.\n\nThis issue affects Apache Kylin: from 4 through 5.0.3.\n\nUsers are recommended to upgrade to version 5.0.4, which fixes the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Kylin",
     "published": "2026-07-14T13:19:08.663"
   },
   {
@@ -52775,7 +52775,7 @@
   {
     "id": "CVE-2026-51105",
     "description": "Buffer Overflow vulnerability in aMULE-Project aMule v.2.3.3 allows a remote attacker to cause a denial of service via the OP_SERVERMESSAGE Handler.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-14T15:17:04.023"
   },
@@ -52848,5 +52848,348 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-14T15:17:11.347"
+  },
+  {
+    "id": "CVE-2025-11698",
+    "description": "A denial-of-service issue exists in 5380/5480/5580 controllers boot firmware lower than version 1.072. This vulnerability could potentially allow a malicious user to write invalid file data to the controller, causing the device to enter a major non-recoverable fault (MNRF).",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:41.837"
+  },
+  {
+    "id": "CVE-2025-43892",
+    "description": "A buffer over-read vulnerability in Fortinet FortiOS 7.6.0 through 7.6.2, FortiOS 7.4.0 through 7.4.8, FortiOS 7.2 all versions may allow an authenticated remote attacker to return a portion of device memory in the redirect response via submitting a specially crafted request.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:42.340"
+  },
+  {
+    "id": "CVE-2025-53379",
+    "description": "A out-of-bounds read vulnerability in Fortinet FortiAuthenticator 6.6.0 through 6.6.2, FortiAuthenticator 6.5 all versions may allow a remote unauthenticated attacker to retrieve sensitive information via a specially crafted request.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:42.477"
+  },
+  {
+    "id": "CVE-2025-62675",
+    "description": "An Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Response Splitting') vulnerability [CWE-113] vulnerability in Fortinet FortiOS 7.6.0 through 7.6.4, FortiOS 7.4 all versions, FortiOS 7.2 all versions, FortiProxy 7.6.0 through 7.6.4, FortiProxy 7.4 all versions, FortiProxy 7.2 all versions may allow an attacker in possession of a valid web filter override token to inject arbitrary headers via tricking a user into clicking on a crafted link.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:42.617"
+  },
+  {
+    "id": "CVE-2025-62826",
+    "description": "An Improper Neutralization of CRLF Sequences in HTTP Headers ('HTTP Response Splitting') vulnerability [CWE-113] vulnerability in Fortinet FortiOS 7.6.0 through 7.6.4, FortiOS 7.4 all versions, FortiOS 7.2 all versions, FortiProxy 7.6.0 through 7.6.4, FortiProxy 7.4 all versions, FortiProxy 7.2 all versions may allow an attacker able to intercept and modify a user's captive portal authentication request to inject arbitrary headers via crafted HTTP requests.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:42.850"
+  },
+  {
+    "id": "CVE-2026-11403",
+    "description": "A vulnerability in Sonatype Nexus Repository Manager's format-specific API key generation may allow a remote attacker to gain unauthorized access to repository operations as a targeted user. A format-specific API key realm (NuGet API Key, Docker Bearer Token, or npm Bearer Token) must be enabled and the targeted user must have an active API key for this vulnerability to be exploitable.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:44.217"
+  },
+  {
+    "id": "CVE-2026-11917",
+    "description": "A path traversal security issue exists within Rockwell Automation ThinManager® software due to improper limitation of file save operations within the API. An authenticated attacker could exploit this vulnerability to write arbitrary files to restricted system directories outside of the application's intended directory.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:44.780"
+  },
+  {
+    "id": "CVE-2026-11944",
+    "description": "openSIS Classic 9.3 contains an authenticated path traversal vulnerability in the legacy messaging sent-mail attachment download functionality that allows an authenticated attacker to read arbitrary files on the server via crafted path traversal sequences.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:44.917"
+  },
+  {
+    "id": "CVE-2026-12523",
+    "description": "Summary\n\n\n\nCloudflare quiche's HTTP/3 layer was discovered to be vulnerable to resource exhaustion (i.e., memory) by means of specially crafted HTTP/3 frames.\n\n\n\n\nImpact\n\n\n\nHTTP/3 defines multiple frame types to support HTTP message exchanges and connection management. Each frame has a length and a payload whose length depends on the frame type. quiche was found to be vulnerable when parsing some frame types to pre-allocating memory based on the declared length. An attacker would not need to send the number of declared bytes to trigger this issue.\n\n\n\nIn addition, quiche was found to not apply QPACK decompression limits correctly. This could allow an attacker to send specially crafted HEADERS frames that would cause more memory commitment than otherwise advertised by MAX_FIELD_SECTION_SIZE (configured by set_max_field_section_size()).\n\n\n\n\n\n\nMitigation:\n\n  *  \n\nUsers are requested to upgrade to quiche 0.29.3 which is the earliest version containing the fix for this issue.\n\n\n\n\n\n\n\n\n\nCredits: Disclosed responsibly by Sébastien Féry",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:45.050"
+  },
+  {
+    "id": "CVE-2026-12659",
+    "description": "A denial-of-service security issue exists in the affected products. The security issue stems from improper handling of exceptional conditions when processing crafted CIP packets sent to the adapter. A power cycle is required to recover the module and associated I/O.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:45.170"
+  },
+  {
+    "id": "CVE-2026-12707",
+    "description": "Summary\n\n\n\nCloudflare quiche was discovered to be vulnerable to memory resource exhaustion due to unbounded queuing of post-handshake client migration events.\n\n\n\nImpact\n\n\n\nquiche supports the connection migration features described in Section 9 of RFC 9000, which allows a single QUIC connection to survive changes in the network path. Although quiche implements the protections described in Section 9.3 of RFC 9000 to limit server state commitment, it was discovered that the collection of PathEvents, intended to be consumed by applications via the path_event_next() function, was not bounded.\n\n\n\nOnce the QUIC handshake completed, a peer could exploit rapid source address migration in order to cause unbounded queuing of the PathEvent::ReusedSourceConnectionId type. Servers are vulnerable even if active connection migration is disabled.\n\n\n\nMitigation:\n\n  *  \n\nApplications can call path_event_next() to drain the PathEvent collection, mitigating the attack.\n\n\n  *  \n\nUsers are requested to upgrade to quiche 0.29.3 which is the earliest version that prevents excessive queueing of PathEvent::ReusedSourceConnectionId.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:45.297"
+  },
+  {
+    "id": "CVE-2026-14504",
+    "description": "An authorization bypass in Nexus Repository 3's component upload API allowed a user with only read/browse privileges on a Swift, Terraform, or Conda hosted repository to upload arbitrary artifacts, bypassing the intended write-permission check.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:45.423"
+  },
+  {
+    "id": "CVE-2026-15392",
+    "description": "DBD::File versions before 1.651 for Perl do not ensure the table file is not a symlink to an untrusted location.\n\nThe complete_table_name method builds the absolute table file path without checking whether the file is a symbolic link. A link inside the data directory can point to a table file at any path outside of the configured f_dir and f_dir_search directories.\n\nCallers of file-based drivers can read or write files outside of the data directory.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:45.827"
+  },
+  {
+    "id": "CVE-2026-15697",
+    "description": "A vulnerability was found in svgdotjs svg.js up to 3.2.5. This affects the function EventTarget.on of the file svgdotjs/svg.js of the component npm Package API. Performing a manipulation results in improperly controlled modification of object prototype attributes. The attack may be initiated remotely. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:46.143"
+  },
+  {
+    "id": "CVE-2026-15698",
+    "description": "A vulnerability was determined in kofrasa mingo up to 7.2.1. This impacts the function update/updateOne/updateMany of the component Update API. Executing a manipulation of the argument Set can lead to improperly controlled modification of object prototype attributes. The attack may be launched remotely. Upgrading to version 7.2.2 will fix this issue. This patch is called fadc398251792c2ba441cbc539f359fc7943c0c2. It is recommended to upgrade the affected component.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:46.310"
+  },
+  {
+    "id": "CVE-2026-15699",
+    "description": "A vulnerability was identified in spencermountain compromise up to 14.15.1. Affected is the function nlp.extend of the file src/API/extend.js of the component Public Root API. The manipulation of the argument plugin leads to improperly controlled modification of object prototype attributes. Remote exploitation of the attack is possible. The exploit is publicly available and might be used. The identifier of the patch is b4644ab7179700df0607521f61c1ee9b5f78d89d. Applying a patch is the recommended action to fix this issue. The vendor was contacted early, responded in a very professional manner and quickly released a fixed version of the affected product.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:46.477"
+  },
+  {
+    "id": "CVE-2026-23573",
+    "description": "An Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability [CWE-79] vulnerability in Fortinet FortiOS 7.6.0 through 7.6.6, FortiOS 7.4 all versions, FortiOS 7.2 all versions, FortiPAM 1.8.0, FortiPAM 1.7 all versions, FortiPAM 1.6 all versions, FortiPAM 1.5 all versions, FortiPAM 1.4 all versions, FortiPAM 1.3 all versions, FortiPAM 1.2 all versions, FortiPAM 1.1 all versions, FortiPAM 1.0 all versions, FortiProxy 7.4.0 through 7.4.3, FortiProxy 7.2.0 through 7.2.9 may allow an authenticated remote user to execute code or commands via crafted requests.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:16:51.823"
+  },
+  {
+    "id": "CVE-2026-52838",
+    "description": "Easy!Appointments is a self hosted appointment scheduler. Versions prior to 1.6.0 allow administrators to define a custom \"booking disabled\" message through the booking settings page. That value is stored in the `disable_booking_message` setting via a rich-text editor and later passed directly to the public `booking_message` view without escaping or sanitization. An authenticated administrator can store HTML or JavaScript in this field, enable disabled-booking mode, and trigger stored XSS in every unauthenticated visitor who opens the public booking page. Version 1.6.0 fixes the issue.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:00.410"
+  },
+  {
+    "id": "CVE-2026-52839",
+    "description": "Easy!Appointments is a self hosted appointment scheduler. Versions prior to 1.6.0 correctly filter provider-scoped appointments in the `appointments/search` response, proving that provider isolation is an intended security boundary. However, the direct mutation endpoints `appointments/store` and `appointments/update` only check generic appointment privileges and never verify that the submitted `id_users_provider` belongs to the current session. A normal authenticated provider can inject new appointments into another provider's schedule via `store`, or reassign existing appointments into a foreign provider's calendar via `update`. The `store` path contains an additional write-before-crash bug: the unauthorized row is committed to the database before the controller crashes on a type error, so the attacker receives an error response while the foreign appointment is already persisted. Version 1.6.0 patches the issue.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:00.540"
+  },
+  {
+    "id": "CVE-2026-52840",
+    "description": "Easy!Appointments is a self hosted appointment scheduler. In versions prior to 1.6.0, `Caldav::connect_to_server` at `application/controllers/Caldav.php:60` hands the request's `caldav_url` to a Guzzle `REPORT` call without scheme or host validation. A logged-in backend user (admin, provider, or secretary) reaches loopback, RFC1918, and link-local hosts on the deployment's network. The Guzzle exception path returns the upstream status code plus ~120 bytes of response body in the JSON `message` field (`Caldav.php:74-78`), so the SSRF is semi-blind. Version 1.6.0 contains a patch.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:00.670"
+  },
+  {
+    "id": "CVE-2026-52841",
+    "description": "Easy!Appointments is a self hosted appointment scheduler. In versions prior to 1.6.0, `Google::oauth` at `application/controllers/Google.php:278` stores its URL-supplied `provider_id` in the session, and `oauth_callback` saves the issued Google OAuth token against that row without checking the caller owns the provider. Any logged-in backend user (admin, provider, or secretary) rebinds a peer provider's Google sync to a Google account they control. The peer's appointments then sync into the attacker's calendar with each customer's name and email attached as attendee data. Version 1.6.0 patches the issue.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:00.800"
+  },
+  {
+    "id": "CVE-2026-55651",
+    "description": "Easy!Appointments is a self hosted appointment scheduler. In version 1.5.2, an Excessive Data Exposure vulnerability in the customers search endpoint allows an authenticated user to obtain appointment hashes belonging to other users.\nUsing these hashes, an attacker can modify or delete appointments of other providers, resulting in an Appointments Takeover. Version 1.6.0 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:00.937"
+  },
+  {
+    "id": "CVE-2026-55954",
+    "description": "Authentication Bypass by Spoofing vulnerability in ueberauth ueberauth_apple allows account takeover via unvalidated ID token claims.\n\nThe Ueberauth.Strategy.Apple.Token.payload/2 function verifies the JWT signature of the callback id_token against Apple's JWKS but does not validate any registered claims. The iss, aud, exp, and iat claims are read from the token and passed on to Ueberauth.Strategy.Apple.handle_callback!/1, which derives the logged-in user's uid and email directly from the unvalidated sub claim.\n\nAn attacker who obtains any Apple-signed ID token bearing the victim's sub (via a captured expired token, or via an ID token issued to a sibling client in the same Apple developer team) can replay it against the vulnerable callback and be authenticated as the victim. The absent exp check makes stolen tokens usable indefinitely, and the absent aud check enables cross-application account takeover across clients that share an Apple developer team.\n\nThis issue affects ueberauth_apple: from 0.1.0 before 0.6.2.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:01.093"
+  },
+  {
+    "id": "CVE-2026-58461",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:01.600"
+  },
+  {
+    "id": "CVE-2026-59198",
+    "description": "Pillow is a Python imaging library. From 5.2.0 until 12.3.0, Pillow's TGA RLE encoder reads past its packed row buffer when saving a mode 1 image with TGA RLE compression, allowing adjacent process heap bytes to be copied into the generated TGA file. This issue is fixed in version 12.3.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:01.797"
+  },
+  {
+    "id": "CVE-2026-59199",
+    "description": "Pillow is a Python imaging library. Prior to 12.3.0, Pillow public image coordinate APIs can trigger a native heap out-of-bounds write when given coordinates near the signed 32-bit integer limits in Image.paste(), Image.crop(), or Image.alpha_composite(). This issue is fixed in version 12.3.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:01.937"
+  },
+  {
+    "id": "CVE-2026-59203",
+    "description": "Pillow is a Python imaging library. From 12.0.0 through 12.2.0, Pillow's EPS parser in PIL/EpsImagePlugin.py accepts a negative byte count in the %%BeginBinary directive, allowing a crafted EPS file to cause Image.open() to seek backwards to the same directive and parse it repeatedly in an infinite loop. This issue is fixed in version 12.3.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:02.063"
+  },
+  {
+    "id": "CVE-2026-59204",
+    "description": "Pillow is a Python imaging library. From 8.2.0 through 12.2.0, src/libImaging/Jpeg2KDecode.c accumulates total_component_width across every tile in a JPEG2000 image instead of recomputing it per tile, allowing a crafted tiled JPEG2000 file to force substantially higher transient memory usage and trigger out-of-memory failures during decoding. This issue is fixed in version 12.3.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:02.227"
+  },
+  {
+    "id": "CVE-2026-59205",
+    "description": "Pillow is a Python imaging library. Prior to 12.3.0, Pillow's ImageCms.ImageCmsTransform.apply(im, imOut) API can trigger controlled native heap corruption when the caller supplies an output image whose mode does not match the transform's declared output mode. This issue is fixed in version 12.3.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:02.370"
+  },
+  {
+    "id": "CVE-2026-59835",
+    "description": "A exposure of resource to wrong sphere vulnerability in Fortinet FortiSandbox 5.0.0 through 5.0.2, FortiSandbox 4.4.3 through 4.4.8 may allow an unauthenticated attacker to access the VNC server of VMs performing scanning via network requests.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:02.593"
+  },
+  {
+    "id": "CVE-2026-59836",
+    "description": "A improper certificate validation vulnerability in Fortinet FortiClientEMS 7.4.3 through 7.4.5, FortiClientEMS 7.4.0 through 7.4.1, FortiClientEMS 7.2 all versions may allow attacker to information disclosure via <insert attack vector here>",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:02.727"
+  },
+  {
+    "id": "CVE-2026-59837",
+    "description": "A stack-based buffer overflow vulnerability in Fortinet FortiOS 7.4.0 through 7.4.1, FortiOS 7.2 all versions, FortiPAM 1.8.0 through 1.8.2, FortiPAM 1.7 all versions, FortiPAM 1.6 all versions, FortiPAM 1.5 all versions, FortiPAM 1.4 all versions, FortiPAM 1.3 all versions, FortiPAM 1.2 all versions, FortiPAM 1.1 all versions, FortiPAM 1.0 all versions, FortiProxy 7.4.0 through 7.4.13, FortiProxy 7.2 all versions may allow a privileged authenticated attacker who can bypass stack protection and ASLR to execute arbitrary code or commands via crafted HTTP requests.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:02.853"
+  },
+  {
+    "id": "CVE-2026-59839",
+    "description": "A improper limitation of a pathname to a restricted directory ('path traversal') vulnerability in Fortinet FortiOS 7.6.0 through 7.6.6, FortiOS 7.4.0 through 7.4.9, FortiOS 7.2 all versions, FortiOS 7.0 all versions, FortiOS 6.4 all versions, FortiPAM 1.8.0, FortiPAM 1.7.0 through 1.7.2, FortiPAM 1.6 all versions, FortiPAM 1.5 all versions, FortiPAM 1.4 all versions, FortiPAM 1.3 all versions, FortiPAM 1.2 all versions, FortiPAM 1.1 all versions, FortiPAM 1.0 all versions, FortiProxy 7.6.0 through 7.6.5, FortiProxy 7.4 through 7.4.13, FortiProxy 7.2 all versions, FortiProxy 7.0 all versions may allow attacker to execute unauthorized code or commands via <insert attack vector here>",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:03.047"
+  },
+  {
+    "id": "CVE-2026-59840",
+    "description": "A buffer over-read vulnerability in Fortinet FortiOS 7.6.0 through 7.6.2, FortiOS 7.4.0 through 7.4.8, FortiOS 7.2 all versions, FortiProxy 7.6.0 through 7.6.5, FortiProxy 7.4.0 through 7.4.13, FortiProxy 7.2 all versions may allow attacker to information disclosure via <insert attack vector here>",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:03.297"
+  },
+  {
+    "id": "CVE-2026-59841",
+    "description": "A improper restriction of communication channel to intended endpoints vulnerability in Fortinet FortiSIEMWindowsAgent 7.4.0 through 7.4.1 may allow attacker to escalation of privilege via <insert attack vector here>",
+    "severity": "High",
+    "tech": "Fortisiem",
+    "published": "2026-07-14T16:17:03.520"
+  },
+  {
+    "id": "CVE-2026-60081",
+    "description": "DBI::ProfileData versions before 1.651 for Perl do not limit the path index.\n\nThe path index column of profile dump files is used to allocate an array of data for the parser. An unbounded value allows an attacker to specify a large index and consume available memory.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:03.647"
+  },
+  {
+    "id": "CVE-2026-60082",
+    "description": "DBI versions before 1.651 for Perl do not enforce statement handle consistency with the row.\n\nWhen the statement handle had no fields but the source row was non-empty, the internal row-buffer helper would read from a negative array index.\n\nThis could be triggered by a caller supplying inconsistent metadata and rows to the prepare method.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:03.750"
+  },
+  {
+    "id": "CVE-2026-60118",
+    "description": "Hi.Events through v1.10.0-beta contains a missing server-side visibility enforcement vulnerability that allows unauthenticated attackers to purchase hidden tickets by referencing hidden product and price IDs in order creation requests without authorization checks. Attackers can enumerate sequential hidden ticket IDs from visible ones and submit order creation requests referencing those IDs to purchase VIP, invite-only, or discounted tickets intentionally withheld from public sale.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:04.090"
+  },
+  {
+    "id": "CVE-2026-60119",
+    "description": "Hi.Events through v1.10.0-beta contains a cross-site scripting vulnerability that allows authenticated attackers with event creation or edit permissions to inject arbitrary HTML and JavaScript by embedding a malicious event title containing the </script> sequence, which is not escaped by JSON.stringify() when embedded in inline script tags. Attackers can craft an event title that breaks out of the script context in the application/ld+json structured data block or server-side rehydrated state, causing the payload to execute in the browser of any user who views the public event page, including unauthenticated visitors and authenticated administrators.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:04.250"
+  },
+  {
+    "id": "CVE-2026-62641",
+    "description": "In Roundcube Webmail before 1.6.17 and 1.7.x before 1.7.2, the TNEF decoder was subject to denial of service via a crafted compressed-RTF size.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:04.377"
+  },
+  {
+    "id": "CVE-2026-62642",
+    "description": "In Roundcube Webmail before 1.6.17 and 1.7.x before 1.7.2, an infinite loop was discovered in the TNEF decoder, which may lead to denial of service upon opening an email with a TNEF attachment.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:04.530"
+  },
+  {
+    "id": "CVE-2026-62643",
+    "description": "In Roundcube Webmail before 1.6.17 and 1.7.x before 1.7.2, insufficient Cascading Style Sheets (CSS) sanitization in HTML e-mail messages may lead to SSRF or Information Disclosure, e.g., if stylesheet links point to local network hosts. NOTE: this issue exists because of insufficient fixes for CVE-2026-35540 and CVE-2026-48843.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:04.670"
+  },
+  {
+    "id": "CVE-2026-62644",
+    "description": "In Roundcube Webmail before 1.6.17 and 1.7.x before 1.7.2, the password plugin of the Roundcube Webmail was subject to username spoofing via session data, which could lead to account takeover.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:04.810"
+  },
+  {
+    "id": "CVE-2026-7494",
+    "description": "Nexus Repository 3 is vulnerable to Server-Side Request Forgery (SSRF) via the SSL Certificate Retrieval endpoint. A user holding the nexus:ssl-truststore:read permission could cause the server to initiate outbound connections to internal or otherwise restricted network hosts. This issue affects Nexus Repository 3.0.0 through versions prior to 3.94.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:04.953"
+  },
+  {
+    "id": "CVE-2026-9108",
+    "description": "A path traversal security issue exists within Studio 5000 Logix Designer® due to improper limitation of file paths within ACD project files. The software does not sanitize or validate file names embedded in the ACD file structure during the project opening procedure, allowing path traversal sequences to escape the intended extraction directory. If exploited, an attacker could craft a malicious ACD project file that results in arbitrary files being written to attacker-controlled locations on the file system, potentially leading to code execution.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:05.210"
+  },
+  {
+    "id": "CVE-2026-9127",
+    "description": "A remote code execution security issue exists within Studio 5000 Logix Designer® due to incorrect authorization on a configuration file. This can allow any authenticated user to modify the paths of external tools configured within the application. If exploited, an attacker could alter the configuration to point to a malicious executable, resulting in arbitrary code execution when any user interacts with the external tools functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:05.347"
+  },
+  {
+    "id": "CVE-2026-9128",
+    "description": "A code execution security issue exists within Studio 5000 Logix Designer® due to an unquoted search path in the External Tools configuration. The executable paths specified in the external tools configuration file are not properly quoted, and because these paths contain spaces, the operating system may resolve them to unintended executables placed earlier in the search order. If exploited, an attacker could plant a malicious executable in a location within the search path, resulting in arbitrary code execution with the same permissions of the user running the application.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:05.487"
+  },
+  {
+    "id": "CVE-2026-9292",
+    "description": "A Stored Cross-Site Scripting security issue exists within FactoryTalk® DataMosaix™ Private Cloud. The vulnerability stems from improper neutralization of user-supplied input within the Workflows configuration. An authenticated attacker with high privileges can inject malicious scripts that are permanently stored on the server. This vulnerability can result in the execution of malicious JavaScript when other users access the affected page, potentially allowing for account takeover, credential theft, or redirection to a malicious website.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:05.723"
+  },
+  {
+    "id": "CVE-2026-9636",
+    "description": "A security issue exists within CompactLogix® 5380, ControlLogix® 5580, and EN4 communication modules related to CIP Security certificate revocation handling. The security issue stems from the controller failing to properly reject certificates signed by an intermediate certificate that has been revoked via a Certificate Revocation List (CRL). This could allow a network-based attacker to establish a connection using a certificate that should be untrusted, potentially bypassing CIP Security protections.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-14T16:17:05.860"
   }
 ]
