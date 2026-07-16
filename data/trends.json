@@ -1,131 +1,5 @@
 [
   {
-    "id": "CVE-2026-12205",
-    "description": "Crypt::DSA versions before 1.21 for Perl reused the nonce across signatures, leading to private-key recovery.\n\nCrypt::DSA::sign caches the per-signature nonce material in the Key object without ever clearing it.\n\nThe first sign() on a Key object picks a nonce, and every later sign() on that same object reuses it, producing an identical \"r\".\n\nKeys used to sign more than once with an affected version should be considered compromised.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-15T23:16:43.150"
-  },
-  {
-    "id": "CVE-2026-48599",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in elixir-grpc grpc allows authenticated attackers to access or modify resources belonging to other users by smuggling a conflicting value for any path-bound field via the query string or request body.\n\nIn 'Elixir.GRPC.Server.Transcode':map_request/5 (lib/grpc/server/transcode.ex), all three clauses use Map.merge/2 with path bindings as the first argument, giving them the lowest merge precedence. A request such as GET /users/me/profile?user_id=victim (or a POST with {\"user_id\": \"victim\"} when body: \"*\") yields a decoded protobuf struct where the path-bound field carries the attacker-supplied value rather than the router-extracted value. Any handler that uses the path-bound field for authorization, multi-tenancy scoping, or ownership checks is silently bypassed.\n\nThis issue affects grpc from 0.8.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-15T23:16:45.377"
-  },
-  {
-    "id": "CVE-2026-48723",
-    "description": "The browserstack-cypress-cli is BrowserStack's CLI which allows users to run Cypress tests on BrowserStack. Versions prior to 1.36.4 are vulnerable to OS command injection via the cypress_config_file configuration parameter. In readCypressConfigUtil.js, the loadJsFile() function constructs a shell command by interpolating the user-controlled cypress_config_filepath value into a template literal, then executes it via child_process.execSync(). Shell metacharacters in the config path (specifically \" and ;) allow breaking out of the quoted argument and injecting arbitrary commands. This issue has been fixed in version 1.36.6.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-15T23:16:45.520"
-  },
-  {
-    "id": "CVE-2026-48853",
-    "description": "Deserialization of Untrusted Data and Allocation of Resources Without Limits or Throttling vulnerabilities in elixir-grpc grpc allow unauthenticated attackers to crash the BEAM node via atom table exhaustion and, when a decoded term flows into a call site that invokes it, achieve remote code execution on the server.\n\n'Elixir.GRPC.Codec.Erlpack':decode/2 (lib/grpc/codec/erlpack.ex) calls :erlang.binary_to_term/1 on the raw gRPC message body without the :safe option, no size bound, and no type guard. Any unauthenticated peer that sends a request with Content-Type: application/grpc+erlpack can send a crafted payload that mints arbitrary new atoms (which are never garbage-collected, exhausting the bounded atom table and crashing the VM) or that encodes a fun term which, if applied anywhere downstream, executes attacker-controlled code inside the server process.\n\nThis issue affects grpc from 0.4.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-15T23:16:45.663"
-  },
-  {
-    "id": "CVE-2026-48854",
-    "description": "Allocation of Resources Without Limits or Throttling vulnerability in elixir-grpc grpc allows unauthenticated attackers to exhaust the BEAM's memory and crash the server by streaming a large or slow-trickle unary request body.\n\n'Elixir.GRPC.Server.Adapters.Cowboy.Handler':read_full_body/3 (lib/grpc/server/adapters/cowboy/handler.ex) accumulates every received chunk into a single growing binary with no size cap. Additionally, when the client omits the grpc-timeout header, the per-chunk read timeout resolves to :infinity, allowing a slow-trickle client to keep the connection alive indefinitely while memory grows. A single connection is sufficient to exhaust server memory and crash the node.\n\nThis issue affects grpc from 0.3.1 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-15T23:16:45.813"
-  },
-  {
-    "id": "CVE-2026-53430",
-    "description": "Improper Handling of Highly Compressed Data (Data Amplification) vulnerability in elixir-grpc grpc (GRPC.Compressor.Gzip, GRPC.Message modules) allows a denial of service via a gzip decompression bomb.\n\nThis vulnerability is associated with program files lib/grpc/compressor/gzip.ex, lib/grpc/message.ex and program routines 'Elixir.GRPC.Compressor.Gzip':decompress/1, 'Elixir.GRPC.Message':from_data/2.\n\n'Elixir.GRPC.Compressor.Gzip':decompress/1 calls :zlib.gunzip/1 directly on attacker-controlled bytes with no decompressed-size limit, ratio check, or incremental decoding. Because this module is the registered gzip GRPC.Compressor implementation, it is invoked automatically whenever an incoming gRPC frame carries the grpc-encoding: gzip header. :zlib.gunzip/1 allocates the entire decompressed result as a single binary, so a small highly compressible payload (for example a few kilobytes of zeros, which gzip compresses at roughly 1000:1) expands to multiple gigabytes inside a single call. The max_receive_message_length limit is enforced only against the already-decompressed message, so it provides no protection. An unauthenticated remote peer can send a single crafted frame to exhaust the BEAM node's heap and trigger an out-of-memory kill.\n\nThis issue affects grpc: from 0.4.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-15T23:16:46.363"
-  },
-  {
-    "id": "CVE-2026-9258",
-    "description": "Improper validation of SSH host keys in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
-    "severity": "Medium",
-    "tech": "Eos network setting tool",
-    "published": "2026-06-16T00:16:35.460"
-  },
-  {
-    "id": "CVE-2026-9259",
-    "description": "Improper validation of server certificates in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
-    "severity": "Medium",
-    "tech": "Eos network setting tool",
-    "published": "2026-06-16T00:16:35.623"
-  },
-  {
-    "id": "CVE-2026-9260",
-    "description": "Use of hard-coded cryptographic keys in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
-    "severity": "Medium",
-    "tech": "Eos network setting tool",
-    "published": "2026-06-16T00:16:35.757"
-  },
-  {
-    "id": "CVE-2026-9261",
-    "description": "Use of weak SSH cryptographic algorithms in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
-    "severity": "Medium",
-    "tech": "Eos network setting tool",
-    "published": "2026-06-16T00:16:35.887"
-  },
-  {
-    "id": "CVE-2026-9262",
-    "description": "Use of a non-secure protocol as the default FTP configuration in Canon EOS Network Setting Tool Version 1.5.0 or earlier",
-    "severity": "Medium",
-    "tech": "Eos network setting tool",
-    "published": "2026-06-16T00:16:36.020"
-  },
-  {
-    "id": "CVE-2026-12161",
-    "description": "Improper input validation in the SSH Elevate Shell feature in \nDevolutions Remote Desktop Manager 2026.2.7 allows an authenticated user\n with permission to create or modify a shared SSH entry to execute \narbitrary commands on a remote SSH host using stored elevation \ncredentials via a crafted alternate username and user interaction with \nthe Elevate Shell action.",
-    "severity": "High",
-    "tech": "Remote desktop manager",
-    "published": "2026-06-16T01:16:22.950"
-  },
-  {
-    "id": "CVE-2026-12162",
-    "description": "Improper host validation in the social login autofill feature in \nDevolutions Remote Desktop Manager 2026.2.8 allows an attacker to \ndisclose stored social login credentials via a crafted web entry \npointing to a provider lookalike domain.",
-    "severity": "Medium",
-    "tech": "Remote desktop manager",
-    "published": "2026-06-16T01:16:23.937"
-  },
-  {
-    "id": "CVE-2026-1764",
-    "description": "A flaw was found in GNOME localsearch (previously known as tracker-miners) MP3 Extractor. When processing specially crafted MP3 files containing ID3v2.4 tags, a missing bounds check in the `extract_performers_tags` function can lead to a heap buffer overflow. This vulnerability allows a remote attacker to cause a Denial of Service (DoS) by triggering a read of unmapped memory. In some cases, it could also lead to information disclosure by reading visible heap data.",
-    "severity": "Medium",
-    "tech": "Localsearch",
-    "published": "2026-06-16T02:16:17.103"
-  },
-  {
-    "id": "CVE-2026-1765",
-    "description": "A flaw was found in the `tracker-extract-mp3` component of GNOME localsearch (previously known as tracker-miners). This vulnerability, a heap buffer overflow, occurs when processing specially crafted MP3 files. A remote attacker could exploit this by providing a malicious MP3 file, leading to a Denial of Service (DoS) where the application crashes. It may also potentially expose sensitive information from the system's memory.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T02:16:18.170"
-  },
-  {
-    "id": "CVE-2026-1766",
-    "description": "A flaw was found in GNOME localsearch (previously known as tracker-miners) MP3 Extractor, specifically within the tracker-extract-mp3 component. This heap buffer overflow vulnerability occurs when processing specially crafted MP3 files containing malformed ID3v2.3 COMM (Comment) tags. An attacker could exploit this by providing a malicious MP3 file, leading to a denial of service (DoS), which causes an application crash, and potentially disclosing sensitive information from the heap memory.",
-    "severity": "Medium",
-    "tech": "Localsearch",
-    "published": "2026-06-16T02:16:18.313"
-  },
-  {
-    "id": "CVE-2026-1767",
-    "description": "A flaw was found in the GNOME localsearch (previously known as tracker-miners) MP3 Extractor `tracker-extract-mp3` component. A remote attacker could exploit this heap buffer overflow vulnerability by providing a specially crafted MP3 file containing malformed ID3 tags. This incorrect length calculation during the parsing of performer tags can lead to a read beyond the allocated buffer, potentially causing a Denial of Service (DoS) due to a crash or enabling information disclosure.",
-    "severity": "Medium",
-    "tech": "Localsearch",
-    "published": "2026-06-16T02:16:18.447"
-  },
-  {
-    "id": "CVE-2026-42014",
-    "description": "A flaw was found in GnuTLS. The `gnutls_pkcs11_token_set_pin` function, used for changing the Security Officer PIN, can lead to a use-after-free vulnerability. This occurs when an attacker attempts to change the PIN with a NULL old PIN for a token that lacks a protected authentication path.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-16T02:16:19.140"
-  },
-  {
     "id": "CVE-2026-7273",
     "description": "A stack-based buffer overflow vulnerability in the CGI program of Zyxel GS1900-48HPv2 firmware versions through 2.90(ABTQ.1)C0 could allow a LAN-based, unauthenticated attacker to exploit the flaw and potentially execute OS commands via a crafted HTTP request.",
     "severity": "High",
@@ -58280,5 +58154,47 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-15T22:17:38.193"
+  },
+  {
+    "id": "CVE-2026-15907",
+    "description": "A flaw has been found in H3C SecPath F1000-C8300 up to 20260522. This impacts an unknown function of the file /webui/?g=log_fw_nbc_mail_jsondata. Executing a manipulation of the argument subject can lead to sql injection. The attack can be executed remotely. The exploit has been published and may be used. The vendor was contacted early about this disclosure and confirmed the existence of the vulnerability. A technical fix is planned to be released.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-16T00:16:19.170"
+  },
+  {
+    "id": "CVE-2026-15909",
+    "description": "A vulnerability has been found in RafyMrX TOKO-ONLINE-ROTI up to ddfe1cd587be0a0b5135d8b6e85cce2ec3aece99. Affected is an unknown function of the file proses/add.php. The manipulation of the argument kd_cs leads to authorization bypass. The attack is possible to be carried out remotely. This product adopts a rolling release strategy to maintain continuous delivery. Therefore, version details for affected or updated releases cannot be specified. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-16T01:16:29.883"
+  },
+  {
+    "id": "CVE-2026-1609",
+    "description": "A flaw was found in Keycloak. When the JSON Web Token (JWT) authorization grant preview feature is enabled and a user account is disabled, Keycloak fails to validate the user’s disabled status during JWT authorization grant processing. A remote attacker with low privileges can exploit this improper access control vulnerability by presenting a valid assertion token from an external identity provider to obtain a JWT for a disabled user. This allows unauthorized access to sensitive resources.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-16T01:16:30.380"
+  },
+  {
+    "id": "CVE-2026-23538",
+    "description": "A vulnerability was identified in the Feast Feature Server's `/ws/chat` endpoint that allows remote attackers to establish persistent WebSocket connections without any authentication. By opening a large number of simultaneous connections, an attacker can exhaust server resources—such as memory, CPU, and file descriptors—leading to a complete denial of service for legitimate users.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-16T01:16:30.530"
+  },
+  {
+    "id": "CVE-2026-3842",
+    "description": "A flaw was found in QEMU. This vulnerability allows a local attacker within a guest virtual machine to write data beyond its allocated memory. This occurs when cpu_physical_memory_map() returns a shorter length than expected, leading to an out-of-bounds write. Successful exploitation could result in unauthorized access to guest memory or corruption of heap-allocated objects, potentially causing information disclosure, data integrity issues, or a denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-16T01:16:30.697"
+  },
+  {
+    "id": "CVE-2026-48863",
+    "description": "A flaw was found in libsolv. A stack-based buffer overflow vulnerability exists in the PGP verification component due to incorrect length handling when copying EdDSA 's' MPI into a stack buffer. A remote attacker could craft a malicious Ed25519 PGP signature with mismatched MPI lengths. Processing this crafted signature could lead to a denial of service in automated package or repository processing workflows.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-16T01:16:30.830"
   }
 ]
