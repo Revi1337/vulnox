@@ -1,131 +1,5 @@
 [
   {
-    "id": "CVE-2025-15661",
-    "description": "libssh2 through 1.11.1, fixed in commit 2dae302, contains an out-of-bounds heap read vulnerability in the sftp_symlink() function in src/sftp.c that allows a malicious SSH server or man-in-the-middle attacker to disclose heap memory contents or cause a crash by sending a crafted SSH_FXP_NAME response. Attackers can supply a link_len value larger than the actual packet data in SSH_FXP_NAME responses for SFTP READLINK and REALPATH operations, triggering a heap buffer over-read of up to target_len minus one bytes due to the missing validation of available packet buffer size before the memcpy operation.",
-    "severity": "Medium",
-    "tech": "Libssh2",
-    "published": "2026-06-18T21:16:27.143"
-  },
-  {
-    "id": "CVE-2026-43994",
-    "description": "Coturn is a free open source implementation of TURN and STUN Server. Versions prior to 4.10.0 contain a stack buffer overflow in decode_oauth_token_gcm(). A uint16_t nonce_len field read from an attacker-supplied OAuth access token (0-65535) is passed directly to memcpy() as the copy length into a 256-byte stack buffer (oauth_encrypted_block.nonce[256]) without bounds checking. The overflow occurs before AES-GCM authentication is verified, the attacker does not need to know the OAuth key or produce a valid AES-GCM token. Up to 735 bytes of attacker-controlled data are written past the buffer, may corrupt adjacent stack data, including control-flow data depending on compiler, ABI, and mitigations. Requires --oauth mode (non-default). This may provide a plausible RCE primitive depending on exploit mitigations; because coturn is widely deployed for WebRTC TURN/STUN and --oauth is commonly recommended, impact can be broad. This issue has been fixed in version 4.10.0.",
-    "severity": "High",
-    "tech": "Coturn",
-    "published": "2026-06-18T21:16:28.630"
-  },
-  {
-    "id": "CVE-2026-44663",
-    "description": "OpenEXR is the reference implementation and specification for the EXR image format, widely used in the motion picture industry. In versions 3.4.0 through 3.4.11, an integer overflow in ht_undo_impl() in src/lib/OpenEXRCore/internal_ht.cpp leads to a heap-buffer overflow when decoding a crafted HTJ2K-compressed EXR file. decode->channels[i].width (int32_t) is multiplied by bytes_per_element in 32-bit signed arithmetic. With large widths (e.g., >= 536870912 for FLOAT data), this overflows, producing a corrupted offset that is later used for pointer arithmetic and can cause a heap out-of-bounds write. The same unchecked multiplication pattern appears in two other HTJ2K paths (bytes-per-line accumulation and pixel-line pointer advancement). As with related CVE-2026-34378 through CVE-2026-34589 fixes in other codecs, validating only after the multiplication is too late because the value may already be overflowed. This issue has been fixed in version 3.4.12.",
-    "severity": "Medium",
-    "tech": "Openexr",
-    "published": "2026-06-18T21:16:28.767"
-  },
-  {
-    "id": "CVE-2026-45696",
-    "description": "OpenEXR is the reference implementation and specification for the EXR image format, widely used in the motion picture industry. In versions 3.4.0 through 3.4.11, the HTJ2K (High-Throughput JPEG 2000) decoder, ht_undo_impl() in OpenEXRCore is vulnerable to a heap-buffer-overflow READ. The  ht_undo_imp function copies decoded pixels out of a per-line OpenJPH buffer using the EXR channel's declared width as the iteration count. The codestream embedded in the EXR chunk can declare different (smaller) tile/line dimensions than the EXR header advertises, but ht_undo_impl() does not validate this — it pulls width 32-bit samples from cur_line->i32[] without checking the OpenJPH line buffer's actual length. A crafted EXR file produces a 4-byte heap-buffer-overflow READ immediately after a buffer allocated by ojph::local::codestream::finalize_alloc(). The bug is reachable through the standard scanline-decode entry point used by every consumer of exr_decoding_run/Imf::checkOpenEXRFile, including thumbnailers, asset pipelines, and the exrcheck utility — i.e. any application that opens untrusted EXR files. The result is a deterministic crash (DoS) and potential adjacent-heap leak. This issue has been fixed in version 3.4.12.",
-    "severity": "Medium",
-    "tech": "Openexr",
-    "published": "2026-06-18T21:16:28.917"
-  },
-  {
-    "id": "CVE-2026-46699",
-    "description": "conda-smithy is a tool for combining a conda recipe with configurations to build using freely hosted CI services into a single repository. Prior to version 3.61.0, a vulnerability in the conda-forge automated webservices allowed unintended write access to feedstock repositories through GitHub username takeover. The root cause is the use of mutable GitHub usernames as identifiers for repository invitation routing, rather than stable, immutable GitHub user IDs. Version 3.61.0 fixes the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-18T21:16:29.053"
-  },
-  {
-    "id": "CVE-2026-49248",
-    "description": "OneDev is a Git server with CI/CD, kanban, and packages. In versions 15.0.6 and below, TarUtils.untar() creates symbolic links verbatim from TAR entry getLinkName() without validating whether the target is an absolute path. A subsequent file entry in the same archive traverses the symlink, writing to arbitrary server-side locations. This is exploitable by any authenticated user with CI Job write access — no admin interaction required. This is an incomplete fix bypass of CVE-2021-21251 (GHSA-2w6j-wc8c-9mq2): that patch blocked .. path segments but did not address absolute symlink targets. This issue has been fixed in version 15.0.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-18T21:16:29.500"
-  },
-  {
-    "id": "CVE-2026-49252",
-    "description": "deepstream is a server that allows clients and backend services to sync data, send messages and make rpcs at scale. Versions prior to 10.0.5  are vulnerable to Prototype Pollution. Exploitation can lead to potential privilege escalation from any authenticated user with write permission to any record. This issue has been fixed in version 10.0.5.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-18T21:16:29.643"
-  },
-  {
-    "id": "CVE-2026-49257",
-    "description": "mcp-pinot is a Python-based Model Context Protocol (MCP) server for interacting with Apache Pinot. In versions 3.0.1 and below, mcp-pinot defaults to running an HTTP MCP server bound to 0.0.0.0:8080 with no authentication enabled. All MCP tools, including SQL query execution, schema creation, and table-config mutation, are reachable by any network-adjacent caller. The server proxies these calls using server-side Pinot credentials, producing a confused-deputy condition that yields full read/write access to the configured Pinot cluster. This issue has been fixed in version 3.1.0",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-18T21:16:29.780"
-  },
-  {
-    "id": "CVE-2026-49454",
-    "description": "Relyra is a strict-by-default SAML 2.0 Service Provider library for Elixir and Phoenix. Versions 1.0.0 and 1.1.0 accept forged SAML signatures because SignatureValue was not cryptographically verified before the library returned a successful authentication result. The XMLDSig trust boundary was incomplete as :public_key.verify over the exclusive-C14N canonicalized SignedInfo was not performed against the configured IdP certificate's public key, DigestValue was not recomputed over the canonicalized referenced element, and canonicalize/2 remained an unused passthrough in the signature-verification path. The result was a structure-only acceptance path where document shape and trust-source rejection could succeed without proving the signature bytes. A forged SignatureValue carrying an attacker-controlled NameID could be accepted as {:ok}. This issue has been fixed in version 1.2.0.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-18T21:16:29.920"
-  },
-  {
-    "id": "CVE-2026-22674",
-    "description": "Hashgraph Guardian through 3.6.0, fixed in commit ba8c566, contains a stored cross-site scripting vulnerability that allows authenticated users with the STANDARD_REGISTRY role to inject malicious scripts by submitting a crafted companyName value via the branding configuration API endpoint. Attackers can exploit the unsanitized innerHTML assignment in the branding service to execute arbitrary JavaScript in the browser of every authenticated user on every page load.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-18T22:16:30.117"
-  },
-  {
-    "id": "CVE-2026-32174",
-    "description": "Improper authentication in Azure Bot Service allows an authorized attacker to elevate privileges over a network.",
-    "severity": "High",
-    "tech": "Azure ai bot service",
-    "published": "2026-06-18T22:16:30.290"
-  },
-  {
-    "id": "CVE-2026-47633",
-    "description": "Exposure of sensitive information to an unauthorized actor in Cost Management Interactive Experiences allows an unauthorized attacker to disclose information over a network.",
-    "severity": "High",
-    "tech": "Cost management",
-    "published": "2026-06-18T22:16:31.613"
-  },
-  {
-    "id": "CVE-2026-47647",
-    "description": "Improper access control in Microsoft Dynamics 365 allows an authorized attacker to elevate privileges over a network.",
-    "severity": "Critical",
-    "tech": "Dynamics 365",
-    "published": "2026-06-18T22:16:31.747"
-  },
-  {
-    "id": "CVE-2026-49205",
-    "description": "phpMyFAQ is an open source FAQ web application. Versions prior to  4.1.4 have Missing Authorization in the API CategoryController. CVE-2026-24421 addressed this in the BackupController by adding: $this->userHasPermission(PermissionType::BACKUP). The same fix was not applied to 4 other write endpoints in the public API. All 4 only call $this->hasValidToken() — which checks a shared API key header, rather than the individual user's role permissions. The following APIs are affected: POST /api/v4.0/category (CategoryController::create), POST /api/v4.0/faq (FaqController::create), PUT /api/v4.0/faq (FaqController::update), and POST /api/v4.0/question (QuestionController::create). This issue has been fixed in version 4.1.4.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-18T22:16:31.937"
-  },
-  {
-    "id": "CVE-2026-54017",
-    "description": "Open WebUI is a self-hosted artificial intelligence platform designed to operate entirely offline. Prior to 0.9.6, the terminal-server reverse proxy in `backend/open_webui/routers/terminals.py` does not fully confine the user-controlled `path` segment before forwarding it to an admin-configured terminal server. An authenticated user who has been granted access to a terminal server can craft `path` values containing encoded `../` traversal sequences that escape the intended path (or policy) scope on that server, reaching unintended endpoints and files on the terminal-server host. Where the terminal server fans requests out to internal services, this also gives SSRF-style reach into those services. This is a separate code path from the `/api/v1/retrieval/process/web` SSRF (GHSA-c6xv-rcvw-v685), with its own input. Two distinct vectors are consolidated here: first, raw path forwarding / single-encoded traversal (original report); and second, a bypass of the subsequently-added `_sanitize_proxy_path` mitigation using double-encoded dots (`%252e%252e`). The attacker-controlled input is the request `path`, supplied by the non-admin user, not anything an administrator configures, so this is not an admin-trust / Rule-9 situation. Version 0.9.6 fixes the issue.",
-    "severity": "High",
-    "tech": "Open webui",
-    "published": "2026-06-18T22:16:32.080"
-  },
-  {
-    "id": "CVE-2026-54130",
-    "description": "Missing authentication for critical function in M365 Copilot allows an unauthorized attacker to disclose information over a network.",
-    "severity": "Critical",
-    "tech": "365 copilot",
-    "published": "2026-06-18T22:16:32.223"
-  },
-  {
-    "id": "CVE-2026-8100",
-    "description": "Impact\n\nA security issue has been identified in Chef 360 that could allow unauthorized access to protected API endpoints under specific conditions. This issue is due to improper handling of URL-encoded paths during request processing. In certain scenarios, an authenticated request may bypass standard access controls gaining additional privileges, potentially allowing access to API endpoints that are intended to be restricted to higher-permissioned roles. The impact is limited to environments where the affected request patterns can be triggered and depends on specific deployment configuration and access controls in place.\nResolution\nThe issue has been addressed through product updates that improve request validation and enforce strict path normalization before authorization checks.  Customers are advised to update to the latest available version containing the fix, version 1.7.1 or later.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-18T22:16:32.353"
-  },
-  {
-    "id": "CVE-2026-8668",
-    "description": "A static credential embedded in Chef 360 prior to v1.7.0 permitted unauthenticated access to internal message queues.  Queue messages contained tenant-specific identifiers.  The credential has been rotated and replaced with per-tenant access in subsequent versions, eliminating this access method entirely.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-18T22:16:32.537"
-  },
-  {
     "id": "CVE-2026-10746",
     "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
     "severity": "Unknown",
@@ -54997,5 +54871,54 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-18T20:17:30.427"
+  },
+  {
+    "id": "CVE-2026-12228",
+    "description": "A stored cross-site scripting (XSS) vulnerability exists in the `POST /api/prompts/share` endpoint of parisneo/lollms (latest version). The endpoint stores attacker-controlled `prompt_content` into `DBDirectMessage.content` without server-side sanitization. When a victim opens the direct message (DM) thread, the message is rendered by the DM UI through `MessageContentRenderer`, which uses `v-html` to insert rendered HTML into the DOM. The frontend sanitizer, which is regex-based, fails to comprehensively sanitize attacker-controlled HTML, allowing malicious payloads to execute in the victim's browser context. This vulnerability enables any authenticated user to send a malicious prompt-share message to another user's inbox, leading to arbitrary JavaScript execution, authenticated actions as the victim, exposure of same-origin application data, and potential account takeover.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-18T21:17:03.040"
+  },
+  {
+    "id": "CVE-2026-16152",
+    "description": "A vulnerability was found in SourceCodester Class and Exam Timetabling System 1.0. Affected is an unknown function of the file /edit_rooma.php. Performing a manipulation of the argument ID results in sql injection. The attack is possible to be carried out remotely. The exploit has been made public and could be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-18T21:17:03.180"
+  },
+  {
+    "id": "CVE-2026-16154",
+    "description": "A vulnerability was determined in SourceCodester Class and Exam Timetabling System 1.0/1.php. Affected by this vulnerability is an unknown functionality of the file /edit_room1.php. Executing a manipulation of the argument ID can lead to sql injection. The attack may be performed from remote. The exploit has been publicly disclosed and may be utilized.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-18T21:17:03.343"
+  },
+  {
+    "id": "CVE-2026-16155",
+    "description": "A vulnerability was identified in SourceCodester Class and Exam Timetabling System 1.0. Affected by this issue is some unknown functionality of the file /schoolyr.php. The manipulation of the argument sy leads to cross site scripting. It is possible to initiate the attack remotely. The exploit is publicly available and might be used.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-18T21:17:03.507"
+  },
+  {
+    "id": "CVE-2026-57857",
+    "description": "The Flow Payment plugin for WordPress (flow.cl) version 3.0.8 is vulnerable to reflected cross-site scripting on the WooCommerce checkout page. When the plugin handles an order cancellation, the error_message GET parameter is passed directly to wc_add_notice() in flowpayment-fl.php (lines 57-58) without input sanitization (for example sanitize_text_field()) or output escaping (for example esc_html()) before being rendered in the checkout notice HTML. An unauthenticated attacker can craft a URL containing a JavaScript payload in the error_message parameter (for example /checkout/?add-to-cart={product-id}&cancel_order=true&error_message={payload}); when a victim with an active WooCommerce checkout session follows the link, the payload executes in the victim's browser in the origin of the WordPress site.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-18T21:17:03.687"
+  },
+  {
+    "id": "CVE-2026-16156",
+    "description": "A security flaw has been discovered in SourceCodester Class and Exam Timetabling System 1.0. This affects an unknown part of the file /forexam.php. The manipulation of the argument day results in cross site scripting. It is possible to launch the attack remotely. The exploit has been released to the public and may be used for attacks.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-18T22:16:43.667"
+  },
+  {
+    "id": "CVE-2026-16194",
+    "description": "A vulnerability was determined in zhayujie CowAgent up to 2.1.1. This affects the function WebFetch.execute of the file agent/tools/web_fetch/web_fetch.py. Executing a manipulation of the argument url can lead to server-side request forgery. The attack may be performed from remote. The exploit has been publicly disclosed and may be utilized. Upgrading to version 2.1.2 is able to mitigate this issue. This patch is called ea47f3097eed4f8295c4cb3d76ecb97e0f43d632. It is recommended to upgrade the affected component. The vendor was contacted early, responded in a very professional manner and quickly released a fixed version of the affected product.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-18T22:16:43.830"
   }
 ]
