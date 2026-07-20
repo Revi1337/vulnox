@@ -1,26 +1,5 @@
 [
   {
-    "id": "CVE-2026-11911",
-    "description": "The Simple File List plugin for WordPress is vulnerable to arbitrary file deletion due to insufficient file path validation in the eeSFL_DeleteFile function in all versions up to, and including, 6.3.7. This makes it possible for unauthenticated attackers to delete arbitrary files on the server, which can easily lead to remote code execution when the right file is deleted (such as wp-config.php). The simplefilelist_edit_job AJAX action is registered via wp_ajax_nopriv_, making it accessible without authentication, and the is_admin() guard that would otherwise restrict access is bypassed because is_admin() always returns true for requests to the admin-ajax.php endpoint.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-20T09:16:13.910"
-  },
-  {
-    "id": "CVE-2026-11912",
-    "description": "The Simple File List plugin for WordPress is vulnerable to arbitrary file modification due to insufficient authorization checks in all versions up to, and including, 6.3.7. This makes it possible for unauthenticated attackers to delete and modify files on the serve. This vulnerability is exploitable even when the administrator has not enabled the AllowFrontManage setting, because the is_admin() check unconditionally short-circuits the guard before that setting is evaluated.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-20T09:16:15.460"
-  },
-  {
-    "id": "CVE-2026-12119",
-    "description": "The Simple File List plugin for WordPress is vulnerable to unauthorized file operations due to a missing authorization check on the 'frontmanage' shortcode attribute in all versions up to, and including, 6.3.7. This makes it possible for authenticated attackers, with contributor-level access and above, to perform arbitrary file operations including deletion, move, folder creation, and download. An attacker can create a draft post containing the 'eeSFL' shortcode, render it via the post preview endpoint to harvest the nonce needed to authorize the operations, and then submit file operation requests that bypass the intended authorization checks in includes/ee-list-ops-bar-process.php.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-20T09:16:15.593"
-  },
-  {
     "id": "CVE-2026-48908",
     "description": "A vulnerability in SP Page Builder for Joomla allows unauthenticated users to upload arbitrary files, ultimately resulting in the upload and execution of PHP code.",
     "severity": "Critical",
@@ -16122,28 +16101,28 @@
   },
   {
     "id": "CVE-2026-57079",
-    "description": "Net::BitTorrent versions through 2.0.1 for Perl write files outside the download directory via path traversal in peer-supplied metadata.\n\nNet::BitTorrent validates file path components only on the .torrent-file ingest path. The peer and magnet metadata path (_on_metadata_received, reached from the BEP09 ut_metadata extension) passes attacker-supplied file names straight to Storage::add_file and Storage::_parse_file_tree, where Path::Tiny's child() does not collapse \"..\". A v2 file tree key, a v1 files[].path element, or a single-file name containing \"..\" segments therefore resolves outside the download directory.\n\nBecause the peer also controls the piece hashes and the served bytes, content verification passes, so a malicious magnet or peer writes attacker-chosen content to an attacker-chosen path on the downloading host.",
+    "description": "Net::BitTorrent versions before 2.1.0 for Perl write files outside the download directory via path traversal in peer-supplied metadata.\n\nNet::BitTorrent validates file path components only on the .torrent-file ingest path. The peer and magnet metadata path (_on_metadata_received, reached from the BEP09 ut_metadata extension) passes attacker-supplied file names straight to Storage::add_file and Storage::_parse_file_tree, where Path::Tiny's child() does not collapse \"..\". A v2 file tree key, a v1 files[].path element, or a single-file name containing \"..\" segments therefore resolves outside the download directory.\n\nBecause the peer also controls the piece hashes and the served bytes, content verification passes, so a malicious magnet or peer writes attacker-chosen content to an attacker-chosen path on the downloading host.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-30T12:16:25.427"
   },
   {
     "id": "CVE-2026-57080",
-    "description": "Net::BitTorrent versions through 2.0.1 for Perl allow remote memory exhaustion via an uncapped peer-wire message-length prefix.\n\nThe peer-wire framing in _process_messages trusts the 4-byte length prefix sent by a connected peer with no upper bound, while receive_data appends every inbound byte to the input buffer. A peer announces a length prefix of up to about 4 GiB and then streams bytes; the decoder waits until the buffer holds the full message before processing it, so the buffer grows without limit.\n\nPeer connections are unauthenticated, so any peer in the swarm exhausts the downloading process's memory. The largest legitimate message is a 16 KiB piece block, so any announced length far above that is anomalous.",
+    "description": "Net::BitTorrent versions through 2.1.0 for Perl allow remote memory exhaustion via an uncapped peer-wire message-length prefix.\n\nThe peer-wire framing in _process_messages trusts the 4-byte length prefix sent by a connected peer with no upper bound, while receive_data appends every inbound byte to the input buffer. A peer announces a length prefix of up to about 4 GiB and then streams bytes; the decoder waits until the buffer holds the full message before processing it, so the buffer grows without limit.\n\nPeer connections are unauthenticated, so any peer in the swarm exhausts the downloading process's memory. The largest legitimate message is a 16 KiB piece block, so any announced length far above that is anomalous.",
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-30T12:16:25.533"
   },
   {
     "id": "CVE-2026-57081",
-    "description": "Net::BitTorrent versions through 2.0.1 for Perl allow remote memory exhaustion via deeply nested bencoded input.\n\nbdecode recurses once per nested list or dictionary level with no depth cap, and each recursive call receives the remaining buffer by value while the list and dictionary branches capture the whole remainder, so every live recursion frame keeps its own copy of the shrinking buffer (O(N^2) bytes for an N-deep input). The decoder runs on every untrusted bencode source: .torrent files, BEP09 metadata fetched from peers, DHT messages, and tracker responses.\n\nA bencoded input of roughly 150,000 nested lists (about 150 KB on the wire) drives multi-gigabyte peak memory, so one short message from any peer, or one crafted .torrent file or magnet link, terminates the client.",
+    "description": "Net::BitTorrent versions through 2.1.0 for Perl allow remote memory exhaustion via deeply nested bencoded input.\n\nbdecode recurses once per nested list or dictionary level with no depth cap, and each recursive call receives the remaining buffer by value while the list and dictionary branches capture the whole remainder, so every live recursion frame keeps its own copy of the shrinking buffer (O(N^2) bytes for an N-deep input). The decoder runs on every untrusted bencode source: .torrent files, BEP09 metadata fetched from peers, DHT messages, and tracker responses.\n\nA bencoded input of roughly 150,000 nested lists (about 150 KB on the wire) drives multi-gigabyte peak memory, so one short message from any peer, or one crafted .torrent file or magnet link, terminates the client.",
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-06-30T12:16:25.633"
   },
   {
     "id": "CVE-2026-57082",
-    "description": "Net::BitTorrent versions through 2.0.1 for Perl generate the MSE Diffie-Hellman private key with a non-cryptographic PRNG.\n\nThe MSE (Message Stream Encryption) handshake derives its 160-bit Diffie-Hellman private key from Perl's rand(), a non-cryptographic drand48-class generator seeded once per process, in KeyExchange.pm. The shared secret and the RC4 keys derived from it (the SHA-1 of \"keyA\" or \"keyB\", the shared secret, and the infohash) therefore depend entirely on a predictable PRNG. The same handshake sends, in cleartext, random padding drawn from the same rand() sequence in _random_pad, immediately after the public key and the private-key draw.\n\nA passive observer of the handshake recovers the PRNG state from the cleartext padding, reconstructs the private key, computes the shared secret from the peer's public key on the wire, derives the RC4 keys, and decrypts the connection, defeating the passive-observation obfuscation MSE provides.",
+    "description": "Net::BitTorrent versions before 2.1.0 for Perl generate the MSE Diffie-Hellman private key with a non-cryptographic PRNG.\n\nThe MSE (Message Stream Encryption) handshake derives its 160-bit Diffie-Hellman private key from Perl's rand(), a non-cryptographic drand48-class generator seeded once per process, in KeyExchange.pm. The shared secret and the RC4 keys derived from it (the SHA-1 of \"keyA\" or \"keyB\", the shared secret, and the infohash) therefore depend entirely on a predictable PRNG. The same handshake sends, in cleartext, random padding drawn from the same rand() sequence in _random_pad, immediately after the public key and the private-key draw.\n\nA passive observer of the handshake recovers the PRNG state from the cleartext padding, reconstructs the private key, computes the shared secret from the peer's public key on the wire, derives the RC4 keys, and decrypts the connection, defeating the passive-observation obfuscation MSE provides.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-06-30T12:16:25.737"
@@ -37731,7 +37710,7 @@
   },
   {
     "id": "CVE-2026-15529",
-    "description": "A vulnerability was detected in yzhao062 pyod 3.5.0/3.5.1/3.5.2. Affected is the function pyod.utils.persistence.load of the file pyod/utils/persistence.py. Performing a manipulation of the argument path results in deserialization. The attack can be initiated remotely. The pull request to fix this issue requires some minor changes.",
+    "description": "A vulnerability was detected in yzhao062 pyod up to 3.6.1. Affected is the function pyod.utils.persistence.load of the file pyod/utils/persistence.py. Performing a manipulation of the argument path results in deserialization. The attack can be initiated remotely. Upgrading to version 3.6.2 is able to address this issue. It is recommended to apply a patch to fix this issue. The pull request to fix this issue requires some minor changes.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-13T04:16:28.577"
@@ -41576,7 +41555,7 @@
     "id": "CVE-2026-49791",
     "description": "Improper link resolution before file access ('link following') in Windows Routing and Remote Access Service (RRAS) allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-07-14T17:16:54.720"
   },
   {
@@ -56684,5 +56663,166 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-20T00:16:58.363"
+  },
+  {
+    "id": "CVE-2026-10081",
+    "description": "The Unlimited Elements For Elementor WordPress plugin before 2.0.11 does not sanitize or escape Google review content fetched from the Serp API before rendering it in the Google Reviews widget output, allowing unauthenticated attackers who submit a malicious review on the targeted business's Google listing to deliver Stored XSS to any visitor (including administrators) of any WP page displaying that Place ID's reviews.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:33.520"
+  },
+  {
+    "id": "CVE-2026-10724",
+    "description": "The Reviews Feed  WordPress plugin before 2.6.5 does not neutralize WordPress shortcodes contained in third-party review content before rendering it through its dynamic block, allowing unauthenticated attackers to execute arbitrary shortcodes on pages that display the feed by planting a shortcode in a review on the connected source.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:34.340"
+  },
+  {
+    "id": "CVE-2026-10755",
+    "description": "The All in One SEO  WordPress plugin before 4.9.9 does not correctly restrict access to some of its AI integration REST API endpoints, allowing users with low-level privileges such as Contributors to overwrite or reset the site-wide AI integration state.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:34.443"
+  },
+  {
+    "id": "CVE-2026-11349",
+    "description": "The Modern Event Calendar Pro WordPress plugin before 7.34.0, Modern Events Calendar Lite WordPress plugin before 7.34.0 do not sanitise and escape a request parameter before using it in a SQL statement, through an AJAX action available to unauthenticated users, leading to an unauthenticated SQL injection vulnerability that allows attackers to extract sensitive data from the database.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:34.547"
+  },
+  {
+    "id": "CVE-2026-11868",
+    "description": "The WP Travel  WordPress plugin before 11.7.1 does not perform capability or ownership checks on its booking cancellation action, which is also exposed to unauthenticated users, allowing them to cancel arbitrary bookings on the site.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:34.650"
+  },
+  {
+    "id": "CVE-2026-12592",
+    "description": "The SlimStat Analytics WordPress plugin before 5.5.0 does not escape a visitor-controlled geolocation value before outputting it in its admin analytics reports, allowing unauthenticated visitors to store a cross-site scripting payload that executes in the browser of an administrator who views the reports. Exploitation requires the SlimStat Analytics WordPress plugin before 5.5.0 to be configured to use the Cloudflare geolocation provider.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:34.757"
+  },
+  {
+    "id": "CVE-2026-12723",
+    "description": "The Kirki  WordPress plugin before 6.0.12 does not perform any authorisation check on one of its REST routes, allowing unauthenticated users to overwrite the content of arbitrary existing comments and to create pre-approved comments under a spoofed identity, bypassing comment moderation.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:34.877"
+  },
+  {
+    "id": "CVE-2026-12724",
+    "description": "The Kirki  WordPress plugin before 6.0.12 does not sanitise or escape the email subject and body values supplied in a request before including them in the password-reset email it sends as HTML, allowing unauthenticated users to inject arbitrary HTML into the message delivered to a registered user, which can be used for phishing.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:34.980"
+  },
+  {
+    "id": "CVE-2026-12898",
+    "description": "The All-in-One WP Migration and Backup WordPress plugin before 7.106 does not properly sanitise a user-supplied value before using it to build a file path, allowing unauthenticated attackers to create or append a log file in arbitrary locations outside its intended storage directory.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.087"
+  },
+  {
+    "id": "CVE-2026-12970",
+    "description": "The LearnPress  WordPress plugin before 4.4.1 does not escape a search parameter before reflecting it into an HTML attribute, leading to Reflected Cross-Site Scripting that executes in the browser of a logged-in instructor or administrator who is tricked into opening a crafted link.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.190"
+  },
+  {
+    "id": "CVE-2026-12972",
+    "description": "The PayPlus Payment Gateway WordPress plugin before 8.2.2 does not perform authorization or order-ownership validation in one of its AJAX actions available to unauthenticated users, allowing them to tamper with the payment-related metadata of arbitrary WooCommerce orders.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.290"
+  },
+  {
+    "id": "CVE-2026-12973",
+    "description": "The PayPlus Payment Gateway WordPress plugin before 8.2.2 does not perform authorization or order-ownership validation in one of its AJAX actions available to unauthenticated users, allowing them to disclose the secret order key of arbitrary WooCommerce orders and, under some configurations, to modify order statuses.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.387"
+  },
+  {
+    "id": "CVE-2026-13142",
+    "description": "The Social Login, Passkeys, Magic Link & Email OTP  WordPress plugin before 1.4.1 does not enforce rate limiting or a working attempt lockout on its passwordless email one-time-password verification, and stores the short numeric codes in plaintext, allowing an unauthenticated attacker who knows a registered email address to brute-force the code and log in as that user, including an administrator, leading to full site takeover.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.483"
+  },
+  {
+    "id": "CVE-2026-13147",
+    "description": "The Kirki  WordPress plugin before 6.0.12 does not validate a user-supplied URL before requesting it server-side, allowing unauthenticated attackers to make the site issue HTTP requests to arbitrary hosts (Server-Side Request Forgery).",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.580"
+  },
+  {
+    "id": "CVE-2026-13156",
+    "description": "The MailerSend  WordPress plugin before 1.0.8 does not perform a nonce check on its configuration-delete action (it verifies the manage_options capability but ignores the nonce), so an attacker can trick a logged-in administrator into visiting a crafted page that wipes the MailerSend  WordPress plugin before 1.0.8's SMTP configuration and deactivates the MailerSend  WordPress plugin before 1.0.8, breaking the site's email delivery.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.687"
+  },
+  {
+    "id": "CVE-2026-13432",
+    "description": "The ThumbPress  WordPress plugin before 6.2.2 does not perform a capability check on one of its AJAX actions, allowing authenticated users with subscriber-level access or higher to deactivate the ThumbPress  WordPress plugin before 6.2.2, disrupting the site's image-handling functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:35.783"
+  },
+  {
+    "id": "CVE-2026-16235",
+    "description": "Crypt::Password versions through 0.28 for Perl generate insecure random values for salts.\n\nThese versions use the built-in rand function, which is predictable and unsuitable for cryptography.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:37.320"
+  },
+  {
+    "id": "CVE-2026-6656",
+    "description": "Crypt::Password versions through 0.28 for Perl are susceptible to timing attacks.\n\nThe check_password method uses the built-in eq operator. This allows discrepancies in timing to be used to guess the underlying hash.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:42.440"
+  },
+  {
+    "id": "CVE-2026-8825",
+    "description": "The Elementor Website Builder  WordPress plugin before 4.1.4 does not properly check user permissions before returning post data through one of its REST endpoints, allowing authenticated users with Contributor-level access and above to retrieve the title, body and metadata of private posts, private pages and drafts authored by other users (including administrators).",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:42.553"
+  },
+  {
+    "id": "CVE-2026-9833",
+    "description": "The Tag Groups is the Advanced Way to Display Your Taxonomy Terms WordPress plugin before 2.2.0 does not properly escape one of its AJAX parameters before reflecting it in the response body served with an HTML content type, allowing unauthenticated attackers to execute arbitrary JavaScript in the browser of a logged-in user with `edit_pages` capability (Editor or higher) who is tricked into following a crafted link.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T07:16:42.657"
+  },
+  {
+    "id": "CVE-2026-13577",
+    "description": "Dancer2 versions through 2.1.0 for Perl generate insecure session ids when CSPRNG modules are unavailable.\n\nDancer2::Core::Role::SessionFactory::generate_id silently falls back to a built-in rand-derived session id when both Math::Random::ISAAC::XS and Crypt::URandom are unavailable.\n\nThe fallback session id is generated from a SHA-1 hash of a call to the built-in rand function, the absolute path of the Dancer2::Core::Role::SessionFactory module, an internal counter, the process id, the module instance memory address, and a shuffled string of characters (using the List::Util::shuffle function, which also uses the built-in rand function).\n\nThese are all low-entropy and easily guessed sources.\n\nThe built-in rand() function is seeded with 32-bits and considered unsuitable for security applications.\n\nPredictable session ids could allow an attacker to gain access to systems.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-20T08:16:28.987"
+  },
+  {
+    "id": "CVE-2026-16242",
+    "description": "A flaw was found in the Konnectivity proxy-server configuration for hosted control planes. The agent-facing listener was started without --cluster-ca-cert (and without token-based agent authentication), so client certificates were not validated. A remote attacker who can reach the Konnectivity cluster endpoint could connect as an unauthenticated agent, join the routing pool, and potentially proxy, inspect, modify, or drop control-plane-to-node traffic.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-20T08:16:29.833"
+  },
+  {
+    "id": "CVE-2026-2445",
+    "description": "The affected product accepts user-supplied input within a URL parameter without enforcing expected sanitization or encoding before rendering it within the response. This condition allows for the injection of malicious JavaScript payloads.\n\nAn attacker can leverage this vulnerability to cause the user's browser to redirect to a malicious website, modify the user interface of the webpage, or retrieve sensitive information from the browser. However, the impact is mitigated for session hijacking as all session-related sensitive cookies are protected by the httpOnly flag.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-20T08:16:30.143"
   }
 ]

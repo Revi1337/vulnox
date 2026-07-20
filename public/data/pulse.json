@@ -1,5 +1,117 @@
 [
   {
+    "id": "CVE-2026-16229",
+    "description": "A flaw has been found in itsourcecode Courier Management System up to 1.0. Affected by this vulnerability is an unknown functionality of the file /index.php. Executing a manipulation of the argument page can lead to cross site scripting. It is possible to launch the attack remotely. The exploit has been published and may be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T10:16:32.830"
+  },
+  {
+    "id": "CVE-2026-16228",
+    "description": "A vulnerability was detected in SourceCodester Class and Exam Timetabling System 1.0. Affected is an unknown function of the file /edit_schoolyr.php. Performing a manipulation of the argument ID results in sql injection. It is possible to initiate the attack remotely. The exploit is now public and may be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-19T10:16:32.677"
+  },
+  {
+    "id": "CVE-2026-16227",
+    "description": "A security vulnerability has been detected in SourceCodester Class and Exam Timetabling System 1.0. This impacts an unknown function of the file /edit_subject.php. Such manipulation of the argument ID leads to sql injection. The attack may be performed from remote. The exploit has been disclosed publicly and may be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-19T10:16:31.380"
+  },
+  {
+    "id": "CVE-2026-53372",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu/vt-d: Block PASID attachment to nested domain with dirty tracking\n\nKernel lacks dirty tracking support on nested domain attached to PASID,\nfails the attachment early if nesting parent domain is dirty tracking\nconfigured, otherwise dirty pages would be lost.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:02.367"
+  },
+  {
+    "id": "CVE-2026-53371",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nRDMA/ionic: bound node_desc sysfs read with %.64s\n\nnode_desc[64] in struct ib_device is not guaranteed to be NUL-\nterminated. The core IB sysfs handler uses \"%.64s\" for exactly this\nreason (drivers/infiniband/core/sysfs.c:1307), since node_desc_store()\nperforms a raw memcpy of up to IB_DEVICE_NODE_DESC_MAX bytes with no NUL\ntermination:\n\n  memcpy(desc.node_desc, buf, min_t(int, count, IB_DEVICE_NODE_DESC_MAX));\n\nIf exactly 64 bytes are written via the node_desc sysfs file, the array\ncontains no NUL byte. The ionic hca_type_show() handler uses unbounded\n\"%s\" and will read past the end of node_desc into adjacent fields of\nstruct ib_device until it encounters a NUL.\n\nionic supports IB_DEVICE_MODIFY_NODE_DESC, so this is triggerable by\nuserspace.\n\nMatch the core handler and bound the format specifier.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:02.260"
+  },
+  {
+    "id": "CVE-2026-53370",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nperf/x86/intel: Improve validation and configuration of ACR masks\n\nCurrently there are several issues on the user space ACR mask validation\nand configuration.\n- The validation for user space ACR mask (attr.config2) is incomplete,\n  e.g., the ACR mask could include the index which belongs to another\n  ACR events group, but it's not validated.\n- An early return on an invalid ACR mask caused all subsequent ACR groups\n  to be skipped.\n- The stale hardware ACR mask (hw.config1) is not cleared before setting\n  new hardware ACR mask.\n\nThe following changes address all of the above issues.\n- Figure out the event index group of an ACR group. Any bits in the\n  user-space mask not present in the index group are now dropped.\n- Instead of an early return on invalid bits, drop only the invalid\n  portions and continue iterating through all ACR events to ensure full\n  configuration.\n- Explicitly clear the stale hardware ACR mask for each event prior to\n  writing the new configuration.\n\nBesides, a non-leader event member of ACR group could be disabled in\ntheory. This could cause bit-shifting errors in the acr_mask of remaining\ngroup members. But since ACR sampling requires all events to be active,\nthis should not be a big concern in real use case. Add a \"FIXME\" comment\nto notice this risk.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:02.153"
+  },
+  {
+    "id": "CVE-2026-53369",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nudf: reject descriptors with oversized CRC length\n\nudf_read_tagged() skips CRC verification when descCRCLength +\nsizeof(struct tag) exceeds the block size.  A crafted UDF image can\nset descCRCLength to an oversized value to bypass CRC validation\nentirely; the descriptor is then accepted based solely on the 8-bit\ntag checksum, which is trivially recomputable.\n\nReject such descriptors instead of silently accepting them.  A\nlegitimate single-block descriptor should never have a CRC length that\nexceeds the block.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:02.017"
+  },
+  {
+    "id": "CVE-2026-53368",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nf2fs: fix fsck inconsistency caused by incorrect nat_entry flag usage\n\nf2fs_need_dentry_mark() reads nat_entry flags without mutual exclusion\nwith the checkpoint path, which can result in an incorrect inode block\nmarking state. The scenario is as follows:\n\ncreate & write & fsync 'file A'                 write checkpoint\n- f2fs_do_sync_file // inline inode\n - f2fs_write_inode // inode folio is dirty\n                                                - f2fs_write_checkpoint\n                                                 - f2fs_flush_merged_writes\n                                                 - f2fs_sync_node_pages\n - f2fs_fsync_node_pages // no dirty node\n - f2fs_need_inode_block_update // return true\n - f2fs_fsync_node_pages // inode dirtied\n  - f2fs_need_dentry_mark //return true\n                                                 - f2fs_flush_nat_entries\n                                                - f2fs_write_checkpoint end\n  - __write_node_folio // inode with DENT_BIT_SHIFT set\n  SPO, \"fsck --dry-run\" find inode has already checkpointed but still\n  with DENT_BIT_SHIFT set\n\nThe state observed by f2fs_need_dentry_mark() can differ from the state\nobserved in __write_node_folio() after acquiring sbi->node_write. The\nroot cause is that the semantics of IS_CHECKPOINTED and\nHAS_FSYNCED_INODE are only guaranteed after the checkpoint write has\nfully completed.\n\nThis patch moves set_dentry_mark() into __write_node_folio() and\nprotects it with the sbi->node_write lock.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:01.903"
+  },
+  {
+    "id": "CVE-2026-53367",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nselinux: fix avdcache auditing\n\nThe per-task avdcache was incorrectly saving and reusing the\naudited vector computed by avc_audit_required() rather than\nrecomputing based on the currently requested permissions and\ndistinguishing the denied versus allowed cases. As a result,\nsome permission checks were not being audited, e.g.\ndirectory write checks after a previously cached directory\nsearch check.\n\n[PM: line wrap tweaks]",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:01.773"
+  },
+  {
+    "id": "CVE-2026-16226",
+    "description": "A weakness has been identified in SourceCodester Pizzafy Ecommerce System 1.0. This affects the function save_settings of the file /admin/admin_class_novo.php. This manipulation of the argument img causes unrestricted upload. The attack is possible to be carried out remotely.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:01.593"
+  },
+  {
+    "id": "CVE-2026-16225",
+    "description": "A security flaw has been discovered in davenardella snap7 up to 1.4.3. The impacted element is the function TSnap7Peer::NegotiatePDULength of the file src/core/s7_peer.cpp. The manipulation of the argument PDULength results in out-of-bounds write. The attack can be executed remotely. The exploit has been released to the public and may be used for attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:01.423"
+  },
+  {
+    "id": "CVE-2026-16224",
+    "description": "A vulnerability was identified in jxxghp MoviePilot up to 2.13.5. The affected element is an unknown function of the file /jxxghp/MoviePilot of the component Application API. The manipulation leads to improper authorization. Remote exploitation of the attack is possible. The identifier of the patch is dc2b6910a423b3bfadeffaa303e1ba75cfb33900. Applying a patch is the recommended action to fix this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T09:17:01.250"
+  },
+  {
+    "id": "CVE-2026-16223",
+    "description": "A vulnerability was determined in 1Panel-dev CordysCRM up to 1.4.1. Impacted is the function getSqlBotSrc of the file backend/crm/src/main/java/cn/cordys/crm/system/service/IntegrationConfigService.java of the component Third Party Edit Endpoint. Executing a manipulation of the argument appSecret can lead to server-side request forgery. The attack may be launched remotely. The exploit has been publicly disclosed and may be utilized.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T08:16:43.647"
+  },
+  {
+    "id": "CVE-2026-16222",
+    "description": "A vulnerability was found in 1Panel-dev CordysCRM up to 1.4.1. This issue affects some unknown processing of the file backend/crm/src/main/java/cn/cordys/crm/integration/sso/service/TokenService.java of the component Third Party Endpoint. Performing a manipulation of the argument mkAddress results in server-side request forgery. The attack may be initiated remotely. The exploit has been made public and could be used. The project closed the issue report, stating that this is not the official way to report a security vulnerability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T08:16:42.620"
+  },
+  {
+    "id": "CVE-2026-16220",
+    "description": "A vulnerability has been found in code-projects Online Examination System 1.0. This vulnerability affects unknown code of the file /account.php?q=quiz. Such manipulation of the argument eid/n/t leads to cross site scripting. The attack can be launched remotely. The exploit has been disclosed to the public and may be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T07:16:49.687"
+  },
+  {
+    "id": "CVE-2026-16219",
+    "description": "A flaw has been found in Croogo CMS up to 4.0.7. This affects the function FileManager::isEditable of the file FileManager/src/Utility/FileManager.php of the component Admin File Manager. This manipulation causes path traversal. The attack can be initiated remotely. The exploit has been published and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-19T07:16:48.540"
+  },
+  {
     "id": "CVE-2026-16218",
     "description": "A vulnerability was detected in hunvreus devpush up to 0.4.6. Affected by this issue is the function reset_storage of the file app/workers/tasks/storage.py of the component Storage Reset Failure Handler. The manipulation results in improper check or handling of exceptional conditions. A high complexity level is associated with this attack. The exploitation is known to be difficult. The project was informed of the problem early through an issue report but has not responded yet.",
     "severity": "Low",
@@ -4093,257 +4205,5 @@
     "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-16T11:16:35.597"
-  },
-  {
-    "id": "CVE-2026-22752",
-    "description": "Authentication bypass by primary weakness vulnerability in Spring Security Spring Authorization Server.\n\nThis issue affects Spring Authorization Server: from 7.0.0 through 7.0.4, from 1.5.0 through 1.5.6, from 1.4.0 through 1.4.9, from 1.3.0 through 1.3.10.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-16T10:16:24.767"
-  },
-  {
-    "id": "CVE-2026-7543",
-    "description": "The Breakdance plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'fields' parameter in versions up to, and including, 2.7.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:19.527"
-  },
-  {
-    "id": "CVE-2026-6424",
-    "description": "Use-after-free vulnerability in ESET Linux products potentially allowed an attacker to trigger kernel panic on the system",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:19.403"
-  },
-  {
-    "id": "CVE-2026-6423",
-    "description": "A local privilege escalation vulnerability in ESET Inspect Connector. \nThe vulnerability was caused by improper authentication in an IPC channel.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:19.273"
-  },
-  {
-    "id": "CVE-2026-58078",
-    "description": "The Joomla extension Quix Page Builder Pro is vulnerable to an unauthenticated SQL injection.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:19.140"
-  },
-  {
-    "id": "CVE-2026-15727",
-    "description": "The WP Bulk Delete plugin for WordPress is vulnerable to generic SQL Injection via the 'delete_user_roles' parameter in all versions up to, and including, 1.4.2 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with administrator-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. wp_unslash() is applied to the raw POST body before parse_str() decomposes it, stripping WordPress magic-quotes protection and leaving attacker-controlled values fully unescaped prior to reaching the SQL sink.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:18.510"
-  },
-  {
-    "id": "CVE-2026-15651",
-    "description": "The WP TripAdvisor Review Slider plugin for WordPress is vulnerable to generic SQL Injection via the 'filtersource' parameter in all versions up to, and including, 14.6 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with administrator-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:18.393"
-  },
-  {
-    "id": "CVE-2026-15610",
-    "description": "The WPBot – AI ChatBot for Live Support, Lead Generation, AI Services plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 8.5.6. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with subscriber-level access and above, to trigger arbitrary re-embedding of stored RAG documents, modifying the rag_documents table and consuming the site owner's paid third-party AI API credits (OpenAI, Gemini, OpenRouter, or xAI).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:18.280"
-  },
-  {
-    "id": "CVE-2026-15407",
-    "description": "The Themify Builder plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 7.7.7. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with subscriber-level access and above, to overwrite or delete the generated CSS stylesheet file of arbitrary posts, including private and draft posts owned by other users, and modify plugin-scoped font options. The required CSRF nonce (tf_nonce) is emitted on public front-end builder pages via wp_localize_script, making it trivially obtainable by any authenticated user visiting such a page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:18.163"
-  },
-  {
-    "id": "CVE-2026-15350",
-    "description": "The The Cache Purger plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 2.3.20. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with subscriber-level access and above, to permanently truncate the plugin's cache-purge audit log (wp-content/purge.log), destroying the entire cache-purge audit history. The tcp_log_purge nonce is rendered in the admin bar on frontend pages accessible to all authenticated users including subscribers, meaning any authenticated user possesses the nonce required to trigger the deletion.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:18.047"
-  },
-  {
-    "id": "CVE-2026-15324",
-    "description": "The SysBasics Customize My Account for WooCommerce – Live My Account Customizer plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'row_type' parameter in all versions up to, and including, 4.4.14 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with shop manager-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.920"
-  },
-  {
-    "id": "CVE-2026-15106",
-    "description": "The WPBot – AI ChatBot for Live Support, Lead Generation, AI Services plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 8.5.6. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to delete arbitrary chat session records from the wpbot_user and wpbot_conversation tables, including chat history and conversation logs, by supplying a crafted userid value.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.800"
-  },
-  {
-    "id": "CVE-2026-15103",
-    "description": "The WPFunnels – Funnel Builder for WooCommerce with Checkout & One Click Upsell plugin for WordPress is vulnerable to Privilege Escalation via arbitrary option update in all versions up to, and including, 3.12.8. This is due to the `update_settings()` REST callback failing to validate the `group_id` path parameter against an allowlist of permitted option names before passing it directly to `get_option()` and `update_option()`, allowing the built-in `wp_user_roles` option — which satisfies the route's loose `[\\w-]+` regex — to be targeted. This makes it possible for authenticated attackers with the `wpf_manage_funnels` capability and above to elevate their privileges to administrator by writing a crafted role definition containing arbitrary capabilities into the `wp_user_roles` option, thereby granting any WordPress role full site administrator access. The `wpf_manage_funnels` capability is typically assigned to the Funnel Manager custom role created by the plugin, meaning this role is the minimum required to exploit the vulnerability.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.677"
-  },
-  {
-    "id": "CVE-2026-15099",
-    "description": "The Delicious Recipes plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'steps' block attribute in versions up to, and including, 1.10.2. This is due to insufficient input sanitization and output escaping in the wrap_direction_text() function, which interpolates the user-supplied href value from nested link nodes ($node['props']['href']) directly into an anchor tag via sprintf() at line 1627 without esc_url() or any URL scheme validation. This makes it possible for authenticated attackers, with Contributor-level access and above, to inject arbitrary web scripts (including javascript: URIs) in pages that will execute whenever a user (such as an editor or administrator previewing the pending post) accesses an injected page and clicks the malicious link.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.557"
-  },
-  {
-    "id": "CVE-2026-15022",
-    "description": "The Tutor LMS – eLearning and online course solution plugin for WordPress is vulnerable to generic SQL Injection via Stored Quiz Answer Array in all versions up to, and including, 4.0.0 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with custom-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The payload is stored at quiz-attempt time via the wp_ajax_tutor_quiz_abandon handler, but the injected SQL executes only when a privileged user or Tutor REST API key holder requests the /wp-json/tutor/v1/quiz-attempt-details/{id} endpoint, making this a second-order (stored) injection chain.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.440"
-  },
-  {
-    "id": "CVE-2026-15021",
-    "description": "The wpForo Forum plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'location' Profile Field in all versions up to, and including, 3.1.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with subscriber-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The sanitize_text_field() function applied at input does not encode double quotes, allowing attribute breakout via a payload that escapes the href attribute context and injects event handler attributes.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.323"
-  },
-  {
-    "id": "CVE-2026-15008",
-    "description": "The Uncanny Automator – Easy Automation, Integration, Webhooks & Workflow Builder Plugin plugin for WordPress is vulnerable to arbitrary file deletion due to insufficient file path validation in the fr_token function in all versions up to, and including, 7.3.1.4. This makes it possible for unauthenticated attackers to delete arbitrary files on the server, which can easily lead to remote code execution when the right file is deleted (such as wp-config.php). Exploitation requires a Forminator form connected to an Uncanny Automator recipe configured for 'Everyone', allowing unauthenticated form submissions to supply the malicious serialized payload; a gadget chain is present within the plugin via the Action_Helpers_Email __destruct() method, meaning no external gadget library is required.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.200"
-  },
-  {
-    "id": "CVE-2026-15005",
-    "description": "The Loco Translate plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 2.8.5. This is due to missing or incorrect nonce validation on the execTemplate function. This makes it possible for unauthenticated attackers to execute arbitrary PHP code on the server by supplying a php://filter stream wrapper URI as the 'template' parameter, which bypasses path validation and is passed directly to the include sink in execTemplate() via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:17.060"
-  },
-  {
-    "id": "CVE-2026-13767",
-    "description": "The Quiz Master Next plugin for WordPress is vulnerable to SQL Injection via stored quiz page data in versions up to, and including, 11.2.0. This is due to insufficient escaping on the user-supplied 'pages' parameter persisted by the qsm_ajax_save_pages() AJAX handler (sanitize_text_field only) and lack of sufficient preparation on the existing SQL query built in qsm_options_questions_tab_content() at line 143, where the stored page IDs are interpolated into an IN() clause via implode() with no $wpdb->prepare() and no integer casting. This makes it possible for authenticated attackers, with Author-level access and above (who can own a quiz they are entitled to edit), to plant a SQL payload that is executed second-order whenever any user (including an administrator) views the quiz's Questions tab, allowing them to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:16.943"
-  },
-  {
-    "id": "CVE-2026-13755",
-    "description": "The Tickera – Sell Tickets & Manage Events plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'price_wrapper' Shortcode Attribute in all versions up to, and including, 3.6.0.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Successful execution of the injected script is limited to victims who have the referenced ticket ID present in their cart cookie, meaning the payload only fires for users who have previously added that ticket to their cart.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:16.827"
-  },
-  {
-    "id": "CVE-2026-13754",
-    "description": "The Tickera – Sell Tickets & Manage Events plugin for WordPress is vulnerable to generic SQL Injection via the 's' parameter in all versions up to, and including, 3.6.0.0 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with custom-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:16.693"
-  },
-  {
-    "id": "CVE-2026-13741",
-    "description": "The Digits: WordPress Mobile Number Signup and Login plugin for WordPress is vulnerable to Privilege Escalation in all versions up to, and including, 9.1.0.5. This is due to missing authorization and role validation in the `dig_update_wpwc_custom_fields()` function. This makes it possible for authenticated attackers, with Subscriber-level access and above, to escalate their privileges to Administrator by submitting a forged `digits_reg_userrole` value during profile update, granted the site administrator has configured the built-in DIGITS User Role field.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T09:16:16.553"
-  },
-  {
-    "id": "CVE-2026-15925",
-    "description": "Improper TLS hostname verification in Snowflake Connector for Python versions prior to 4.7.1 and 3.18.1 may have allowed a network-positioned attacker to bypass certificate hostname validation on HTTPS connections made by the connector. An attacker with on-path network access could exploit this by intercepting or redirecting network traffic and presenting a certificate signed by any trusted CA for any domain, causing the connector to accept connections without validating that the certificate matched the requested hostname. Successful exploitation requires an on-path traffic interception capability (e.g. ARP/DNS poisoning, rogue access point, BGP hijacking, or malicious proxy/exit node). This vulnerability may have exposed credentials, query data, and staged file contents to interception and tampering, and may have enabled the attacker to issue arbitrary SQL within the context of the victim's connector session. Impact is limited by the privileges of the affected Snowflake role. The fix is available in Snowflake Connector for Python versions 4.7.1 and 3.18.1. Users must manually upgrade.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.957"
-  },
-  {
-    "id": "CVE-2026-12979",
-    "description": "The FunnelKit  WordPress plugin before 3.15.0.6 does not validate a user-supplied path before deleting a file during a template-import operation, allowing users with administrator privileges to delete arbitrary .json files outside the intended directory through path traversal, which can disable other FunnelKit  WordPress plugin before 3.15.0.6 or  (denial of service).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.663"
-  },
-  {
-    "id": "CVE-2026-12978",
-    "description": "The FunnelKit  WordPress plugin before 3.15.0.6 does not escape a user-supplied parameter before reflecting it into the HTML response of one of its page-builder AJAX actions, allowing unauthenticated attackers to perform Reflected Cross-Site Scripting against logged-in users who open a crafted page. The affected action is only registered when the Divi /builder is active.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.577"
-  },
-  {
-    "id": "CVE-2026-12907",
-    "description": "The RTMKit WordPress plugin before 2.0.9 does not perform a proper capability check on one of its -builder AJAX actions, allowing users with at least the Author role to create and activate a site-wide template that overrides the header, footer or other global areas displayed to all visitors, which is normally restricted to administrators.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.490"
-  },
-  {
-    "id": "CVE-2026-12906",
-    "description": "The RTMKit WordPress plugin before 2.0.9 does not perform a capability check in one of its AJAX actions and resolves a request-supplied post identifier directly, allowing users with at least the Contributor role to read the titles of other users' private, draft, pending, scheduled and trashed posts.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.400"
-  },
-  {
-    "id": "CVE-2026-12869",
-    "description": "The Header Footer Builder for Elementor WordPress plugin before 1.2.1 does not require an administrative capability for its dashboard template-import action (it allows any edit_posts user), so a Contributor can import a template containing an Elementor HTML widget configured to display site-wide, injecting JavaScript that executes in the session of any visitor or administrator who loads the site.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.300"
-  },
-  {
-    "id": "CVE-2026-12684",
-    "description": "The Customer Reviews for WooCommerce WordPress plugin before 5.113.0 does not perform authentication, capability, or nonce checks on one of its media upload AJAX actions when the review media attachment feature is enabled, allowing unauthenticated users to upload media files (bounded to an image and video allowlist) to the Media Library and create attachment posts, leading to media library pollution and disk space exhaustion.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.210"
-  },
-  {
-    "id": "CVE-2026-12585",
-    "description": "The Abandoned Cart Lite for WooCommerce WordPress plugin before 6.8.2 does not protect the integrity of its cart-recovery tokens or bind them to the requesting account, allowing unauthenticated attackers to forge a recovery link that logs them in as another user when the automatic-login option is enabled.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:47.100"
-  },
-  {
-    "id": "CVE-2026-12525",
-    "description": "The Redux Framework WordPress plugin before 4.5.13 does not restrict which user meta keys can be written when saving custom profile fields, allowing users with at least the Subscriber role to escalate their privileges to Administrator by submitting a crafted value while updating their own profile, on sites where the Redux Framework WordPress plugin before 4.5.13's user-profile (Users extension) feature is enabled.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:46.987"
-  },
-  {
-    "id": "CVE-2026-12510",
-    "description": "The AI Engine  WordPress plugin before 3.5.5 does not verify that a user owns the chatbot conversation referenced by a client-supplied identifier, allowing users with subscriber-level access to read other users' private conversations and take over their conversation records when the discussions feature is enabled.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:46.877"
-  },
-  {
-    "id": "CVE-2026-12492",
-    "description": "The Happy Coders OTP Login for WooCommerce WordPress plugin before 2.8 does not verify that a one-time password was actually validated before authenticating a user based on a supplied identifier, allowing unauthenticated attackers to log in as any existing user, including administrators, as well as to create new accounts.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:46.787"
-  },
-  {
-    "id": "CVE-2026-12395",
-    "description": "The WP Job Portal  WordPress plugin before 2.5.5 does not properly sanitize and escape a parameter before using it in a SQL query, allowing authenticated users with a subscriber-level (self-registerable) account to perform SQL injection attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:46.690"
-  },
-  {
-    "id": "CVE-2026-11866",
-    "description": "The Appointment Booking Plugin  WordPress plugin before 5.6.3 does not validate a CSRF nonce on several state-changing actions handled by its central request dispatcher, allowing attackers to perform privileged actions, such as overwriting the booking-form configuration or disconnecting the connected payment gateway, via Cross-Site Request Forgery against a logged-in administrator.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:46.593"
-  },
-  {
-    "id": "CVE-2026-11371",
-    "description": "The BetterDocs  WordPress plugin before 4.5.5 does not sanitise an AI-generated documentation summary before storing and outputting it, and the feature that generates it is exposed to unauthenticated users, allowing them to store a malicious payload via prompt injection that executes in the browser of any visitor who views the affected page, including administrators.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-16T07:16:46.480"
   }
 ]
