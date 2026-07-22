@@ -1,5 +1,362 @@
 [
   {
+    "id": "CVE-2026-47410",
+    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an insecure default cryptographic key. The JWT signing secret defaults to the hardcoded literal `\"dev-secret-change-me\"` when `PLATFORM_JWT_SECRET` is unset. A safety check exists but only fires when `PLATFORM_ENV != \"dev\"`; the default value of `PLATFORM_ENV` is `\"dev\"`, so the check is silently bypassed in any deployment that does not explicitly opt out. The attacker reads the literal from this public source file, mints a JWT with arbitrary `sub` and `email` claims, and authenticates as any existing user (including workspace owners and admins). PraisonAI Platform version 0.1.4 patches the issue.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:09.773"
+  },
+  {
+    "id": "CVE-2026-47409",
+    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an authorization bypass enabling owner lockout. The `DELETE /workspaces/{workspace_id}/members/{user_id}` endpoint is gated only by `require_workspace_member(workspace_id)` (default `min_role=\"member\"`). Any member can remove any other member, including the workspace owner, using a single DELETE. There is no caller-role check, no target-role check, no \"cannot remove last owner\" guard. PraisonAI Platform version 0.1.4 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:09.640"
+  },
+  {
+    "id": "CVE-2026-47408",
+    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. The `GET /workspaces/{workspace_id}/issues/{issue_id}/activity` endpoint is gated by `require_workspace_member(workspace_id)` and dispatches to `ActivityService.list_for_issue(issue_id)`, which executes `SELECT * FROM activity WHERE issue_id = :issue_id` with no workspace constraint. A user who is a member of any workspace can read the full activity log of any issue across the entire multi-tenant deployment. PraisonAI Platform version 0.1.4 patches the issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:09.500"
+  },
+  {
+    "id": "CVE-2026-47407",
+    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Prior to version 0.1.4, the Platform server exposes resources under `/api/v1/workspaces/{workspace_id}/...` and protects them with a `require_workspace_member(workspace_id)` FastAPI dependency. The dependency only checks that the caller is a member of the workspace_id in the URL prefix. The route handlers then look up the inner resource (`agent_id`, `issue_id`, `project_id`, `label_id`, `comment_id`, `dependency_id`) by primary key alone. The resource's own `workspace_id` is never compared to the URL's `workspace_id`. A user can therefore put their own workspace in the URL prefix and any other workspace's resource ID in the path. The auth check passes, since they really are a member of the prefix workspace. The service then returns the cross-tenant resource for read, update, or delete. There is a second bug in the member-management routes (`add_member`, `update_member_role`, `remove_member`, `update_workspace`, `delete_workspace`). Each one inherits the default `min_role=\"member\"` from `require_workspace_member`. Any basic member can therefore promote themselves to admin or owner, demote or remove other members, and delete the workspace. The role hierarchy exists in the schema but is not enforced. Registration is open at `/api/v1/auth/register` with no email verification. The default server bind is `0.0.0.0:8000` (`python -m praisonai_platform`). One curl from any unauthenticated network position is enough to bootstrap into the system. PraisonAI Platform version 0.1.4 patches the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:09.363"
+  },
+  {
+    "id": "CVE-2026-47406",
+    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. The dependency endpoints (`POST/GET /workspaces/{workspace_id}/issues/{issue_id}/dependencies` and `DELETE .../dependencies/{dep_id}`) gate access on `require_workspace_member(workspace_id)` only, then dispatch to `DependencyService` calls that take URL/body-supplied issue and dependency IDs without verifying any of them belong to the membership-checked workspace. Most damaging: `create_dependency` accepts `body.depends_on_issue_id` from the request body — that ID is checked against nothing — letting an attacker create a \"blocks\" or \"related\" link between any two issues anywhere in the database. PraisonAI Platform version 0.1.4 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:09.220"
+  },
+  {
+    "id": "CVE-2026-47405",
+    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have a broken workspace authorization check that allows any authenticated low-privilege workspace member to escalate their own role to `owner`. The issue is caused by privileged workspace-management routes using the shared dependency `require_workspace_member(...)` without requiring `admin` or `owner`. The dependency defaults to `min_role=\"member\"`, so routes that should be administrative are accessible to ordinary workspace members. As a result, a normal workspace member can promote their own account from `member` to `owner`; add arbitrary users as `owner` or `admin`; change other members' roles; remove legitimate owners or members; take over workspace membership completely; and/or perform destructive workspace operations after escalation. This is a broken access control / vertical privilege escalation vulnerability. PraisonAI Platform version 0.1.4 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:09.083"
+  },
+  {
+    "id": "CVE-2026-47399",
+    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Prior to version 0.1.4, the workspace-scoped REST routes contain a systemic object-level authorization flaw that allows an authenticated user from one workspace to access, modify, and delete objects belonging to another workspace by supplying the victim object's global UUID. The affected pattern appears in workspace-scoped routes such as agents, projects, issues, and comments. The route layer verifies that the caller is a member of the `workspace_id` provided in the URL, but the service layer later resolves the target object by global object ID only. It does not verify that the resolved object actually belongs to the workspace in the URL. As a result, a valid member of `workspace_attacker` can call a route under `/api/v1/workspaces/{workspace_attacker}/...` while supplying an object UUID from `workspace_victim`. The server authorizes the request based on membership in `workspace_attacker`, then fetches or mutates the victim object by global UUID. This breaks the platform's workspace isolation boundary. PraisonAI Platform version 0.1.4 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:08.950"
+  },
+  {
+    "id": "CVE-2026-47398",
+    "description": "PraisonAI is a multi-agent teams system. The v4.6.32 chokepoint refactor (which patched CVE-2026-44334 / GHSA-xcmw-grxf-wjhj) added the PRAISONAI_ALLOW_LOCAL_TOOLS env-var gate to the tool_override.py sinks. However, two additional spec.loader.exec_module call sites in praisonai/agents_generator.py were missed and remain completely unguarded in versions prior to 4.6.40. Both functions accept a module_path parameter sourced from YAML configuration and execute it without validation, signature checking, or the env-var gate. Version 4.6.40 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:08.803"
+  },
+  {
+    "id": "CVE-2026-47397",
+    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40, hidden metadata in a webpage causes PraisonAI agents to write attacker-controlled content to arbitrary paths. `write_file` skips path validation when `workspace=None` (always `None` in production). Version 4.6.40 fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:08.670"
+  },
+  {
+    "id": "CVE-2026-44907",
+    "description": "A denial of service vulnerability could be triggered by sending specially crafted HTTP requests to server function endpoints, this could lead to excessive CPU usage; affecting the following packages: react-server-dom-webpack, react-server-dom-parcel, react-server-dom-turbopack (versions 19.0.0 through 19.0.7, 19.1.0 through 19.1.8, and 19.2.0 through 19.2.7).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:08.227"
+  },
+  {
+    "id": "CVE-2026-24232",
+    "description": "NVIDIA Tranformers4Rec contains a vulnerability where an attacker could cause improper deserialization of untrusted data. A successful exploit of this vulnerability might lead to code execution, data tampering, and information disclosure.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:06.453"
+  },
+  {
+    "id": "CVE-2026-16454",
+    "description": "In Eclipse hawkBit versions 1.0.3 and prior, a privilege escalation vulnerability (CWE-284 / CWE-862) has been identified in the Direct Device Integration (DDI) Controller.\n\n\n\nThis vulnerability allows an authenticated device to escalate its permissions and bypass the strict boundaries of its assigned updates. Under normal operation, a device should be restricted strictly to the specific firmware artifacts explicitly assigned to it. However, this flaw enables any authenticated device to bypass this restriction and download any firmware artifact within the same tenant.\n\n\n\nThis is not an authentication bypass; the requesting device must possess valid credentials for its respective tenant. Instead, the issue stems from a flaw in object-level authorization validation.\n\n\n\nA related, lower-severity helper issue exists in the listing software modules artifacts metadata endpoint. This endpoint does not enforce assignment checks, enabling an authenticated device to list and enumerate available firmware artifacts, which can facilitate targeted exfiltration using the main download authorization bypass.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:05.887"
+  },
+  {
+    "id": "CVE-2026-16451",
+    "description": "A security flaw has been discovered in zsadmin2025 ZS-Admin up to b52e14536d59fda11e56e2536a1c32e82a38cead. This impacts an unknown function of the file /api/system/file/upload of the component com.zs.file.controller.SysFileController. Performing a manipulation of the argument File results in unrestricted upload. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. This product is using a rolling release to provide continious delivery. Therefore, no version details for affected nor updated releases are available. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:05.730"
+  },
+  {
+    "id": "CVE-2026-15829",
+    "description": "A SQL injection (CWE-89) and security boundary bypass (CWE-863) vulnerability exists in the prebuilt BigQuery forecasting tool (bigquery-forecast) of googleapis/mcp-toolbox.\n\nThe tool accepts client-controlled parameters (data_col, timestamp_col, and id_cols) as plain strings and interpolates them unescaped via fmt.Sprintf directly into a generated AI.FORECAST table-valued SELECT statement. While MCP Toolbox utilizes an allowedDatasets mechanism to restrict queries, this defense only validates the history_data parameter; the final assembled query is executed without re-validation.\n\nAn attacker can break out of the string literal fields (such as timestamp_col) to inject a valid multi-statement or cross-dataset query block. This allows an unauthorized user to bypass the operator-configured allowedDatasets boundary and read arbitrary BigQuery tables.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:05.350"
+  },
+  {
+    "id": "CVE-2026-15793",
+    "description": "BuildKit custom frontends or clients using the raw low-level API can set git.checkoutbundle=true when checking out Git sources. If the Git source is malicious, this could lead to a crafted command invocation on the host.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:05.220"
+  },
+  {
+    "id": "CVE-2026-15792",
+    "description": "A malicious BuildKit client or frontend could craft a request that could lead to BuildKit daemon crashing with a panic.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:05.093"
+  },
+  {
+    "id": "CVE-2026-15791",
+    "description": "A crafted message in the BuildKit low-level build API can be used to remove the contents of the /tmp directory. The action that can normally be used to delete files inside the build container rootfs can escape into the real host temp directory.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:04.963"
+  },
+  {
+    "id": "CVE-2026-15789",
+    "description": "A custom client can produce such an upload request to the BuildKit daemon that files can escape from the BuildKit-controlled state directory. The client needs to have valid permissions to access the BuildKit control API to issue builds, e.g., bypass authentication, etc.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:04.843"
+  },
+  {
+    "id": "CVE-2026-15724",
+    "description": "In Progress ShareFile Storage Zones Controller versions prior to 5.12.5 and 6.0.2, an authenticated administrative user can exploit a path traversal vulnerability to read arbitrary files from the server filesystem, write files to arbitrary directories, or determine whether specific files exist on the server.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:04.703"
+  },
+  {
+    "id": "CVE-2026-15432",
+    "description": "When verifying a mac with a ChunkedMacVerification object, Tink compares the resulting tag with non constant time comparison. This potentially allows an attacker to use timinig information as a side channel in order to get information how many bytes of a given tag match the correct tag. This in turn could allow to find a correct tag bytewise.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:04.563"
+  },
+  {
+    "id": "CVE-2026-15342",
+    "description": "Plane contains a multi‑tenant authorization flaw in its asset‑management API that allows authenticated users from one workspace to access, delete, or duplicate assets belonging to another workspace by providing only the victim workspace slug and asset ID. The affected endpoints return presigned file URLs and enable destructive or duplicative actions without verifying that the requester is a member of the targeted workspace. This enables cross‑tenant data exposure, data deletion, and persistent exfiltration of files into an attacker‑controlled workspace.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:04.450"
+  },
+  {
+    "id": "CVE-2025-68640",
+    "description": "The Apple Find My backend service through 2025-12-17 allows an attacker in possession of a valid PET (Private Endpoint Token) to enumerate devices and remove offline devices from an Apple ID account without triggering two-factor authentication or ownership verification. This may result in unauthorized removal of devices associated with the account.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T17:17:04.183"
+  },
+  {
+    "id": "CVE-2026-64825",
+    "description": "Home Assistant Core before 2026.6.0 contains a path traversal vulnerability that allows unauthenticated attackers to write arbitrary files to any directory on the host filesystem by uploading a crafted backup archive during the initial onboarding window. Attackers can manipulate the 'name' field inside the uploaded archive's backup.json to supply an absolute path, causing pathlib.Path.__truediv__ to discard the configured backup directory prefix and write attacker-controlled content to arbitrary locations, with full filesystem access when the process runs as root.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:21.633"
+  },
+  {
+    "id": "CVE-2026-64824",
+    "description": "Home Assistant Core before 2026.7.0 contains a path traversal vulnerability in the backup-restore function that allows attackers to write files to arbitrary absolute filesystem paths by supplying a crafted tar archive with a SYMTYPE entry containing a benign member name paired with an absolute linkname pointing outside the extraction directory. Because the official Docker image runs the Home Assistant process as root and the subsequent regular-file entry is written through the unvalidated symlink, attackers can achieve remote code execution by overwriting auto-imported Python paths such as site-packages/sitecustomize.py or custom component directories.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:21.433"
+  },
+  {
+    "id": "CVE-2026-64823",
+    "description": "Home Assistant Core before 2026.5.4 contains a cross-site scripting vulnerability in the Shelly integration's async_get_media_image() method that allows attackers controlling a Shelly device's thumb field to serve arbitrary HTML content by supplying a data URI with a text/html content type without validation against an image-only allowlist. Attackers can cause the media player proxy endpoint to serve attacker-controlled bytes with Content-Type text/html in the Home Assistant web origin, enabling theft of session tokens from local storage and authenticated calls to sensitive service endpoints including lock, alarm, and cover controls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:21.230"
+  },
+  {
+    "id": "CVE-2026-56586",
+    "description": "HCL IEM was affected with X-Content-Type-Options Header Missing. It may enable attackers to perform SSL stripping or man-in-the-middle attacks and intercept sensitive data.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:18.107"
+  },
+  {
+    "id": "CVE-2026-56585",
+    "description": "HCL IEM was affected with the Anti Clickjacking XFrame Options Header Missing. It may allow attackers to embed the application in malicious pages and induce unauthorized user actions.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:17.977"
+  },
+  {
+    "id": "CVE-2026-47396",
+    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40, PraisonAI's call server exposes a network-facing agent control API without authentication when `CALL_SERVER_TOKEN` is not configured. The affected component is the `praisonai.api.agent_invoke` router as mounted by `praisonai.api.call`. The authentication helper `verify_token()` fails open when `CALL_SERVER_TOKEN` is unset. Since every sensitive agent-control endpoint depends on this helper, starting the call server without a token allows any reachable client to list agents, inspect agent metadata and instructions, invoke agents, and unregister agents. This is security-relevant because the bundled call server includes the vulnerable router and binds to `0.0.0.0`. As a result, operators who launch the call server without explicitly setting `CALL_SERVER_TOKEN` may unintentionally expose an unauthenticated remote agent control plane. Version 4.6.40 fixes the issue.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:12.760"
+  },
+  {
+    "id": "CVE-2026-47395",
+    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40 of PraisonAI, corresponding to version 1.6.40 of praisonaiagents, PraisonAI's direct-prompt CLI automatically expands `@url:` mentions in raw prompt text before agent execution begins. If a prompt contains `@url:<http-or-https-url>`, the CLI calls `MentionsParser.process(...)`. The `@url:` handler then performs a direct `urllib.request.urlopen()` request to the attacker-controlled URL and returns the response body. That response body is prepended to the final model prompt context. There is no loopback/private-address restriction, no metadata-service restriction, and no approval gate before the fetch. As a result, attacker-influenced prompt text can cause the operator's machine to fetch localhost-only HTTP resources and inject the response into model context. PraisonAI version 4.6.40 and praisonaiagents version 1.6.40 contain a fix.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:12.600"
+  },
+  {
+    "id": "CVE-2026-47394",
+    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40, the fix for GHSA-9mqq-jqxf-grvw / CVE-2026-44336 is incomplete. The original advisory description named four vulnerable handlers in `mcp_server/adapters/cli_tools.py`. Commit `68cc9427` (\"fix(security): harden MCP rules path handling…\") added a `_resolve_rule_path()` helper and applied it to `rules.create`, `rules.show`, and `rules.delete`. `workflow.show` was left unchanged. Two adjacent handlers in the same file have the same pattern, `workflow.validate` and `deploy.validate`. Neither was mentioned in the original advisory. Both remained  unchanged. The original advisory also identified the dispatcher (`server.py:281-298`) as a root cause. It accepts unvalidated `**kwargs` from `params[\"arguments\"]` with no enforcement against the tool's declared `input_schema`. That code is unchanged prior to version 4.6.40. A single unauthenticated MCP `tools/call` to `praisonai.workflow.show` returns the contents of any file the host user can read: `/etc/passwd`, `~/.ssh/id_rsa`, `~/.aws/credentials`, or any project `.env`. Version 4.6.40 contains an updated fix.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:12.440"
+  },
+  {
+    "id": "CVE-2026-47393",
+    "description": "PraisonAI is a multi-agent teams system. CVE-2026-44338 (GHSA-6rmh-7xcm-cpxj) documents that PraisonAI ships a code-generator (`praisonai.deploy.api.generate_api_server_code`) that emits a Flask API server with authentication disabled by default. Users who follow the documented quickstart (`praisonai deploy --type api`) get a server that binds to `0.0.0.0` per the recommended sample YAML, exposes `/chat` and `/agents` endpoints, runs `praisonai.run()` on user-supplied JSON input — LLM orchestration with the API key materials present in the process environment, and does not require any authentication. Versions prior to 4.6.40 still ship the generator with `auth_enabled` defaulting to `False`. The fix shape is opt-in via `APIConfig(auth_enabled=True, auth_token=...)`. Version 4.6.40 fixes the issue.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:12.270"
+  },
+  {
+    "id": "CVE-2026-47392",
+    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40 of PraisonAI, corresponding to version 1.6.40 of praisonaiagents, `execute_code()` in `praisonaiagents/tools/python_tools.py` (v1.6.37, subprocess sandbox mode) can be fully bypassed using `print.__self__` to retrieve the real Python `builtins` module, from which `__import__` can be extracted via `vars()` and runtime string construction. This achieves arbitrary OS command execution on the host, completely defeating the sandbox. This is a novel bypass that survives all patches for CVE-2026-39888 (frame traversal), CVE-2026-34938 (str subclass), and CVE-2026-40158 (`type.__getattribute__` trampoline). PraisonAI version 4.6.40 and praisonaiagents version 1.6.40 contain an updated fix.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:12.087"
+  },
+  {
+    "id": "CVE-2026-47391",
+    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40, PraisonAI's first-party A2A server example exposes an unauthenticated A2A JSON-RPC endpoint and registers a `calculate(expression)` tool implemented with Python `eval()`. The example also binds to `0.0.0.0`. A remote unauthenticated attacker can send `message/send` to `/a2a`; the request reaches `agent.chat()`, and a real LLM can invoke the registered `calculate` tool. In testing with `gemini/gemini-2.5-flash-lite`, this resulted in arbitrary Python execution in the server process, confirmed by creation of a marker file from an unauthenticated HTTP request. The issue affects deployments following the official A2A example or similar unauthenticated public A2A deployments with unsafe tools. The default unauthenticated A2A surface also exposes task history and task cancellation APIs, increasing confidentiality and integrity impact. Version 4.6.40 patches the issue.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:11.920"
+  },
+  {
+    "id": "CVE-2026-47390",
+    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40 of PraisonAI, corresponding to version 1.6.40 of praisonaiagents, `spider_tools` URL validation can be bypassed using alternate loopback host encodings. The tool contains a URL validation function intended to block local or unsafe targets before fetching attacker-controlled URLs. However, the validation only blocks a small set of exact host strings such as `localhost` and `127.0.0.1`. It does not normalize hostnames, resolve DNS, parse numeric IPv4 variants, or validate the final resolved IP address before making the request. As a result, certain URLs may bypass the protection and still reach loopback services. After the weak validation passes, `scrape_page()` calls `requests.Session.get()` on the attacker-controlled URL. This allows an attacker who can influence URLs passed to `scrape_page`, `crawl`, or `extract_text` to induce SSRF requests against loopback-only services. This is a server-side request forgery protection bypass. PraisonAI version 4.6.40 and praisonaiagents version 1.6.40 contain a patch.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:11.760"
+  },
+  {
+    "id": "CVE-2026-28321",
+    "description": "SolarWinds Serv-U is affected by a broken access control vulnerability that could allow arbitrary file read and write, which can then be used to escalate privileges and execute code as root. A domain administrator access is required, and the impact is lower in Windows installations.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:10.293"
+  },
+  {
+    "id": "CVE-2026-28317",
+    "description": "SolarWinds Serv-U is affected by an insecure direct object reference (IDOR) vulnerability that can lead to privilege escalation. This issue requires domain administrator access. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:10.157"
+  },
+  {
+    "id": "CVE-2026-28316",
+    "description": "SolarWinds Serv-U is affected by an insecure direct object reference (IDOR) vulnerability that can lead to privilege escalation to a system administrator with the ability to execute commands as the root user. This issue requires a domain account with administrator access. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:09.943"
+  },
+  {
+    "id": "CVE-2026-28315",
+    "description": "SolarWinds Serv-U was found to be affected by a stored cross-site scripting vulnerability that could lead to session hijacking or information disclosure from an administrator account.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:09.417"
+  },
+  {
+    "id": "CVE-2026-28314",
+    "description": "SolarWinds Serv-U is affected by an insecure direct object reference vulnerability that leads to an account takeover. User authentication is required. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:09.283"
+  },
+  {
+    "id": "CVE-2026-28313",
+    "description": "SolarWinds Serv-U is affected by an insecure direct object reference (IDOR) vulnerability that can lead to SMTP hijacking leading to arbitrary account takeover. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:09.147"
+  },
+  {
+    "id": "CVE-2026-28312",
+    "description": "SolarWinds Serv-U is affected by a privilege escalation vulnerability. This would elevate a group’s access to system administrator and allow code execution as root. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:09.000"
+  },
+  {
+    "id": "CVE-2026-28310",
+    "description": "SolarWinds Serv-U is affected by a privilege escalation vulnerability that allows a domain administrator to escalate their user type to that of a system administrator. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:08.877"
+  },
+  {
+    "id": "CVE-2026-28309",
+    "description": "SolarWinds Serv-U is affected by a broken access control vulnerability that allows a domain administrator to create system administrator accounts. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:08.743"
+  },
+  {
+    "id": "CVE-2026-28308",
+    "description": "SolarWinds Serv-U is affected by an insecure direct object reference (IDOR) vulnerability that can lead to remote code execution. Domain administrator access is required. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:08.577"
+  },
+  {
+    "id": "CVE-2026-28307",
+    "description": "SolarWinds Serv-U is affected by a privilege escalation vulnerability that allows a domain user group to be elevated into an administrator group. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:08.443"
+  },
+  {
+    "id": "CVE-2026-28306",
+    "description": "SolarWinds Serv-U is affected by a privilege escalation vulnerability that allows a domain administrator to elevate their privileges to a system administrator. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:08.317"
+  },
+  {
+    "id": "CVE-2026-28305",
+    "description": "SolarWinds Serv-U is affected by an insecure direct object reference (IDOR) vulnerability that can lead to remote code execution as root. A domain account with admin privileges and read and write access to the home directory is required. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:08.180"
+  },
+  {
+    "id": "CVE-2026-28304",
+    "description": "SolarWinds Serv-U is affected by a remote code execution vulnerability that, when exploited, can allow the arbitrary execution of code remotely as root. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:08.050"
+  },
+  {
+    "id": "CVE-2026-28302",
+    "description": "SolarWinds Serv-U is affected by an insecure direct object reference (IDOR) vulnerability that can lead to privilege escalation and remote code execution as root. This issue requires group administrator access. The impact is lower in Windows deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:07.903"
+  },
+  {
+    "id": "CVE-2026-16450",
+    "description": "A vulnerability was identified in zsadmin2025 ZS-Admin up to b52e14536d59fda11e56e2536a1c32e82a38cead. This affects the function getTenantId of the file /api/system/sys/dept/page of the component MyBatis-Plus Tenant Plugin. Such manipulation of the argument X-Tenant-Id leads to authorization bypass. The attack may be performed from remote. The exploit is publicly available and might be used. This product utilizes a rolling release system for continuous delivery, and as such, version information for affected or updated releases is not disclosed. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:07.493"
+  },
+  {
+    "id": "CVE-2026-16449",
+    "description": "A vulnerability was determined in zsadmin2025 ZS-Admin up to b52e14536d59fda11e56e2536a1c32e82a38cead. The impacted element is the function OrderItem.asc/OrderItem.desc of the file /api/system/sys/dept/page of the component com.zs.sys.dept.controller.SysDeptController. This manipulation of the argument orderField causes sql injection. The attack is possible to be carried out remotely. The exploit has been publicly disclosed and may be utilized. This product adopts a rolling release strategy to maintain continuous delivery. Therefore, version details for affected or updated releases cannot be specified. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-21T16:17:07.313"
+  },
+  {
     "id": "CVE-2026-8933",
     "description": "A local privilege escalation vulnerability exists in snap-confine, a set-capabilities core component used internally by Canonical snapd to construct the secure execution environment for snap applications. This vulnerability uniquely affects versions of snap-confine configured with set-capabilities (rather than standard set-uid-root installations).\nDue to a flaw in how privilege boundaries or security sandboxes are initialized when the binary runs under limited ambient capabilities, a local, unprivileged attacker can exploit this behavior to bypass intended restrictions and execute arbitrary code. Successful exploitation allows the local user to elevate their privileges to full root authority.",
     "severity": "High",
@@ -156,7 +513,7 @@
   {
     "id": "CVE-2025-66390",
     "description": "In Microsoft Azure API Management through 2025-10-17, when self-service signup (username/password Basic Authentication) is enabled in Tenant A, an attacker can reuse the registration flow by changing the hostname or tenant identifier to Tenant B, even when Tenant B has signup disabled at the UI level. In other words, disabling signup in the UI does not disable the underlying API endpoint (which still accepts cross-tenant requests based on the Host header). NOTE: The supplier states that they evaluated the report and determined it did not cross a security boundary (i.e., the observed behavior was a configuration/state issue rather than an exploitable product vulnerability affecting tenant isolation). NOTE: The supplier evaluated this report and determined that it did not cross a security boundary (i.e., the observed behavior was a configuration/state issue rather than an exploitable product vulnerability affecting tenant isolation).",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T14:16:32.797"
   },
@@ -457,42 +814,42 @@
   {
     "id": "CVE-2026-16375",
     "description": "Site isolation issue in the Networking: HTTP component. This vulnerability was fixed in Firefox 153 and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:12.677"
   },
   {
     "id": "CVE-2026-16374",
     "description": "Information disclosure in the Framework component in DevTools. This vulnerability was fixed in Firefox 153 and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:12.573"
   },
   {
     "id": "CVE-2026-16373",
     "description": "Information disclosure in the Privacy component in Firefox for Android. This vulnerability was fixed in Firefox 153.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:12.473"
   },
   {
     "id": "CVE-2026-16372",
     "description": "Privilege escalation in the DOM: Content Processes component. This vulnerability was fixed in Firefox 153.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:12.377"
   },
   {
     "id": "CVE-2026-16371",
     "description": "Privilege escalation in the DOM: Navigation component. This vulnerability was fixed in Firefox 153 and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:12.270"
   },
   {
     "id": "CVE-2026-16370",
     "description": "Mitigation bypass in the DOM: Networking component. This vulnerability was fixed in Firefox 153.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:06.860"
   },
@@ -506,42 +863,42 @@
   {
     "id": "CVE-2026-16368",
     "description": "Incorrect boundary conditions in the JavaScript: WebAssembly component. This vulnerability was fixed in Firefox 153 and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:05.360"
   },
   {
     "id": "CVE-2026-16367",
     "description": "Sandbox escape due to invalid pointer in the Disability Access APIs component. This vulnerability was fixed in Firefox 153.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:05.240"
   },
   {
     "id": "CVE-2026-16366",
     "description": "Privilege escalation in the DOM: Navigation component. This vulnerability was fixed in Firefox 153.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:05.140"
   },
   {
     "id": "CVE-2026-16365",
     "description": "Privilege escalation in the DOM: Workers component. This vulnerability was fixed in Firefox 153.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:05.037"
   },
   {
     "id": "CVE-2026-16364",
     "description": "Incorrect boundary conditions in the Audio/Video: Playback component. This vulnerability was fixed in Firefox 153.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:04.940"
   },
   {
     "id": "CVE-2026-16363",
     "description": "JIT miscompilation in the JavaScript: WebAssembly component. This vulnerability was fixed in Firefox 153 and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:04.840"
   },
@@ -562,7 +919,7 @@
   {
     "id": "CVE-2026-16360",
     "description": "Memory safety bugs present in Firefox ESR 115.37, Firefox ESR 140.12 and Firefox 152. Some of these bugs showed evidence of memory corruption and we presume that with enough effort some of these could have been exploited to run arbitrary code. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:04.517"
   },
@@ -583,63 +940,63 @@
   {
     "id": "CVE-2026-16357",
     "description": "Incorrect boundary conditions in the Graphics component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:04.207"
   },
   {
     "id": "CVE-2026-16356",
     "description": "Sandbox escape due to use-after-free in the Disability Access APIs component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:04.100"
   },
   {
     "id": "CVE-2026-16355",
     "description": "JIT miscompilation in the JavaScript Engine: JIT component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:04.000"
   },
   {
     "id": "CVE-2026-16354",
     "description": "Information disclosure in the Graphics: ImageLib component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:03.893"
   },
   {
     "id": "CVE-2026-16353",
     "description": "Invalid pointer in the DOM: Bindings (WebIDL) component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:03.793"
   },
   {
     "id": "CVE-2026-16352",
     "description": "Sandbox escape due to use-after-free in the Disability Access APIs component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:03.693"
   },
   {
     "id": "CVE-2026-16351",
     "description": "Sandbox escape due to use-after-free in the DOM: Navigation component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:03.577"
   },
   {
     "id": "CVE-2026-16350",
     "description": "Incorrect boundary conditions in the Audio/Video: cubeb component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:03.470"
   },
   {
     "id": "CVE-2026-16349",
     "description": "Same-origin policy bypass in the DOM: Navigation component. This vulnerability was fixed in Firefox 153, Firefox ESR 115.38, and Firefox ESR 140.13.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T13:17:03.370"
   },
@@ -681,7 +1038,7 @@
   {
     "id": "CVE-2026-60080",
     "description": "Use After Free vulnerability in the Rust deserialization logic of Apache Fory. This issue affects Apache Fory from 0.13.0 through 1.3.0.\n\n A crafted Fory payload could cause undefined behavior, process crash, or potential memory disclosure.\n\nUsers are recommended to upgrade to version 1.4.0, which fixes the issue.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T12:18:58.697"
   },
@@ -1017,42 +1374,42 @@
   {
     "id": "CVE-2026-15904",
     "description": "Use after free in Ozone in Google Chrome on Linux prior to 150.0.7871.128 allowed a remote attacker who convinced a user to engage in specific UI gestures to potentially exploit heap corruption via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-20T23:16:56.190"
   },
   {
     "id": "CVE-2026-15903",
     "description": "Out of bounds read and write in V8 in Google Chrome prior to 150.0.7871.128 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-20T23:16:56.093"
   },
   {
     "id": "CVE-2026-15902",
     "description": "Use after free in Cast in Google Chrome prior to 150.0.7871.128 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-20T23:16:55.983"
   },
   {
     "id": "CVE-2026-15901",
     "description": "Use after free in Network in Google Chrome prior to 150.0.7871.128 allowed a remote attacker to potentially exploit heap corruption via a crafted HTML page. (Chromium security severity: Critical)",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-20T23:16:55.877"
   },
   {
     "id": "CVE-2026-15900",
     "description": "Use after free in GPU in Google Chrome on Android prior to 150.0.7871.128 allowed a remote attacker to potentially perform a sandbox escape via a crafted HTML page. (Chromium security severity: Critical)",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-20T23:16:55.763"
   },
   {
     "id": "CVE-2026-15899",
     "description": "Use after free in CameraCapture in Google Chrome on Mac prior to 150.0.7871.128 allowed a remote attacker to potentially perform a sandbox escape via a crafted HTML page. (Chromium security severity: Critical)",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-20T23:16:55.637"
   },
@@ -2558,126 +2915,126 @@
     "id": "CVE-2026-63750",
     "description": "SurrealDB versions before 3.1.0 fail to apply the SURREAL_WEBSOCKET_MAX_MESSAGE_SIZE limit to anonymous /sql WebSocket connections, allowing attackers to buffer unbounded frames in the per-connection read buffer. Attackers can stream WebSocket frames larger than the configured limit across multiple concurrent connections to consume excessive memory and degrade /sql availability.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:44.730"
   },
   {
     "id": "CVE-2026-63749",
     "description": "SurrealDB versions before 3.1.0 contain an authentication bypass vulnerability in LIVE SELECT subscriptions where permission expressions referencing $value, $before, $after, or $event are evaluated against attacker-controlled bindings instead of actual documents. Authenticated subscribers can bind chosen values to these parameter names and register LIVE SELECT queries to receive notifications for records that SELECT permission expressions should have hidden.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:44.590"
   },
   {
     "id": "CVE-2026-63748",
     "description": "SurrealDB versions before 3.1.0 contain an information disclosure vulnerability where authenticated users with UPDATE access can read field values hidden by field-level SELECT permissions through error messages. Attackers can trigger arithmetic or extend operations on hidden fields to embed raw operand values in error responses, bypassing field-level access controls.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:44.440"
   },
   {
     "id": "CVE-2026-63747",
     "description": "SurrealDB versions before 3.1.0 contain a denial of service vulnerability in the RPC use handler that panics when db is set without a namespace. Unauthenticated attackers can send a malformed WebSocket message to the /rpc endpoint to crash the server process.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:44.300"
   },
   {
     "id": "CVE-2026-63746",
     "description": "SurrealDB versions before 3.1.0 fail to enforce table SELECT permissions when traversing graph edges or back-references. Authenticated users can read records from any table reachable through graph edges regardless of the target table's PERMISSIONS FOR select clause.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:44.143"
   },
   {
     "id": "CVE-2026-63745",
     "description": "SurrealDB versions before 3.1.0 contain an authorization bypass vulnerability where authenticated users can spoof composite record-id field values by writing to editable body fields. Attackers can bypass permission rules that gate access on id components like tenant isolation by setting same-named body fields to spoofed values that permission checks incorrectly read instead of the immutable id key.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:44.003"
   },
   {
     "id": "CVE-2026-63744",
     "description": "SurrealDB before 3.1.5 contains a server-side request forgery vulnerability in the JWKS fetcher that follows HTTP redirects without re-validating redirect targets against network capabilities. Attackers with Owner role can configure a JWKS URL pointing to an allowlisted host that redirects to blocked internal addresses, bypassing network access controls.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:43.860"
   },
   {
     "id": "CVE-2026-63743",
     "description": "SurrealDB before 3.1.0 contains a capability bypass vulnerability in HTTP redirect handling that allows authenticated users to circumvent port-scoped --deny-net rules. Attackers can chain an HTTP redirect from an allowed hostname to a denied host:port combination, and the redirect is followed because the port information is dropped during redirect policy evaluation.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:43.713"
   },
   {
     "id": "CVE-2026-63742",
     "description": "SurrealDB versions before 3.1.0 contain a field-level SELECT permission bypass vulnerability in indexed COUNT fast paths. Attackers can execute COUNT queries on indexed fields with field-level SELECT restrictions to confirm or recover restricted field values through repeated guesses.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:43.573"
   },
   {
     "id": "CVE-2026-63741",
     "description": "SurrealDB versions before 3.1.0 fail to validate DEFINE NAMESPACE or DEFINE DATABASE permissions when processing USE NS and USE DB statements. Unauthenticated attackers can create arbitrary namespaces and databases by issuing USE commands, bypassing authorization checks in the RPC use method and SurrealQL executor.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:43.430"
   },
   {
     "id": "CVE-2026-63740",
     "description": "SurrealDB versions before 3.1.4 fail to properly enforce SELECT permissions on array elements (field.*) for record users, leaking denied array elements instead of hiding them. Attackers with record scope access can read array elements that element-level permissions should deny by exploiting incorrect index handling during permission filtering.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:43.287"
   },
   {
     "id": "CVE-2026-63739",
     "description": "SurrealDB before 3.1.5 contains an arbitrary file read vulnerability in the DEFINE ANALYZER mapper filter that allows database users with EDITOR or OWNER roles to read files accessible to the SurrealDB process. Attackers can specify arbitrary file paths in the mapper filter and retrieve file contents through query error messages when the SURREAL_FILE_ALLOWLIST is empty or not configured.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:43.143"
   },
   {
     "id": "CVE-2026-63738",
     "description": "SurrealDB versions 3.1.0 before 3.1.5 fail to enforce field-level SELECT permissions when records are accessed through graph-edge or back-reference traversals. Attackers with table-level SELECT access can read field values hidden by field-level permissions by materializing records through graph traversals instead of direct table scans.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:43.000"
   },
   {
     "id": "CVE-2026-63737",
     "description": "SurrealDB versions before 3.1.5 contain a denial of service vulnerability where authenticated users can crash the server with queries containing long chains of operators. Attackers can submit queries with tens of thousands of chained operators that create unbounded expression trees, causing stack overflow during query processing and aborting the entire process.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:42.857"
   },
   {
     "id": "CVE-2026-63736",
     "description": "SurrealDB before 3.2.0 contains a server-side request forgery vulnerability in the JWKS fetcher that validates only the URL hostname string against allow-lists without checking resolved IP addresses. An Owner role attacker can point an access method at an allow-listed hostname resolving to private or loopback addresses, causing the server to issue GET requests to internal addresses that would be blocked by direct URL.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:42.707"
   },
   {
     "id": "CVE-2026-63735",
     "description": "SurrealDB versions before 3.2.0 fail to validate namespace and database scope in custom API routes, allowing authenticated users to invoke endpoints in different namespaces/databases. Attackers with valid credentials for any namespace/database can access custom API endpoints in other tenants by specifying the target scope in the URL path, reading sensitive data or triggering unintended operations.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:42.563"
   },
   {
     "id": "CVE-2026-63734",
     "description": "SurrealDB versions before 3.2.0 contain a denial of service vulnerability in the SurrealML header parser that allows authenticated Owner-role users to crash the server by uploading a malformed .surml file to the /ml/import endpoint. Attackers can supply non-numeric input-dimensions or other malformed header fields that trigger unchecked unwrap calls, causing a panic that aborts the entire server process and denies service to all databases.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:42.413"
   },
   {
     "id": "CVE-2026-63733",
     "description": "SurrealDB versions before 3.2.0 contain a permissions bypass vulnerability where data-modifying statements within PERMISSIONS clauses execute with enforcement disabled. Attackers with permission to perform a guarded operation can write to tables they lack permission for by embedding CREATE, UPDATE, DELETE, or UPSERT statements in the PERMISSIONS clause, causing unintended writes and data corruption.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-20T12:19:42.243"
   },
   {
@@ -6277,47 +6634,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-18T18:16:37.430"
-  },
-  {
-    "id": "CVE-2026-16129",
-    "description": "A vulnerability has been found in princezuda SafestClaw up to 4.2.4. This vulnerability affects the function ShellAction._validate_command of the file src/safestclaw/actions/shell.py of the component Built-in Web Interface. Such manipulation leads to incomplete blacklist. An attack has to be approached locally. The exploit has been disclosed to the public and may be used. The presence of this vulnerability remains uncertain at this time. The project maintainer explains: \"On paper you're correct, this is a vulnerability. In practice, nothing your AI generated shows how it makes users vulnerable. It's open source. Someone can mod the shell allow list or remove that system. Present an actual poc that shows a threat to users.\"",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-18T17:16:39.030"
-  },
-  {
-    "id": "CVE-2026-16128",
-    "description": "A security flaw has been discovered in zevorn rt-claw up to 0.2.0. This impacts the function receiver_thread of the file claw/services/swarm/swarm.c of the component http_request. Performing a manipulation results in server-side request forgery. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-18T17:16:38.273"
-  },
-  {
-    "id": "CVE-2026-16127",
-    "description": "A vulnerability was identified in zevorn rt-claw up to 0.2.0. This affects the function claw_net_get/claw_net_post of the file claw/tools/tool_net.c of the component http_request. Such manipulation of the argument url leads to server-side request forgery. The attack may be performed from remote. The exploit is publicly available and might be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-18T16:17:13.217"
-  },
-  {
-    "id": "CVE-2026-16126",
-    "description": "A vulnerability was determined in zevorn rt-claw up to 0.2.0. The impacted element is the function handle_rpc_request of the file claw/services/swarm/swarm.c of the component Swarm RPC Receiver. This manipulation causes incorrect authorization. The attack is possible to be carried out remotely. The exploit has been publicly disclosed and may be utilized. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-18T16:17:13.043"
-  },
-  {
-    "id": "CVE-2026-16125",
-    "description": "A vulnerability was found in zevorn rt-claw up to 0.2.0. The affected element is the function claw_net_get/claw_net_post of the file claw/services/tools/net.c of the component http_request. The manipulation of the argument url results in server-side request forgery. The attack can be executed remotely. The exploit has been made public and could be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-18T16:17:12.873"
-  },
-  {
-    "id": "CVE-2026-16124",
-    "description": "A security vulnerability has been detected in nextlevelbuilder GoClaw up to 3.15.0-beta.32. This affects the function CheckSSRF/isPrivateIP of the file internal/tools/web_shared.go of the component web_fetch. Such manipulation leads to server-side request forgery. The attack can be launched remotely. The exploit has been disclosed publicly and may be used. Upgrading to version 3.15.0-beta.33 is able to mitigate this issue. The name of the patch is 12a0168271827650ddb0026d6277fbadf3dcf3ea. Upgrading the affected component is recommended.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-18T16:17:12.657"
   }
 ]
