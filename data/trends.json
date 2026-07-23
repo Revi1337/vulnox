@@ -1,89 +1,5 @@
 [
   {
-    "id": "CVE-2026-41523",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.22.0, an assert-based security check in vLLM's activation function loading allows any unauthenticated attacker to achieve arbitrary code execution on the server by publishing a malicious HuggingFace model, when vLLM runs in Python optimized mode (python -O or PYTHONOPTIMIZE=1). This vulnerability is fixed in 0.22.0.",
-    "severity": "High",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:30.200"
-  },
-  {
-    "id": "CVE-2026-47155",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.22.0, vLLM's revision pinning controls do not consistently apply to all artifacts loaded for a model. A deployment that supplies --revision or --code-revision can still load dynamic code, GGUF files, image processors, retrieval side weights, or same-repository subfolder weights/config from an unpinned/default revision. This is a supply-chain integrity issue for pinned vLLM deployments. Operators can believe they are serving a reviewed model revision while vLLM resolves behavior-affecting nested or sibling artifacts outside that reviewed revision. This vulnerability is fixed in 0.22.0.",
-    "severity": "Medium",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:30.357"
-  },
-  {
-    "id": "CVE-2026-48746",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). From 0.3.0 until 0.22.0, a vulnerability in ASGI web servers and starlette's trust on those web servers enables an authentication bypass of the OpenAI API AuthenticationMiddleware. It allows to use the API without providing the configured VLLM_API_KEY or --api-key. This vulnerability is fixed in 0.22.0.",
-    "severity": "Critical",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:30.490"
-  },
-  {
-    "id": "CVE-2026-53923",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). From 0.5.5 until 0.23.1rc0, integer truncation of tensor dimensions in vLLM's GGUF dequantize kernels (csrc/quantization/gguf/gguf_kernel.cu) causes partial tensor processing. The output tensor is allocated at full size via torch::empty (uninitialized memory), but the dequantize CUDA kernel processes only a truncated number of elements. The unfilled portion of the output tensor retains whatever was previously in GPU memory. In multi-tenant inference deployments, this residual GPU memory may contain tensor data from other users' inference requests, constituting information disclosure. This vulnerability is fixed in 0.23.1rc0.",
-    "severity": "High",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:30.737"
-  },
-  {
-    "id": "CVE-2026-54232",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.22.1, the vLLM Dockerfile is vulnerable to a dependency confusion attack through the flashinfer-jit-cache package. The package is installed from a custom index (flashinfer.ai/whl/) using --extra-index-url, but the package name was not registered on PyPI, and UV_INDEX_STRATEGY=\"unsafe-best-match\" is set globally. An attacker who registers flashinfer-jit-cache on PyPI with version 0.6.11.post2 can execute arbitrary code as root during the Docker build and backdoor every resulting container image, enabling exfiltration of all user prompts, API credentials, and model data from production vLLM deployments This vulnerability is fixed in 0.22.1.",
-    "severity": "High",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:30.873"
-  },
-  {
-    "id": "CVE-2026-54233",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.23.1rc0, vLLM's /v1/audio/transcriptions endpoint limits compressed upload size but not decoded PCM output. A 25MB OPUS file expands to ~14.9GB of float32 PCM at decode time. This vulnerability is fixed in 0.23.1rc0.",
-    "severity": "Medium",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:31.007"
-  },
-  {
-    "id": "CVE-2026-54235",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.23.1rc0, ll temperature validation gates use comparison operators (<, >), which silently evaluate to False for NaN and for positive Infinity in Python's IEEE 754 float semantics. Both values pass every guard and propagate to GPU sampling kernels, where they produce undefined behavior or CUDA errors that can crash the inference worker. This vulnerability is fixed in 0.23.1rc0.",
-    "severity": "Medium",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:31.143"
-  },
-  {
-    "id": "CVE-2026-54236",
-    "description": "vLLM is an inference and serving engine for large language models (LLMs). Prior to 0.23.1rc0, the fix for CVE-2026-22778, which introduced a sanitize_message helper that strips object-repr memory addresses from error messages before they reach the client, is incomplete: several response paths echo str(exc) directly to clients without calling sanitize_message. The unsanitized sites include the Anthropic API router in vllm/entrypoints/anthropic/api_router.py (the POST /v1/messages and POST /v1/messages/count_tokens handlers), the Server-Sent Events streaming converter in vllm/entrypoints/anthropic/serving.py, and the realtime speech-to-text WebSocket in vllm/entrypoints/speech_to_text/realtime/connection.py. These paths catch the exception inside the route coroutine and construct the JSONResponse themselves, bypassing the sanitizing global FastAPI exception handler, and WebSocket frames do not traverse that handler chain at all. Using the same primitive as the parent issue, an unauthenticated attacker can send malformed image bytes through the Anthropic Messages API image content parts so that PIL.Image.open raises an UnidentifiedImageError whose message contains the BytesIO object repr, leaking the heap memory address verbatim in the error.message field of the response body. This vulnerability is fixed in 0.23.1rc0.",
-    "severity": "Medium",
-    "tech": "Vllm",
-    "published": "2026-06-22T23:16:31.290"
-  },
-  {
-    "id": "CVE-2026-10645",
-    "description": "The Zephyr ext2 filesystem driver (subsys/fs/ext2) trusted the on-disk directory entry fields de_rec_len and de_name_len when walking a directory block. ext2_fetch_direntry() guarded only with de_name_len > EXT2_MAX_FILE_NAME, but de_name_len is a uint8_t and EXT2_MAX_FILE_NAME is 255, so the check is always false; the function then memcpy'd up to 255 name bytes and the lookup/readdir paths advanced traversal by an unvalidated de_rec_len. Each directory block is read into a block_size-sized slab buffer, and block_off can be driven near the block end by preceding entries' rec_len, so the 8-byte header read and the subsequent name memcpy can read up to ~263 bytes past the end of the block buffer into adjacent heap/slab memory. On the readdir path those bytes are returned to the caller in fs_dirent.name, leaking adjacent kernel heap memory; a de_rec_len of 0 also causes a zero-progress infinite loop (denial of service), and the unlink path's memmove(de, next, next_reclen) over unvalidated records is an additional OOB read/write source. The defect is reached by any path-based operation (open, stat, unlink, rename, mkdir) or directory listing on a mounted ext2 volume, so a crafted or corrupted ext2 image on attacker-supplied storage (SD card, USB mass storage, or otherwise mounted image) triggers it. Affected: Zephyr ext2 from its introduction in v3.5.0 through v4.4.0. The fix validates rec_len and name_len in the parser and rejects entries whose header does not fit the remaining block or whose rec_len crosses the block boundary in every traversal caller.",
-    "severity": "Medium",
-    "tech": "Zephyr",
-    "published": "2026-06-23T01:16:26.607"
-  },
-  {
-    "id": "CVE-2026-10651",
-    "description": "bt_sdp_parse_attribute() in subsys/bluetooth/host/classic/sdp.c validated only that the SDP record buffer held the type-marker byte plus the 2-byte attribute ID (a check of buf->len < 3) but then read a fourth byte, the data-element descriptor (type), via net_buf_simple_pull_u8(). Because net_buf_simple_pull_u8() dereferences buf->data[0] before its only bounds guard (an __ASSERT_NO_MSG that compiles out when CONFIG_ASSERT is disabled, the production default), a record of exactly three bytes (0x09 followed by a 2-byte attribute ID) causes a one-byte read past the end of the logical buffer. The parser is reachable from inbound, remote-controlled data: a Bluetooth BR/EDR peer acting as an SDP server returns discovery-response records that are stored verbatim in the client receive buffer and parsed via the public bt_sdp_get_attr()/bt_sdp_has_attr()/bt_sdp_record_parse() helpers. The over-read is bounded to a single byte that is used only as an internal length selector and is never leaked to the attacker; subsequent length checks then reject the malformed record. Realistic impact is therefore limited to an edge-case denial of service (a fault only if the record ends exactly at a mapped-memory boundary, or a deterministic assert panic when CONFIG_ASSERT=y). Affects Zephyr v4.3.0 and v4.4.0; fixed by adding sizeof(type) to the length check.",
-    "severity": "High",
-    "tech": "Zephyr",
-    "published": "2026-06-23T01:16:26.747"
-  },
-  {
-    "id": "CVE-2026-10658",
-    "description": "bt_iso_recv() in subsys/bluetooth/host/iso.c pulled the ISO SDU header (4 bytes) or, when the timestamp flag is set, the timestamped SDU header (8 bytes) from the inbound HCI ISO Data buffer via net_buf_pull_mem() without first checking buf->len. The upstream hci_iso() handler enforces buf->len == the controller-declared ISO Data_Load length, so a malicious or buggy controller / adjacent BLE peer on an established CIS/BIS can present a first-fragment (BT_ISO_START) or single (BT_ISO_SINGLE) PDU shorter than the SDU header. Because net_buf_simple_pull_mem only guards length with __ASSERT_NO_MSG (compiled out when CONFIG_ASSERT is disabled, the production default), the pull underflows buf->len (uint16_t, e.g. 0 - 8 = 0xFFF8) and advances buf->data past valid data: the subsequent reads of hdr->slen and hdr->sn are out-of-bounds reads of adjacent pool memory. For the multi-fragment (START) case the corrupted buffer is retained as iso->rx, and a following CONT/END fragment's net_buf_tailroom() guard underflows to a near-SIZE_MAX value, defeating the bounds check and causing net_buf_add_mem() to memcpy attacker-supplied fragment data far past the RX pool buffer (out-of-bounds write). The flaw affects ISO receive builds (CONFIG_BT_ISO_RX, selected by the default-off LE Audio options BT_ISO_PERIPHERAL/BT_ISO_CENTRAL/BT_ISO_SYNC_RECEIVER) and has existed since the ISO subsystem was introduced (v2.6.0) through v4.4.0. The fix adds explicit buf->len < sizeof(ts_hdr) and buf->len < sizeof(hdr) checks that drop the buffer before pulling.",
-    "severity": "High",
-    "tech": "Zephyr",
-    "published": "2026-06-23T01:16:26.867"
-  },
-  {
-    "id": "CVE-2026-11833",
-    "description": "Overview: \nA vulnerability has been found in FAST/TOOLS and CI Server. The web server may return a response containing the CI Server setting information. This information could \nbe exploited by an attacker for other attacks. \n\nThe affected products and versions are as follows:\n\nFAST/TOOLS (Packages: RVSVRN, UNSVRN, HMIWEB, FTEES, HMIMOB) R9.01 to R10.04\n\nCI Server (All packages) R1.01 to R1.04",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-23T02:16:30.917"
-  },
-  {
     "id": "CVE-2026-55653",
     "description": "A flaw was found in OpenSSH. A malicious SSH server can exploit a double free vulnerability in the Diffie-Hellman Group Exchange (DH-GEX) client path. This occurs during FIPS (Federal Information Processing Standards) mode known-group validation when the client processes attacker-controlled DH-GEX group parameters. Successful exploitation leads to client-side process termination, resulting in a Denial of Service (DoS).",
     "severity": "Medium",
@@ -67933,5 +67849,131 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-22T22:16:29.073"
+  },
+  {
+    "id": "CVE-2026-16630",
+    "description": "A security vulnerability has been detected in syncfusion ej2-javascript-ui-controls up to 33.2.3. This affects the function child_process.exec of the file package.json. The manipulation leads to os command injection. An attack has to be approached locally. The exploit has been disclosed publicly and may be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:34.890"
+  },
+  {
+    "id": "CVE-2026-38763",
+    "description": "An issue in Unistal Systems Pvt. Ltd.Protegent 360 v2.0.0.4 allows a local attacker to cause a denial of service via the function sub_13828",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:35.143"
+  },
+  {
+    "id": "CVE-2026-38765",
+    "description": "An issue in Unistal Systems Pvt. Ltd.Protegent 360 v2.0.0.4 allows a local attacker to escalate privileges via the kernel driver pgsecdl.sys",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:35.390"
+  },
+  {
+    "id": "CVE-2026-38766",
+    "description": "An issue in Unistal Systems Pvt. Ltd.Protegent 360 v2.0.0.4 allows a local attacker to escalate privileges via the sub_186f4 function",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:35.537"
+  },
+  {
+    "id": "CVE-2026-60366",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Platform Security for Java.  While the vulnerability is in Oracle Platform Security for Java, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 10.0 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H).",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:35.757"
+  },
+  {
+    "id": "CVE-2026-60367",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:35.870"
+  },
+  {
+    "id": "CVE-2026-60368",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via SOAP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:35.980"
+  },
+  {
+    "id": "CVE-2026-60369",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Platform Security for Java.  While the vulnerability is in Oracle Platform Security for Java, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 9.9 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H).",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.087"
+  },
+  {
+    "id": "CVE-2026-60370",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Difficult to exploit vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 7.5 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.203"
+  },
+  {
+    "id": "CVE-2026-60371",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Difficult to exploit vulnerability allows low privileged attacker with access to the physical communication segment attached to the hardware where the Oracle Platform Security for Java executes to compromise Oracle Platform Security for Java.  While the vulnerability is in Oracle Platform Security for Java, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 8.0 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:A/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:H).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.317"
+  },
+  {
+    "id": "CVE-2026-60372",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.420"
+  },
+  {
+    "id": "CVE-2026-60373",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.530"
+  },
+  {
+    "id": "CVE-2026-60439",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.640"
+  },
+  {
+    "id": "CVE-2026-60455",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.753"
+  },
+  {
+    "id": "CVE-2026-61246",
+    "description": "Vulnerability in the Oracle Platform Security for Java product of Oracle Fusion Middleware (component: Centralized Thirdparty Jars).  Supported versions that are affected are 12.2.1.4.0 and  14.1.2.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Platform Security for Java.  Successful attacks of this vulnerability can result in takeover of Oracle Platform Security for Java. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-22T23:16:36.867"
+  },
+  {
+    "id": "CVE-2026-16631",
+    "description": "A vulnerability was detected in publint up to 0.1.4. This impacts the function child_process.exec of the file src/node/pack.js of the component package-manager Command Handler. The manipulation results in os command injection. Attacking locally is a requirement. The exploit is now public and may be used. The patch is identified as adf2d9a09945fc98c85a2520a89f441d78b2dbd8. It is advisable to implement a patch to correct this issue. The project maintainer explains: \"I think it's very rare for someone to use this package with untrusted input\".",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-23T00:16:26.927"
+  },
+  {
+    "id": "CVE-2026-16632",
+    "description": "A flaw has been found in boazsegev facil.io up to 0.7.4. Affected is the function websocket_on_protocol_error in the library lib/facil/http/parsers/websocket_parser.h of the component WebSocket Frame Parser. This manipulation of the argument on_message causes improper input validation. The attack can be initiated remotely. The exploit has been published and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-23T00:16:28.020"
+  },
+  {
+    "id": "CVE-2026-16653",
+    "description": "A security flaw has been discovered in boazsegev facil.io up to 0.7.58. This affects the function http_sendfile2 of the file lib/facil/http/http.c of the component Public Folder Handler. Performing a manipulation results in path traversal. Remote exploitation of the attack is possible. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-23T02:16:27.720"
   }
 ]
