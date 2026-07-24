@@ -1,222 +1,5 @@
 [
   {
-    "id": "CVE-2026-11968",
-    "description": "Argument Injection in TortoiseGitBlame via Malicious Git History Filenames Leads to Arbitrary File Write in TortoiseGit",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-24T10:17:19.063"
-  },
-  {
-    "id": "CVE-2026-52943",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: skbuff: fix missing zerocopy reference in pskb_carve helpers\n\npskb_carve_inside_header() and pskb_carve_inside_nonlinear() both copy\nthe old skb_shared_info header into a new buffer via memcpy(), which\nincludes the destructor_arg pointer (uarg) for MSG_ZEROCOPY skbs.\nNeither function calls net_zcopy_get() for the new shinfo, creating an\nunaccounted holder: every skb_shared_info with destructor_arg set will\ncall skb_zcopy_clear() once when freed, but the corresponding\nnet_zcopy_get() was never called for the new copy. Repeated calls\ndrive uarg->refcnt to zero prematurely, freeing ubuf_info_msgzc while\nTX skbs still hold live destructor_arg pointers.\n\nKASAN reports use-after-free on a freed ubuf_info_msgzc:\n\n  BUG: KASAN: slab-use-after-free in skb_release_data+0x77b/0x810\n  Read of size 8 at addr ffff88801574d3e8 by task poc/220\n\n  Call Trace:\n   skb_release_data+0x77b/0x810\n   kfree_skb_list_reason+0x13e/0x610\n   skb_release_data+0x4cd/0x810\n   sk_skb_reason_drop+0xf3/0x340\n   skb_queue_purge_reason+0x282/0x440\n   rds_tcp_inc_free+0x1e/0x30\n   rds_recvmsg+0x354/0x1780\n   __sys_recvmsg+0xdf/0x180\n\n  Allocated by task 219:\n   msg_zerocopy_realloc+0x157/0x7b0\n   tcp_sendmsg_locked+0x2892/0x3ba0\n\n  Freed by task 219:\n   ip_recv_error+0x74a/0xb10\n   tcp_recvmsg+0x475/0x530\n\nThe skb consuming the late access still referenced the same uarg via\nshinfo->destructor_arg copied by pskb_carve_inside_nonlinear() without\na refcount bump. This has been verified to be reliably exploitable: a\nworking proof-of-concept achieves full root privilege escalation from\nan unprivileged local user on a default kernel configuration.\n\nThe fix follows the pattern of pskb_expand_head() which has the same\nmemcpy/cloned structure. For pskb_carve_inside_header(), net_zcopy_get()\nis placed after skb_orphan_frags() succeeds, so the orphan error path\nneeds no cleanup. For pskb_carve_inside_nonlinear(), net_zcopy_get() is\nplaced after all failure points and just before skb_release_data(), so\nno error path needs cleanup at all -- matching pskb_expand_head() more\nclosely and avoiding the need for a balancing net_zcopy_put().",
-    "severity": "High",
-    "tech": "Linux kernel",
-    "published": "2026-06-24T10:17:19.293"
-  },
-  {
-    "id": "CVE-2026-52944",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nksmbd: fix FSCTL permission bypass by adding a permission check for FSCTL_SET_SPARSE\n\nFSCTL_SET_SPARSE in fsctl_set_sparse() modifies the file's sparse\nattribute and saves it through xattr without any permission checks.\n\nThis exposes two issues:\n\n1) A client on a read-only share can change the sparse attribute\n   on files it opened, even though the share is read-only.\n   Other FSCTL write operations already check\n   test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE),\n   but FSCTL_SET_SPARSE does not.\n\n2) Even on writable shares, clients without FILE_WRITE_DATA or\n   FILE_WRITE_ATTRIBUTES access should not modify the sparse\n   attribute. Similar handle-level checks exist in other functions\n   but are missing here.\n\nAdd both share-level writable check and per-handle access check.\nUse goto out on error to avoid leaking file references.",
-    "severity": "Medium",
-    "tech": "Linux kernel",
-    "published": "2026-06-24T10:17:19.447"
-  },
-  {
-    "id": "CVE-2026-13150",
-    "description": "Server-Side Request Forgery (SSRF) (CWE-918) in the PDF generation endpoint GET /api/reports/{id}/pdf (backend/main.py) in ccyl13 Pentestify 1.0.0 and lower allows remote attackers to make the server issue requests to arbitrary internal or external URLs, including cloud metadata services, and return the rendered content in the resulting PDF via a crafted Host header, because the target URL is built from request.base_url without validation.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-24T11:16:33.557"
-  },
-  {
-    "id": "CVE-2025-71332",
-    "description": "Flowise through 2.2.7 contains a SQL injection vulnerability in the importChatflows API. Due to insufficient validation of the chatflow.id value, an authenticated user can supply a crafted JSON import file whose id field is concatenated unsanitized into a SQL IN clause, allowing arbitrary SQL to be executed, including blind and error-based extraction of data from the credential table.",
-    "severity": "Medium",
-    "tech": "Flowise",
-    "published": "2026-06-24T13:16:30.263"
-  },
-  {
-    "id": "CVE-2025-71354",
-    "description": "picklescan before 0.0.29 fails to detect malicious pickle files that exploit idlelib.debugobj.ObjectTreeItem.SetText function in reduce methods. Attackers can craft pickle files with embedded code that bypasses picklescan detection and executes arbitrary commands when pickle.load() is called.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:30.413"
-  },
-  {
-    "id": "CVE-2025-71361",
-    "description": "picklescan before 0.0.29 fails to detect malicious idlelib.calltip.Calltip.fetch_tip calls in pickle files, allowing remote code execution. Attackers can embed undetected payloads in pickle files that execute arbitrary code when loaded via pickle.load().",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:30.543"
-  },
-  {
-    "id": "CVE-2026-12242",
-    "description": "The AdRotate Banner Manager plugin for WordPress is vulnerable to PHP Code Injection in all versions up to, and including, 5.17.7 via the 'banner' attribute of the adrotate shortcode. This is due to insufficient input validation and sanitization of the banner shortcode attribute before concatenation into a PHP code string wrapped in W3 Total Cache mfunc or Borlabs Cache fragment markers. This makes it possible for authenticated attackers, with Contributor-level access and above, to execute arbitrary PHP code on the server. This vulnerability requires W3 Total Cache or Borlabs Cache support to be enabled in AdRotate settings.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:31.447"
-  },
-  {
-    "id": "CVE-2026-13140",
-    "description": "Stored Cross-Site Scripting in the exposed AWS API key store of Thinkst Applied Research Canarytokens.\n\n\n\n\nAnonymous exploitation requires knowledge of a random identifier.\n\n\n\n\nThis issue affects Canarytokens: from Docker tag sha-4116b92cb before sha-f5aa5c4e, from Git commit 4116b92cb before f5aa5c4e.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:31.710"
-  },
-  {
-    "id": "CVE-2026-13163",
-    "description": "Open redirect vulnerability (CWE-601) in the _safe_redirect function of the click-tracking endpoint (/c/<token>/) in Mailerup <1.0.0 on all platforms allows remote unauthenticated attackers to redirect victims to arbitrary external sites and conduct phishing attacks via a crafted u query parameter, because the URL scheme is validated (blocking javascript: and data:) but the destination host is not restricted to an allowlist, and a signing.BadSignature exception is silently caught so a valid signed token is not required.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:31.993"
-  },
-  {
-    "id": "CVE-2026-56223",
-    "description": "Capgo before 12.128.2 contains a cross-domain SSO account takeover vulnerability in the provision-user endpoint that allows attackers to merge arbitrary victim accounts based on email match without validating SSO provider domain authorization. An attacker with enterprise org admin access and a malicious IdP can forge SAML assertions containing victim email addresses to trigger account merge and gain full access to victim accounts, organizations, and data.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:33.067"
-  },
-  {
-    "id": "CVE-2026-56231",
-    "description": "Capgo before 12.128.2 contains a broken object level authorization (BOLA) vulnerability in the POST /build/start/:jobId and POST /build/cancel/:jobId endpoints. The handlers authorize the request based only on the attacker-controlled app_id supplied in the request body and never verify that the jobId in the URL belongs to that app_id (or the same tenant/org) before issuing privileged builder commands with the server-held builder API key. An authenticated user with the app.build_native permission for any app they control can start or cancel arbitrary builder jobs belonging to other tenants by supplying a victim jobId, resulting in cross-tenant build sabotage (denial of service), unauthorized compute actions, and potential billing impact.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:33.200"
-  },
-  {
-    "id": "CVE-2026-56232",
-    "description": "Capgo before 12.128.2 fails to enforce limited_to_orgs and limited_to_apps constraints on subkeys provided via x-limited-key-id header in middlewareKey function. Attackers can bypass subkey scope restrictions by referencing their own subkeys, causing all downstream route handlers to use the unrestricted parent key instead of the scoped subkey.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:33.327"
-  },
-  {
-    "id": "CVE-2026-56237",
-    "description": "Capgo before 12.128.2 contains a broken authentication vulnerability in its API key generation mechanism. API keys are exposed in frontend requests, and the backend fails to validate that keys are securely generated and bound to the authenticated user. An attacker can tamper with the API key parameter in the generation request and supply arbitrary values, generating custom API keys without proper authorization, which can lead to unauthorized access to protected endpoints.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:33.467"
-  },
-  {
-    "id": "CVE-2026-56244",
-    "description": "Capgo before 12.128.2 allows non-admin API keys to read webhook signing secrets via Supabase REST due to insufficient row-level security policies on the webhooks table. Attackers can retrieve the webhook secret and forge valid X-Capgo-Signature headers to send authenticated webhook events to configured receivers, breaking webhook authenticity and integrity.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:33.597"
-  },
-  {
-    "id": "CVE-2026-56245",
-    "description": "Supabase Capgo before 12.128.2 contains an authorization bypass vulnerability in the SECURITY DEFINER record_build_time RPC function that allows unauthenticated attackers to insert arbitrary build-time records. Attackers can exploit this by calling POST /rest/v1/rpc/record_build_time with a public API key to poison billing and quota data for any organization, enabling resource exhaustion and cross-tenant billing manipulation.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:34.820"
-  },
-  {
-    "id": "CVE-2026-56256",
-    "description": "Capgo before 12.128.2 enforces mandatory two-factor authentication only at the UI level. Sensitive Organization (ORG) management API endpoints (e.g., editing organization details, inviting users) do not validate 2FA completion on the backend. An authenticated Admin user who has not enabled 2FA can replay or modify a previously captured ORG API request to perform privileged organization actions, bypassing the globally enforced 2FA requirement.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:34.980"
-  },
-  {
-    "id": "CVE-2026-56257",
-    "description": "Capgo before 12.128.2 allows direct patching of public.apps.owner_org through PostgREST, bypassing the transfer_app() workflow and creating split-brain ownership. Attackers can directly update apps.owner_org while leaving app_versions.owner_org unchanged, enabling old-org keys to retain access to version data while new-org keys control the app record.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:35.123"
-  },
-  {
-    "id": "CVE-2026-56262",
-    "description": "Crawl4AI before 0.8.7 contains an authentication bypass vulnerability in the monitor router endpoints that allows unauthenticated attackers to access destructive operations. Remote attackers can invoke the /monitor/actions/cleanup endpoint and manipulate monitoring state without authentication, causing service disruption.",
-    "severity": "Medium",
-    "tech": "Crawl4ai",
-    "published": "2026-06-24T13:16:35.263"
-  },
-  {
-    "id": "CVE-2026-56269",
-    "description": "Flowise before 3.1.0 (npm package flowise, versions 3.0.13 and earlier) uses a weak hardcoded default value 'Secre$t' for the TOKEN_HASH_SECRET environment variable in packages/server/src/enterprise/utils/tempTokenUtils.ts when the variable is not configured. This secret derives the AES-256-CBC key used to encrypt user IDs and workspace IDs in the 'meta' field of JWT tokens. An attacker who knows the default secret can decrypt this metadata to extract internal user and workspace identifiers, and re-encrypt manipulated values such as altered user or workspace IDs. Because the JWT signature is validated separately, decrypting or tampering with this metadata does not by itself grant access, but the disclosure of internal identifiers and possible metadata manipulation could aid privilege escalation or unauthorized data access.",
-    "severity": "Medium",
-    "tech": "Flowise",
-    "published": "2026-06-24T13:16:35.400"
-  },
-  {
-    "id": "CVE-2026-56270",
-    "description": "Flowise before 3.1.0 (versions 3.0.13 and earlier) contains a missing authentication vulnerability in the /api/v1/loginmethod endpoint that allows unauthenticated users to retrieve an organization's complete SSO configuration, including OAuth client secrets in cleartext, by providing an organizationId parameter. Remote attackers can send a GET request to harvest sensitive API credentials for Google, Microsoft/Azure, GitHub, and Auth0 integrations. This affects FlowiseAI Cloud and self-hosted instances where the endpoint is exposed.",
-    "severity": "High",
-    "tech": "Flowise",
-    "published": "2026-06-24T13:16:35.540"
-  },
-  {
-    "id": "CVE-2026-56272",
-    "description": "Flowise before 3.0.13 uses bcrypt with default salt rounds of 5, providing only 32 iterations instead of the OWASP-recommended minimum of 10 rounds. Attackers can crack password hashes approximately 30 times faster with modern GPU hardware, potentially compromising all user accounts in a database breach scenario.",
-    "severity": "Medium",
-    "tech": "Flowise",
-    "published": "2026-06-24T13:16:35.680"
-  },
-  {
-    "id": "CVE-2026-56302",
-    "description": "Capgo before 12.128.2 contains an unsecured images bucket lacking any row level security controls, allowing unauthenticated attackers to read, insert, and delete stored app icons. Remote attackers can exploit this misconfiguration to delete all icons and leak sensitive app IDs and user IDs.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:35.937"
-  },
-  {
-    "id": "CVE-2026-56310",
-    "description": "Cap-go before 12.128.2 contains an authorization bypass vulnerability in the GET /organization/members endpoint that allows org-limited API keys to bypass limited_to_orgs restrictions. Attackers with org-limited API keys can read membership data including uid, email, image_url, role, and is_tmp from organizations outside their assigned scope.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:36.063"
-  },
-  {
-    "id": "CVE-2026-56337",
-    "description": "Capgo before 12.128.2 contains an information disclosure vulnerability in the public.exist_app_v2 RPC function that allows unauthenticated attackers to enumerate app_ids by calling POST /rest/v1/rpc/exist_app_v2 with arbitrary appid parameters. Remote attackers can exploit this SECURITY DEFINER function to determine whether specific app_ids exist in the public.apps table, enabling cross-tenant app enumeration and privacy violations.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:36.197"
-  },
-  {
-    "id": "CVE-2026-56338",
-    "description": "Capgo before 12.128.2 contains a denial of service vulnerability in the /auth/v1/otp endpoint that prevents email verification for two-factor authentication due to captcha validation failures. Authenticated users cannot complete 2FA enrollment as the backend consistently returns HTTP 500 errors with captcha verification process failed messages, blocking access to security controls.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-24T13:16:36.343"
-  },
-  {
-    "id": "CVE-2026-56351",
-    "description": "n8n before version 2.4.0 contains a sql injection vulnerability in MySQL, PostgreSQL, and Microsoft SQL nodes that allows authenticated users to inject arbitrary SQL through unescaped identifier values in node configuration parameters. Attackers with workflow creation permissions can supply specially crafted table or column names to execute unauthorized database commands and compromise data integrity.",
-    "severity": "High",
-    "tech": "N8n",
-    "published": "2026-06-24T13:16:36.473"
-  },
-  {
-    "id": "CVE-2026-56358",
-    "description": "n8n before 1.123.25 (1.x) and before 2.11.2 (2.x), with the fix also included in 2.12.0, contains a stored cross-site scripting vulnerability in the Form Trigger node's CSS sanitization that allows authenticated users to inject malicious scripts. Attackers with workflow creation permissions can inject XSS payloads that execute persistently for all form visitors, enabling form hijacking and phishing attacks.",
-    "severity": "Medium",
-    "tech": "N8n",
-    "published": "2026-06-24T13:16:36.613"
-  },
-  {
-    "id": "CVE-2026-56368",
-    "description": "ImageMagick before 7.1.2-15 contains a memory leak vulnerability in multiple coders that write raw pixel data where allocated objects are not properly freed. Attackers can trigger this leak by processing specially crafted images, causing memory exhaustion and denial of service.",
-    "severity": "Low",
-    "tech": "Imagemagick",
-    "published": "2026-06-24T13:16:36.750"
-  },
-  {
-    "id": "CVE-2026-56370",
-    "description": "ImageMagick before 7.1.2-19 contains an out-of-bounds access vulnerability in ConnectedComponentsImage() when processing connected-components artifacts with invalid indices. Attackers can trigger access violations by specifying malformed connected-components definitions via CLI, causing denial of service or potential code execution.",
-    "severity": "Low",
-    "tech": "Imagemagick",
-    "published": "2026-06-24T13:16:36.900"
-  },
-  {
-    "id": "CVE-2026-56761",
-    "description": "hono before 4.12.14 contains an html injection vulnerability in jsx server-side rendering that allows attackers to inject unintended html by using malformed attribute names. Attackers can craft specially crafted attribute keys containing characters like quotes or angle brackets to break html tag boundaries and inject arbitrary attributes or elements.",
-    "severity": "Medium",
-    "tech": "Hono",
-    "published": "2026-06-24T13:16:37.043"
-  },
-  {
     "id": "CVE-2026-12537",
     "description": "Improper Neutralization used in an OS Command in the container launcher in Google Gemini CLI (versions prior to 0.39.1) and run-gemini-cli GitHub Action (versions prior to 0.1.22) on headless CI platforms allows an unprivileged attacker to achieve pre-sandbox host-level code execution a maliciously crafted .gemini/.env file.",
     "severity": "High",
@@ -36634,7 +36417,7 @@
     "id": "CVE-2026-48581",
     "description": "Insufficient granularity of access control in Microsoft Surface allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Surface go 2 1901 firmware",
     "published": "2026-07-14T17:16:50.767"
   },
   {
@@ -37054,7 +36837,7 @@
     "id": "CVE-2026-50338",
     "description": "Improper authentication in Azure Spring Apps allows an authorized attacker to elevate privileges over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Azure spring cloud",
     "published": "2026-07-14T17:17:00.020"
   },
   {
@@ -37117,7 +36900,7 @@
     "id": "CVE-2026-50506",
     "description": "Allocation of resources without limits or throttling in ASP.NET Core allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Asp.net core odata",
     "published": "2026-07-14T17:17:01.303"
   },
   {
@@ -37607,7 +37390,7 @@
     "id": "CVE-2026-58595",
     "description": "Improper restriction of rendered ui layers or frames in Microsoft Bing App for IOS allows an unauthorized attacker to perform spoofing over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Bing search",
     "published": "2026-07-14T17:17:12.530"
   },
   {
@@ -39189,7 +38972,7 @@
     "id": "CVE-2026-50647",
     "description": "Loop with unreachable exit condition ('infinite loop') in Active Directory Federation Services (AD FS) allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-07-14T18:17:58.743"
   },
   {
@@ -40092,21 +39875,21 @@
     "id": "CVE-2026-56196",
     "description": "Relative path traversal in Windows Admin Center allows an authorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows admin center",
     "published": "2026-07-14T18:18:30.070"
   },
   {
     "id": "CVE-2026-56197",
     "description": "Improper neutralization of special elements used in a command ('command injection') in Windows Admin Center allows an authorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows admin center",
     "published": "2026-07-14T18:18:30.200"
   },
   {
     "id": "CVE-2026-56642",
     "description": "Stack-based buffer overflow in Microsoft Fabric Data Warehouse allows an authorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Fabric data warehouse",
     "published": "2026-07-14T18:18:30.353"
   },
   {
@@ -40715,7 +40498,7 @@
     "id": "CVE-2026-47302",
     "description": "Allocation of resources without limits or throttling in .NET allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T19:17:08.540"
   },
   {
@@ -40729,7 +40512,7 @@
     "id": "CVE-2026-47304",
     "description": "Improper verification of cryptographic signature in .NET allows an unauthorized attacker to bypass a security feature over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T19:17:08.830"
   },
   {
@@ -41212,7 +40995,7 @@
     "id": "CVE-2026-50525",
     "description": "Allocation of resources without limits or throttling in .NET allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T20:17:37.120"
   },
   {
@@ -41226,7 +41009,7 @@
     "id": "CVE-2026-50527",
     "description": "Stack-based buffer overflow in .NET Framework allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T20:17:37.363"
   },
   {
@@ -41240,28 +41023,28 @@
     "id": "CVE-2026-50646",
     "description": "Protection mechanism failure in .NET Framework allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T20:17:37.670"
   },
   {
     "id": "CVE-2026-50648",
     "description": "Allocation of resources without limits or throttling in .NET Framework allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T20:17:37.937"
   },
   {
     "id": "CVE-2026-50649",
     "description": "Deserialization of untrusted data in .NET allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T20:17:38.103"
   },
   {
     "id": "CVE-2026-50650",
     "description": "Improper control of generation of code ('code injection') in .NET Framework allows an unauthorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T20:17:38.230"
   },
   {
@@ -41275,7 +41058,7 @@
     "id": "CVE-2026-50659",
     "description": "Improper encoding or escaping of output in .NET allows an authorized attacker to perform spoofing over a network.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": ".net framework",
     "published": "2026-07-14T20:17:38.917"
   },
   {
@@ -53776,7 +53559,7 @@
   {
     "id": "CVE-2026-15902",
     "description": "Use after free in Cast in Google Chrome prior to 150.0.7871.128 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Critical",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-20T23:16:55.983"
   },
@@ -57718,7 +57501,7 @@
     "id": "CVE-2026-60268",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:28.933"
   },
   {
@@ -57732,7 +57515,7 @@
     "id": "CVE-2026-60270",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows high privileged attacker with network access via HTTP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in  unauthorized access to critical data or complete access to all Oracle Coherence accessible data as well as  unauthorized update, insert or delete access to some of Oracle Coherence accessible data. CVSS 3.1 Base Score 5.5 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:L/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:29.173"
   },
   {
@@ -57802,14 +57585,14 @@
     "id": "CVE-2026-60280",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP/2 to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:30.383"
   },
   {
     "id": "CVE-2026-60281",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with access to the physical communication segment attached to the hardware where the Oracle Coherence executes to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Coherence accessible data as well as  unauthorized access to critical data or complete access to all Oracle Coherence accessible data. CVSS 3.1 Base Score 8.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:30.490"
   },
   {
@@ -57844,28 +57627,28 @@
     "id": "CVE-2026-60286",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:31.053"
   },
   {
     "id": "CVE-2026-60287",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:31.163"
   },
   {
     "id": "CVE-2026-60288",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:31.273"
   },
   {
     "id": "CVE-2026-60289",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:31.387"
   },
   {
@@ -57907,7 +57690,7 @@
     "id": "CVE-2026-60295",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Difficult to exploit vulnerability allows low privileged attacker with network access via TCP to compromise Oracle Coherence.  While the vulnerability is in Oracle Coherence, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 8.5 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:32.050"
   },
   {
@@ -57921,35 +57704,35 @@
     "id": "CVE-2026-60297",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:32.277"
   },
   {
     "id": "CVE-2026-60298",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:32.387"
   },
   {
     "id": "CVE-2026-60299",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:32.493"
   },
   {
     "id": "CVE-2026-60300",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in takeover of Oracle Coherence. CVSS 3.1 Base Score 9.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:32.603"
   },
   {
     "id": "CVE-2026-60301",
     "description": "Vulnerability in the Oracle Coherence product of Oracle Fusion Middleware (component: Core).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows unauthenticated attacker with network access via TCP to compromise Oracle Coherence.  Successful attacks of this vulnerability can result in unauthorized ability to cause a hang or frequently repeatable crash (complete DOS) of Oracle Coherence. CVSS 3.1 Base Score 7.5 (Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Coherence",
     "published": "2026-07-21T22:17:32.707"
   },
   {
@@ -63947,7 +63730,7 @@
   {
     "id": "CVE-2026-16413",
     "description": "Out of bounds write in ANGLE in Google Chrome prior to 150.0.7871.182 allowed a remote attacker who had compromised the renderer process to potentially perform a sandbox escape via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:58.017"
   },
@@ -63961,49 +63744,49 @@
   {
     "id": "CVE-2026-16415",
     "description": "Insufficient validation of untrusted input in Extensions in Google Chrome prior to 150.0.7871.182 allowed a remote attacker to spoof the contents of the Omnibox (URL bar) via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:59.053"
   },
   {
     "id": "CVE-2026-16416",
     "description": "Integer overflow in Chromecast in Google Chrome prior to 150.0.7871.182 allowed a local attacker to potentially perform a sandbox escape via malicious network traffic. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:59.170"
   },
   {
     "id": "CVE-2026-16417",
     "description": "Uninitialized Use in Skia in Google Chrome prior to 150.0.7871.182 allowed a remote attacker who had compromised the renderer process to leak cross-origin data via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "Low",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:59.287"
   },
   {
     "id": "CVE-2026-16418",
     "description": "Stack buffer overflow in V8 in Google Chrome prior to 150.0.7871.182 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:59.400"
   },
   {
     "id": "CVE-2026-16419",
     "description": "Out of bounds read and write in ANGLE in Google Chrome on Android prior to 150.0.7871.182 allowed a remote attacker to potentially perform a sandbox escape via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:59.503"
   },
   {
     "id": "CVE-2026-16420",
     "description": "Type Confusion in WebAudio in Google Chrome prior to 150.0.7871.182 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:59.607"
   },
   {
     "id": "CVE-2026-16421",
     "description": "Inappropriate implementation in WebAudio in Google Chrome prior to 150.0.7871.182 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-21T23:16:59.710"
   },
@@ -64774,7 +64557,7 @@
     "id": "CVE-2026-56444",
     "description": "In NLnet Labs Unbound 1.20.0 up to and including 1.25.1, when Unbound is configured with 'serve-expired: yes' and 'serve-expired-client-timeout > discard-timeout > 0' (contrary to the suggested values), the discard-timeout branch during the serve expired logic drops an aged client reply without performing the correct accounting for the number of reply addresses for the query. Other identical branches outside of serve expired perform the correct decrement. Since the counter is never decremented in such scenario, it can reach the maximum limit and new clients for duplicate in-flight queries are silently dropped resulting in degradation of resolution service. A malicious actor can exploit the vulnerability by querying the resolver for a client-controlled slow-on-demand authoritative zone that can drive the counter past the threshold. Shipped defaults for 'serve-expired-client-timeout: 1800' and 'discard-timeout: 1900' make the branch unreachable.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Unbound",
     "published": "2026-07-22T14:17:22.203"
   },
   {
@@ -68063,28 +67846,28 @@
   {
     "id": "CVE-2026-16804",
     "description": "Use after free in Input in Google Chrome prior to 150.0.7871.186 allowed a remote attacker who had compromised the renderer process to potentially perform a sandbox escape via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-23T22:16:52.427"
   },
   {
     "id": "CVE-2026-16805",
     "description": "Use after free in Blink in Google Chrome prior to 150.0.7871.186 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-23T22:16:52.533"
   },
   {
     "id": "CVE-2026-16806",
     "description": "Use after free in WebMCP in Google Chrome prior to 150.0.7871.186 allowed a remote attacker to execute arbitrary code inside a sandbox via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-23T22:16:52.640"
   },
   {
     "id": "CVE-2026-16807",
     "description": "Out of bounds write in Codecs in Google Chrome prior to 150.0.7871.186 allowed a remote attacker to potentially perform a sandbox escape via a crafted HTML page. (Chromium security severity: High)",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-23T22:16:52.750"
   },
@@ -68535,5 +68318,173 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-24T09:16:25.273"
+  },
+  {
+    "id": "CVE-2026-10033",
+    "description": "The EventON Action User plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 2.5.14. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to grant EventON management capabilities and the upload_files capability to any non-administrator WordPress role or user, escalating their privileges within the site. The administrator role is protected by an early-return guard in update_role_caps(), so only non-administrator roles and individual users can be targeted; however, the same unauthenticated exposure also allows attackers to enumerate all WordPress users with their IDs and display names, disclose role and user capability state along with nonce values, and tamper with event-to-user term assignments.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T10:16:29.983"
+  },
+  {
+    "id": "CVE-2026-15401",
+    "description": "The VikBooking Hotel Booking Engine & PMS plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'vbfX' parameter in all versions up to, and including, 1.8.13 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The vbfX custom-field value is stored via the public-facing saveorder task, which has no capability or authentication check enforced by default, enabling fully unauthenticated submission of malicious payloads.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T10:16:31.410"
+  },
+  {
+    "id": "CVE-2026-15663",
+    "description": "The Ninja Forms – The Contact Form Builder That Grows With You plugin for WordPress is vulnerable to generic SQL Injection via Import File 'settings' Key in all versions up to, and including, 3.14.9 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with administrator-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The vulnerable keys originate from the 'settings' object in an attacker-controlled import file processed via file_get_contents() or base64-decoded/JSON-decoded blobs, bypassing wp_magic_quotes protections entirely; two distinct sinks are affected — _save_setting() in Model.php and insert_form_meta() in ImportForm.php — as only the value side is escaped while the key side receives no sanitization or parameterization at any point in the call chain.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-24T10:16:31.567"
+  },
+  {
+    "id": "CVE-2026-16634",
+    "description": "TOML::XS versions before 0.06 for Perl bundle an unsupported and vulnerable version of tomlc99.\n\nThe tomlc99 library is no longer maintained, and has an uncontrolled recursion vulnerability publicly reported in the issue tracker.\n\nAny caller that passes untrusted TOML to from_toml risks a stack overflow from a deeply-nested document.\n\nTOML::XS version 0.06 or later uses the successor tomlc17 library.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T10:16:31.693"
+  },
+  {
+    "id": "CVE-2026-7483",
+    "description": "Local privilege escalation potentially allowed an attacker to write an arbitrary file with fully controlled content as a privileged user.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T10:16:32.637"
+  },
+  {
+    "id": "CVE-2026-10610",
+    "description": "Local privilege escalation potentially allowed an attacker to execute arbitrary code as a privileged user.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T12:16:45.797"
+  },
+  {
+    "id": "CVE-2026-15243",
+    "description": "Apereo CAS Client accepts any CA-trusted certificate for any hostname, provided the URL the client is calling matches the configured allowlist or regex. An attacker with a MITM position (DNS poisoning, rogue Wi-Fi, malicious proxy, etc.) can provide any CA-signed certificate for a hostname that matches the configured allowlist or regex. This can lead to intercepting the CAS exchange, capturing the Ticket-Granting Ticket (TGT), and subsequently obtaining Service Tickets on behalf of the victim. \n\n\nBecause maintainers contact attempts were unsuccessful, vulnerabilities have only been confirmed in version 4.1.0 (Java Apereo CAS Client) and 3.6.4 (Jasig CAS Client) but may also affect other versions.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T12:16:46.973"
+  },
+  {
+    "id": "CVE-2026-15810",
+    "description": "A Cross-Site Scripting (XSS) vulnerability in Google Cloud Looker versions prior to 25.6.103, 25.12.65, 25.18.68, 26.0.66, 26.2.47, 26.4.36, 26.6.28, and 26.8.7 on Looker-hosted and Self-hosted allows an attacker to execute arbitrary JavaScript leading to administrative account takeover using a maliciously crafted URL.\n\n\nLooker-hosted and Self-hosted were found to be vulnerable.\nThis issue has already been mitigated for Looker-hosted instances. No user action is required for these.\n\n\nSelf-hosted instances must be upgraded to the patched versions: 25.6.103+, 25.12.65+, 25.18.68+, 26.0.66+, 26.2.47+, 26.4.36+, 26.6.28+, or 26.8.7+.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T12:16:47.543"
+  },
+  {
+    "id": "CVE-2026-16730",
+    "description": "A flaw was found in dbus-broker. When the process file-descriptor limit is reached, EMFILE/ENFILE errors during peer setup (notably SO_PEERPIDFD) are handled as fatal failures, causing the broker to exit. A local attacker who can open many connections to the user session bus can trigger this and deny service to the desktop session. Flatpak applications can reach the host session bus through the dbus proxy.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-24T12:16:47.717"
+  },
+  {
+    "id": "CVE-2026-16743",
+    "description": "A flaw was found in accountsservice. The systemd-homed code path for SetIconFile opens a user-supplied filename as root without the validation and privilege drop performed by the classic handler. A local attacker with a systemd-homed-managed account can read arbitrary files accessible to the accounts-daemon process.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:17:27.173"
+  },
+  {
+    "id": "CVE-2026-45811",
+    "description": "Buffer Copy without Checking Size of Input ('Classic Buffer Overflow') vulnerability in Apache NimBLE.\nThe HCI socket transport did not check whether a received HCI event would fit the configured event pool before copying it, allowing a buffer overflow. Severity is low: exploitation requires either a misconfigured pool size or a malicious/compromised controller on the other end of the HCI socket link, not over-the-air Bluetooth access.\n\nThis issue affects Apache NimBLE: through 1.9.0.\n\nUsers are recommended to upgrade to version 1.10.0, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:23.847"
+  },
+  {
+    "id": "CVE-2026-45812",
+    "description": "Incorrect Calculation of Buffer Size vulnerability in Apache NimBLE when processing Legacy Advertising Report HCI event.\n\nWhen a single HCI advertising report event bundles multiple reports, NimBLE miscalculated the offset to the next report. This can cause the host to read past the end of the buffer and deliver a GAP event with bogus data to the application.\n\nSeverity is low: NimBLE's own controller never batches multiple reports into one event, so this only matters when NimBLE's host is paired with a third-party controller that does.\n\nThis issue affects Apache NimBLE: through 1.9.0.\n\nUsers are recommended to upgrade to version 1.10.0, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:23.967"
+  },
+  {
+    "id": "CVE-2026-45813",
+    "description": "Out-of-bounds Write, Integer Underflow (Wrap or Wraparound) vulnerability in Apache NimBLE BASS service.\nImproper validation when parsing BASS service  \"Add Source\" and \"Modify Source\" operation PDU could results in stack buffer overflow or arbitrary out-of-bound read.\n\n\nThis can be triggered by nearby devices over Bluetooth connection, however pairing is required prior to accessing BASS service, which depending on device configuration may or may not require user action.\n\nThis issue affects Apache NimBLE: through 1.9.0.\n\nUsers are recommended to upgrade to version 1.10.0, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:24.087"
+  },
+  {
+    "id": "CVE-2026-45815",
+    "description": "Reachable Assertion vulnerability in Apache NimBLE.\nA specially crafted ATT Read Multiple Variable Response (BLE_ATT_OP_READ_MULT_VAR_RSP) may trigger assert in ATT parser.\n\nSeverity is medium as this requires DUT to first send ATT Read Multiple Variable Request.\n\nThis issue affects Apache NimBLE: through 1.9.0.\n\nUsers are recommended to upgrade to version 1.10.0, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:24.200"
+  },
+  {
+    "id": "CVE-2026-45816",
+    "description": "NULL Pointer Dereference vulnerability in Apache NimBLE in LE Long Term Key Request event.\n\nThis requires disabled asserts (otherwise assert would trigger before NULL dereference) and bogus (or misbehaving) controller, thus severity is low.\n\nThis issue affects Apache NimBLE: through 1.9.0.\n\nUsers are recommended to upgrade to version 1.10.0, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:24.307"
+  },
+  {
+    "id": "CVE-2026-46452",
+    "description": "Improper Input Validation vulnerability in Apache NimBLE in Mesh Proxy SAR reassembly could result in passing broken data toward application resulting in memory pressure and unstable parsing behavior.\n\nThis issue affects Apache NimBLE: through 1.9.0.\n\nUsers are recommended to upgrade to version 1.10.0, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:25.097"
+  },
+  {
+    "id": "CVE-2026-66008",
+    "description": "Parse Server versions >= 9.0.0 before 9.10.0-alpha.6 and >= 8.2.2 before 8.6.87 disclose Pointer and Relation target class names through GraphQL validation and input-coercion error messages when public schema introspection is disabled (graphQLPublicIntrospection: false, the default). Because these errors are produced before authentication, authorization, or any resolver runs, an unauthenticated client possessing only the public application ID can trigger errors on Pointer or Relation fields to reconstruct hidden schema class names, partially defeating the schema-hiding protection. Only schema metadata (class names) is exposed; no object data, credentials, or user records are disclosed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:28.450"
+  },
+  {
+    "id": "CVE-2026-66009",
+    "description": "Parse Server versions >= 9.0.0 before 9.10.0-alpha.5 and >= 8.2.2 before 8.6.86 return GraphQL validation error messages that name required custom input fields even when public introspection is disabled (graphQLPublicIntrospection: false, the default). A client holding only the public application id — with no user session, master key, or maintenance key — can trigger validation errors to learn the names of required (non-null) custom fields on classes it already references by name, partially defeating the schema-hiding intent of disabling public introspection. No stored data, credentials, optional field names, unreferenced class names, or Cloud Code function names are exposed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:28.580"
+  },
+  {
+    "id": "CVE-2026-66010",
+    "description": "DOMPurify before 3.4.12 fails to execute afterSanitizeElements hook for custom elements allowed via CUSTOM_ELEMENT_HANDLING.tagNameCheck, allowing attributes to bypass application security policies. Attackers can preserve sensitive attributes on custom elements that later re-inject them into innerHTML sinks, creating second-order XSS gadgets.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:28.720"
+  },
+  {
+    "id": "CVE-2026-66142",
+    "description": "Apache Neethi is vulnerable to uncontrolled recursion when parsing policies that lack policy Ids or with deeply nested structures, which may lead to a denial of service attack when parsing policies due to runtime memory exhaustion. Users are recommended to upgrade to version 3.2.3, which fixes this issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:29.237"
+  },
+  {
+    "id": "CVE-2026-66143",
+    "description": "It is possible to bypass the maximum number of normalized policy alternatives that was introduced in Apache Neethi 3.2.2 via certain crafted policies, which may lead to a denial of service attack via resource consumption. Users are recommended to upgrade to version 3.2.3, which fixes this issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:29.350"
+  },
+  {
+    "id": "CVE-2026-66144",
+    "description": "Although remote policy references are not retrieved during policy normalization, if they are manually retrieved via the API it can cause a denial of service attack if a huge policy is retrieved. Users are recommended to upgrade to version 3.2.3, which fixes this issue by imposing a default maximum size on data read from remote policy references.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:29.467"
+  },
+  {
+    "id": "CVE-2026-7484",
+    "description": "External control of Assumed-Immutable web parameter vulnerability in ABIS Technology Ltd. Co. AVESİS allows Accessing Functionality Not Properly Constrained by ACLs.\n\nThis issue affects AVESİS: before 202606251646.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:30.867"
+  },
+  {
+    "id": "CVE-2026-9765",
+    "description": "Note: The CVE and blog post don't exist because we determined this is actually a cloud-only issue.\n\nAccess Controls are “Broken” when a user can access resources they are not authorized to access. An attacker can bypass any access control mechanisms in a web application, and gain unauthorized access to resources that are not available with their permissions. \n\nBroken access control can allow attackers to:\nAccess resources only accessible to certain users, thus allowing unauthorized access to data\nPerform operations on behalf of other users, leading to account takeovers in the worst cases\nAttempt privilege escalation\nAttempt to take over an account",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T13:18:31.480"
   }
 ]
