@@ -1,5 +1,75 @@
 [
   {
+    "id": "CVE-2026-66035",
+    "description": "libssh2 through 1.11.1, fixed in commit 42e33d8, contains a pre-authentication heap buffer overflow vulnerability that allows a malicious SSH server to corrupt heap metadata in any connecting client by sending a packet with a packet_length smaller than the cipher's block size during Encrypt-then-MAC cipher negotiation. In the fullpacket() function in src/transport.c, the ETM path allocates a buffer of packet_length bytes but copies blocksize minus one bytes via memcpy, causing an overflow that on 32-bit glibc writes attacker-controlled bytes into an adjacent chunk's SIZE field, enabling tcache bin confusion, overlapping live objects, and function pointer overwrite during the session handshake before authentication.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:35.547"
+  },
+  {
+    "id": "CVE-2026-66034",
+    "description": "libssh2 through 1.11.1, fixed in commit a13bb6c, contains a missing bounds check vulnerability that allows a malicious SSH server to trigger an arbitrary-length heap out-of-bounds read and a free of an uninitialized pointer via the publickey subsystem. In libssh2_publickey_list_fetch(), the version 1 response parser reads a server-controlled comment_len value and advances the parse pointer without verifying sufficient bytes remain in the buffer, causing the out-of-bounds read to leak heap pointers from adjacent allocations defeating ASLR, followed by heap allocator state corruption when the error cleanup path frees an uninitialized pointer from a non-zeroed realloc() region.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:35.407"
+  },
+  {
+    "id": "CVE-2026-66033",
+    "description": "libssh2 through 1.11.1, fixed in commit a2ed82d, contains a pre-authentication integer underflow vulnerability in the ssh2_cipher_crypt() function in src/openssl.c that allows a malicious SSH server to crash any connecting client by negotiating AES-GCM ciphers during handshake. Attackers can exploit the underflow in the expression computing blocksize minus aadlen minus authentication tag length to trigger an out-of-bounds read and a memcpy call with a near-SIZE_MAX length argument, causing immediate process crash before any authentication occurs.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:35.263"
+  },
+  {
+    "id": "CVE-2026-66032",
+    "description": "libssh2 through 1.11.1, fixed in commit 5e47761, contains a double-free vulnerability in the sftp_open() function in src/sftp.c that allows a malicious SSH server to corrupt the heap of any authenticated client opening an SFTP session. When a server responds to SSH_FXP_OPEN with SSH_FXP_STATUS containing FX_OK, the response data buffer is freed, and if a subsequent sftp_packet_require() call returns a specific error such as LIBSSH2_ERROR_CHANNEL_PACKET_EXCEEDED, the same pointer is freed a second time, enabling tcache dup conditions on glibc systems that allow overlapping allocations and function pointer overwrites.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:35.120"
+  },
+  {
+    "id": "CVE-2026-65711",
+    "description": "sysPass through version 3.2.11 contains an OS command injection vulnerability that allows authenticated administrators to execute arbitrary commands as the web server process user by setting a malicious backup path and triggering a backup. The FileBackupService builds a tar shell command via string concatenation, inserting the admin-configurable siteBackupPath setting without escapeshellarg() or equivalent sanitization before passing it to exec(), causing injected commands to persist and execute on every subsequent backup trigger.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:34.857"
+  },
+  {
+    "id": "CVE-2026-65710",
+    "description": "sysPass through version 3.2.11 contains a missing authorization vulnerability that allows authenticated users with the PUBLICLINK_CREATE profile flag to trigger unauthorized decryption and persistent storage of any vault account's password by exploiting the absence of AccountAcl checks in the public link creation flow. Attackers can invoke the saveCreateFromAccountAction endpoint to cause AccountService::getDataForLink to load arbitrary target accounts without AccountFilterUser restrictions, decrypt credentials using the session master key, and serialize cleartext passwords into Vault storage on the PublicLink database row, enabling subsequent unauthenticated retrieval if the generated link hash is recovered.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:34.713"
+  },
+  {
+    "id": "CVE-2026-65709",
+    "description": "sysPass through version 3.2.11 contains a missing object-level authorization vulnerability in the JSON-RPC API that allows API token holders to enumerate account metadata, overwrite passwords, and delete accounts across the entire vault without per-account access control. Attackers can invoke AccountController methods such as viewAction, editAction, deleteAction, and editPassAction without AccountFilterUser checks to modify or delete accounts beyond the scope of their assigned token permissions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:34.573"
+  },
+  {
+    "id": "CVE-2026-65708",
+    "description": "sysPass through version 3.2.11 contains an insecure direct object reference vulnerability that allows any authenticated attacker to access account file attachments belonging to accounts they do not have ACL permissions for by exploiting missing authorization checks in AccountFileController. Attackers can supply arbitrary numeric file IDs through the download, view, delete, upload, and list actions to enumerate and manipulate any attachment in the vault, bypassing account-level access controls entirely.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:34.433"
+  },
+  {
+    "id": "CVE-2026-65707",
+    "description": "Likeshop through 3.0.5 contains an authenticated SQL injection vulnerability that allows admin-level users to extract arbitrary database contents by submitting unsanitized POST parameters to the adjustAccount endpoint. The adjustAccount method in UserLogic.php concatenates the money, integral, growth, and earnings parameters directly into Db::raw() SQL fragments without type casting, numeric validation, or parameter binding, enabling boolean-based binary-search extraction of credentials, PII, and session tokens via distinct success and failure response messages.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:34.290"
+  },
+  {
+    "id": "CVE-2026-65623",
+    "description": "Inefficient Algorithmic Complexity vulnerability in mtrudel bandit allows unauthenticated remote denial of service via CPU exhaustion during WebSocket fragment reassembly.\n\nThe size guard 'Elixir.Bandit.WebSocket.Connection':oversize_message?/2 called from handle_frame/3 in lib/bandit/websocket/connection.ex appends each non-final continuation frame to a left-nested iolist and then re-measures the entire accumulated buffer with IO.iodata_length/1 on every frame. Because the buffer grows by one element per frame and is fully re-traversed each time, reassembly work is quadratic (O(n^2)) in the number of continuation frames.\n\nThe max_fragmented_message_size limit (default 8 MB) bounds total bytes but not frame count, and each frame can carry as little as one payload byte, so an attacker can send millions of tiny continuation frames using modest bandwidth to pin a CPU core for minutes to hours. Many concurrent connections can starve the whole server of CPU, denying service to legitimate users. The WebSocket read timeout does not help, because it is an idle timeout evaluated between reads and cannot preempt the synchronous reassembly work spent inside a single callback.\n\nThis issue affects bandit: from 1.11.0 before 1.12.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-24T17:17:34.107"
+  },
+  {
     "id": "CVE-2026-66027",
     "description": "Suna before 0.9.102 contains a broken access control vulnerability in the message queue API that allows authenticated attackers to access and manipulate queue resources belonging to other users by exploiting missing ownership and account isolation checks. Attackers can read pending prompt queues of all users, read or delete individual sessions, and inject arbitrary prompts into another user's session queue, causing the background drainer to forward malicious messages to the victim's running AI agent with the victim's credentials and permissions.",
     "severity": "High",
@@ -13914,334 +13984,5 @@
     "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-07-21T19:17:07.357"
-  },
-  {
-    "id": "CVE-2026-56583",
-    "description": "HCL MyCloud was affected with Concurrent Login Vulnerability. It may increase the risk of unauthorized access, session hijacking, and account misuse.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:02.287"
-  },
-  {
-    "id": "CVE-2026-56582",
-    "description": "HCL MyCloud was affected by the SSL/TLS LUCKY13 Vulnerability. An attacker may exploit this vulnerability to decrypt sensitive information through a TLS/SSL padding oracle attack.",
-    "severity": "Low",
-    "tech": "Mycloud",
-    "published": "2026-07-21T18:17:02.170"
-  },
-  {
-    "id": "CVE-2026-56581",
-    "description": "HCL MyCloud was affected with Cookie Attribute Path Not Set. It may increase the risk of unauthorized access to session data or authentication tokens.",
-    "severity": "Low",
-    "tech": "Mycloud",
-    "published": "2026-07-21T18:17:02.047"
-  },
-  {
-    "id": "CVE-2026-56580",
-    "description": "HCL MyCloud was affected by Using Components with Known Vulnerability ( IIS Server ). It may allow attackers to exploit publicly disclosed weaknesses and compromise the system.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:01.903"
-  },
-  {
-    "id": "CVE-2026-56579",
-    "description": "HCL MyCloud was affected with License Key Revealed in HTTP Response. It may enable attackers to misuse the exposed information and compromise the application's security.",
-    "severity": "Low",
-    "tech": "Mycloud",
-    "published": "2026-07-21T18:17:01.787"
-  },
-  {
-    "id": "CVE-2026-56578",
-    "description": "HCL MyCloud was affected by Server Version Disclosure. It may help attackers identify and exploit known vulnerabilities affecting the disclosed software versions.",
-    "severity": "Low",
-    "tech": "Mycloud",
-    "published": "2026-07-21T18:17:01.667"
-  },
-  {
-    "id": "CVE-2026-56577",
-    "description": "HCL MyCloud was affected with Weak Password Policy. It may increase the risk of account compromise through brute-force or credential-based attacks.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:01.547"
-  },
-  {
-    "id": "CVE-2026-47657",
-    "description": "HumHub is an Open Source Enterprise Social Network. In versions 1.13.0 through 1.18.2, a missing authorization check in the Space member management controller allowed any authenticated user to trigger the removal of all members from any Space, regardless of their own role or membership in that Space. Versions 1.13.0 through 1.18.2 are affected. The vulnerability has been patched in version 1.18.3, and all users are encouraged to upgrade to this version or later immediately. No known workaround is available.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:01.277"
-  },
-  {
-    "id": "CVE-2026-47425",
-    "description": "Rattler is a library that provides common functionality used within the conda ecosystem. Prior to version 0.43.2, `EntryPoint::FromStr` in `rattler_conda_types` performs only `.trim()` on the `command` field before the linker joins it onto the install prefix and writes an executable Python script. A malicious `noarch:python` package can ship an `info/link.json` with an entry-point name containing `..`, `/`, `\\`, or an absolute path; the resulting file is written outside the prefix (or clobbers an existing in-prefix entry-point such as `bin/pip`) with mode `0o775` on Unix and a copied launcher `.exe` on Windows. This affects the default install path of `pixi install`, `mamba install` via py-rattler, `rattler-build`, and any other consumer of the `rattler` install crate; no flag or post-link-script opt-in is involved. Version 0.43.2 contains a fix for the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:01.130"
-  },
-  {
-    "id": "CVE-2026-47419",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an* Insecure Direct Object Reference. The agent CRUD endpoints (`GET / PATCH / DELETE /workspaces/{workspace_id}/agents/{agent_id}`) gate access on `require_workspace_member(workspace_id)` only, then resolve `agent_id` through `AgentService.get(agent_id)` which is a primary-key lookup with no workspace constraint. A user who is a member of any workspace `W1` can read, modify, or delete agents that belong to a different workspace `W2` by guessing or harvesting an agent UUID and calling `…/workspaces/W1/agents/<W2-agent-id>`. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:00.990"
-  },
-  {
-    "id": "CVE-2026-47418",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. The project CRUD endpoints (`GET / PATCH / DELETE /workspaces/{workspace_id}/projects/{project_id}` and `GET .../{project_id}/stats`) gate access on `require_workspace_member(workspace_id)` only, then resolve `project_id` through `ProjectService.get(project_id)` / `update(project_id, ...)` / `delete(project_id)` / `get_stats(project_id)`. None of these calls thread `workspace_id` through to constrain the lookup. A user who is a member of any workspace `W1` can read, modify, delete, or read stats for projects that belong to a different workspace `W2`. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:00.853"
-  },
-  {
-    "id": "CVE-2026-47417",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. The comment endpoints (`POST /workspaces/{workspace_id}/issues/{issue_id}/comments` and `GET .../comments`) gate access on `require_workspace_member(workspace_id)` only, then call `CommentService.create(issue_id=issue_id, ...)` and `CommentService.list_for_issue(issue_id)` without verifying that `issue_id` belongs to `workspace_id`. A user who is a member of any workspace `W1` can read every comment on, and post new comments to, any issue in any other workspace `W2`. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:00.707"
-  },
-  {
-    "id": "CVE-2026-47416",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 are vulnerable to vertical privilege escalation. The `PATCH /workspaces/{workspace_id}/members/{user_id}` endpoint is gated by `require_workspace_member(workspace_id)`, which defaults to `min_role=\"member\"` and is never overridden by the route. The handler then calls `MemberService.update_role(workspace_id, user_id, body.role)` which sets the target member's role to whatever the request body specifies, with no check that the caller has owner-or-admin privilege, no check that the new role is not higher than the caller's own, and no check that the caller is not silently promoting themselves. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:00.563"
-  },
-  {
-    "id": "CVE-2026-47415",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. The issue CRUD endpoints (`GET / PATCH / DELETE /workspaces/{workspace_id}/issues/{issue_id}`) gate access on `require_workspace_member(workspace_id)` only, then resolve `issue_id` through `IssueService.get(issue_id)` which is a primary-key lookup with no workspace constraint. A user who is a member of any workspace `W1` can read, modify, or delete issues that belong to a different workspace `W2`. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:00.423"
-  },
-  {
-    "id": "CVE-2026-47414",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. Five label endpoints — `PATCH /workspaces/{workspace_id}/labels/{label_id}`, `DELETE .../labels/{label_id}`, `POST .../issues/{issue_id}/labels/{label_id}`, `DELETE .../issues/{issue_id}/labels/{label_id}`, `GET .../issues/{issue_id}/labels` — gate access on `require_workspace_member(workspace_id)` only and pass URL-supplied `label_id` and `issue_id` straight through to `LabelService` without verifying either belongs to the workspace. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:00.283"
-  },
-  {
-    "id": "CVE-2026-47413",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have aprivilege escalation / cross-tenant member injection. The `POST /workspaces/{workspace_id}/members` endpoint is gated only by `require_workspace_member(workspace_id)` (default `min_role=\"member\"`) and forwards the request body's `user_id` and `role` straight into `MemberService.add(workspace_id, user_id, role)`, which has no caller-permission check. A user with the lowest workspace privilege can add any user (including a new attacker-controlled second account, or an existing account they want to grief) as owner of the workspace. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:17:00.133"
-  },
-  {
-    "id": "CVE-2026-47412",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an authorization bypass enabling destructive action. The `DELETE /workspaces/{workspace_id}` endpoint is gated only by `require_workspace_member(workspace_id)` (default `min_role=\"member\"`). Any member of the workspace can issue a single DELETE to wipe the entire workspace, including every project, issue, comment, agent, label, and member record (cascading via the foreign-key relationships). There is no owner-role gate, no confirmation token, no soft-delete window, no recovery path. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:59.980"
-  },
-  {
-    "id": "CVE-2026-47411",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an authorization bypass enabling workspace metadata + settings tampering. The `PATCH /workspaces/{workspace_id}` endpoint is gated only by `require_workspace_member(workspace_id)` (default `min_role=\"member\"`). Any member can rewrite the workspace's `name`, `description`, and the `settings` JSON blob. The settings field is a free-form JSON object — depending on which downstream code reads it, this becomes a configuration-injection primitive for any setting the platform exposes there. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:59.663"
-  },
-  {
-    "id": "CVE-2026-44880",
-    "description": "A buffer overflow vulnerability was found in the command line interface of AOS-CX. Successful exploitation of these vulnerabilities could allow an remote low-privileged user to execute arbitrary code as a privileged user on the underlying operating system.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:58.320"
-  },
-  {
-    "id": "CVE-2026-21579",
-    "description": "This High severity Information Disclosure vulnerability was introduced in versions 7.17.0, 7.19.0, 8.5.0, 8.9.0, 9.0.1, 9.1.0, 9.2.0, 10.0.2, 10.1.0, and 10.2.0 of Confluence Data Center.\r\n\r\nThis Information Disclosure vulnerability, with a CVSS Score of 8.2, allows an unauthenticated attacker to view sensitive information via an Information Disclosure vulnerability.\r\n\r\nAtlassian recommends that Confluence Data Center customers upgrade to latest version, if you are unable to do so, upgrade your instance to one of the specified supported fixed versions:\r\n Confluence Data Center 9.2: Upgrade to a release greater than or equal to 9.2.22\r\n\r\n Confluence Data Center 10.2: Upgrade to a release greater than or equal to 10.2.14\r\n\r\nSee the release notes ([https://confluence.atlassian.com/doc/confluence-release-notes-327.html]). You can download the latest version of Confluence Data Center from the download center ([https://www.atlassian.com/software/confluence/download-archives]).\r\n\r\nThis vulnerability was reported via our Atlassian (Internal) program.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:57.487"
-  },
-  {
-    "id": "CVE-2026-21577",
-    "description": "This High severity DoS (Denial of Service) vulnerability was introduced in versions 9.0.1, 9.1.0, 9.2.0, 9.3.1, 9.4.0, 9.5.1, 10.0.2, 10.1.0 and 10.2.0 of Confluence Data Center.\r\n\r\nThis DoS (Denial of Service) vulnerability, with a CVSS Score of 7.1, allows an authenticated attacker to cause a resource to be unavailable for its intended users by temporarily or indefinitely disrupting services of a host connected to a network.\r\n\r\nAtlassian recommends that Confluence Data Center customers upgrade to latest version, if you are unable to do so, upgrade your instance to one of the specified supported fixed versions:\r\n Confluence Data Center 9.2: Upgrade to a release greater than or equal to 9.2.17\r\n\r\n Confluence Data Center 10.2: Upgrade to a release greater than or equal to 10.2.7\r\n\r\nSee the release notes ([https://confluence.atlassian.com/doc/confluence-release-notes-327.html]). You can download the latest version of Confluence Data Center from the download center ([https://www.atlassian.com/software/confluence/download-archives]).\r\n\r\nThis vulnerability was reported via our Penetration Testing program.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:57.327"
-  },
-  {
-    "id": "CVE-2026-21575",
-    "description": "This High severity RCE (Remote Code Execution) vulnerability was introduced in version 3.4.11 of Sourcetree for Mac and Sourcetree for Windows. \n\t\n\tThis RCE (Remote Code Execution) vulnerability, with a CVSS Score of 7.1, allows an authenticated attacker to execute arbitrary code which has high impact to confidentiality, high impact to integrity, high impact to availability, and requires user interaction. \n\t\n\tAtlassian recommends that Sourcetree for Mac and Sourcetree for Windows customers upgrade to latest version, if you are unable to do so, upgrade your instance to one of the specified supported fixed versions:\n\t\t\n\t\t* Sourcetree for Mac and Sourcetree for Windows 3.4: Upgrade to a release greater than or equal to 3.4.13\n\t\t\n\t\t\n\t\n\tSee the release notes (https://www.sourcetreeapp.com/download-archives). You can download the latest version of Sourcetree for Mac and Sourcetree for Windows from the download center (https://www.sourcetreeapp.com/download-archives). \n\t\n\tThis vulnerability was reported via our Bug Bounty program.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:57.170"
-  },
-  {
-    "id": "CVE-2026-16493",
-    "description": "A flaw was found in ansible-core. The _extract_collection_from_git() function in ansible-core's concrete_artifact_manager.py constructs git clone commands without a '--' (end-of-options) separator before user-supplied URLs when installing collections from git sources. An attacker who provides a crafted collection source URI containing git argument injection payloads can achieve arbitrary command execution when a user runs 'ansible-galaxy collection install' with the malicious source. This is an incomplete fix for CVE-2026-11332, which hardened the role install path but missed the equivalent collection install code path.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:57.030"
-  },
-  {
-    "id": "CVE-2026-16439",
-    "description": "In Eclipse OpenJ9 versions up to 0.60, using -Xtrace to trace method arguments can lead to buffer underflow.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:56.883"
-  },
-  {
-    "id": "CVE-2026-16243",
-    "description": "In Eclipse OMR versions up to 0.11, the arraycmp SIMD implementation for Z and P does not check if the number of bytes to compare is zero.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T18:16:56.727"
-  },
-  {
-    "id": "CVE-2026-47410",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an insecure default cryptographic key. The JWT signing secret defaults to the hardcoded literal `\"dev-secret-change-me\"` when `PLATFORM_JWT_SECRET` is unset. A safety check exists but only fires when `PLATFORM_ENV != \"dev\"`; the default value of `PLATFORM_ENV` is `\"dev\"`, so the check is silently bypassed in any deployment that does not explicitly opt out. The attacker reads the literal from this public source file, mints a JWT with arbitrary `sub` and `email` claims, and authenticates as any existing user (including workspace owners and admins). PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:09.773"
-  },
-  {
-    "id": "CVE-2026-47409",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an authorization bypass enabling owner lockout. The `DELETE /workspaces/{workspace_id}/members/{user_id}` endpoint is gated only by `require_workspace_member(workspace_id)` (default `min_role=\"member\"`). Any member can remove any other member, including the workspace owner, using a single DELETE. There is no caller-role check, no target-role check, no \"cannot remove last owner\" guard. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:09.640"
-  },
-  {
-    "id": "CVE-2026-47408",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. The `GET /workspaces/{workspace_id}/issues/{issue_id}/activity` endpoint is gated by `require_workspace_member(workspace_id)` and dispatches to `ActivityService.list_for_issue(issue_id)`, which executes `SELECT * FROM activity WHERE issue_id = :issue_id` with no workspace constraint. A user who is a member of any workspace can read the full activity log of any issue across the entire multi-tenant deployment. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:09.500"
-  },
-  {
-    "id": "CVE-2026-47407",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Prior to version 0.1.4, the Platform server exposes resources under `/api/v1/workspaces/{workspace_id}/...` and protects them with a `require_workspace_member(workspace_id)` FastAPI dependency. The dependency only checks that the caller is a member of the workspace_id in the URL prefix. The route handlers then look up the inner resource (`agent_id`, `issue_id`, `project_id`, `label_id`, `comment_id`, `dependency_id`) by primary key alone. The resource's own `workspace_id` is never compared to the URL's `workspace_id`. A user can therefore put their own workspace in the URL prefix and any other workspace's resource ID in the path. The auth check passes, since they really are a member of the prefix workspace. The service then returns the cross-tenant resource for read, update, or delete. There is a second bug in the member-management routes (`add_member`, `update_member_role`, `remove_member`, `update_workspace`, `delete_workspace`). Each one inherits the default `min_role=\"member\"` from `require_workspace_member`. Any basic member can therefore promote themselves to admin or owner, demote or remove other members, and delete the workspace. The role hierarchy exists in the schema but is not enforced. Registration is open at `/api/v1/auth/register` with no email verification. The default server bind is `0.0.0.0:8000` (`python -m praisonai_platform`). One curl from any unauthenticated network position is enough to bootstrap into the system. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:09.363"
-  },
-  {
-    "id": "CVE-2026-47406",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have an Insecure Direct Object Reference. The dependency endpoints (`POST/GET /workspaces/{workspace_id}/issues/{issue_id}/dependencies` and `DELETE .../dependencies/{dep_id}`) gate access on `require_workspace_member(workspace_id)` only, then dispatch to `DependencyService` calls that take URL/body-supplied issue and dependency IDs without verifying any of them belong to the membership-checked workspace. Most damaging: `create_dependency` accepts `body.depends_on_issue_id` from the request body — that ID is checked against nothing — letting an attacker create a \"blocks\" or \"related\" link between any two issues anywhere in the database. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:09.220"
-  },
-  {
-    "id": "CVE-2026-47405",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Versions prior to 0.1.4 have a broken workspace authorization check that allows any authenticated low-privilege workspace member to escalate their own role to `owner`. The issue is caused by privileged workspace-management routes using the shared dependency `require_workspace_member(...)` without requiring `admin` or `owner`. The dependency defaults to `min_role=\"member\"`, so routes that should be administrative are accessible to ordinary workspace members. As a result, a normal workspace member can promote their own account from `member` to `owner`; add arbitrary users as `owner` or `admin`; change other members' roles; remove legitimate owners or members; take over workspace membership completely; and/or perform destructive workspace operations after escalation. This is a broken access control / vertical privilege escalation vulnerability. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:09.083"
-  },
-  {
-    "id": "CVE-2026-47399",
-    "description": "PraisonAI Platform is the platform layer for the PraisonAI multi-agent teams system. Prior to version 0.1.4, the workspace-scoped REST routes contain a systemic object-level authorization flaw that allows an authenticated user from one workspace to access, modify, and delete objects belonging to another workspace by supplying the victim object's global UUID. The affected pattern appears in workspace-scoped routes such as agents, projects, issues, and comments. The route layer verifies that the caller is a member of the `workspace_id` provided in the URL, but the service layer later resolves the target object by global object ID only. It does not verify that the resolved object actually belongs to the workspace in the URL. As a result, a valid member of `workspace_attacker` can call a route under `/api/v1/workspaces/{workspace_attacker}/...` while supplying an object UUID from `workspace_victim`. The server authorizes the request based on membership in `workspace_attacker`, then fetches or mutates the victim object by global UUID. This breaks the platform's workspace isolation boundary. PraisonAI Platform version 0.1.4 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:08.950"
-  },
-  {
-    "id": "CVE-2026-47398",
-    "description": "PraisonAI is a multi-agent teams system. The v4.6.32 chokepoint refactor (which patched CVE-2026-44334 / GHSA-xcmw-grxf-wjhj) added the PRAISONAI_ALLOW_LOCAL_TOOLS env-var gate to the tool_override.py sinks. However, two additional spec.loader.exec_module call sites in praisonai/agents_generator.py were missed and remain completely unguarded in versions prior to 4.6.40. Both functions accept a module_path parameter sourced from YAML configuration and execute it without validation, signature checking, or the env-var gate. Version 4.6.40 fixes the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:08.803"
-  },
-  {
-    "id": "CVE-2026-47397",
-    "description": "PraisonAI is a multi-agent teams system. Prior to version 4.6.40, hidden metadata in a webpage causes PraisonAI agents to write attacker-controlled content to arbitrary paths. `write_file` skips path validation when `workspace=None` (always `None` in production). Version 4.6.40 fixes the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:08.670"
-  },
-  {
-    "id": "CVE-2026-44907",
-    "description": "A denial of service vulnerability could be triggered by sending specially crafted HTTP requests to server function endpoints, this could lead to excessive CPU usage; affecting the following packages: react-server-dom-webpack, react-server-dom-parcel, react-server-dom-turbopack (versions 19.0.0 through 19.0.7, 19.1.0 through 19.1.8, and 19.2.0 through 19.2.7).",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:08.227"
-  },
-  {
-    "id": "CVE-2026-24232",
-    "description": "NVIDIA Tranformers4Rec contains a vulnerability where an attacker could cause improper deserialization of untrusted data. A successful exploit of this vulnerability might lead to code execution, data tampering, and information disclosure.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:06.453"
-  },
-  {
-    "id": "CVE-2026-16454",
-    "description": "In Eclipse hawkBit versions 1.0.3 and prior, a privilege escalation vulnerability (CWE-284 / CWE-862) has been identified in the Direct Device Integration (DDI) Controller.\n\n\n\nThis vulnerability allows an authenticated device to escalate its permissions and bypass the strict boundaries of its assigned updates. Under normal operation, a device should be restricted strictly to the specific firmware artifacts explicitly assigned to it. However, this flaw enables any authenticated device to bypass this restriction and download any firmware artifact within the same tenant.\n\n\n\nThis is not an authentication bypass; the requesting device must possess valid credentials for its respective tenant. Instead, the issue stems from a flaw in object-level authorization validation.\n\n\n\nA related, lower-severity helper issue exists in the listing software modules artifacts metadata endpoint. This endpoint does not enforce assignment checks, enabling an authenticated device to list and enumerate available firmware artifacts, which can facilitate targeted exfiltration using the main download authorization bypass.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:05.887"
-  },
-  {
-    "id": "CVE-2026-16451",
-    "description": "A security flaw has been discovered in zsadmin2025 ZS-Admin up to b52e14536d59fda11e56e2536a1c32e82a38cead. This impacts an unknown function of the file /api/system/file/upload of the component com.zs.file.controller.SysFileController. Performing a manipulation of the argument File results in unrestricted upload. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. This product is using a rolling release to provide continious delivery. Therefore, no version details for affected nor updated releases are available. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:05.730"
-  },
-  {
-    "id": "CVE-2026-15829",
-    "description": "A SQL injection (CWE-89) and security boundary bypass (CWE-863) vulnerability exists in the prebuilt BigQuery forecasting tool (bigquery-forecast) of googleapis/mcp-toolbox.\n\nThe tool accepts client-controlled parameters (data_col, timestamp_col, and id_cols) as plain strings and interpolates them unescaped via fmt.Sprintf directly into a generated AI.FORECAST table-valued SELECT statement. While MCP Toolbox utilizes an allowedDatasets mechanism to restrict queries, this defense only validates the history_data parameter; the final assembled query is executed without re-validation.\n\nAn attacker can break out of the string literal fields (such as timestamp_col) to inject a valid multi-statement or cross-dataset query block. This allows an unauthorized user to bypass the operator-configured allowedDatasets boundary and read arbitrary BigQuery tables.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:05.350"
-  },
-  {
-    "id": "CVE-2026-15793",
-    "description": "BuildKit custom frontends or clients using the raw low-level API can set git.checkoutbundle=true when checking out Git sources. If the Git source is malicious, this could lead to a crafted command invocation on the host.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:05.220"
-  },
-  {
-    "id": "CVE-2026-15792",
-    "description": "A malicious BuildKit client or frontend could craft a request that could lead to BuildKit daemon crashing with a panic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:05.093"
-  },
-  {
-    "id": "CVE-2026-15791",
-    "description": "A crafted message in the BuildKit low-level build API can be used to remove the contents of the /tmp directory. The action that can normally be used to delete files inside the build container rootfs can escape into the real host temp directory.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:04.963"
-  },
-  {
-    "id": "CVE-2026-15789",
-    "description": "A custom client can produce such an upload request to the BuildKit daemon that files can escape from the BuildKit-controlled state directory. The client needs to have valid permissions to access the BuildKit control API to issue builds, e.g., bypass authentication, etc.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:04.843"
-  },
-  {
-    "id": "CVE-2026-15724",
-    "description": "In Progress ShareFile Storage Zones Controller versions prior to 5.12.5 and 6.0.2, an authenticated administrative user can exploit a path traversal vulnerability to read arbitrary files from the server filesystem, write files to arbitrary directories, or determine whether specific files exist on the server.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:04.703"
-  },
-  {
-    "id": "CVE-2026-15432",
-    "description": "When verifying a mac with a ChunkedMacVerification object, Tink compares the resulting tag with non constant time comparison. This potentially allows an attacker to use timinig information as a side channel in order to get information how many bytes of a given tag match the correct tag. This in turn could allow to find a correct tag bytewise.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:04.563"
-  },
-  {
-    "id": "CVE-2026-15342",
-    "description": "Plane contains a multi‑tenant authorization flaw in its asset‑management API that allows authenticated users from one workspace to access, delete, or duplicate assets belonging to another workspace by providing only the victim workspace slug and asset ID. The affected endpoints return presigned file URLs and enable destructive or duplicative actions without verifying that the requester is a member of the targeted workspace. This enables cross‑tenant data exposure, data deletion, and persistent exfiltration of files into an attacker‑controlled workspace.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:04.450"
-  },
-  {
-    "id": "CVE-2025-68640",
-    "description": "The Apple Find My backend service through 2025-12-17 allows an attacker in possession of a valid PET (Private Endpoint Token) to enumerate devices and remove offline devices from an Apple ID account without triggering two-factor authentication or ownership verification. This may result in unauthorized removal of devices associated with the account.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-21T17:17:04.183"
   }
 ]
