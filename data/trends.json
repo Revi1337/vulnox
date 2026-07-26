@@ -1,229 +1,5 @@
 [
   {
-    "id": "CVE-2026-40080",
-    "description": "Cacti is an open source performance and fault management framework. Versions 1.2.30 and prior are vulnerable to Open Redirect through a substring check rather than a host check at str_contains($referer, CACTI_PATH_URL). When the user's login_opts == '1' (redirect to referer after login), the function used $_SERVER['HTTP_REFERER'] directly.  An attacker could craft a referer such as https://evil.com/cacti/. Where CACTI_PATH_URL is /cacti/, the substring matches and the user is redirected to evil.com after login. The pre-existing validate_redirect_url() helper at lib/html_utility.php performed proper validation but was not invoked from auth_login_redirect(). This issue has been fixed in version 1.2.31.",
-    "severity": "Medium",
-    "tech": "Cacti",
-    "published": "2026-06-25T23:17:02.623"
-  },
-  {
-    "id": "CVE-2026-40082",
-    "description": "Cacti is an open source performance and fault management framework. Versions 1.2.30 and prior have missing session_regenerate_id() after login, leading to Session Fixation. session_regenerate_id() is NOT called after successful login. The login flow at auth_login.php:203-207 directly sets $_SESSION[SESS_USER_ID] without rotating the session ID. The session cookie configuration is otherwise good (httponly=true, samesite=Strict, secure=true for HTTPS at include/global.php:513-537), but these do not prevent session fixation via same-site vectors. This issue has been fixed in version 1.2.31.",
-    "severity": "Medium",
-    "tech": "Cacti",
-    "published": "2026-06-25T23:17:02.760"
-  },
-  {
-    "id": "CVE-2026-40083",
-    "description": "Cacti is an open source performance and fault management framework. Versions 1.2.30 and prior have SQL Injection through unsanitized unserialize+implode in managers.php.  At line 756 of managers.php, the application assigns $selected_items by calling cacti_unserialize(stripslashes(gnrv('selected_graphs_array'))). The  cacti_unserialize() function calls unserialize() with allowed_classes set to false, which prevents object injection but still allows arbitrary string  arrays to be deserialized. Then, at lines 760 to 766, the deserialized array values are passed directly into db_execute('DELETE FROM snmpagent_managers  WHERE id IN (' . implode(',', $selected_items) . ')'), where they are imploded into the SQL statement without any integer validation, resulting in SQL  Injection when using SNMP agent management permissions. This issue has been fixed in version 1.2.31.",
-    "severity": "High",
-    "tech": "Cacti",
-    "published": "2026-06-25T23:17:02.900"
-  },
-  {
-    "id": "CVE-2026-40084",
-    "description": "Cacti is an open source performance and fault management framework. Versions 1.2.30 and prior are vulnerable to Path Traversal  through the Report format_file Parameter, causing arbitrary file read. This vulnerability occurs in two stages. In the first stage (stored injection), lib/html_reports.php at line 283 stores $save['format_file'] =  $post['format_file'] directly into the database without any validation. In the second stage (file read), lib/reports.php at line 667 concatenates  CACTI_PATH_FORMATS . '/' . $format_file, and line 670 then calls file($format_file), reading arbitrary files from the filesystem. This issue has been fixed in version 1.2.31.",
-    "severity": "Medium",
-    "tech": "Cacti",
-    "published": "2026-06-25T23:17:03.030"
-  },
-  {
-    "id": "CVE-2026-40941",
-    "description": "Cacti is an open source performance and fault management framework. Versions 1.2.30 and prior have a package import signature validation bypass allows which allows self-signed packages. This issue has been fixed in version 1.2.31.",
-    "severity": "Medium",
-    "tech": "Cacti",
-    "published": "2026-06-25T23:17:03.170"
-  },
-  {
-    "id": "CVE-2026-12993",
-    "description": "A flaw was found in Apicurio Registry. The DocumentBuilderAccessor correctly blocks external DTD and schema access but does not disable DOCTYPE declarations or enable FEATURE_SECURE_PROCESSING. An attacker with artifact-write permission can upload XML documents with internal entity-expansion payloads (billion-laughs variant) that cause CPU and heap exhaustion, partially mitigated by the JAXP default 64,000 entity-expansion limit.",
-    "severity": "Medium",
-    "tech": "Build of apicurio registry",
-    "published": "2026-06-26T00:16:50.760"
-  },
-  {
-    "id": "CVE-2026-13083",
-    "description": "A flaw was found in the Pen Drive report generator. Cluster-sourced data is rendered into HTML reports without proper escaping or sanitization. An attacker with cluster administrator privileges can inject a stored cross-site scripting (XSS) payload into cluster objects (such as ClusterVersion spec.channel) that executes in the browser of any user who opens the generated HTML report.",
-    "severity": "Medium",
-    "tech": "Pen drive",
-    "published": "2026-06-26T00:16:50.883"
-  },
-  {
-    "id": "CVE-2026-13218",
-    "description": "A flaw was found in KubeVirt's virt-handler network cache handling. The WriteToCachedFile function writes data to a launcher-rooted path using os.WriteFile and os.Chown without symlink protection. A user with access to the virt-launcher container can plant a symlink at the cache file path, causing virt-handler to follow it and overwrite an arbitrary host file with JSON content and change its ownership.",
-    "severity": "Medium",
-    "tech": "Kubevirt",
-    "published": "2026-06-26T00:16:51.147"
-  },
-  {
-    "id": "CVE-2026-13318",
-    "description": "A server-side request forgery (SSRF) flaw was found in KubeVirt's virt-api port-forward handler. When processing a port-forward request to a VirtualMachineInstance (VMI), virt-api reads the target IP from vmi.Status.Interfaces[0].IP and passes it directly to net.Dial() without validation. For VMIs using non-masquerade network bindings (bridge or secondary-only), this IP is reported by the QEMU guest agent running inside the VM and is fully controllable by the VM owner. An attacker with kubevirt.io:edit permissions can create a VM with a modified guest agent that reports an arbitrary IP address, then request port-forward to establish a bidirectional TCP tunnel from virt-api's cluster-internal network position to any routable destination, bypassing NetworkPolicy isolation.",
-    "severity": "Medium",
-    "tech": "Kubevirt",
-    "published": "2026-06-26T00:16:51.277"
-  },
-  {
-    "id": "CVE-2026-13322",
-    "description": "A flaw was found in KubeVirt's downward metrics virtio-serial server. The server reads guest requests using textproto.Reader.ReadLine(), which buffers input indefinitely until a newline character is received, with no length limit or read deadline. A user with access to a VM guest that has the downward metrics virtio-serial device configured can write a continuous byte stream to the device, causing unbounded memory allocation in the virt-handler process until it is OOM-killed.",
-    "severity": "Low",
-    "tech": "Openshift virtualization",
-    "published": "2026-06-26T00:16:51.397"
-  },
-  {
-    "id": "CVE-2026-43920",
-    "description": "FOSSBilling is a free, open-source billing and client management system. In versions 0.5.4 through 0.7.2, the /run-patcher maintenance endpoint in FOSSBilling was accessible without authentication, which allowed unauthenticated remote users to trigger update patch routines that modify configuration files, execute database schema changes, perform filesystem mutations, and clear caches. The /run-patcher endpoint executes privileged maintenance operations - configuration migrations, database patch execution (including ALTER TABLE, DROP TABLE, UPDATE statements), filesystem deletions and renames, and cache clearing - without requiring administrator authentication, CSRF validation, or CLI context. An unauthenticated remote attacker can trigger these operations by sending a simple HTTP GET request to /run-patcher, which can be abused for denial-of-service attacks. Certain patches (e.g., batch token regeneration for all admin and client accounts in patch 53, and session invalidation) are disruptive even when re-executed against an already-patched instance. Repeated or concurrent requests may also cause inconsistent database state. This issue has been fixed in version 0.8.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-26T00:16:52.817"
-  },
-  {
-    "id": "CVE-2026-9219",
-    "description": "Setracker2 Android Companion App com.tgelec.setracker versions 3.1.5 and prior have a predictable registration ID derived from IMEI. The enrollment system lacks additional authentication before assignment. If an attacker is able to obtain the registration ID, they would be able to arbitrarily enroll watches belonging to other users.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T00:16:55.213"
-  },
-  {
-    "id": "CVE-2026-9220",
-    "description": "Setracker2 Android Companion App com.tgelec.setracker versions 3.1.5 and prior encrypts requests between the watch and its backend with static hardcoded AES keys and initialization vectors. This allows an attacker to decrypt Setracker2 watch traffic.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T00:16:55.367"
-  },
-  {
-    "id": "CVE-2026-9221",
-    "description": "The Setracker2 Android Companion App (com.tgelec.setracker) versions 3.1.5 and earlier uses MD5 to generate a request signature for authenticating communications between the mobile client and the backend REST API. Attackers could potentially reverse the signature to recover the session ID. With the session ID exposed, an attacker could impersonate the legitimate user and issue authenticated API requests.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T00:16:55.500"
-  },
-  {
-    "id": "CVE-2026-9222",
-    "description": "Setracker2 Android Companion App com.tgelec.setracker versions 3.1.5 and prior only require the password hash when authenticating with backend services from the client. This could allow an attacker, who knows the hash, to authenticate and gain full access.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-26T00:16:55.647"
-  },
-  {
-    "id": "CVE-2026-13226",
-    "description": "The Groundhogg — CRM, Newsletters, and Marketing Automation plugin for WordPress is vulnerable to generic SQL Injection via the 'after' parameter in all versions up to, and including, 4.5.4 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with Sales Manager-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The AJAX handler wp_ajax_groundhogg_get_contacts_table has its capability check commented out and performs no nonce verification, meaning any authenticated user regardless of role can reach the vulnerable code path.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T02:16:51.877"
-  },
-  {
-    "id": "CVE-2026-48615",
-    "description": "A flaw in Node.js proxy tunnel error handling could expose proxy credentials in `ERR_PROXY_TUNNEL` error messages.\r\n\r\nWhen proxy credentials are embedded in the proxy URL, they may be exposed through error handling paths and captured by logs, diagnostics, or other error consumers.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "High",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:52.273"
-  },
-  {
-    "id": "CVE-2026-48618",
-    "description": "A flaw in Node.js TLS hostname handling can cause Node.js unicode dot separator handling can lead to tls wildcard-depth authentication bypass due to resolver and verifier hostname normalization mismat.\r\n\r\nThis can lead to confidentiality impact or bypass of the intended security boundary under affected configurations.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "Medium",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:52.397"
-  },
-  {
-    "id": "CVE-2026-48619",
-    "description": "A flaw in Node.js HTTP/2 client allows a server to send an unlimited number of ORIGIN frames, which could lead to an Out of Memory error on the client.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "High",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:52.507"
-  },
-  {
-    "id": "CVE-2026-48928",
-    "description": "A inconsistency in Node.js hostname matching can cause a trust-policy bypass in multi-context mTLS setups.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "Medium",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:52.610"
-  },
-  {
-    "id": "CVE-2026-48930",
-    "description": "A flaw in Node.js TLS hostname handling can cause Embedded-nul hostnames can lead to silent authority rebinding due to c-string truncation in resolver bindings.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "Critical",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:52.723"
-  },
-  {
-    "id": "CVE-2026-48933",
-    "description": "A flaw in Node.js WebCrypto implementation can crash the process if the input of `subtle.encrypt()` is a multiple of 2GiB.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "High",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:52.833"
-  },
-  {
-    "id": "CVE-2026-48934",
-    "description": "A flaw in Node.js TLS host verification can cause an attacker to bypass certification validation.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "Medium",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:52.950"
-  },
-  {
-    "id": "CVE-2026-48935",
-    "description": "A flaw in Node.js Permission API can cause a file metadata to be modified even on a path that was set as read-only with e.g. `--allow-fs-read`.\r\n\r\nThis vulnerability affects all supported release lines: **Node.js 22**, **Node.js 24**, and **Node.js 26**.",
-    "severity": "Low",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:53.050"
-  },
-  {
-    "id": "CVE-2026-48936",
-    "description": "A flaw in Node.js Permission API can cause a local server to be started (via a Unix domain socket), even without the `--allow-net` permission.\r\n\r\nThis vulnerability affects one supported release line: **Node.js 26**.",
-    "severity": "Low",
-    "tech": "Node.js",
-    "published": "2026-06-26T02:16:53.157"
-  },
-  {
-    "id": "CVE-2026-50739",
-    "description": "A bypass for CVE‑2026‑34913 exists with proper ownership validation that had not been applied to the reverse operation of linking campaigns and trackers through the `tracker-campaigns.php` script in Revive Adserver 6.0.7 and earlier. As a result, a low‑privileged user could link their trackers to campaigns owned by other managers on the same instance, leading to inconsistent ownership relationships.",
-    "severity": "Medium",
-    "tech": "Revive adserver",
-    "published": "2026-06-26T02:16:53.407"
-  },
-  {
-    "id": "CVE-2026-50740",
-    "description": "A missing sanitisation vulnerability of user input in the zone-include.php script exists in Revive Adserver 6.0.7 and earlier. A low‑privileged user could exploit the refresh parameter of the iFrame invocation tag to perform reflected XSS attacks.",
-    "severity": "Medium",
-    "tech": "Revive adserver",
-    "published": "2026-06-26T02:16:53.517"
-  },
-  {
-    "id": "CVE-2026-50741",
-    "description": "Bypass to the fix for CVE-2026-34916. Variants of such vectors have been also reported by phucrio and offsetmd. The fix can be bypassed either by sending a disallowed but otherwise valid plugin identifier as `type`, or using the `ox.setChannelTargeting` XML-RPC API method.",
-    "severity": "High",
-    "tech": "Revive adserver",
-    "published": "2026-06-26T02:16:53.627"
-  },
-  {
-    "id": "CVE-2026-50742",
-    "description": "A stored XSS vulnerabilities exists in the `maintenance-acl-check.php` and `maintenance-banners-check.php` tools of Revive Adserver 6.0.7. The issue was caused by entity names being displayed without proper escaping when inconsistencies were detected. Whether the XSS payload is executed when an administrator uses the affected maintenance tools is not entirely under the attacker's control.",
-    "severity": "Medium",
-    "tech": "Revive adserver",
-    "published": "2026-06-26T02:16:53.740"
-  },
-  {
-    "id": "CVE-2026-50744",
-    "description": "A bypass to the admin‑only restriction of the XML‑RPC API in Revive Adserver 6.0.7. The API response for the ox.login method returned a session ID cookie in the HTTP headers, and although the method correctly returned an error, the associated session was not invalidated. As a result, the leaked session ID could be used to perform subsequent API calls without restrictions.",
-    "severity": "Medium",
-    "tech": "Revive adserver",
-    "published": "2026-06-26T02:16:53.847"
-  },
-  {
-    "id": "CVE-2026-50745",
-    "description": "A missing sanitisation vulnerability exists with user input in the stats-video.php script. The way URLs to this script were constructed did not follow best practices, and the output of the Smarty custom helper function url was neither properly encoded nor sanitised, allowing user‑supplied input to be reflected without escaping.",
-    "severity": "Medium",
-    "tech": "Revive adserver",
-    "published": "2026-06-26T02:16:53.953"
-  },
-  {
-    "id": "CVE-2026-8661",
-    "description": "Server-Side Request Forgery in the markdown_to_pdf action of Rapid7 InsightConnect Markdown Plugin on Linux in versions prior to 4.0.2 allows remote attackers to make arbitrary outbound HTTP requests via unsanitized resource-loading HTML elements (img/src, CSS url(), @import) embedded in Markdown input. The initial fix in 4.0.0 disabled JavaScript but did not neutralize resource-loading vectors. Resolved in 4.0.2 by sanitizing HTML with an allowlist of tags, attributes, and URL schemes.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-06-26T02:16:54.640"
-  },
-  {
     "id": "CVE-2026-8797",
     "description": "An access control deficiency vulnerability exists in ExpressUpdate Agent for Windows. If a malicious user gains access to the product, arbitrary code could be executed with SYSTEM privileges.",
     "severity": "Unknown",
@@ -65301,5 +65077,19 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-25T14:16:28.957"
+  },
+  {
+    "id": "CVE-2026-17432",
+    "description": "A vulnerability was detected in NousResearch hermes-agent 2026.6.5. Affected by this vulnerability is an unknown functionality of the file hermes-agent/plugins/platforms/simplex/adapter.py of the component SimpleX Gateway Authorization. The manipulation of the argument contactId results in improper access controls. The attack may be launched remotely. A high complexity level is associated with this attack. The exploitation appears to be difficult. The exploit is now public and may be used. The patch is identified as 490c486ff65b766d9de0fe0e6f26e1778aaa8fb3. Applying a patch is advised to resolve this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-26T01:16:25.783"
+  },
+  {
+    "id": "CVE-2026-15962",
+    "description": "The Fluent Forms Pro Add On Pack plugin for WordPress is vulnerable to PHP Object Injection in all versions up to, and including, 6.2.6 via deserialization of untrusted input. This makes it possible for authenticated attackers, with Subscriber-level access and above, to inject a PHP Object. The additional presence of a POP chain allows attackers to change user passwords and potentially take over administrator accounts. Note: This can only be exploited if user update integration is enabled and a user meta field is mapped.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-26T02:16:28.790"
   }
 ]
