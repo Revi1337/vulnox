@@ -1,89 +1,5 @@
 [
   {
-    "id": "CVE-2026-10643",
-    "description": "Zephyr's IP socket recvmsg() implementation (subsys/net/lib/sockets/sockets_inet.c, insert_pktinfo()) validated the user-supplied ancillary (msg_control) buffer using only the payload length (msg->msg_controllen < pktinfo_len) before writing a full control message consisting of an aligned cmsg header plus the payload. Because the check omitted the cmsg header size, a control buffer whose length falls in the under-checked window (e.g. 16-27 bytes for IPv4 IP_PKTINFO on a 64-bit target, where a single element actually occupies 28 bytes) passes the guard yet causes a fixed-size out-of-bounds write of up to one cmsg header (~12 bytes) past the end of the buffer.\n\nUnder CONFIG_USERSPACE the recvmsg verifier allocates a kernel-heap copy of the control buffer sized to msg_controllen and runs the implementation against it, so the overflow corrupts kernel heap memory and is triggerable from an unprivileged userspace thread; in supervisor mode it corrupts the caller's buffer.\n\nThe path is reachable on a UDP/IP socket with IP_PKTINFO/IPV6_RECVPKTINFO (or hoplimit/timestamping) enabled when the application calls recvmsg() with an undersized control buffer and a datagram is received; part of the overwritten bytes (the destination IP in ipi_addr) is influenced by the received packet.\n\nThe fix makes the capacity check use NET_CMSG_SPACE(pktinfo_len) (aligned header + aligned data) and returns -ENOMEM when the buffer is too small. Affected: v3.6.0 through v4.4.0.",
-    "severity": "High",
-    "tech": "Zephyr",
-    "published": "2026-06-28T00:16:24.637"
-  },
-  {
-    "id": "CVE-2026-8095",
-    "description": "The Frontend File Manager Plugin plugin for WordPress is vulnerable to Authenticated Arbitrary File Deletion in versions up to and including 23.6. This is due to a case-sensitive bypass of the wpfm_dir_path parameter sanitization in the wpfm_file_meta_update AJAX handler, where supplying WPFM_DIR_PATH in uppercase evades the unset check and is normalized to wpfm_dir_path by sanitize_key() during update_post_meta(), allowing an attacker to overwrite the stored file path with an arbitrary filesystem path that is then passed directly to unlink() in delete_file_locally() without any directory containment validation. This makes it possible for authenticated attackers with Subscriber-level access to delete arbitrary files on the server, including sensitive files such as wp-config.php, potentially leading to full site takeover.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-28T00:16:25.180"
-  },
-  {
-    "id": "CVE-2026-58049",
-    "description": "FFmpeg's RASC video decoder (decode_dlta in libavcodec/rasc.c) performs 32-bit reads and writes at the row cursor before the NEXT_LINE row-boundary check and validates the DLTA region in pixel rather than byte units, so a DLTA run on a PAL8 frame can access several bytes past the row allocation. A crafted media stream using the RASC FourCC, decoded by libavcodec, triggers a bitstream-controlled out-of-bounds heap write and adjacent out-of-bounds read, leading to memory corruption.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-28T02:16:30.477"
-  },
-  {
-    "id": "CVE-2026-58050",
-    "description": "libssh2 through 1.11.1 reads an attacker-controlled 32-bit attribute count from a publickey-subsystem response and uses it in the allocation num_attrs * sizeof(libssh2_publickey_attribute) without bounds checking, so on 32-bit platforms the multiplication overflows to an undersized buffer. A malicious SSH server can then drive the attribute-parsing loop to write past the allocation, causing a heap buffer overflow in a connecting libssh2 client.",
-    "severity": "High",
-    "tech": "Libssh2",
-    "published": "2026-06-28T02:16:32.017"
-  },
-  {
-    "id": "CVE-2026-58051",
-    "description": "libssh2 through 1.11.1 grows its publickey list with SSH2_REALLOC but does not zero-initialize new entries before parsing populates them, so a parse failure reaching the cleanup path leaves libssh2_publickey_list_free operating on an uninitialized entry. A malicious SSH server offering the publickey subsystem can use a malformed response to make cleanup free an uninitialized, attacker-influenceable attrs pointer in a connecting libssh2 client.",
-    "severity": "Medium",
-    "tech": "Libssh2",
-    "published": "2026-06-28T02:16:32.153"
-  },
-  {
-    "id": "CVE-2026-58052",
-    "description": "7-Zip for Windows through 26.01 fails to preserve the Mark-of-the-Web when extracting a crafted RAR5 archive, because its guard that suppresses an archive-supplied Zone.Identifier stream matches the exact name 'Zone.Identifier' while a RAR5 STM record named ':Zone.Identifier:$DATA' is not matched and NTFS canonicalizes it to the same stream, overwriting the propagated Internet-zone marker with ZoneId=0. A second STM record named '::$DATA' overwrites the extracted file's default data stream, letting an attacker defeat SmartScreen/MotW warnings and spoof file content.",
-    "severity": "Low",
-    "tech": "7-zip",
-    "published": "2026-06-28T02:16:32.283"
-  },
-  {
-    "id": "CVE-2026-58053",
-    "description": "Gitea act_runner with the Docker backend (through act 0.262.0) passes a workflow's container.options string to the Docker job container's HostConfig and, when configured with privileged: false, forces only the Privileged flag off while merging options such as --pid=host, --cap-add, and --security-opt unchanged. A user who can run a workflow on a Docker-backed runner can create a job container with host namespaces and broad capabilities and escape to the host as root despite privileged mode being disabled.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-06-28T02:16:32.420"
-  },
-  {
-    "id": "CVE-2026-58054",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority. This CVE was assigned on the basis that the permission system allows a limited administrator to grant privileges exceeding their own authorization scope, potentially constituting an insecure default configuration. Following a dispute, the MITRE TL-Root determined the behavior reflects documented and intended product design rather than a security vulnerability.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-06-28T02:16:32.550"
-  },
-  {
-    "id": "CVE-2026-58055",
-    "description": "nghttp2's nghttpx proxy through 1.69.0 forwards an HTTP/1.1 Upgrade request that also carries a Content-Length header and body onto reusable keep-alive backend connections, re-adding the Upgrade and Connection headers while passing Content-Length verbatim. A backend that resolves the resulting ambiguous message in the attacker's favor enables HTTP request/response smuggling and cross-client response-queue poisoning.",
-    "severity": "Medium",
-    "tech": "Nghttp2",
-    "published": "2026-06-28T02:16:32.677"
-  },
-  {
-    "id": "CVE-2026-58056",
-    "description": "RustDesk gates incoming control messages on per-capability flags rather than on the session's authorized connection type, and a file-transfer session does not clear those flags. A peer holding only a valid FileTransfer authorization can inject keyboard and mouse input and reach the unguarded screenshot and display-capture handlers, acting outside its granted scope.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-06-28T02:16:32.860"
-  },
-  {
-    "id": "CVE-2026-58057",
-    "description": "Flowise before 3.1.3 validates Custom MCP stdio environment variables against a denylist using a case-sensitive comparison, so on Windows, where environment names are case-insensitive, supplying 'node_options' bypasses the NODE_OPTIONS denylist entry. An authenticated user who can configure a Custom MCP node can thereby inject NODE_OPTIONS --require and execute arbitrary code in the Flowise server context.",
-    "severity": "Medium",
-    "tech": "Flowise",
-    "published": "2026-06-28T02:16:32.990"
-  },
-  {
-    "id": "CVE-2026-58058",
-    "description": "Nmap through 7.99 does not keep the IPv6 extension-header walk within the captured packet in ipv6_get_data_primitive (libnetutil/netutil.cc), so the pointer advances past the buffer and the remaining-length computation underflows to a large value. A scanned target or on-path attacker returning a crafted IPv6 response with a truncated extension header can trigger out-of-bounds reads and a crash during raw IPv6 scans.",
-    "severity": "Medium",
-    "tech": "Nmap",
-    "published": "2026-06-28T02:16:33.130"
-  },
-  {
     "id": "CVE-2026-10593",
     "description": "The Zephyr Bluetooth LE Audio Basic Audio Profile (BAP) unicast client mishandles peer-supplied ASE state notifications. In unicast_client_ep_qos_state() (subsys/bluetooth/audio/bap_unicast_client.c), the handler writes attacker-controlled QoS fields (interval, framing, phy, sdu, rtn, latency, pd) through the stream->qos pointer with only a stream != NULL guard. stream->qos is NULL for any stream that has been codec-configured via bt_bap_stream_config() but not yet added to a unicast group (it is set only by unicast_group_add_stream()).\n\nA malicious or buggy remote ASCS server, to which the local device is connected as a BAP unicast client, can send a GATT notification announcing the ASE has entered the QoS Configured state while the local endpoint is still in the Codec Configured state — a transition the dispatcher explicitly permits — during that window, causing a write through a NULL pointer and a crash (denial of service). The data written is itself remote-controlled.\n\nThe defect shipped in v4.3.0 and v4.4.0 (and earlier). The fix re-points all BAP QoS storage to the always-valid embedded ep->qos struct, eliminating the NULL dereference.",
     "severity": "Medium",
@@ -47890,7 +47806,7 @@
     "id": "CVE-2026-60150",
     "description": "Vulnerability in the Oracle VM VirtualBox product of Oracle Virtualization (component: Core).   The supported version that is affected is 7.2.12. Easily exploitable vulnerability allows low privileged attacker with logon to the infrastructure where Oracle VM VirtualBox executes to compromise Oracle VM VirtualBox.  Successful attacks of this vulnerability can result in takeover of Oracle VM VirtualBox. CVSS 3.1 Base Score 7.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Vm virtualbox",
     "published": "2026-07-21T22:17:15.650"
   },
   {
@@ -47904,7 +47820,7 @@
     "id": "CVE-2026-60153",
     "description": "Vulnerability in the Oracle WebLogic Server product of Oracle Fusion Middleware (component: Console).  Supported versions that are affected are 12.2.1.4.0, 14.1.1.0.0, 14.1.2.0.0 and  15.1.1.0.0. Easily exploitable vulnerability allows high privileged attacker with network access via HTTPS to compromise Oracle WebLogic Server.  Successful attacks of this vulnerability can result in takeover of Oracle WebLogic Server. CVSS 3.1 Base Score 7.2 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Weblogic server",
     "published": "2026-07-21T22:17:15.873"
   },
   {
@@ -47918,7 +47834,7 @@
     "id": "CVE-2026-60155",
     "description": "Vulnerability in the Oracle VM VirtualBox product of Oracle Virtualization (component: Core).   The supported version that is affected is 7.2.12. Difficult to exploit vulnerability allows high privileged attacker with logon to the infrastructure where Oracle VM VirtualBox executes to compromise Oracle VM VirtualBox.  While the vulnerability is in Oracle VM VirtualBox, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in takeover of Oracle VM VirtualBox. CVSS 3.1 Base Score 7.5 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:H/PR:H/UI:N/S:C/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Vm virtualbox",
     "published": "2026-07-21T22:17:16.097"
   },
   {
@@ -47932,21 +47848,21 @@
     "id": "CVE-2026-60157",
     "description": "Vulnerability in Oracle GoldenGate (component: Service Manager).  Supported versions that are affected are 19.1.0.0.0-19.29.0.0, 21.3-21.21 and  23.4-23.26.1.0.0. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle GoldenGate.  Successful attacks of this vulnerability can result in takeover of Oracle GoldenGate. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Goldengate",
     "published": "2026-07-21T22:17:16.320"
   },
   {
     "id": "CVE-2026-60158",
     "description": "Vulnerability in the Oracle VM VirtualBox product of Oracle Virtualization (component: Core).   The supported version that is affected is 7.2.12. Difficult to exploit vulnerability allows low privileged attacker with logon to the infrastructure where Oracle VM VirtualBox executes to compromise Oracle VM VirtualBox.  While the vulnerability is in Oracle VM VirtualBox, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle VM VirtualBox accessible data and unauthorized ability to cause a partial denial of service (partial DOS) of Oracle VM VirtualBox. CVSS 3.1 Base Score 6.4 (Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:C/C:N/I:H/A:L).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Vm virtualbox",
     "published": "2026-07-21T22:17:16.433"
   },
   {
     "id": "CVE-2026-60159",
     "description": "Vulnerability in the Oracle VM VirtualBox product of Oracle Virtualization (component: Core).   The supported version that is affected is 7.2.12. Difficult to exploit vulnerability allows high privileged attacker with logon to the infrastructure where Oracle VM VirtualBox executes to compromise Oracle VM VirtualBox.  While the vulnerability is in Oracle VM VirtualBox, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in takeover of Oracle VM VirtualBox. CVSS 3.1 Base Score 7.5 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:H/PR:H/UI:N/S:C/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Vm virtualbox",
     "published": "2026-07-21T22:17:16.547"
   },
   {
@@ -53126,7 +53042,7 @@
     "id": "CVE-2026-61106",
     "description": "Vulnerability in Oracle GoldenGate (component: Config Service Executable).  Supported versions that are affected are 23.4-23.26.2. Difficult to exploit vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle GoldenGate.  Successful attacks of this vulnerability can result in takeover of Oracle GoldenGate. CVSS 3.1 Base Score 8.1 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Goldengate",
     "published": "2026-07-21T22:18:41.793"
   },
   {
@@ -53644,77 +53560,77 @@
     "id": "CVE-2026-61184",
     "description": "Vulnerability in the Oracle Agile Product Lifecycle Management for Process product of Oracle Supply Chain (component: Product Quality Management).   The supported version that is affected is 6.2.4. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Agile Product Lifecycle Management for Process.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Agile Product Lifecycle Management for Process accessible data as well as  unauthorized access to critical data or complete access to all Oracle Agile Product Lifecycle Management for Process accessible data. CVSS 3.1 Base Score 9.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Agile product lifecycle management for process",
     "published": "2026-07-21T22:18:50.233"
   },
   {
     "id": "CVE-2026-61185",
     "description": "Vulnerability in the Oracle Agile Product Lifecycle Management for Process product of Oracle Supply Chain (component: Installation).   The supported version that is affected is 6.2.4. Easily exploitable vulnerability allows unauthenticated attacker with access to the physical communication segment attached to the hardware where the Oracle Agile Product Lifecycle Management for Process executes to compromise Oracle Agile Product Lifecycle Management for Process.  While the vulnerability is in Oracle Agile Product Lifecycle Management for Process, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in  unauthorized access to critical data or complete access to all Oracle Agile Product Lifecycle Management for Process accessible data. CVSS 3.1 Base Score 7.4 (Confidentiality impacts).  CVSS Vector: (CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Agile product lifecycle management for process",
     "published": "2026-07-21T22:18:50.353"
   },
   {
     "id": "CVE-2026-61186",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Install).   The supported version that is affected is 6.2.1. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Agile Engineering Data Management.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Agile Engineering Data Management accessible data as well as  unauthorized read access to a subset of Oracle Agile Engineering Data Management accessible data and unauthorized ability to cause a hang or frequently repeatable crash (complete DOS) of Oracle Agile Engineering Data Management. CVSS 3.1 Base Score 9.4 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:H).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:50.470"
   },
   {
     "id": "CVE-2026-61187",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Install).   The supported version that is affected is 6.2.1. Easily exploitable vulnerability allows low privileged attacker with logon to the infrastructure where Oracle Agile Engineering Data Management executes to compromise Oracle Agile Engineering Data Management.  Successful attacks require human interaction from a person other than the attacker. Successful attacks of this vulnerability can result in unauthorized ability to cause a partial denial of service (partial DOS) of Oracle Agile Engineering Data Management. CVSS 3.1 Base Score 2.8 (Availability impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:N/I:N/A:L).",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:50.590"
   },
   {
     "id": "CVE-2026-61188",
     "description": "Vulnerability in the Oracle Agile Product Lifecycle Management for Process product of Oracle Supply Chain (component: Installation).   The supported version that is affected is 6.2.4. Difficult to exploit vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Agile Product Lifecycle Management for Process.  Successful attacks of this vulnerability can result in takeover of Oracle Agile Product Lifecycle Management for Process. CVSS 3.1 Base Score 7.5 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Agile product lifecycle management for process",
     "published": "2026-07-21T22:18:50.700"
   },
   {
     "id": "CVE-2026-61189",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Install).   The supported version that is affected is 6.2.1. Easily exploitable vulnerability allows low privileged attacker with logon to the infrastructure where Oracle Agile Engineering Data Management executes to compromise Oracle Agile Engineering Data Management.  While the vulnerability is in Oracle Agile Engineering Data Management, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in  unauthorized access to critical data or complete access to all Oracle Agile Engineering Data Management accessible data. CVSS 3.1 Base Score 6.5 (Confidentiality impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:50.830"
   },
   {
     "id": "CVE-2026-61190",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Install).   The supported version that is affected is 6.2.1. Difficult to exploit vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Agile Engineering Data Management.  Successful attacks require human interaction from a person other than the attacker. Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Agile Engineering Data Management accessible data as well as  unauthorized access to critical data or complete access to all Oracle Agile Engineering Data Management accessible data. CVSS 3.1 Base Score 6.4 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:U/C:H/I:H/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:50.943"
   },
   {
     "id": "CVE-2026-61191",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Document Management).   The supported version that is affected is 6.2.1. Easily exploitable vulnerability allows low privileged attacker with logon to the infrastructure where Oracle Agile Engineering Data Management executes to compromise Oracle Agile Engineering Data Management.  Successful attacks of this vulnerability can result in  unauthorized update, insert or delete access to some of Oracle Agile Engineering Data Management accessible data and unauthorized ability to cause a partial denial of service (partial DOS) of Oracle Agile Engineering Data Management. CVSS 3.1 Base Score 4.4 (Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:51.060"
   },
   {
     "id": "CVE-2026-61192",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Install).   The supported version that is affected is 6.2.1. Difficult to exploit vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Agile Engineering Data Management.  Successful attacks of this vulnerability can result in unauthorized ability to cause a hang or frequently repeatable crash (complete DOS) of Oracle Agile Engineering Data Management. CVSS 3.1 Base Score 5.3 (Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:51.177"
   },
   {
     "id": "CVE-2026-61194",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Core).   The supported version that is affected is 6.2.1. Easily exploitable vulnerability allows low privileged attacker with network access via TCP to compromise Oracle Agile Engineering Data Management.  Successful attacks of this vulnerability can result in unauthorized ability to cause a hang or frequently repeatable crash (complete DOS) of Oracle Agile Engineering Data Management. CVSS 3.1 Base Score 6.5 (Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:51.290"
   },
   {
     "id": "CVE-2026-61195",
     "description": "Vulnerability in the Oracle Agile Engineering Data Management product of Oracle Supply Chain (component: Core).   The supported version that is affected is 6.2.1. Easily exploitable vulnerability allows low privileged attacker with network access via TCP to compromise Oracle Agile Engineering Data Management.  Successful attacks of this vulnerability can result in unauthorized ability to cause a hang or frequently repeatable crash (complete DOS) of Oracle Agile Engineering Data Management. CVSS 3.1 Base Score 6.5 (Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Agile engineering data management",
     "published": "2026-07-21T22:18:51.400"
   },
   {
@@ -53749,7 +53665,7 @@
     "id": "CVE-2026-61202",
     "description": "Vulnerability in the Oracle Solaris product of Oracle Systems (component: Utility).  Supported versions that are affected are 11.3 and  11.4. Difficult to exploit vulnerability allows low privileged attacker with logon to the infrastructure where Oracle Solaris executes to compromise Oracle Solaris.  While the vulnerability is in Oracle Solaris, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Solaris accessible data as well as  unauthorized access to critical data or complete access to all Oracle Solaris accessible data. CVSS 3.1 Base Score 7.5 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Solaris",
     "published": "2026-07-21T22:18:51.947"
   },
   {
@@ -64016,7 +63932,7 @@
   },
   {
     "id": "CVE-2026-66030",
-    "description": "Ekushey Project Manager CRM through version 5.0 contains a stored cross-site scripting vulnerability that allows authenticated client users to inject arbitrary HTML and JavaScript by entering malicious payloads into the Ticket Title field on the Create New Ticket page. Attackers can craft and store malicious scripts that execute in the browser sessions of Staff or Administrator users who view the Client Support page where ticket titles are rendered unsanitized.",
+    "description": "Ekushey Project Manager CRM through version 5.0 ccontains a stored cross-site scripting vulnerability that allows authenticated client users to inject arbitrary HTML and JavaScript by entering malicious payloads into the Ticket Title field on the Create New Ticket page. Attackers can craft and store malicious scripts that execute in the browser sessions of Staff or Administrator users who view the Client Support page where ticket titles are rendered unsanitized.",
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-27T18:17:00.390"
@@ -65651,5 +65567,117 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-27T22:17:54.713"
+  },
+  {
+    "id": "CVE-2025-63913",
+    "description": "An issue was discovered in OpenSBI 1.3 allowing attackers to cause a denial of service via crafted request to the SBI function #2 or the 'Find and configure a matching counter' function of SBI PMU extension.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:39.717"
+  },
+  {
+    "id": "CVE-2026-51565",
+    "description": "Cross-site scripting (XSS) vulnerability in Modules/Docs/DocsController.php in Milk admin <=0.9.8 allows remote attackers to inject arbitrary web script or HTML via the action parameter in a crafted request",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:41.160"
+  },
+  {
+    "id": "CVE-2026-61953",
+    "description": "Unauthenticated Server Side Request Forgery (SSRF) in Simple Link Directory Pro <= 15.0.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:41.280"
+  },
+  {
+    "id": "CVE-2026-61957",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in miniorange otp verification <= 5.5.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:41.410"
+  },
+  {
+    "id": "CVE-2026-65437",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Spam protection, AntiSpam, FireWall by CleanTalk <= 6.82 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:41.540"
+  },
+  {
+    "id": "CVE-2026-65438",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Message Filter for Contact Form 7 <= 1.6.3.9 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:41.673"
+  },
+  {
+    "id": "CVE-2026-65439",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Ultimate Addons for Contact Form 7 <=3.5.45 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:41.807"
+  },
+  {
+    "id": "CVE-2026-65440",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in GetGenie <= 4.4.3 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:41.933"
+  },
+  {
+    "id": "CVE-2026-65441",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in GiveWP <= 4.16.3 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.060"
+  },
+  {
+    "id": "CVE-2026-65442",
+    "description": "Unauthenticated Server Side Request Forgery (SSRF) in FormCraft <= 3.9.15 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.207"
+  },
+  {
+    "id": "CVE-2026-65443",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in BackWPup  <= 5.7.4 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.330"
+  },
+  {
+    "id": "CVE-2026-65445",
+    "description": "Unauthenticated Broken Access Control in Ad Invalid Click Protector (AICP) <= 1.3.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.460"
+  },
+  {
+    "id": "CVE-2026-65446",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Kali Forms <= 2.4.18 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.590"
+  },
+  {
+    "id": "CVE-2026-65447",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Contest Gallery <= 30.0.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.720"
+  },
+  {
+    "id": "CVE-2026-65448",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Anti Spam and list cleaner &#8211; AcyChecker <= 1.8.1 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.850"
+  },
+  {
+    "id": "CVE-2026-66473",
+    "description": "Unauthenticated Broken Access Control in Xendit Payment <= 7.1.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-27T23:16:42.970"
   }
 ]
