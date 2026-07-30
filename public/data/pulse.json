@@ -1,5 +1,271 @@
 [
   {
+    "id": "CVE-2026-8339",
+    "description": "A SQL injection vulnerability exists in the Coverity Connect SOAP API for versions between 2024.6.0 and 2026.3.0 (inclusive). A malicious, authenticated threat actor who sends a specially crafted payload can achieve full read access to database contents and other unauthorized commands.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:54.347"
+  },
+  {
+    "id": "CVE-2026-8338",
+    "description": "A Spring Security authentication and authorization bypass exists in Coverity Connect versions between 2023.6.0 and 2026.3.0. An unauthenticated malicious threat actor that can send a specially crafted HTTP request is able to bypass authentication and authorization controls on certain API endpoints to access data within Coverity.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:54.177"
+  },
+  {
+    "id": "CVE-2026-67194",
+    "description": "Courier IMAP before 6.0.1 and Courier Mail Server before 2.0.2 allow authenticated IMAP users to crash the imapd process via deeply nested parenthesized SEARCH queries. The SEARCH command parser (alloc_search_key in searchinfo.C) recursively descends on nested parenthesized groups through a mutual recursion chain with alloc_search_andlist() and alloc_search_notkey(), with no depth limit. Courier IMAP has no overall command line length limit, making exploitation trivial. A single IMAP command with ~2500 nested parentheses overflows the 8MB default stack, causing SIGSEGV.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:54.017"
+  },
+  {
+    "id": "CVE-2026-64560",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nposix-cpu-timers: Prevent UAF caused by non-leader exec() race\n\nWongi and Jungwoo decoded and reported a non-leader exec() related race\nwhich can result in an UAF:\n\n sys_timer_delete()\t\t\texec()\n   posix_cpu_timer_del()\n   // Observes old leader\n   p = pid_task(pid, pid_type);\t\tde_thread()\n   \t\t\t\t\t  switch_leader();\n\t\t\t\t\t  release_task(old_leader)\n\t\t\t\t\t    __exit_signal(old_leader)\n\t\t\t\t\t      sighand = lock(old_leader, sighand);\n\t\t\t\t\t      posix_cpu_timers*_exit();\n   sighand = lock_task_sighand(p)\t      unhash_task(old_leader);\n     sh = lock(p, sighand)\t    \t      old_leader->sighand = NULL;\n\t\t\t\t\t      unlock(sighand);\n     (p->sighand == NULL)\n\tunlock(sh)\n\treturn NULL;\n\n   // Returns without action\n   if(!sighand)\n      return 0;\n   free_posix_timer();\n\nThis is \"harmless\" unless the deleted timer was armed and enqueued in\np->signal because on exec() a TGID targeted timer is inherited.\n\nAs sys_timer_delete() freed the underlying posix timer object\nrun_posix_cpu_timers() or any timerqueue related add/delete operations on\nother timers will access the freed object's timerqueue node, which results\nin an UAF.\n\nThere is a similar problem vs. posix_cpu_timer_set(). For regular posix\ntimers it just transiently returns -ESRCH to user space, but for the use\ncase in do_cpu_nanosleep() it's the same UAF just that the k_itimer is\nallocated on the stack.\n\nAlso posix_cpu_timer_rearm() fails to rearm the timer, which means it stops\nto expire.\n\nWhile debating solutions Frederic pointed out another problem:\n\n   posix_cpu_timer_del(tmr)\n\t\t\t\t\t__exit_signal(p)\n\t\t\t\t\t  posix_cpu_timers*_exit(p);\n\t\t\t\t\t  unhash_task(p);\n\t\t\t\t\t  p->sighand = NULL;\n     sh = lock_task_sighand(p)\n        sighand = p->sighand;\n\tif (!sighand)\n\t    return NULL;\n\tlock(sighand);\n\n     if (!sh)\n\tWARN_ON_ONCE(timer_queued(tmr));\n\nOn weakly ordered architectures it is not guaranteed that\nposix_cpu_timer_del() will observe the stores in posix_cpu_timers*_exit()\nwhen p->sighand is observed as NULL, which means the WARN() can be a false\npositive.\n\nSolve these issues by:\n\n  1) Changing the store in __exit_signal() to smp_store_release().\n\n  2) Adding a smp_acquire__after_ctrl_dep() into the !sighand path\n     of lock_task_sighand().\n\n  3) Creating a helper function for looking up the task and locking sighand\n     which does not return when sighand == NULL. Instead it retries the\n     task lookup and only if that fails it gives up.\n\n  4) Using that helper in the three affected functions.\n\n#1/#2 ensures that the reader side which observes sighand == NULL also\nobserves all preceeding stores, i.e. the stores in posix_cpu_timers*_exit()\nand the ones in unhash_task().\n\n#3 ensures that the above described non-leader exec() situation is handled\ngracefully. When the task lookup returns the old leader, but sighand ==\nNULL then it retries. In the non-leader exec() case the subsequent task\nlookup will observe the new leader due to #1/#2. In normal exit() scenarios\nthe subsequent lookup fails.\n\nWhen the task lookup fails, the function also checks whether the timer is\nstill enqueued and issues a warning if that's the case. Unfortunately there\nis nothing which can be done about it, but as the task is already not\nlonger visible the timer should not be accessed anymore. This check also\nrequires memory ordering, which is not provided when the first lookup\nfails. To achieve that the check is preceeded by a smp_rmb() which pairs\nwith the smp_wmb() in write_seqlock() in __exit_signal(). That ensures that\nthe stores in posix_cpu_timers*_exit() are visible.\n\nThe history of the non-leader exec() issue goes back to the early days of\nposix CPU timers, which stored a pointer to the group leader task in the\ntimer. That obviously fails when a non-leader exec() switches the leader.\ncommit e0a70217107e (\"posix-cpu-timers: workaround to suppress the problems\nwith mt exec\") added a temporary workaround for that in 2010 which surv\n---truncated---",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:53.637"
+  },
+  {
+    "id": "CVE-2026-64559",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ns390/pkey: Check length in PKEY_VERIFYPROTK ioctl\n\nExplicitly check the buffer length request structure provided by\nuser-space and fail, if it exceeds the buffer size.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:53.523"
+  },
+  {
+    "id": "CVE-2026-64558",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ns390/pkey: Check length in pkey_pckmo handler implementation\n\nExplicitly check the length of the target buffer in the pkey_pckmo\nimplementation of the key_to_protkey() handler function. The handler\nfunction fails, if the generated output data exceeds the length of the\nprovided target buffer.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:53.410"
+  },
+  {
+    "id": "CVE-2026-54727",
+    "description": "proot-distro is a utility for managing proot containers. Prior to version 5.1.6, proot-distro restore accepted hardlink entries whose linkname referenced another installed container and did not verify that the hardlink source container matched the destination container being restored, allowing a crafted restore archive to copy files between otherwise isolated containers. This issue is fixed in version 5.1.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:53.250"
+  },
+  {
+    "id": "CVE-2026-54693",
+    "description": "ZITADEL is an open source identity management platform. From 2.43.0 through 2.71.19, from 3.0.0 until 3.4.11, and from 4.0.0 until 4.15.1, the email and phone self-management API paths in internal/command/user_v2_email.go, internal/command/user_v2_phone.go, and internal/command/user_v2_human.go allowed users to request returned verification codes without the required permission, allowing users to claim ownership of email addresses or phone numbers they do not control and bypass email-based or phone-based security policies. This issue is fixed in versions 3.4.11 and 4.15.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:53.067"
+  },
+  {
+    "id": "CVE-2026-54680",
+    "description": "Logging operator automates the deployment and configuration of Kubernetes logging pipelines. Prior to 6.6.0, the Fluentd configuration renderer FluentRender in pkg/sdk/logging/model/render/fluent.go writes CRD strings such as Flow record_transformer.records values directly into fluent.conf without escaping, allowing a user who can create Flow resources to inject a Fluentd <match **> block using @type exec and execute arbitrary commands inside the Fluentd aggregator. This issue is fixed in version 6.6.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:52.900"
+  },
+  {
+    "id": "CVE-2026-54574",
+    "description": "proot-distro is a utility for managing proot containers. Prior to version 5.1.5, proot-distro install extracted plain tarball root filesystems through _extract_plain_tar() in proot_distro/commands/install.py and Docker layers through _apply_layer() in proot_distro/helpers/docker.py without validating archive-controlled symlink targets in member.linkname, allowing a malicious archive to plant an absolute host-path symlink and write files through it onto the host filesystem. This issue is fixed in version 5.1.5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:52.743"
+  },
+  {
+    "id": "CVE-2026-52791",
+    "description": "fuse-overlayfs is an implementation of overlayfs in FUSE for rootless containers. Prior to 1.17, the release-1.x C branch preserves SUID and SGID mode bits in main.c during open(O_TRUNC) and truncate handling on a copied-up file, allowing a low-privileged process to leave the upper-layer file with mode 4777. This issue is fixed in version 1.17.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:52.187"
+  },
+  {
+    "id": "CVE-2026-51992",
+    "description": "SQL Injection vulnerability in ClickHouse Server Versions <= 26.3.9.8 allows a remote attacker to execute arbitrary code via the create dictionaries function.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:52.040"
+  },
+  {
+    "id": "CVE-2026-20316",
+    "description": "A vulnerability in the web interface of Cisco Secure Firewall Management Center (FMC) Software could allow an unauthenticated, remote attacker to log in to an affected device using a low-privileged account to access sensitive data within the impacted systems.\r\n\r\nThis vulnerability is due to the presence of static user credentials for a low-privileged&nbsp;account. An attacker could exploit this vulnerability by using the account to log in to an affected system. A successful exploit could allow the attacker to log in to the affected system and access sensitive data as the low-privileged user.&nbsp;\r\nNote:&nbsp;If the FMC management interface does not have public internet access, the attack surface that is associated with this vulnerability is reduced.&nbsp;&nbsp;\r\nCisco has assigned this security advisory a Security Impact Rating (SIR) of High rather than Medium as the score indicates. The reason is that this vulnerability can be used with other Cisco Secure FMC Software vulnerabilities to elevate privileges.",
+    "severity": "Medium",
+    "tech": "Secure firewall management center",
+    "published": "2026-07-29T17:16:51.840"
+  },
+  {
+    "id": "CVE-2026-18257",
+    "description": "Improper validity period check for root issuer certificate in CycloneCrypto cryptographic wrapper of S2OPC allows a certificate issued by this root issuer to be considered trusted",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:51.540"
+  },
+  {
+    "id": "CVE-2026-18255",
+    "description": "A flaw was found in Quay. A user configured in GLOBAL_READONLY_SUPER_USERS is able to view robot account tokens for repositories they are not a member of, allowing an attacker with read-only superuser privileges to impersonate any robot account.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:51.393"
+  },
+  {
+    "id": "CVE-2026-16729",
+    "description": "undici's setCookie function does not fully sanitize cookie attributes. In undici before 6.28.0, from 7.0.0 up to before 7.29.0, and from 8.0.0 up to before 8.9.0, a domain value is not checked for semicolons and entries in the unparsed array are not sanitized, so attacker-influenced input can inject additional cookie attributes. For example, a domain value containing a semicolon can append attributes such as SameSite, and an unparsed entry can inject attributes such as HttpOnly, without the caller setting them. Applications that pass user-controlled input to these fields, such as multi-tenant or reverse-proxy servers that scope session cookies to a tenant-supplied domain, can have SameSite CSRF protections bypassed, or the Secure, HttpOnly, and SameSite attributes forced, stripped, or overridden. The issue is fixed in undici 6.28.0, 7.29.0, and 8.9.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:51.123"
+  },
+  {
+    "id": "CVE-2026-15144",
+    "description": "@fastify/rate-limit before 11.2.0 keys rate-limit buckets by the verbatim client IP string returned from request.ip. Because a single IPv6 client can control a large address range (a /64 holds 2^64 distinct addresses) and the same address has multiple valid textual representations, an IPv6 capable client can defeat the rate-limit boundary by rotating addresses or by rewriting the same address in different forms. Applications that use @fastify/rate-limit to protect endpoints such as authentication, password reset, OTP delivery, or expensive API calls can be bypassed by IPv6 clients behind a proxy that surfaces IPv6 to the origin when trustProxy is enabled. The issue is fixed in @fastify/rate-limit 11.2.0, where the default key generator normalizes IPv6 addresses to their canonical form, collapses IPv4 mapped IPv6 to IPv4, and applies a configurable prefix mask (default /64) via a new ipv6Subnet option.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:50.637"
+  },
+  {
+    "id": "CVE-2026-13697",
+    "description": "undici's cache interceptor mishandles malformed Cache-Control private directives. In undici 7.0.0 up to before 7.29.0 and 8.0.0 up to before 8.9.0, a response carrying a degenerate qualified private directive, such as private set to an empty value, can be stored in the default shared cache and later served to a different caller with the same cache key, disclosing private response bodies and headers including Set-Cookie. Separately, a Cache-Control header that combines an unqualified private directive with a qualified one triggers an uncaught TypeError in the cache-control parser, which rejects the request and, depending on the consumer's error handling, can terminate the process. Both issues affect applications using the cache interceptor in shared mode, including the default configuration. The issues are fixed in undici 7.29.0 and 8.9.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:50.503"
+  },
+  {
+    "id": "CVE-2025-60931",
+    "description": "An Insecure Direct Object Reference (IDOR) in the Employee Compensation View function of Infor Global HR v11.24.10.01.33 allows unauthorized attackers to arbitrarily view the compensation information of other employees via a crafted GET request.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T17:16:50.367"
+  },
+  {
+    "id": "CVE-2026-67193",
+    "description": "Xlight FTP Server before 3.9.5 contains an information disclosure vulnerability that allows unauthenticated attackers to obtain the server's current GetTickCount() value by sending a USER command with a username ending in the :adm suffix. Attackers can trigger the admin protocol path within the standard FTP listener pre-authentication to leak timing information from the FTP 331 response without requiring a separate port or configuration change.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:57.833"
+  },
+  {
+    "id": "CVE-2026-67192",
+    "description": "Xlight FTP Server before 3.9.5 contains a pre-authentication stack buffer overflow vulnerability that allows unauthenticated attackers to corrupt stack memory by sending malformed SSH packets when a GCM cipher is negotiated. Attackers can craft packets with an unvalidated length field passed directly to the GCM decrypt function, overwriting the stack cookie and return address to potentially achieve remote code execution before any authentication occurs.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:57.683"
+  },
+  {
+    "id": "CVE-2026-67191",
+    "description": "Xlight FTP Server before 3.9.5 contains a pre-authentication heap buffer overflow vulnerability that allows remote unauthenticated attackers to write past the end of a heap buffer by sending a malformed SSH client identification string. A logic error in the recv loop's termination condition uses an incorrect OR operator where an AND operator is required, enabling exploitation on any SSH or SFTP connection before authentication occurs.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:57.540"
+  },
+  {
+    "id": "CVE-2026-67188",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:57.480"
+  },
+  {
+    "id": "CVE-2026-66051",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:56.853"
+  },
+  {
+    "id": "CVE-2026-60113",
+    "description": "AMMOS Instrument Toolkit (AIT) Deep Space Network (DSN) Interface before 2.2.2 contains a missing authentication vulnerability in the Space Link Extension (SLE) interface manager that allows unauthenticated network attackers to access seven unprotected API routes by sending direct HTTP requests with no credentials. Attackers can reach the exposed SLE endpoints to start or stop Deep Space Network communication sessions, retrieve telemetry frame data, and inject arbitrary frames into active spacecraft links.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:55.560"
+  },
+  {
+    "id": "CVE-2026-60112",
+    "description": "AMMOS Instrument Toolkit (AIT) GUI before 2.5.1 contains a missing authentication vulnerability that allows any unauthenticated network attacker to obtain a valid session and issue arbitrary spacecraft commands by calling Sessions.create() without any credential check. Attackers can exploit the unauthenticated session issuance in Sessions.create() and subsequently invoke handle_cmd() to forward arbitrary commands directly to the AIT command bus without any authentication gate between session creation and command dispatch.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:55.413"
+  },
+  {
+    "id": "CVE-2026-54735",
+    "description": "Prebid Server is an open-source solution for running real-time advertising auctions in the cloud. Prior to version 4.4.0, certain bidder adapters in Prebid Server interpolate user-supplied parameters into outbound request URLs without properly validating host and subdomain values, allowing crafted bid request parameters to cause server-side requests to unintended destinations and potentially expose internal network services or sensitive server endpoints. This issue is fixed in version 4.4.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:54.317"
+  },
+  {
+    "id": "CVE-2026-54082",
+    "description": "veraPDF validation model is an implementation of the veraPDF validation model. From 1.25.73 until 1.30.2 and 1.31.71, veraPDF-validation contains an XML External Entity vulnerability in PDFAValidator.validate(...) and GFPDAcroForm.getdynamicRender(), where default DocumentBuilderFactory parsing of rich-text annotation or form-field values and XFA configurations in untrusted PDFs can allow local file disclosure and outbound network requests. This issue is fixed in versions 1.30.2 and 1.31.71.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:53.630"
+  },
+  {
+    "id": "CVE-2026-54081",
+    "description": "veraPDF PDF parser is a PDF parser for veraPDF. Prior to 1.30.2 and 1.31.23, veraPDF-parser contains a denial-of-service vulnerability in veraPDF-parser/src/main/java/org/verapdf/pd/font/type1/Type1FontProgram.java and veraPDF-parser/src/main/java/org/verapdf/parser/postscript/PSOperator.java, where a crafted Type 1 font /FontDescriptor /FontFile program can execute unbounded PostScript array allocation, a zero-increment for loop, or self-recursive toExecute user dictionary lookups and exhaust validator memory, CPU, or stack. This issue is fixed in versions 1.30.2 and 1.31.23.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:53.493"
+  },
+  {
+    "id": "CVE-2026-54080",
+    "description": "veraPDF PDF parser is a PDF parser for veraPDF. Prior to 1.30.2 and 1.31.23, veraPDF-parser contains a denial-of-service vulnerability in veraPDF-parser/src/main/java/org/verapdf/pd/font/cmap/CMapParser.java and veraPDF-parser/src/main/java/org/verapdf/parser/postscript/PSOperator.java, where a crafted Type 0 font /Encoding or /ToUnicode CMap stream can execute unbounded PostScript array allocation or a zero-increment for loop and exhaust validator memory or CPU. This issue is fixed in versions 1.30.2 and 1.31.23.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:53.347"
+  },
+  {
+    "id": "CVE-2026-54079",
+    "description": "veraPDF validation provides PDF/A and PDF/UA validation, feature reporting, and metadata repair. From 1.17.35 until 1.30.2 and 1.31.71, veraPDF-validation contains an XML External Entity (XXE) vulnerability in validation-model/src/main/java/org/verapdf/gf/model/impl/pd/GFPDAcroForm.java in the getdynamicRender() method, where a crafted PDF containing a malicious XFA stream can cause external entity expansion during PDF/UA-1 validation and allow local file disclosure or outbound server-side requests. This issue is fixed in versions 1.30.2 and 1.31.71.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:53.203"
+  },
+  {
+    "id": "CVE-2026-54078",
+    "description": "veraPDF validation model is an implementation of the veraPDF validation model. From 1.25.73 until 1.30.2 and 1.31.71, veraPDF-validation contains an XML External Entity (XXE) vulnerability in validation-model/src/main/java/org/verapdf/gf/model/tools/DictionaryKeysHelper.java in getRichTextStringOrStreamEntryStringRepresentation(), where a crafted PDF containing a malicious rich-text /RC or /RV entry can cause external entity expansion and reflect local file contents into the validation report. This issue is fixed in versions 1.30.2 and 1.31.71.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:53.053"
+  },
+  {
+    "id": "CVE-2026-50558",
+    "description": "Penelope Shell Handler is a post-exploitation shell handler for authorized security testing. Prior to 0.20.0, the Unix download() implementation in penelope.py used tar.extractall(local_download_folder) on tar archives returned by remote sessions without validating member paths, allowing a malicious or compromised session to write files outside the intended download directory and potentially overwrite ~/.penelope/peneloperc. This issue is fixed in version 0.20.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:52.900"
+  },
+  {
+    "id": "CVE-2026-17550",
+    "description": "A maliciously crafted DWG or DXF file, when parsed through Autodesk AutoCAD, can force an Out-of-Bounds Read vulnerability. A malicious actor can leverage this vulnerability to cause a crash or disclose sensitive information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:51.180"
+  },
+  {
+    "id": "CVE-2026-16543",
+    "description": "Kong Operator's embedded Kong Kubernetes Ingress Controller (KIC) allows a user with namespace-scoped Secret creation privileges to cause a cluster-wide ingress configuration denial of service. The embedded KIC collects CA-certificate Secrets across all watched namespaces using a label selector alone, without ingress-class or namespace restrictions. The CA-certificate primary key is derived from a user-supplied field in the Secret. Duplicate CA-certificate IDs cause Kong Gateway to reject the entire configuration document and halting all ingress changes cluster-wide.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:50.660"
+  },
+  {
+    "id": "CVE-2026-16465",
+    "description": "A maliciously crafted DWG or DXF file, when parsed through Autodesk AutoCAD, can force an Out-of-Bounds Read vulnerability. A malicious actor can leverage this vulnerability to cause a crash or disclose sensitive information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:50.530"
+  },
+  {
+    "id": "CVE-2026-16463",
+    "description": "A maliciously crafted DXF file, when parsed through Autodesk AutoCAD, can force a Heap-Based Overflow vulnerability. A malicious actor can leverage this vulnerability to cause a crash, read sensitive data, or execute arbitrary code in the context of the current process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:50.377"
+  },
+  {
+    "id": "CVE-2026-15228",
+    "description": "Kong Kubernetes Ingress Controller (KIC) allows a user with namespace-scoped Secret creation privileges to cause a cluster-wide ingress configuration denial of service. KIC collects CA-certificate Secrets across all watched namespaces using a label selector alone, without ingress-class or namespace restrictions. The CA-certificate primary key is derived from a user-supplied field in the Secret. Duplicate CA-certificate IDs cause Kong Gateway to reject the entire configuration document and halting all ingress changes cluster-wide.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-07-29T16:17:49.723"
+  },
+  {
     "id": "CVE-2026-66724",
     "description": "MWDB Core versions >=2.0.0 and <2.19.0 contain a missing authorization vulnerability in the deprecated config and blob upload endpoints. These endpoints accept the undocumented POST method, which bypasses the capability checks applied to the documented PUT method. This allows any authenticated user without the adding_configs or adding_blobs capabilities to upload config and text blob objects to the system. The impact is limited to adding new config and blob objects. This issue has been fixed in version 2.19.0",
     "severity": "Unknown",
@@ -891,14 +1157,14 @@
   {
     "id": "CVE-2026-14300",
     "description": "The miniOrange Social Login and Register (Discord, Google, Twitter, LinkedIn) WordPress plugin before 7.8.0 does not bind the one-time code used by its optional email-verification (Profile Completion) feature to the account it was issued for, allowing unauthenticated attackers to obtain a valid session for any account, including administrators, by requesting a code for an email address they control and replaying it against the victim's email address. Exploitation requires the Profile Completion feature to be enabled and social login to be configured.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-29T07:16:41.857"
   },
   {
     "id": "CVE-2026-14234",
     "description": "The WOLF  WordPress plugin before 1.1.0 does not perform a nonce or capability check on one of its AJAX actions, allowing an unauthenticated attacker to trick a logged-in administrator into writing arbitrary content, including a malicious script, into a post via a cross-site request, resulting in stored Cross-Site Scripting.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-07-29T07:16:41.757"
   },
