@@ -1,5 +1,40 @@
 [
   {
+    "id": "CVE-2026-18556",
+    "description": "Authentication bypass using an alternate path or channel vulnerability in N-able N-central allows Authentication Bypass.\n\nThis issue affects N-central: through 2026.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-01T20:16:37.157"
+  },
+  {
+    "id": "CVE-2026-55735",
+    "description": "Improper Verification of Cryptographic Signature in ueberauth guardian allows an unauthenticated attacker to revoke a victim's session with a forged token.\n\nGuardian.revoke/3 in lib/guardian.ex decodes the supplied token with peek/1, which performs no signature verification (it only base64-decodes the JWT header and payload). The resulting unverified claims are forwarded directly to the configured token module's revoke callback and the implementation's on_revoke callback, a state-mutating sink. The sibling operations refresh/2 and exchange/4 both call decode_and_verify first, so the signature is checked before anything acts on the claims; revoke/3 is the only state-mutating path that acts on claims without verifying the signature.\n\nAn attacker who knows or guesses a victim's identifying claim values (jti, sub) can forge a JWT carrying those claims, sign it with an arbitrary key, and submit it to any endpoint that funnels a caller-supplied token into Guardian.revoke/3 (the standard logout / session-revocation pattern). When the token module mutates state keyed by the claims (whitelist deletion or blacklist insertion, for example a GuardianDb-style store), the victim's legitimate session is evicted. This is an unauthenticated session-revocation denial of service; the attacker never needs the signing secret.\n\nThis issue affects guardian: from 1.0.0 before 2.4.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-01T19:16:42.510"
+  },
+  {
+    "id": "CVE-2026-55734",
+    "description": "Allocation of Resources Without Limits or Throttling vulnerability in ueberauth guardian (Guardian.Permissions module) allows a denial of service via BEAM atom-table exhaustion.\n\nThis vulnerability is associated with program file lib/guardian/permissions.ex and program routines 'Elixir.Guardian.Permissions':encode_permissions!/1, 'Elixir.Guardian.Permissions':encode_permissions_into_claims!/2, 'Elixir.Guardian.Permissions':do_encode_permissions!/2.\n\nThe Guardian.Permissions mixin installs a public encode_permissions!/1 function on every module that does use Guardian.Permissions. For each key of the supplied map, encode_permissions!/1 calls String.to_atom(to_string(k)) before any validation runs. The integer-value clause of do_encode_permissions!/2 then short-circuits straight to encoding without validating the key against the configured permission set, so a key with an integer value is interned as a fresh atom with no exception raised. Atoms are never garbage collected and the BEAM atom table is a fixed-size resource (default roughly 1,048,576 entries), so each unique attacker-chosen key permanently consumes one slot. An attacker who can influence a permission map that reaches encode_permissions!/1 (for example a permissions map read from a request body and passed into token issuance via encode_permissions_into_claims!/2) can mint an unbounded number of atoms and exhaust the atom table, crashing the entire BEAM node and every service running on it. The sibling decode_permissions/1 is not affected because it skips keys absent from the configured permission set.\n\nThis issue affects guardian: from 2.0.0 before 2.4.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-01T19:16:42.333"
+  },
+  {
+    "id": "CVE-2026-55733",
+    "description": "Allocation of Resources Without Limits or Throttling in ueberauth guardian allows denial of service via unbounded atom creation from attacker-controlled binary input.\n\nGuardian.Permissions.AtomEncoding encodes permission scopes by passing arbitrary binaries to String.to_atom/1. When encode/3 in lib/guardian/permissions/atom_encoding.ex is called with a list, each binary entry is handled by the encode_value/3 binary clause, which calls String.to_atom(value) with no allow-list check. The perm_set argument (the application's small, finite set of legitimate permission names) is discarded, so any external string flows straight into atom creation. This encoder is selected with use Guardian.Permissions, encoding: Guardian.Permissions.AtomEncoding and reached through the imported encode/3 entry point.\n\nString.to_atom/1 creates a brand-new atom for every previously unseen binary, atoms are never garbage collected, and the BEAM atom table is fixed at roughly 1,048,576 entries by default. An application that funnels attacker-influenced permission scopes (from a request body, a JWT claim, or other external input) into encode/3 therefore mints one permanent atom per distinct value. A modest stream of varied, unauthenticated input permanently consumes the atom table and crashes the BEAM node with system_limit, taking down every application running on it.\n\nThe default encoder is Guardian.Permissions.BitwiseEncoding, which is not affected.\n\nThis issue affects guardian: from 2.0.0 before 2.4.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-01T19:16:42.157"
+  },
+  {
+    "id": "CVE-2026-54894",
+    "description": "Allocation of Resources Without Limits or Throttling in ueberauth guardian allows denial of service via unbounded atom creation from attacker-influenced binary input.\n\nGuardian.Plug.Keys derives connection and session namespace keys by passing arbitrary binaries to String.to_atom/1. base_key/1 in lib/guardian/plug/keys.ex converts any binary into the atom :\"guardian_<input>\", and the derived helpers claims_key/1, resource_key/1, and token_key/1 create a second atom on top of that. key_from_other/1 likewise converts a regex-captured binary through String.to_atom/1. The public specs advertise String.t() as a valid argument, so passing a string is documented usage, and higher-level entry points such as Guardian.Plug.current_token(conn, key: key) thread the caller-supplied key straight into these functions.\n\nString.to_atom/1 creates a brand-new atom for every previously unseen binary, atoms are never garbage collected, and the BEAM atom table is fixed at roughly 1,048,576 entries by default. An application that routes attacker-influenced data (a tenant identifier, header, or other request input) into a Guardian key therefore mints one permanent atom per distinct value. A modest stream of varied, unauthenticated input permanently consumes the atom table and crashes the BEAM node, taking down every application running on it.\n\nThis issue affects guardian: from 0.1.0 before 2.4.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-01T19:16:41.977"
+  },
+  {
     "id": "CVE-2026-67355",
     "description": "guzzlehttp/guzzle versions before 7.15.1 fail to preserve host-only cookie scope, storing the request host in the Domain field instead of marking cookies as host-only. Attackers controlling child hosts can receive host-only cookies intended only for parent hosts, potentially disclosing session identifiers and authorization tokens when the same cookie jar is reused across trust boundaries.",
     "severity": "Medium",
@@ -7544,355 +7579,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-07-29T21:17:45.760"
-  },
-  {
-    "id": "CVE-2026-6336",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 16.6 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an unauthorized user to view project import source information due to a missing authorization check.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:13.270"
-  },
-  {
-    "id": "CVE-2026-6267",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 10.1.0 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user with Developer role to access unauthorized information due to insufficient access controls on internal request handling.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:13.123"
-  },
-  {
-    "id": "CVE-2026-6102",
-    "description": "MSI Center NTIOLib_X64 Origin Validation Error Local Privilege Escalation Vulnerability. This vulnerability allows local attackers to escalate privileges on affected installations of MSI Center. An attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\n\nThe specific flaw exists within the NTIOLib_X64.sys driver. The issue results from insufficient validation of the origin of commands. An attacker can leverage this vulnerability to escalate privileges and execute arbitrary code in the context of SYSTEM. Was ZDI-CAN-28935.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:12.980"
-  },
-  {
-    "id": "CVE-2026-67436",
-    "description": "Linuxfabrik monitoring-plugins provides Python monitoring plugins for Icinga, Nagios, and related monitoring systems. In 6.0.0 and earlier, the redfish-* plugins built request URLs by concatenating an operator-supplied base URL with response-supplied @odata.id links, allowing a malicious or compromised BMC to redirect authenticated Redfish requests and disclose X-Auth-Token or HTTP Basic credentials.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:12.827"
-  },
-  {
-    "id": "CVE-2026-67435",
-    "description": "linuxfabrik-lib provides Python modules for database access, caching, shell execution, and API integrations. Prior to version 6.0.0, lib.url.fetch() followed cross-origin redirects while forwarding caller-supplied credential headers other than Authorization and Cookie, allowing a malicious redirect-capable server to receive headers such as X-Auth-Token from authenticated monitoring requests. This issue is fixed in version 6.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:12.647"
-  },
-  {
-    "id": "CVE-2026-67433",
-    "description": "Linuxfabrik monitoring-plugins provides Python monitoring plugins for Icinga, Nagios, and related monitoring systems. In version 6.0.0, the logfile check legacy database migration moved a predictable path from /tmp with os.rename() and allowed a local user controlling the plugin account to place a symlink that would be followed by sqlite3.connect() during a root-run check.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:12.457"
-  },
-  {
-    "id": "CVE-2026-67432",
-    "description": "MCP Ruby SDK is the official Ruby SDK for Model Context Protocol servers and clients. Prior to 0.23.0, MCP::Server::Transports::StreamableHTTPTransport in the mcp gem reads and parses an entire JSON-RPC POST body without a size limit, allowing an unauthenticated remote attacker to exhaust process memory. This issue is fixed in version 0.23.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:12.277"
-  },
-  {
-    "id": "CVE-2026-67431",
-    "description": "MCP Ruby SDK is the official Ruby SDK for Model Context Protocol servers and clients. Prior to 0.23.0, MCP::Server::Transports::StreamableHTTPTransport in the mcp gem does not bind a session ID to a session owner, allowing an attacker with a stolen session ID to send tools/call requests that execute in the victim's session. This issue is fixed in version 0.23.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:12.120"
-  },
-  {
-    "id": "CVE-2026-67430",
-    "description": "MCP Ruby SDK is the official Ruby SDK for Model Context Protocol servers and clients. Prior to 0.23.0, MCP::Server::Transports::StreamableHTTPTransport in the mcp gem does not expire sessions by default, so repeated initialize requests retain unbounded ServerSession objects and can exhaust process memory. This issue is fixed in version 0.23.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:11.960"
-  },
-  {
-    "id": "CVE-2026-63119",
-    "description": "MCP Ruby SDK is the official Ruby SDK for Model Context Protocol servers and clients. Prior to 0.23.0, MCP::Server::Transports::StdioTransport and MCP::Client::Stdio in the mcp gem use IO#gets without a byte limit, allowing a peer that sends data without a newline to exhaust process memory. This issue is fixed in version 0.23.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:10.790"
-  },
-  {
-    "id": "CVE-2026-63118",
-    "description": "MCP Ruby SDK is the official Ruby SDK for Model Context Protocol servers and clients. Prior to 0.23.0, MCP::Server::Transports::StreamableHTTPTransport in the mcp gem does not validate the HTTP Host or Origin request headers, which allows a malicious browser page to use DNS rebinding to reach a locally running MCP server and invoke exposed tools. This issue is fixed in version 0.23.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:10.630"
-  },
-  {
-    "id": "CVE-2026-5492",
-    "description": "DriveLock Directory Traversal Information Disclosure Vulnerability. This vulnerability allows remote attackers to disclose sensitive information on affected installations of DriveLock. Authentication is required to exploit this vulnerability.\n\nThe specific flaw exists within the web service, which listens on TCP port 4568 by default. The issue results from the lack of proper validation of a user-supplied path prior to using it in file operations. An attacker can leverage this vulnerability to disclose information in the context of the service account. Was ZDI-CAN-28713.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:06.140"
-  },
-  {
-    "id": "CVE-2026-5491",
-    "description": "DriveLock Directory Traversal Information Disclosure Vulnerability. This vulnerability allows remote attackers to disclose sensitive information on affected installations of DriveLock. Authentication is not required to exploit this vulnerability.\n\nThe specific flaw exists within the web service, which listens on TCP port 6067 by default. The issue results from the lack of proper validation of a user-supplied path prior to using it in file operations. An attacker can leverage this vulnerability to disclose information in the context of the service account. Was ZDI-CAN-28722.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:06.020"
-  },
-  {
-    "id": "CVE-2026-5490",
-    "description": "DriveLock SQL Injection Privilege Escalation Vulnerability. This vulnerability allows remote attackers to escalate privileges on affected installations of DriveLock. Authentication is required to exploit this vulnerability.\n\nThe specific flaw exists within the web service, which listens on TCP port 4568 by default. The issue results from the lack of proper validation of a user-supplied string before using it to construct SQL queries. An attacker can leverage this vulnerability to escalate privileges to resources normally protected from the user. . Was ZDI-CAN-28726.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:05.893"
-  },
-  {
-    "id": "CVE-2026-5489",
-    "description": "DriveLock Directory Traversal Information Disclosure Vulnerability. This vulnerability allows remote attackers to disclose sensitive information on affected installations of DriveLock. Authentication is not required to exploit this vulnerability.\n\nThe specific flaw exists within the web service, which listens on TCP port 4568 by default. The issue results from the lack of proper validation of a user-supplied path prior to using it in file operations. An attacker can leverage this vulnerability to disclose information in the context of the service account. Was ZDI-CAN-28719.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:05.777"
-  },
-  {
-    "id": "CVE-2026-5487",
-    "description": "DriveLock Directory Traversal Information Disclosure Vulnerability. This vulnerability allows remote attackers to disclose sensitive information on affected installations of DriveLock. Authentication is not required to exploit this vulnerability.\n\nThe specific flaw exists within the web service, which listens on TCP port 4568 by default. The issue results from the lack of proper validation of a user-supplied path prior to using it in file operations. An attacker can leverage this vulnerability to disclose information in the context of the service account. Was ZDI-CAN-28746.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:05.653"
-  },
-  {
-    "id": "CVE-2026-5057",
-    "description": "ATEN Unizon RpcProvider Missing Authentication Denial-of-Service Vulnerability. This vulnerability allows remote attackers to create a denial-of-service condition on affected installations of ATEN Unizon. Authentication is not required to exploit this vulnerability.\n\nThe specific flaw exists within the RpcProvider class. The issue results from the lack of authentication prior to allowing access to functionality. An attacker can leverage this vulnerability to create a denial-of-service condition on the system. Was ZDI-CAN-29041.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:05.497"
-  },
-  {
-    "id": "CVE-2026-5056",
-    "description": "GStreamer qtdemux Stack-based Buffer Overflow Remote Code Execution Vulnerability. This vulnerability allows remote attackers to execute arbitrary code on affected installations of GStreamer. Interaction with this library is required to exploit this vulnerability but attack vectors may vary depending on the implementation.\n\nThe specific flaw exists within the parsing of UncompressedFrameConfigBox structures. The issue results from the lack of proper validation of the length of user-supplied data prior to copying it to a fixed-length stack-based buffer. An attacker can leverage this vulnerability to execute code in the context of the current process. Was ZDI-CAN-29392.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:05.337"
-  },
-  {
-    "id": "CVE-2026-4672",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.4 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user with guest-role permissions to access test report contents they were not authorized to view due to improper access control enforcement.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:03.963"
-  },
-  {
-    "id": "CVE-2026-3093",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 14.0 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an attacker to execute arbitrary JavaScript in another user's browser via a crafted URL, due to improper sanitization of user-controlled input.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:03.137"
-  },
-  {
-    "id": "CVE-2026-18266",
-    "description": "Dify AI Workflow oauth_redirect_url Open Redirect Vulnerability. This vulnerability allows remote attackers to disclose sensitive information on affected installations of Dify. User interaction is required to exploit this vulnerability in that the target must visit a malicious page or open a malicious file.\n\nThe specific flaw exists within the OAuth flow handling in the AppInitializer component. An attacker can force a redirection to a site that serves malicious content. An attacker can leverage this vulnerability to disclose information in the context of the application. Was ZDI-CAN-29196.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:02.730"
-  },
-  {
-    "id": "CVE-2026-18022",
-    "description": "Integer wraparound in IVFFlat index build in pgvector before 0.8.6 allows a database user to write data out-of-bounds, which could lead to arbitrary code execution. Only 32-bit systems are affected.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:02.593"
-  },
-  {
-    "id": "CVE-2026-16553",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.8 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed some sensitive information to be disclosed to an unintended host due to improper handling of upstream requests in virtual registries.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:02.460"
-  },
-  {
-    "id": "CVE-2026-15975",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 11.8 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an unauthenticated user to cause a denial of service due to insufficient resource throttling when processing merge request discussions.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:02.117"
-  },
-  {
-    "id": "CVE-2026-15831",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.1 before 19.1.3 and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user to bypass administrator-configured tool governance policies due to improper authorization enforcement during token generation.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:01.983"
-  },
-  {
-    "id": "CVE-2026-15077",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.1 before 19.1.3 and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user to access information from unauthorized projects due to improper neutralization of untrusted content processed by the AI-assisted code review functionality.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:01.690"
-  },
-  {
-    "id": "CVE-2026-14351",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 8.8 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an unauthenticated user to view the title of a confidential issue through a publicly accessible merge request due to improper authorization checks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:01.197"
-  },
-  {
-    "id": "CVE-2026-14341",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 12.8 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user with Maintainer role to modify protected branch configuration due to improper authorization in a projects API endpoint.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:01.063"
-  },
-  {
-    "id": "CVE-2026-13268",
-    "description": "G DATA Total Security Backup Service Link Following Local Privilege Escalation Vulnerability. This vulnerability allows local attackers to escalate privileges on affected installations of G DATA Total Security. An attacker must first obtain the ability to execute low-privileged code on the target system in order to exploit this vulnerability.\n\nThe specific flaw exists within the Backup Service. By creating a symbolic link, an attacker can abuse the service to delete a file. An attacker can leverage this vulnerability to escalate privileges and execute arbitrary code in the context of SYSTEM. Was ZDI-CAN-28665.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:00.700"
-  },
-  {
-    "id": "CVE-2026-13113",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.0 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user to merge code into a protected branch without the required approvals due to a race condition in approval rule processing.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:00.550"
-  },
-  {
-    "id": "CVE-2026-12436",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.0 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user to modify CI/CD configuration belonging to another user due to improper validation of user-supplied attributes when processing pipeline schedule inputs.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:00.417"
-  },
-  {
-    "id": "CVE-2026-12357",
-    "description": "Heimdall Data Database Proxy generateFileContent CRLF Injection Remote Code Execution Vulnerability. This vulnerability allows remote attackers to execute arbitrary code on affected installations of Heimdall Data Database Proxy. Authentication is required to exploit this vulnerability.\n\nThe specific flaw exists within the generateFileContent function. The issue results from the lack of proper neutralization of CRLF sequences. An attacker can leverage this vulnerability to execute code in the context of root. Was ZDI-CAN-29251.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:00.270"
-  },
-  {
-    "id": "CVE-2025-14562",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 10.6 before 19.0.5, 19.1 before 19.1.3, and 19.2 before 19.2.1 that under certain conditions could have allowed an authenticated user with developer-role permissions to commit changes to a project after being removed as a member, due to improper authorization checks on merge request collaboration settings.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-29T20:17:00.067"
-  },
-  {
-    "id": "CVE-2026-67429",
-    "description": "Flyto2 Core is an execution kernel for automation and AI-agent workflows. Prior to 2.26.6, image.download and related file-writing modules use caller-controlled output_dir instead of validate_path_with_env_config and its FLYTO_SANDBOX_DIR confinement, allowing attacker-controlled response bytes to be written to arbitrary filesystem paths the process can access. This issue is fixed in version 2.26.6.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:52.240"
-  },
-  {
-    "id": "CVE-2026-67428",
-    "description": "Flyto2 Core is an execution kernel for automation and AI-agent workflows. Prior to 2.26.7, HTTP-emitting modules including src/core/modules/third_party/developer/http/requests.py, core.api.http_get, core.api.http_post, graphql.query, graphql.mutation, monitor.http_check, communication.slack_send, notification.discord.send_message, notification.slack.send_message, notification.teams.send_message, ai.vision_analyze, verify.visual_diff, browser.proxy_rotate, and the agent and llm inline base_url branch fetch caller-controlled URLs without validate_url_with_env_config, allowing SSRF to internal or metadata endpoints. This issue is fixed in version 2.26.7.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:52.087"
-  },
-  {
-    "id": "CVE-2026-67427",
-    "description": "Flyto2 Core is an execution kernel for automation and AI-agent workflows. Prior to 2.26.6, the workflow engine variable resolver expands ${env.VAR} for any host environment variable without an allowlist or capability policy check, allowing a workflow parameter to bypass the default capability policy denylist for env.get and env.load_dotenv and exfiltrate secrets through allowed modules. This issue is fixed in version 2.26.6.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:51.913"
-  },
-  {
-    "id": "CVE-2026-67426",
-    "description": "Flyto2 Core is an execution kernel for automation and AI-agent workflows. Prior to 2.26.7, the standalone flyto-verification service in src/core/verification_service.py exposes unauthenticated POST /run on 0.0.0.0:8344 and uses client-supplied callback_url for an outbound POST with X-Internal-Key: $FLYTO_RUNNER_SECRET while bypassing target_allowed, allowing unauthenticated SSRF and runner secret exfiltration. This issue is fixed in version 2.26.7.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:51.770"
-  },
-  {
-    "id": "CVE-2026-67425",
-    "description": "Flyto2 Core is an execution kernel for automation and AI-agent workflows. Prior to 2.26.6, llm.chat reads provider keys such as OPENAI_API_KEY and ANTHROPIC_API_KEY from the environment and sends them in the Authorization: Bearer header to caller-controlled base_url, allowing an attacker to receive the operator's key on a public host that passes the SSRF guard. This issue is fixed in version 2.26.6.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:51.630"
-  },
-  {
-    "id": "CVE-2026-67424",
-    "description": "Flyto2 Core is an execution kernel for automation and AI-agent workflows. Prior to 2.26.7, the HTTP modules http.get, http.request, and http.batch in src/core/modules/atomic/http/get.py, src/core/modules/atomic/http/request.py, and src/core/modules/atomic/http/batch.py validate only the initial URL, then follow redirects with allow_redirects=True and without per-hop Location revalidation, allowing a public URL to redirect into internal address space and return the internal response body. This issue is fixed in version 2.26.7.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:51.480"
-  },
-  {
-    "id": "CVE-2026-67201",
-    "description": "V through 0.5.2, fixed in commit 85859f0, contains a server-side request forgery (SSRF) bypass vulnerability that allows attackers to circumvent host-based allowlists by exploiting a parser differential between net.urllib and net.http. Attackers can craft a URL containing a backslash in the authority section such that net.urllib.parse() extracts the trusted host for allowlist validation while net.http.get() normalizes the backslash and connects to the internal host, enabling access to internal network services that the allowlist was intended to block.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:51.330"
-  },
-  {
-    "id": "CVE-2026-66737",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:51.007"
-  },
-  {
-    "id": "CVE-2026-62995",
-    "description": "joserfc is a Python library that provides an implementation of several JSON Object Signing and Encryption (JOSE) standards. in versions 1.7.1 and prior,  joserfc accepts JWTs with trailing padding (==) which are not conforming to the JOSE specifications. This leads to malleability of the JWTs when consumed by joserfc. Depending on this application this might or not be an issue. This could lead to bypass of token revocation or anti-replay protection when implemented as a deny list of tokens or a deny list of token hashes. Note that ECDSA JWS are always malleable because of the malleability of ECDSA signatures (first test case in the code bellow). This makes a scheme which assumes that JWTs are not malleable brittle. However for other signatures (or MAC) schemes it might make sense to assume non malleability of the token. This issue has been fixed in version 1.7.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:50.837"
-  },
-  {
-    "id": "CVE-2026-59898",
-    "description": "Netty is an asynchronous, event-driven network application framework.  Prior to versions 4.1.136.Final and 4.2.16.Final, ab attacker can force WebSocket upgrade via the lax V07 (or V08) handshaker by sending `Sec-WebSocket-Version: 7` and omitting `Connection: Upgrade` / `Upgrade: websocket` headers, completing a protocol switch that a proxy would not recognize as an Upgrade request and enabling HTTP request smuggling / protocol-confusion attacks. This issue has been fixed in versions 4.1.136.Final and 4.2.16.Final.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:48.740"
-  },
-  {
-    "id": "CVE-2026-2482",
-    "description": "IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.8 is vulnerable to cross-site request forgery which could allow an attacker to execute malicious and unauthorized actions transmitted from a user that the website trusts.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:45.597"
-  },
-  {
-    "id": "CVE-2026-16328",
-    "description": "In consul-mcp-server, versions 0.1.0 up to 0.1.3 did not restrict how the Consul backend address was supplied, allowing a connected client to override the server's configured Consul address via a request header. This may allow a malicious client to redirect the server's Consul API traffic to an attacker-controlled endpoint, potentially exfiltrating the Consul token configured on the server. This vulnerability, CVE-2026-16328, is fixed in consul-mcp-server 0.1.4.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:45.060"
-  },
-  {
-    "id": "CVE-2026-16326",
-    "description": "In consul-mcp-server, versions 0.1.0 up to 0.1.3 did not properly isolate session state in stateless mode, which may allow one client's Consul authentication token to be used for subsequent requests from other clients. This vulnerability (CVE-2026-16326) is fixed in consul-mcp-server 0.1.4.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:44.900"
-  },
-  {
-    "id": "CVE-2026-14529",
-    "description": "IBM WebSphere Application Server 9.0, and 8.5 and IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.8 traditional is vulnerable to server-side request forgery (SSRF) when the SIP container feature (sipServlet-1.1) is enabled.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:44.720"
-  },
-  {
-    "id": "CVE-2026-13346",
-    "description": "pip would incorrectly handle doubly-encoded package URLs from indexes allowing for files to be installed to arbitrary locations on disk even when installing wheels.\n\n\n\n\nThis vulnerability requires downloading or installing a package from a malicious package index to succeed, malicious packages alone are not able to exploit this vulnerability. Note that this vulnerability only materially impacts users running `pip download` with the `--only-binary` option as installing source distributions from an untrusted index is already an unsafe operation that executes code during install time.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:44.267"
-  },
-  {
-    "id": "CVE-2026-12935",
-    "description": "The\nTL-WR940N v6 router contains a vulnerability in its RTSP connection tracking\nmodule that can lead to a stack-based buffer overflow. The issue occurs when a\nLAN client initiates a connection to a malicious RTSP server controlled by an\nattacker. A specially crafted RTSP message may trigger improper memory handling\nwithin the kernel module\n\n\n\n\n\n\n\n\n\nSuccessful\nexploitation of this vulnerability may result in a denial-of-service (DoS)\ncondition or allow remote code execution (RCE), potentially leading to full\ncompromise of the device. This vulnerability can be exploited by an\nunauthenticated attacker under the device's default configuration.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:44.113"
-  },
-  {
-    "id": "CVE-2026-10684",
-    "description": "In subsys/debug/coredump/coredump_shell.c, print_coredump_hdr() used the 16-bit tgt_code field of a stored Zephyr coredump header directly as an index into coredump_target_code2str[], a fixed 7-element array of string pointers, with no bounds check.\n\nA stored coredump whose tgt_code is >= 7 causes an out-of-bounds read of a char* up to ~64K entries past the array; that value is passed as the %s argument to shell_print, which dereferences and walks it as a string. The result is either disclosure of device memory contents to the shell user or a crash when the out-of-bounds pointer is unmapped.\n\nThe defect is reached via the coredump print shell command (cmd_coredump_print_stored_dump -> pretty_print_coredump -> parse_and_print_coredump -> print_coredump_hdr). The tgt_code field is device-generated and in-range during normal crash handling, so triggering requires local shell access plus the ability to stage or corrupt the stored coredump in the flash/in-memory backend.\n\nIntroduced in v4.2.0 (commit 13abd7fe730) and present through v4.4.0; fixed by clamping out-of-range codes to the 'unknown' (index 0) entry.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-07-29T19:16:43.677"
   }
 ]
