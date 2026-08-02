@@ -1,19 +1,5 @@
 [
   {
-    "id": "CVE-2026-14620",
-    "description": "webpack-dev-server versions 5.2.5 and earlier expose two internal developer endpoints, /webpack-dev-server/open-editor and /webpack-dev-server/invalidate, that perform state-changing actions on any GET request without verifying that the request originated from the dev server's own page. Any website a developer visits while the dev server is running can trigger these endpoints cross-origin with no interaction beyond the visit. An attacker can open an arbitrary existing local file in the developer's editor, including files outside the project root, and repeated requests can spawn editor processes and force recompilations that degrade the developer's machine. Patches: upgrade to webpack-dev-server 5.2.6. Workarounds: none.",
-    "severity": "Medium",
-    "tech": "Webpack-dev-server",
-    "published": "2026-07-03T17:16:53.620"
-  },
-  {
-    "id": "CVE-2026-14631",
-    "description": "webpack-dev-server versions 5.2.5 and earlier terminate the whole Node.js process when an unauthenticated peer sends either a normal HTTP request with a malformed Host header or a WebSocket upgrade to the default /ws endpoint with a malformed Origin header. The malformed value causes an uncaught exception in the host-validation path and crashes the dev server. Impact is limited to availability of the development server, no data disclosure, no code execution. Patches: upgrade to webpack-dev-server 5.2.6. Workarounds: keep the dev server bound to localhost (the default) and do not expose it to untrusted networks.",
-    "severity": "Medium",
-    "tech": "Webpack-dev-server",
-    "published": "2026-07-03T18:16:24.687"
-  },
-  {
     "id": "CVE-2026-14604",
     "description": "A vulnerability was determined in Open Asset Import Library Assimp up to 6.0.4. Affected is the function Assimp::Exporter::ExportToBlob of the file code/AssetLib/Ply/PlyLoader.cpp of the component PLY Model Handler. This manipulation causes double free. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized. The project was informed of the problem early through an issue report.",
     "severity": "Medium",
@@ -65721,5 +65707,12 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-02T16:16:25.413"
+  },
+  {
+    "id": "CVE-2026-10848",
+    "description": "The OCPP 1.6 client in subsys/net/lib/ocpp parsed inbound WAMP RPC frames in parse_rpc_msg() (subsys/net/lib/ocpp/ocpp_j.c) using a hand-rolled helper, extract_string_field(), that copied the message's uid and action fields with strncpy(out_buf, token + 1, outlen - 1) and then scanned the result with strchr(out_buf, '\"'). Because strncpy does not NUL-terminate the destination when the source is at least outlen - 1 (127) bytes long, the subsequent strchr reads past the 128-byte destination buffer into adjacent stack memory; if a \" byte is found beyond the buffer, a one-byte out-of-bounds NUL write also occurs. A related defect in extract_payload() runs strchr/strrchr over the receive buffer, which may not be NUL-terminated when a maximal-length frame fills it.\n\nThe parsed bytes come directly from the OCPP central-system server over a websocket: the reader thread fills recv_buf via websocket_recv_msg() and calls parse_rpc_msg() on each inbound DATA frame (subsys/net/lib/ocpp/ocpp.c). A malicious or compromised central server, or an on-path attacker (OCPP is commonly deployed over plain ws://), can send an RPC frame whose uid or action field is 127+ bytes with no closing quote, triggering the out-of-bounds access.\n\nThe primary impact is a remotely triggerable denial of service: the unbounded scan can fault on an unmapped page, and the stray NUL write can corrupt adjacent stack state. The over-read data is not reflected to the peer, so disclosure is limited. The feature is EXPERIMENTAL and must be explicitly enabled (CONFIG_OCPP). The fix replaces the manual parser with the bounds-respecting json_mixed_arr_parse() and copies the extracted uid with an explicitly NUL-terminated buffer, eliminating both over-reads.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-02T17:16:58.163"
   }
 ]
