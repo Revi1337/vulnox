@@ -1,103 +1,5 @@
 [
   {
-    "id": "CVE-2026-10656",
-    "description": "The MAX32xxx USB device controller driver (drivers/usb/udc/udc_max32.c, compatible adi_max32_usbhs) dereferenced an endpoint buffer in its OUT and IN transfer-completion handlers without checking it for NULL. udc_event_xfer_out_done() called net_buf_add(buf, ep_request->actlen) immediately after buf = udc_buf_get(ep_cfg), where udc_buf_get() returns NULL when the endpoint FIFO is empty.\n\nA transfer-completion event is queued from interrupt context and processed asynchronously by the driver thread; between queuing and processing, the endpoint FIFO can be drained by host-controlled control flow — in particular udc_setup_received() drains the EP0 OUT/IN FIFOs whenever a new SETUP packet arrives, and dequeue/disable/purge paths drain it likewise.\n\nA USB host that aborts an in-flight EP0 control transfer with a new SETUP packet (legal USB behavior) can therefore cause a stale XFER_OUT_DONE event to be processed against an empty FIFO, producing net_buf_add(NULL, ...), a near-NULL pointer dereference that faults and crashes the device. No authentication is required; the attacker is the USB host the device is connected to (physical bus access). Impact is denial of service (device crash).\n\nThe defect was introduced when the MAX32 UDC driver was added and shipped in Zephyr v4.4.0. The fix adds NULL-buffer checks that return early with UDC_EVT_ERROR/-ENOBUFS in both the OUT-done and IN-done handlers.",
-    "severity": "Medium",
-    "tech": "Zephyr",
-    "published": "2026-07-05T23:16:52.730"
-  },
-  {
-    "id": "CVE-2026-10657",
-    "description": "Zephyr's DNS resolver detects mDNS (.local) queries in dns_resolve_name_internal() (subsys/net/lib/dns/resolve.c) with memcmp(strrchr(query, '.'), \".local\", 7), which always reads a fixed 7 bytes from the suffix pointer. When the resolved hostname's final label is shorter than 7 bytes (e.g. names ending in .org, .com, .net, .io, or a trailing dot), the comparison reads 1-2 bytes past the string's NUL terminator.\n\nThe hostname (query) is the caller-supplied name passed through the standard getaddrinfo()/dns_get_addr_info()/dns_resolve_name() path and is influenceable by operators or remote inputs (server names from configuration, parsed URLs, or app-facing interfaces).\n\nOn a tightly-sized buffer with no slack (for example a userspace getaddrinfo call where the hostname is copied with k_usermode_string_alloc_copy to exactly strlen+1 bytes), the over-read crosses the allocation boundary; if that boundary is unmapped (guard page, memory-domain boundary under MPU, or an address sanitizer) the over-read faults, causing a denial of service. The over-read bytes are never returned, so there is no information disclosure.\n\nThe flaw is compiled only when CONFIG_MDNS_RESOLVER is enabled, exists since v1.10.0, and is fixed by replacing the fixed-length memcmp with a NUL-safe strcmp(ptr, \".local\").",
-    "severity": "Low",
-    "tech": "Zephyr",
-    "published": "2026-07-05T23:16:52.863"
-  },
-  {
-    "id": "CVE-2026-14773",
-    "description": "A vulnerability was found in itsourcecode Hospital Management System 1.0. This affects an unknown function of the file /payment.php. The manipulation of the argument patientid results in sql injection. The attack can be launched remotely. The exploit has been made public and could be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-05T23:16:52.990"
-  },
-  {
-    "id": "CVE-2026-14774",
-    "description": "A vulnerability was determined in itsourcecode Hospital Management System 1.0. This impacts an unknown function of the file /paymentdischarge.php. This manipulation of the argument patientid causes sql injection. The attack may be initiated remotely. The exploit has been publicly disclosed and may be utilized.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-05T23:16:53.140"
-  },
-  {
-    "id": "CVE-2026-14775",
-    "description": "A vulnerability was identified in SourceCodester Onlne Examination & Learning Management System 1.0. Affected is an unknown function of the file /process_lesson.php. Such manipulation of the argument user_id leads to unrestricted upload. The attack may be launched remotely. The exploit is publicly available and might be used. The name of the affected product appears to have a typo in it.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-05T23:16:53.290"
-  },
-  {
-    "id": "CVE-2026-14776",
-    "description": "A security flaw has been discovered in SourceCodester Onlne Examination & Learning Management System 1.0. Affected by this vulnerability is the function pathinfo of the file /upload_files.php of the component Filename Extension. Performing a manipulation results in unrestricted upload. Remote exploitation of the attack is possible. The exploit has been released to the public and may be used for attacks. The name of the affected product appears to have a typo in it.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-05T23:16:53.440"
-  },
-  {
-    "id": "CVE-2026-14777",
-    "description": "A weakness has been identified in SourceCodester Onlne Examination & Learning Management System 1.0. Affected by this issue is some unknown functionality of the file /announcements.php. Executing a manipulation can lead to unrestricted upload. The attack can be executed remotely. The exploit has been made available to the public and could be used for attacks. The name of the affected product appears to have a typo in it.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-06T00:16:54.713"
-  },
-  {
-    "id": "CVE-2026-14778",
-    "description": "A security vulnerability has been detected in SourceCodester Onlne Examination & Learning Management System 1.0. This affects an unknown part of the file /ajax_enroll.php of the component Enrollment Management. The manipulation of the argument student_id/schedule_id/action leads to improper authorization. The attack is possible to be carried out remotely. The exploit has been disclosed publicly and may be used. The name of the affected product appears to have a typo in it.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-06T00:16:54.880"
-  },
-  {
-    "id": "CVE-2026-14783",
-    "description": "A vulnerability was determined in NousResearch hermes-agent 2026.5.29.2. The impacted element is the function skill_view of the file tools/skills_tool.py. Executing a manipulation of the argument Name can lead to path traversal. The attack can be launched remotely. The exploit has been publicly disclosed and may be utilized. This patch is called 56f833efa427ccb444c0f9ad1759af1012f2124d. It is advisable to implement a patch to correct this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-06T00:16:55.037"
-  },
-  {
-    "id": "CVE-2026-14784",
-    "description": "A vulnerability was identified in vxcontrol PentAGI up to 2.1.0. This affects an unknown function of the file backend/pkg/docker/client.go of the component Docker API. The manipulation leads to sandbox issue. The attack may be initiated remotely. The pull request to fix this issue awaits acceptance.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-06T01:16:54.757"
-  },
-  {
-    "id": "CVE-2026-14786",
-    "description": "A security flaw has been discovered in radareorg radare2 up to 6.1.6. This impacts the function r_str_word_get0set of the file libr/util/str.c. The manipulation results in integer overflow. The attack must be initiated from a local position. The exploit has been released to the public and may be used for attacks. The patch is identified as 11ac224c0eb8d57830fccc99e1c1cd8e5d958813. It is best practice to apply a patch to resolve this issue.",
-    "severity": "Low",
-    "tech": "Radare2",
-    "published": "2026-07-06T01:16:54.913"
-  },
-  {
-    "id": "CVE-2026-14787",
-    "description": "A weakness has been identified in radareorg radare2 up to 6.1.6. Affected is the function cmd_print in the library libr/core/cmd_print.inc of the component pb Print Command Handler. This manipulation causes integer overflow. The attack needs to be launched locally. The exploit has been made available to the public and could be used for attacks. Patch name: 2b6265476c75567006b0fcbb749f4ae7b189c5df. It is recommended to apply a patch to fix this issue.",
-    "severity": "Low",
-    "tech": "Radare2",
-    "published": "2026-07-06T02:16:21.360"
-  },
-  {
-    "id": "CVE-2026-14788",
-    "description": "A security vulnerability has been detected in radareorg radare2 up to 6.1.6. Affected by this vulnerability is the function r_core_bin_load of the file libr/core/cfile.c. Such manipulation leads to use after free. The attack needs to be performed locally. The exploit has been disclosed publicly and may be used. The name of the patch is 635ab1eeb30340c26076722a90cb91fb2272130b. Applying a patch is advised to resolve this issue.",
-    "severity": "Low",
-    "tech": "Radare2",
-    "published": "2026-07-06T02:16:21.527"
-  },
-  {
-    "id": "CVE-2026-14803",
-    "description": "Mojo::JSON versions before 9.47 for Perl allow memory exhaustion via unbounded recursion in the pure-Perl decoder.\n\nThe pure-Perl decode path (`_decode_value` dispatching to `_decode_array` and `_decode_object`) recurses with no depth limit, so a small deeply nested JSON document can consume excessive memory.\n\nThis path is the default when Cpanel::JSON::XS is not installed or `MOJO_NO_JSON_XS=1` is set; the Cpanel::JSON::XS fast path is not affected.\n\nAny caller that decodes an untrusted JSON body, for example `Mojo::Message::json` reached through `$c->req->json`, can exhaust process memory and cause denial of service.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-06T02:16:21.683"
-  },
-  {
     "id": "CVE-2026-14789",
     "description": "A vulnerability was detected in radareorg radare2 up to 6.1.6. Affected by this issue is some unknown functionality of the file libr/bin/format/mdmp/mdmp.c of the component Memory64ListStream Parser. Performing a manipulation results in stack-based buffer overflow. The attack requires a local approach. The exploit is now public and may be used. The patch is named 175d4addb68981331c85b10681c2161c38fb5762. It is suggested to install a patch to address this issue.",
     "severity": "Low",
@@ -18642,14 +18544,14 @@
   },
   {
     "id": "CVE-2026-47984",
-    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read and write access. Exploitation of this issue does not require user interaction.",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read and limited write access. Exploitation of this issue does not require user interaction.",
     "severity": "High",
     "tech": "Commerce",
     "published": "2026-07-14T20:17:04.223"
   },
   {
     "id": "CVE-2026-47988",
-    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read and write access. Exploitation of this issue does not require user interaction.",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized read and limited write access, causing a limited disruption to availability. Exploitation of this issue does not require user interaction.",
     "severity": "High",
     "tech": "Commerce",
     "published": "2026-07-14T20:17:04.347"
@@ -18677,8 +18579,8 @@
   },
   {
     "id": "CVE-2026-47996",
-    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. A high-privileged attacker could leverage this vulnerability to bypass security measures and gain unauthorized read access. Exploitation of this issue does not require user interaction. Scope is changed.",
-    "severity": "High",
+    "description": "Adobe Commerce is affected by an Incorrect Authorization vulnerability that could lead to arbitrary file system read. A high-privileged attacker could exploit this vulnerability to access sensitive files and directories outside the intended access scope. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "Medium",
     "tech": "Commerce",
     "published": "2026-07-14T20:17:04.840"
   },
@@ -19321,7 +19223,7 @@
   },
   {
     "id": "CVE-2026-48284",
-    "description": "ColdFusion is affected by an Improper Input Validation vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "description": "ColdFusion is affected by an Improper Input Validation vulnerability that could result in arbitrary code execution in the context of the current user. The vulnerable component is restricted to an administrative network zone by default. Exploitation of this issue does not require user interaction. Scope is changed.",
     "severity": "Critical",
     "tech": "Coldfusion",
     "published": "2026-07-14T21:16:58.043"
@@ -19356,21 +19258,21 @@
   },
   {
     "id": "CVE-2026-48320",
-    "description": "ColdFusion is affected by a reflected Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this vulnerability to inject malicious scripts into a web page, potentially gaining elevated access or control over the victim's account or session. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
+    "description": "ColdFusion is affected by a reflected Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this vulnerability to inject malicious scripts into a web page, potentially gaining elevated access or control over the victim's account or session. The vulnerable component is restricted to an administrative network zone by default. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
     "severity": "High",
     "tech": "Coldfusion",
     "published": "2026-07-14T21:16:58.703"
   },
   {
     "id": "CVE-2026-48321",
-    "description": "ColdFusion is affected by an Incorrect Authorization vulnerability that could result in privilege escalation. An attacker could leverage this vulnerability to gain unauthorized read and write access. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "description": "ColdFusion is affected by an Incorrect Authorization vulnerability that could result in privilege escalation. An attacker could leverage this vulnerability to gain unauthorized read and write access. The vulnerable component is restricted to an administrative network zone by default. Exploitation of this issue does not require user interaction. Scope is changed.",
     "severity": "Critical",
     "tech": "Coldfusion",
     "published": "2026-07-14T21:16:58.813"
   },
   {
     "id": "CVE-2026-48322",
-    "description": "ColdFusion is affected by an Improper Control of Generation of Code ('Code Injection') vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "description": "ColdFusion is affected by an Improper Control of Generation of Code ('Code Injection') vulnerability that could result in arbitrary code execution in the context of the current user. A low-privileged attacker could exploit this vulnerability to execute arbitrary code. Exploitation of this issue does not require user interaction. Scope is changed.",
     "severity": "Critical",
     "tech": "Coldfusion",
     "published": "2026-07-14T21:16:58.920"
@@ -66900,7 +66802,7 @@
   },
   {
     "id": "CVE-2026-68494",
-    "description": "The fix released in jackson-core 2.18.6 and 2.21.1 for CVE-2026-18401 (GHSA-72hv-8253-57qq, number length constraint bypass in the non-blocking parser) is incomplete. This record covers the remaining bypass.\n\n\n\nThe earlier fix wired validateIntegerLength() into a new _setIntLength() helper and invoked it wherever the integer portion of a number is decided: a terminator byte arrives, a . or e/E is seen, or input ends inside a fully buffered value. It was not invoked on the attacker-relevant path where the parser runs out of input while still inside the MINOR_NUMBER_INTEGER_DIGITS minor state and returns NOT_AVAILABLE to the caller.\n\n\n\nAs a result, an attacker who streams JSON to a non-blocking parser in many small chunks, without ever sending a terminator byte, keeps the parser inside MINOR_NUMBER_INTEGER_DIGITS indefinitely. _textBuffer.expandCurrentSegment() grows the accumulator on every chunk while validateIntegerLength() is never called. The accumulator is bounded only by maxStringLength (20 MiB by default) rather than by maxNumberLength (1000 by default), an amplification of roughly 20,000x over the documented limit. Because Java char values occupy two bytes, a single connection can be driven to approximately 40 MiB of heap before the validator finally fires when the value completes.\n\n\n\nThe equivalent fraction-path code is correct: _finishFloatFraction() calls _setFractLength() before its NOT_AVAILABLE return. The missing call affects the integer-digit paths in _startPositiveNumber(), _startNegativeNumber() and _finishNumberIntegralPart() in NonBlockingUtf8JsonParserBase.\n\n\n\nImpact: reactive frameworks such as Spring WebFlux/Reactor, Quarkus, Helidon and Vert.x feed inbound HTTP or gRPC bytes to the async parser as they arrive, which is precisely the chunked-feed shape required. Operators who set StreamReadConstraints.maxNumberLength expecting it to cap memory per number value do not get that guarantee; memory accumulates per concurrent connection and attacker-controlled concurrency can exhaust the JVM heap. The synchronous parsers (UTF8StreamJsonParser, ReaderBasedJsonParser) and the async parser operating on complete input are not affected.\n\n\n\nExploitation requires only the ability to stream data to a parsing endpoint; no privileges or user interaction are needed.\n\n\n\nThis issue affects com.fasterxml.jackson.core:jackson-core from version 2.15.0 through 2.18.7, from 2.19.0 through 2.21.3, and from 2.22.0 through 2.22.0, and tools.jackson.core:jackson-core from 3.0.0 through 3.1.3 and from 3.2.0 through 3.2.0. Versions prior to 2.15.0 are not affected, because StreamReadConstraints -- which defines the maxNumberLength setting -- was first introduced in jackson-core 2.15.0, so no such constraint exists to be bypassed in earlier releases. Note that GHSA-r7wm-3cxj-wff9 states the affected 2.x range without a lower bound.",
+    "description": "The fix released in jackson-core 2.18.6 and 2.21.1 for CVE-2026-18401 (GHSA-72hv-8253-57qq, number length constraint bypass in the non-blocking parser) is incomplete. This record covers the remaining bypass.\n\nThe earlier fix wired validateIntegerLength() into a new _setIntLength() helper and invoked it wherever the integer portion of a number is decided: a terminator byte arrives, a '.' or 'e'/'E' is seen, or input ends inside a fully buffered value. It was not invoked on the attacker-relevant path where the parser runs out of input while still inside the MINOR_NUMBER_INTEGER_DIGITS minor state and returns NOT_AVAILABLE to the caller.\n\nAs a result, an attacker who streams JSON to a non-blocking parser in many small chunks, without ever sending a terminator byte, keeps the parser inside MINOR_NUMBER_INTEGER_DIGITS indefinitely. _textBuffer.expandCurrentSegment() grows the accumulator on every chunk while validateIntegerLength() is never called. The accumulator is bounded only by maxStringLength (20 MiB by default) rather than by maxNumberLength (1000 by default), an amplification of roughly 20,000x over the documented limit. Because Java char values occupy two bytes, a single connection can be driven to approximately 40 MiB of heap before the validator finally fires when the value completes.\n\nThe equivalent fraction-path code is correct: _finishFloatFraction() calls _setFractLength() before its NOT_AVAILABLE return. The missing call affects the integer-digit paths in _startPositiveNumber(), _startNegativeNumber() and _finishNumberIntegralPart() in NonBlockingUtf8JsonParserBase.\n\nImpact: reactive frameworks such as Spring WebFlux/Reactor, Quarkus, Helidon and Vert.x feed inbound HTTP or gRPC bytes to the async parser as they arrive, which is precisely the chunked-feed shape required. Operators who set StreamReadConstraints.maxNumberLength expecting it to cap memory per number value do not get that guarantee; memory accumulates per concurrent connection and attacker-controlled concurrency can exhaust the JVM heap. The synchronous parsers (UTF8StreamJsonParser, ReaderBasedJsonParser) and the async parser operating on complete input are not affected.\n\nExploitation requires only the ability to stream data to a parsing endpoint; no privileges or user interaction are needed.\n\nThis issue affects com.fasterxml.jackson.core:jackson-core from version 2.15.0 through 2.18.7, and from 2.19.0 through 2.21.3, and tools.jackson.core:jackson-core from 3.0.0 through 3.1.3. Versions prior to 2.15.0 are not affected, because StreamReadConstraints -- which defines the maxNumberLength setting -- was first introduced in jackson-core 2.15.0, so no such constraint exists to be bypassed in earlier releases. Note that GHSA-r7wm-3cxj-wff9 states the affected 2.x range without a lower bound. The 2.22.x and 3.2.x release lines are not affected: those branches were created after the fix commit landed on 2026-05-21 and therefore contain it from their initial releases (2.22.0, tagged 2026-06-03, and 3.2.0, tagged 2026-06-08).",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-04T15:16:41.443"
@@ -68024,5 +67926,117 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-04T22:17:17.727"
+  },
+  {
+    "id": "CVE-2026-18818",
+    "description": "A weakness has been identified in Ehco1996 django-sspanel up to 2023.12.26. This affects the function TicketDetailView of the file apps/sspanel/views.py of the component Support Ticket Handler. Executing a manipulation can lead to authorization bypass. The attack can be executed remotely. The vendor was contacted early about this disclosure but did not respond in any way. This vulnerability only affects products that are no longer supported by the maintainer.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-04T23:16:51.300"
+  },
+  {
+    "id": "CVE-2026-18819",
+    "description": "A security vulnerability has been detected in RackTables up to 0.22.0/e5fff9f8aab339798ed47e8c6d7d977ed97a82bd. This vulnerability affects unknown code. The manipulation leads to cross-site request forgery. The attack is possible to be carried out remotely. The exploit has been disclosed publicly and may be used. The project maintainer confirms: \"[I]t seems plausible, in that RackTables does not at this time have any CSRF prevention. You may assign a CVE ID to this, but there is no guarantee it will be handled in urgent, or even timely, manner, or at all.\"",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-04T23:16:51.493"
+  },
+  {
+    "id": "CVE-2026-45537",
+    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. In versions prior to 3.6.6 and 4.0.0-rc1, the construct_uri() function concatenates multiple URI components (protocol, username, domain, port, params) into a fixed 1024-byte global BSS buffer without any bounds checking. When a routing script calls construct_uri() with an attacker-controlled username, a combined component length exceeding 1024 bytes overflows the buffer, corrupting adjacent global data with attacker-controlled content. The overflow reaches disable_503_translation, a global flag controlling SIP 503 response handling, allowing an attacker to deterministically set the flag via the URI username and alter the server's routing behavior for subsequent messages. Because the same buffer is shared with contact_builder(), the overflow also corrupts that function's data, and without a memory sanitizer the adjacent globals are silently overwritten on every request containing a long username. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-04T23:16:51.687"
+  },
+  {
+    "id": "CVE-2026-18103",
+    "description": "A flaw was found in dhcp-server. A remote attacker with network access to the OMAPI (Open Management Application Programming Interface) port, especially if not secured with TSIG (Transaction Signature) key authentication, could send a specially crafted lease creation request. This request, containing an overly long InfiniBand MAC address, triggers a buffer overflow in the `print_hw_addr()` function. Successful exploitation leads to a persistent denial of service (DoS), causing the `dhcpd` service to crash and preventing it from restarting without manual intervention.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-05T00:16:59.110"
+  },
+  {
+    "id": "CVE-2026-18852",
+    "description": "A vulnerability has been found in epsilla-cloud vectordb up to 0.3.18/df5a5f5afb85a2376a0f2f316c79dea9b2c6ac7a. This impacts the function SplitTokens/ShuntingYard of the file engine/query/expr/expr.cpp of the component Filter Parser. Such manipulation leads to improper check for unusual conditions. The attack needs to be performed locally. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-05T00:16:59.370"
+  },
+  {
+    "id": "CVE-2026-18853",
+    "description": "A security vulnerability has been detected in ZomboDroid Meme Generator App 4.6830 on Android. This issue affects the function t5.l.c of the component com.zombodroid.MemeGenerator. Such manipulation leads to path traversal. Local access is required to approach this attack. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-05T00:16:59.547"
+  },
+  {
+    "id": "CVE-2026-18854",
+    "description": "A vulnerability has been found in Shandong Hoteam PDM Product Data Management System up to 8.3.10. The impacted element is the function GetStoredClassByFilter of the file /Base/BaseService.asmx/DataService. The manipulation of the argument FilterString leads to sql injection. Remote exploitation of the attack is possible. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-05T00:16:59.717"
+  },
+  {
+    "id": "CVE-2026-45705",
+    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. In versions prior to 3.6.6 and 4.0.0-rc1, the find_line_delimiter() function in the multipart body parser performs an out-of-bounds read via strncmp() when searching for MIME boundary delimiters. After finding a -- pattern near the end of the body, the function compares delimiter.len bytes (typically 20-70) starting from a position at or past the logical end of the body buffer, reading past the body boundary. The bug triggers when a SIP message has Content-Type: multipart/mixed with a boundary parameter and its body contains -- within two to three bytes of the body's end without being followed by the actual boundary delimiter. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-05T00:16:59.890"
+  },
+  {
+    "id": "CVE-2026-45809",
+    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. Versions prior to 3.6.6 and 4.0.0-rc1 contain a denial of service vulnerability in the watcherinfo generation functionality. An attacker can create an oversized watcher entry by sending a SUBSCRIBE Event: presence request with a long From URI, and then trigger presence.winfo watcherinfo XML generation for the same presentity. OpenSIPS copies the stored watcher URI into a fixed-size stack buffer, overflowing it and crashing the process. A remote attacker can crash an OpenSIPS worker in deployments that expose handle_subscribe() and allow watcherinfo (presence.winfo) generation. The issue is configuration-dependent because the presence and presence_xml modules must be loaded and SUBSCRIBE routing must be reachable. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-05T00:17:00.030"
+  },
+  {
+    "id": "CVE-2026-46334",
+    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. Versions prior to 3.6.6 and 4.0.0-rc1 contain a denial of service vulnerability in the SDP bandwidth-line parsing logic. A SIP request with Content-Type: application/sdp and a malformed session-level SDP bandwidth line missing the required colon delimiter can corrupt parsed SDP bandwidth metadata. When a route or module subsequently clones the corrupted SDP state, as occurs with dialog and QoS processing, the OpenSIPS worker process crashes. An unauthenticated remote attacker can therefore trigger a crash in any configuration whose routing script parses attacker-controlled SDP and applies dialog/QoS processing. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-05T00:17:00.177"
+  },
+  {
+    "id": "CVE-2026-18856",
+    "description": "A vulnerability was determined in Poesis Rhymix CMS up to 2.1.33. This impacts the function procImporterAdminCheckXmlFile of the file modules/importer/importer.admin.controller.php of the component Data Import Module. This manipulation of the argument filename causes server-side request forgery. The attack is possible to be carried out remotely. The exploit has been publicly disclosed and may be utilized. Upgrading to version 2.1.34 will fix this issue. It is recommended to upgrade the affected component.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-05T01:16:44.757"
+  },
+  {
+    "id": "CVE-2026-18859",
+    "description": "A vulnerability was identified in ESAFENET CDG up to 20260615. Affected is an unknown function of the file /CDGServer3/ukey/usbkey;logindojojs. Such manipulation of the argument keyid leads to sql injection. The attack may be performed from remote. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-05T01:16:44.947"
+  },
+  {
+    "id": "CVE-2026-18895",
+    "description": "A vulnerability was found in UTT HiPER 1250GW up to 3.2.7-210907-180535. Impacted is the function strcpy of the file /goform/APSecurity_5g. Performing a manipulation of the argument cipher results in stack-based buffer overflow. It is possible to initiate the attack remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-05T02:16:37.403"
+  },
+  {
+    "id": "CVE-2026-18896",
+    "description": "A vulnerability was determined in lavkush-maurya Student-Registration-System 1.0. The affected element is an unknown function of the file /student/changepass.php. Executing a manipulation of the argument oldpass can lead to sql injection. It is possible to launch the attack remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-05T02:16:37.593"
+  },
+  {
+    "id": "CVE-2026-18897",
+    "description": "A vulnerability was identified in UTT HiPER 1250GW up to v3.2.7-210907-180535. The impacted element is the function strcpy of the file /goform/getOneApConfTempEntry. The manipulation of the argument tempName leads to stack-based buffer overflow. The attack can be initiated remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-05T02:16:37.773"
+  },
+  {
+    "id": "CVE-2026-18907",
+    "description": "Path Traversal in Download File Feature in com.talpa.hibrowser 2.23.1.1 on Android allows arbitrary file write via directory traversal sequences in the filename.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-05T02:16:37.950"
   }
 ]
