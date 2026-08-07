@@ -1,5 +1,915 @@
 [
   {
+    "id": "CVE-2026-68750",
+    "description": "Inefficient Algorithmic Complexity vulnerability in the traversal engine in rrrene html_sanitize_ex allows an unauthenticated remote attacker to exhaust server CPU and memory via a flat run of sibling elements in sanitized HTML. The list clause of HtmlSanitizeEx.Traverser.traverse/2 recurses on the tail of a sibling list and then evaluates List.flatten([head] ++ tail) over the already flattened result, so every one of n siblings copies and re-walks the entire remaining tail. The flattening is only needed for the rare case where scrub returns several replacement nodes for one node, but the cost is paid across the whole tail at every step, making traversal quadratic in sibling count.\n\nThe traverser sits on every public entry point, so no particular scrubber or configuration is required and the payload needs only allowed tags. A 160 KB body of 20,000 sibling elements occupies a scheduler for roughly 1.7 seconds, and the cost grows faster than the body does.\n\nThis issue affects html_sanitize_ex: from 0.3.1 before 1.5.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:51.907"
+  },
+  {
+    "id": "CVE-2026-68749",
+    "description": "Inefficient Regular Expression Complexity vulnerability in the CSS scrubber in rrrene html_sanitize_ex allows an unauthenticated remote attacker to exhaust server CPU via a long CSS declaration in sanitized HTML. The declaration regex in HtmlSanitizeEx.Scrubber.CSS.scrub/1 matches the property name with an unbounded greedy [-\\w]+ followed by a mandatory :, so a long run of word characters not followed by a colon makes the engine give back one character at a time and retry the colon at every start offset. The work is quadratic in the length of the run, and no length cap is applied to the CSS handed to the scrubber. An 80 KB <style> body costs roughly 2.4 seconds of scheduler time, so a few concurrent requests saturate the BEAM scheduler pool and make the application unresponsive.\n\nThe impact is CPU exhaustion only. Nothing is read, modified or disclosed.\n\nThis issue affects html_sanitize_ex: from 0.3.1 before 1.5.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:51.720"
+  },
+  {
+    "id": "CVE-2026-68747",
+    "description": "Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection') vulnerability in the CSS scrubber in rrrene html_sanitize_ex allows an unauthenticated remote attacker to inject CSS at-rules, including an import of a remote stylesheet, into a page served to other users. HtmlSanitizeEx.Scrubber.CSS.scrub/1 applies its property and value allowlist through a Regex.replace over substrings matching a property: value declaration pattern, so input that does not match that pattern is never inspected and is copied to the output unchanged. @import url(//attacker.example/style.css); survives, while the same URL inside a background: url(...) declaration is removed.\n\nElement boundaries are resolved before the scrubber runs, so injected content does not escape the <style> element and no script executes.\n\nThis issue affects html_sanitize_ex: from 0.3.1 before 1.5.4.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:51.533"
+  },
+  {
+    "id": "CVE-2026-66843",
+    "description": "Inclusion of Functionality from Untrusted Control Sphere vulnerability in the HTML5 scrubber in rrrene html_sanitize_ex allows a remote attacker to load a document of their choosing into a trusted page via the data attribute of an <object> element in sanitized HTML. object is the one URI-bearing element in lib/html_sanitize_ex/scrubber/html5.ex never registered through allow_tag_with_uri_attributes/3, and its only guard is a prefix match on lowercase \"javascript:\", so mixed-case variants, data: URIs, protocol-relative URLs and same-origin paths all survive.\n\nThis is not unconditional cross-site scripting. A javascript: URL does not execute through <object data> in current browsers, data: documents load in an opaque origin, and host-origin script execution additionally requires the application to serve attacker-controlled content from a same-origin path.\n\nThis issue affects html_sanitize_ex: from 0.3.1 before 1.5.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:49.627"
+  },
+  {
+    "id": "CVE-2026-66829",
+    "description": "URL Redirection to Untrusted Site ('Open Redirect') vulnerability in the HTML5 scrubber in rrrene html_sanitize_ex allows a remote attacker to force visitors of a page to navigate to a site of the attacker's choosing via a <meta http-equiv=\"refresh\"> element in sanitized HTML. HtmlSanitizeEx.html5/1 keeps attacker-supplied <meta> elements in its output. A meta element acts on the whole document rather than on the fragment it was embedded in, so it can also declare document-wide directives such as Content-Security-Policy.\n\nThis is not cross-site scripting. Browsers do not navigate a meta refresh to a javascript: URL, so the uppercase JAVASCRIPT: filter bypass yields no script execution and none was demonstrated.\n\nThis issue affects html_sanitize_ex: from 0.3.1 before 1.5.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:49.450"
+  },
+  {
+    "id": "CVE-2026-66370",
+    "description": "URL Redirection to Untrusted Site ('Open Redirect') vulnerability in the HTML5 scrubber in rrrene html_sanitize_ex allows an unauthenticated remote attacker to retarget a form already on the rendering page and receive whatever the victim submits, including credentials, via the form and formaction attributes on an <input> element in sanitized HTML. HTML's form attribute associates an input with any form on the page by its id even when the input sits outside that form, and formaction on a submit control overrides the owning form's action. Neither attribute receives a scheme check, so an absolute cross-origin URL survives sanitizing.\n\nNo script executes. The scrubber allows neither form nor button, so the attacker cannot introduce a form of their own and the rendering page must already contain a form carrying an id.\n\nThis issue affects html_sanitize_ex: from 0.3.1 before 1.5.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:48.420"
+  },
+  {
+    "id": "CVE-2026-5423",
+    "description": "@neo4j/graphql library versions prior to 7.5.6 fail to verify the authenticity of a client-supplied, pre-decoded JWT object passed through GraphQL subscription connectionParams. As a result, any unauthenticated remote client that can open a GraphQL-over-WebSocket connection can forge arbitrary JWT claims (e.g. sub, roles) in connectionParams.jwt and have them accepted as authenticated identity for the purposes of @authentication and @subscriptionsAuthorization directive evaluation. This allows a fully unauthenticated attacker to receive subscription events that should be restricted to specific authenticated roles/users.\nUpgrade the library to versions 7.5.6+ or 5.12.14+. v6 is end-of-life and will not receive a fix.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:44.430"
+  },
+  {
+    "id": "CVE-2026-53985",
+    "description": "Ground Station prior to 0.6.0 contains an unauthenticated denial-of-service vulnerability in the Socket.IO server's service_control event handler that allows any unauthenticated network peer to forcibly terminate the ground-station process by sending a single restart_service command. Attackers can connect to the Socket.IO server on port 7000 without credentials due to disabled authentication enforcement and a wildcard CORS policy, then emit the service_control event to terminate all active satellite-tracking sessions, SDR recording pipelines, demodulators, decoders, and rotator controllers, with repeated triggering possible in Docker deployments to create a persistent denial-of-service condition.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:43.620"
+  },
+  {
+    "id": "CVE-2026-53977",
+    "description": "OpenChamber 1.11.7 contains an authentication bypass vulnerability that allows unauthenticated remote attackers to terminate the server process by sending a POST request to the /api/system/shutdown endpoint, which is registered before the authentication middleware in the Express route handler chain. Attackers can exploit the route registration order in bootstrap-runtime.js to reach the shutdown handler before auth middleware executes, causing denial of service to all active AI coding sessions and locking out legitimate remote users regardless of whether UI_PASSWORD is configured.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:43.483"
+  },
+  {
+    "id": "CVE-2026-43622",
+    "description": "llama.cpp builds b1886 through b7445 contain a double free vulnerability in the LLaMA-Android JNI wrapper where new_1batch() allocates memory using malloc() while free_1batch() deallocates it using the C++ delete operator, causing heap metadata corruption. Attackers can trigger this memory management mismatch to cause denial of service through process crashes or potentially achieve arbitrary code execution depending on allocator state.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:42.883"
+  },
+  {
+    "id": "CVE-2026-3430",
+    "description": "The Creative Mail WordPress plugin from 1.6.5 to 1.6.9 does not sanitize and escape a parameter before using in an SQL statement, leading to an unauthenticated SQL injection when the abandoned cart email is managed by creative mail.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:42.760"
+  },
+  {
+    "id": "CVE-2026-19047",
+    "description": "A vulnerability was detected in NocteDefensor LudusMCP up to 1.0.24. This affects the function executeArbitraryCommand/executeCommand of the file src/ludusMCP/cliWrapper.ts of the component ludus_cli_execute. Performing a manipulation of the argument command/args results in command injection. The attack needs to be approached locally. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:41.510"
+  },
+  {
+    "id": "CVE-2026-19046",
+    "description": "A security vulnerability has been detected in NocteDefensor LudusMCP up to 1.0.24. The impacted element is an unknown function of the file src/tools/ludusEnvironmentGuidesSearch.ts of the component ludus_environment_guides_search. Such manipulation of the argument guide_name leads to path traversal. Local access is required to approach this attack. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:41.340"
+  },
+  {
+    "id": "CVE-2026-18427",
+    "description": "@fastify/static before version 10.1.3 contains an incomplete fix for a previous route guard bypass. The static file handler rejected only parent directory segments, but it did not canonicalize dot segments, duplicate slashes, encoded dots, or backslashes before route matching and before delegating to the send layer. As a result, an unauthenticated attacker could request a file protected by a route based guard using a non canonical path form that misses the guarded route yet resolves back onto the protected file, disclosing its contents. Applications that protect a subtree of the static root with a route based guard are affected, while applications relying on the allowedPath option are not. This is fixed in @fastify/static 10.1.3, which canonicalizes the pathname, including rejecting backslashes, on the path used for routing and serving.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:38.350"
+  },
+  {
+    "id": "CVE-2026-18359",
+    "description": "Server-side request forgery in the METS and IIIF import URI handling in Scripta eScriptorium through 26.04.1 allows a remote authenticated user to make the server issue arbitrary HTTP requests to internal hosts, including the cloud instance metadata service, via the mets_uri or iiif_uri parameter of POST /api/documents/{pk}/imports/, because the IMPORT_ALLOWED_DOMAINS setting defaults to '*' and no address filtering, redirect cap or timeout is applied",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:38.223"
+  },
+  {
+    "id": "CVE-2026-18277",
+    "description": "Missing authorization in the OcrModelRight create and delete views in Scripta eScriptorium through 26.04.1 allows a remote authenticated user to grant themselves access to another user's private OCR model and to revoke any user's OCR model access via a POST request, because the ownership check is placed in get_context_data() and therefore runs only on the GET rendering path",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:38.100"
+  },
+  {
+    "id": "CVE-2026-18276",
+    "description": "Missing authorization in the websocket consumer in Scripta eScriptorium through 26.04.1 allows a remote authenticated user to subscribe to any document's event stream and observe another user's segmentation, transcription, import, export and training activity via the object_cls and object_pk values of a join-room message, which are passed to group_add without an access check",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:37.977"
+  },
+  {
+    "id": "CVE-2026-18275",
+    "description": "Authorization bypass in the process and annotation taxonomy serializers in Scripta eScriptorium through 26.04.1 allows a remote authenticated user to run segmentation and transcription against other users' document parts, overwriting their content, via part primary keys supplied to a many=True related field whose queryset restriction was applied to the ManyRelatedField instead of its child_relation and therefore had no effect",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:37.853"
+  },
+  {
+    "id": "CVE-2026-18258",
+    "description": "Authorization bypass in the Line, LineTranscription, VirtualCollection, tag and process API endpoints in Scripta/eScriptorium through 26.04.1 allows a remote authenticated user to read, modify and delete other users' transcription content via primary keys supplied in the request body, which are queried against the global model manager instead of the request-scoped queryset",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T16:16:37.727"
+  },
+  {
+    "id": "CVE-2026-70646",
+    "description": "aiosend is a synchronous and asynchronous Crypto Pay API client. Pror to version 3.0.7, `WebhookHandler.feed_update()` deserializes the entire request body before verifying the HMAC signature. This allows an unauthenticated attacker to force expensive parsing of arbitrary JSON payloads that will ultimately be rejected, leading to unnecessary CPU and memory consumption. Version 3.0.7 fixes the issue. Some workarounds are available. Restrict request body size at the reverse proxy or web framework, rate-limit webhook endpoints, and/or reject oversized requests before JSON parsing.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:27.750"
+  },
+  {
+    "id": "CVE-2026-70637",
+    "description": "LightFTP through 2.4 contains multiple data race vulnerabilities in ftpserv.c that allow anonymous attackers to cause undefined behavior by issuing LIST followed by ABOR commands without authentication. The control thread closes data_socket and file_fd descriptors while worker threads concurrently operate on the same fields in worker_thread_cleanup, allowing stale file descriptors to be reassigned by the OS and subsequently used by worker threads on unrelated resources, resulting in potential denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:27.613"
+  },
+  {
+    "id": "CVE-2026-67261",
+    "description": "Dell Virtual Storage Integrator for VMware vSphere Client, versions prior to 10.11.1.0, contain(s) an OS Command Injection vulnerability in the IAPI component. A remote unauthenticated attacker could potentially exploit this vulnerability, leading to the execution of arbitrary OS commands on the application's underlying operating system with root privileges. Exploitation may lead to a complete system takeover by an attacker. This vulnerability is considered critical as it allows an unauthenticated remote attacker to achieve arbitrary code execution as root, potentially compromising the entire VSI deployment and underlying infrastructure. Dell recommends customers to upgrade at the earliest opportunity.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:24.430"
+  },
+  {
+    "id": "CVE-2026-66712",
+    "description": "Unauthenticated Broken Access Control in Simple Membership <= 4.7.8 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:24.307"
+  },
+  {
+    "id": "CVE-2026-66711",
+    "description": "Subscriber Cross Site Scripting (XSS) in WooCommerce Multilingual & Multicurrency <= 5.5.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:24.187"
+  },
+  {
+    "id": "CVE-2026-66710",
+    "description": "Unauthenticated Local File Inclusion in e2pdf <= 1.32.40 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:24.060"
+  },
+  {
+    "id": "CVE-2026-66709",
+    "description": "Shop manager Remote Code Execution (RCE) in CTX Feed <= 6.6.42 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:23.927"
+  },
+  {
+    "id": "CVE-2026-66708",
+    "description": "Unauthenticated Broken Access Control in Total Upkeep <= 1.17.2 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:23.793"
+  },
+  {
+    "id": "CVE-2026-66707",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Facebook for WooCommerce <= 3.7.5 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:23.670"
+  },
+  {
+    "id": "CVE-2026-66706",
+    "description": "Author Cross Site Scripting (XSS) in Subscribe to Comments <= 2.3.1 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:23.547"
+  },
+  {
+    "id": "CVE-2026-66705",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Facebook for WordPress <= 5.2.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:23.423"
+  },
+  {
+    "id": "CVE-2026-66703",
+    "description": "Contributor Cross Site Scripting (XSS) in MailOptin <= 1.2.78.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:23.273"
+  },
+  {
+    "id": "CVE-2026-66702",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Rank Math SEO <= 1.0.274.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:23.117"
+  },
+  {
+    "id": "CVE-2026-66701",
+    "description": "Unauthenticated Broken Access Control in Profile Builder <= 3.16.5 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.987"
+  },
+  {
+    "id": "CVE-2026-66699",
+    "description": "Custom role Broken Access Control in Dokan <= 5.0.10 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.853"
+  },
+  {
+    "id": "CVE-2026-66696",
+    "description": "Contributor Sensitive Data Exposure in Gutenberg Blocks by Kadence Blocks <= 3.7.8 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.730"
+  },
+  {
+    "id": "CVE-2026-66695",
+    "description": "Unauthenticated Path Traversal in W3 Total Cache <= 2.10.2 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.607"
+  },
+  {
+    "id": "CVE-2026-66694",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Thrive Architect <= 10.9.3.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.483"
+  },
+  {
+    "id": "CVE-2026-66692",
+    "description": "Customer Insecure Direct Object References (IDOR) in Colissimo Officiel : Méthodes de livraison pour WooCommerce <= 2.10.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.357"
+  },
+  {
+    "id": "CVE-2026-66690",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in GiveWP <= 4.16.5 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.230"
+  },
+  {
+    "id": "CVE-2026-66688",
+    "description": "Contributor Cross Site Scripting (XSS) in Ultimate Addons for Elementor <= 1.45.2 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:22.107"
+  },
+  {
+    "id": "CVE-2026-66686",
+    "description": "Unauthenticated Cross Site Request Forgery (CSRF) in Plugins Garbage Collector (Database Cleanup) <= 0.14 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.973"
+  },
+  {
+    "id": "CVE-2026-66685",
+    "description": "Unauthenticated Sensitive Data Exposure in Featured Video Plus <= 2.3.3 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.853"
+  },
+  {
+    "id": "CVE-2026-66684",
+    "description": "Unauthenticated Sensitive Data Exposure in Export Import Menus <= 1.9.2 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.723"
+  },
+  {
+    "id": "CVE-2026-66683",
+    "description": "Unauthenticated Sensitive Data Exposure in Custom CSS and JavaScript <= 2.0.16 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.600"
+  },
+  {
+    "id": "CVE-2026-66681",
+    "description": "Unauthenticated Cross Site Request Forgery (CSRF) in Theme My Login <= 7.1.14 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.473"
+  },
+  {
+    "id": "CVE-2026-66678",
+    "description": "Contributor Broken Access Control in Advanced Custom Fields: Font Awesome Field <= 6.1.1 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.353"
+  },
+  {
+    "id": "CVE-2026-66665",
+    "description": "Unauthenticated Arbitrary File Upload in Type Hub <= 2.0.6 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.227"
+  },
+  {
+    "id": "CVE-2026-66664",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in SEO Plugin by Squirrly SEO <= 14.2.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:21.103"
+  },
+  {
+    "id": "CVE-2026-66663",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in WP Data Access <= 5.5.79 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.977"
+  },
+  {
+    "id": "CVE-2026-66662",
+    "description": "Unauthenticated Privilege Escalation in Frontend Admin by DynamiApps <= 3.29.10 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.850"
+  },
+  {
+    "id": "CVE-2026-66470",
+    "description": "Subscriber Broken Access Control in Frontend Admin by DynamiApps <= 3.29.10 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.720"
+  },
+  {
+    "id": "CVE-2026-66457",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Events Manager <= 7.4.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.590"
+  },
+  {
+    "id": "CVE-2026-66452",
+    "description": "Unauthenticated Broken Access Control in Legal Text Connector of the IT-Recht Kanzlei <= 1.0.13 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.460"
+  },
+  {
+    "id": "CVE-2026-66451",
+    "description": "Unauthenticated Broken Authentication in WP Event SOlution <= 4.1.9 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.340"
+  },
+  {
+    "id": "CVE-2026-66447",
+    "description": "Unauthenticated SQL Injection in WordPress File Upload <= 5.1.7 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.207"
+  },
+  {
+    "id": "CVE-2026-66440",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in WPIDE – File Manager & Code Editor <= 3.5.7 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:20.057"
+  },
+  {
+    "id": "CVE-2026-66439",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Advanced AJAX Product Filters <= 3.2.0.3 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.937"
+  },
+  {
+    "id": "CVE-2026-66425",
+    "description": "Unauthenticated Broken Authentication in Gutena Forms – Contact Form, Survey Form, Feedback Form, Booking Form, and Custom Form Builder <= 1.9.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.803"
+  },
+  {
+    "id": "CVE-2026-65581",
+    "description": "Unauthenticated PHP Object Injection in AI ANN <= 1.29.0 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.683"
+  },
+  {
+    "id": "CVE-2026-65579",
+    "description": "Unauthenticated PHP Object Injection in Agricola <= 1.21.0 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.560"
+  },
+  {
+    "id": "CVE-2026-65578",
+    "description": "Unauthenticated PHP Object Injection in Agora <= 1.9 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.437"
+  },
+  {
+    "id": "CVE-2026-65577",
+    "description": "Unauthenticated PHP Object Injection in Advice <= 1.18.0 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.313"
+  },
+  {
+    "id": "CVE-2026-65576",
+    "description": "Unauthenticated PHP Object Injection in Adrena <= 1.2.14 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.190"
+  },
+  {
+    "id": "CVE-2026-65575",
+    "description": "Unauthenticated PHP Object Injection in Accalia <= 1.5.3 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:19.067"
+  },
+  {
+    "id": "CVE-2026-65574",
+    "description": "Unauthenticated PHP Object Injection in Abogado <= 1.18 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.940"
+  },
+  {
+    "id": "CVE-2026-65573",
+    "description": "Unauthenticated PHP Object Injection in Abelle <= 1.22 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.813"
+  },
+  {
+    "id": "CVE-2026-65572",
+    "description": "Unauthenticated PHP Object Injection in A.Williams <= 1.3.1 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.683"
+  },
+  {
+    "id": "CVE-2026-65571",
+    "description": "Unauthenticated PHP Object Injection in 69 Clothing <= 1.2.11.1 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.560"
+  },
+  {
+    "id": "CVE-2026-65570",
+    "description": "Unauthenticated Bypass Vulnerability in Login with phone number <= 1.8.70 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.433"
+  },
+  {
+    "id": "CVE-2026-65569",
+    "description": "Subscriber SQL Injection in WP Job Portal <= 2.5.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.307"
+  },
+  {
+    "id": "CVE-2026-65565",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Survey Maker <= 5.2.3.3 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.183"
+  },
+  {
+    "id": "CVE-2026-65560",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Houzez Property Feed <= 2.5.48 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:18.060"
+  },
+  {
+    "id": "CVE-2026-65559",
+    "description": "Shop manager Privilege Escalation in Order Delivery Date for WooCommerce <= 4.6.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:17.933"
+  },
+  {
+    "id": "CVE-2026-65556",
+    "description": "Unauthenticated PHP Object Injection in WPBruiser {no- Captcha anti-Spam} <= 3.1.43 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:17.803"
+  },
+  {
+    "id": "CVE-2026-65554",
+    "description": "Subscriber Broken Access Control in AnsPress – Question and answer 4.4.4 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:17.677"
+  },
+  {
+    "id": "CVE-2026-65553",
+    "description": "Unauthenticated Remote Code Execution (RCE) in Spider Analyser &#8211; WordPress搜索引擎蜘蛛分析插件 <= 2.1.3 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:17.557"
+  },
+  {
+    "id": "CVE-2026-65552",
+    "description": "Subscriber PHP Object Injection in Export User Data <= 2.2.6 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:17.430"
+  },
+  {
+    "id": "CVE-2026-65549",
+    "description": "Author PHP Object Injection in Jeg Kit for Elementor <= 3.2.10 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:16.877"
+  },
+  {
+    "id": "CVE-2026-65548",
+    "description": "Contributor Remote Code Execution (RCE) in Betheme <= 28.4.2 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:16.737"
+  },
+  {
+    "id": "CVE-2026-65547",
+    "description": "Subscriber SQL Injection in Creative Mail <= 1.6.9 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:16.603"
+  },
+  {
+    "id": "CVE-2026-65546",
+    "description": "Unauthenticated SQL Injection in Qode Tours <= 3.1.3.1 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:16.480"
+  },
+  {
+    "id": "CVE-2026-65545",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in AI Engine <= 3.6.8 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:16.360"
+  },
+  {
+    "id": "CVE-2026-65544",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Super Socializer <= 7.14.5 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:16.233"
+  },
+  {
+    "id": "CVE-2026-65543",
+    "description": "Subscriber Sensitive Data Exposure in Vimeo <= 1.2.2 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:16.110"
+  },
+  {
+    "id": "CVE-2026-65542",
+    "description": "Unauthenticated Broken Authentication in Super Socializer <= 7.14.5 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.983"
+  },
+  {
+    "id": "CVE-2026-65541",
+    "description": "Unauthenticated Broken Access Control in Staff Training <= 1.0.7 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.857"
+  },
+  {
+    "id": "CVE-2026-65523",
+    "description": "Unauthenticated Insecure Direct Object References (IDOR) in Formidable Forms Signature Online Contract Automation <= 2.0.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.737"
+  },
+  {
+    "id": "CVE-2026-65520",
+    "description": "Unauthenticated SQL Injection in WP OAuth Server <= 6.2.0 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.607"
+  },
+  {
+    "id": "CVE-2026-65517",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Easy PayPal Buy Now Button <= 2.0.4 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.483"
+  },
+  {
+    "id": "CVE-2026-65515",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in AffiliateWP <= 2.35.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.360"
+  },
+  {
+    "id": "CVE-2026-65513",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Simply Schedule Appointments <= 1.6.12.10 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.233"
+  },
+  {
+    "id": "CVE-2026-65509",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in wpDataTables <= 7.5.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:15.097"
+  },
+  {
+    "id": "CVE-2026-65508",
+    "description": "Unauthenticated SQL Injection in Simply Schedule Appointments <= 1.6.12.10 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:14.957"
+  },
+  {
+    "id": "CVE-2026-65507",
+    "description": "Unauthenticated Privilege Escalation in AIWU <= 1.5.6 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:14.823"
+  },
+  {
+    "id": "CVE-2026-65504",
+    "description": "Unauthenticated Broken Access Control in BOX NOW Delivery Croatia <= 3.3.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:14.697"
+  },
+  {
+    "id": "CVE-2026-65502",
+    "description": "Unauthenticated Bypass Vulnerability in Element Pack Elementor Addons <= 8.7.13 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:14.573"
+  },
+  {
+    "id": "CVE-2026-61982",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in SiteGuard WP Plugin <= 1.8.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:14.450"
+  },
+  {
+    "id": "CVE-2026-61964",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Ninja Tables <= 5.2.9 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:14.323"
+  },
+  {
+    "id": "CVE-2026-61963",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Media LIbrary Assistant <= 3.38 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:14.190"
+  },
+  {
+    "id": "CVE-2026-61961",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in EmbedPress <= 4.5.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:17:12.950"
+  },
+  {
+    "id": "CVE-2026-61959",
+    "description": "Subscriber Cross Site Scripting (XSS) in Business Directory <= 6.4.24 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:57.020"
+  },
+  {
+    "id": "CVE-2026-54489",
+    "description": "Dell Virtual Storage Integrator for VMware vSphere Client, versions prior to 10.11.1.0, contain(s) a Sensitive Information Disclosure vulnerability. An unauthenticated remote attacker could potentially exploit this vulnerability, leading to information disclosure and session hijacking. This vulnerability is considered critical as it allows an unauthenticated attacker to obtain active session credentials and fully impersonate authenticated users, including administrators. Dell recommends customers to upgrade at the earliest opportunity.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:56.120"
+  },
+  {
+    "id": "CVE-2026-53976",
+    "description": "OpenChamber 1.11.7 contains a path traversal vulnerability in the file-serving endpoints /api/fs/read, /api/fs/stat, and /api/fs/raw that allows unauthenticated remote attackers to read arbitrary files by supplying the allowOutsideWorkspace=true query parameter alongside an absolute path, bypassing the workspace boundary check in resolveReadPathFromContext. Attackers can exploit the vacuous isPathWithinRoot guard to read sensitive files such as the JWT signing secret, SSH private keys, API credentials, and environment variables, enabling full authentication bypass by forging session cookies on password-protected deployments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:55.983"
+  },
+  {
+    "id": "CVE-2026-53975",
+    "description": "OpenChamber 1.11.7 contains an unauthenticated remote code execution vulnerability that allows remote attackers to execute arbitrary shell commands by sending crafted POST requests to the /api/fs/exec endpoint, which passes commands verbatim to Node.js spawn() without any allowlist, blocklist, or argument validation. The authentication middleware becomes a no-op when UI_PASSWORD is not configured, matching the default Docker deployment, enabling attackers to execute arbitrary OS commands as the application user and retrieve full command output including stdout, stderr, and exit code from the server response.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:55.827"
+  },
+  {
+    "id": "CVE-2026-34502",
+    "description": "Heap-based Buffer Overflow vulnerability in Apache Portable Runtime Utility memcached client\n\nThis issue affects Apache Portable Runtime Utility: from 1.3.0 through 1.6.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:54.920"
+  },
+  {
+    "id": "CVE-2026-34501",
+    "description": "Heap-based Buffer Overflow vulnerability in Apache Portable Runtime Utility redis client.\n\nThis issue affects Apache Portable Runtime Utility: from 1.6.0 through 1.6.3.\n\nUsers are recommended to upgrade to version 1.6.4, which fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:54.773"
+  },
+  {
+    "id": "CVE-2026-34191",
+    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in Apache Portable Runtime Utility via apr_dbd_oracle provider.\n\nThis issue affects Apache Portable Runtime Utility: from 1.6.0 through 1.6.3",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:54.650"
+  },
+  {
+    "id": "CVE-2026-32548",
+    "description": "Unauthenticated Broken Access Control in SureCart <= 4.6.2 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:54.497"
+  },
+  {
+    "id": "CVE-2026-32469",
+    "description": "Unauthenticated Bypass Vulnerability in CAPTCHA 4WP <= 7.6.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:54.333"
+  },
+  {
+    "id": "CVE-2026-32327",
+    "description": "A bug in APR-util version 1.6.3 (and earlier) allows a stack recursion attack against any library consumer which parses XML from untrusted sources and uses the apr_xml_quote_elem() function.\n\nUsers are recommended to upgrade to version 1.6.4, which fixes this issue.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:54.190"
+  },
+  {
+    "id": "CVE-2026-28183",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:54.063"
+  },
+  {
+    "id": "CVE-2026-28180",
+    "description": "Unauthenticated Insecure Direct Object References (IDOR) in Mercado Pago payments for WooCommerce <= 8.9.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:53.937"
+  },
+  {
+    "id": "CVE-2026-28179",
+    "description": "Shop manager Cross Site Scripting (XSS) in FiboSearch <= 1.33.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:53.800"
+  },
+  {
+    "id": "CVE-2026-28178",
+    "description": "Contributor Cross Site Scripting (XSS) in Powerkit <= 3.1.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:53.673"
+  },
+  {
+    "id": "CVE-2026-28177",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Popup Maker <= 1.23.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:53.527"
+  },
+  {
+    "id": "CVE-2026-28172",
+    "description": "Unauthenticated Cross Site Request Forgery (CSRF) in Tracking Code Manager <= 2.6.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:53.377"
+  },
+  {
+    "id": "CVE-2026-28169",
+    "description": "Unauthenticated Sensitive Data Exposure in YITH WooCommerce Zoom Magnifier <= 2.52.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:53.223"
+  },
+  {
+    "id": "CVE-2026-28146",
+    "description": "Contributor Arbitrary File Download in Unlimited Elements For Elementor (Free Widgets, Addons, Templates) <= 2.0.14 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:53.087"
+  },
+  {
+    "id": "CVE-2026-28143",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Forminator <= 1.56.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:52.963"
+  },
+  {
+    "id": "CVE-2026-28141",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in NextGEN Gallery <= 4.2.3 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:52.830"
+  },
+  {
+    "id": "CVE-2026-28140",
+    "description": "Unauthenticated Broken Access Control in JetFormBuilder <= 3.6.4.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:52.707"
+  },
+  {
+    "id": "CVE-2026-28139",
+    "description": "Unauthenticated PHP Object Injection in Ajax Search Lite <= 4.14.4 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:52.580"
+  },
+  {
+    "id": "CVE-2026-28111",
+    "description": "Contributor Privilege Escalation in Forminator <= 1.56.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:52.070"
+  },
+  {
+    "id": "CVE-2026-28082",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in JetEngine <= 3.8.13.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:51.770"
+  },
+  {
+    "id": "CVE-2026-28005",
+    "description": "Unauthenticated Privilege Escalation in Kadence WooCommerce Email Designer <= 1.5.19 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:51.560"
+  },
+  {
+    "id": "CVE-2026-25403",
+    "description": "Unauthenticated Broken Access Control in Ultimate Store Kit Elementor Addons <= 3.0.5 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:51.320"
+  },
+  {
+    "id": "CVE-2026-19045",
+    "description": "A weakness has been identified in NocteDefensor LudusMCP up to 1.0.24. The affected element is the function SecretDialog.showSecretDialog of the file src/utils/secretDialog.ts of the component get_credential_from_user. This manipulation of the argument Description causes command injection. It is possible to launch the attack on the local host. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:49.550"
+  },
+  {
+    "id": "CVE-2026-19044",
+    "description": "A flaw has been found in LeeSinLiang godot-mcp 0.1.0. Affected by this vulnerability is the function executeOperation of the file src/index.ts of the component create_scene/add_node. This manipulation of the argument projectPath causes command injection. The attack needs to be launched locally. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:48.910"
+  },
+  {
+    "id": "CVE-2026-15246",
+    "description": "The RealHomes Memberships WordPress plugin before 3.1.0 does not verify that a membership payment actually completed, nor check a nonce or the user's capability, before granting a paid membership package, allowing any authenticated user such as a Subscriber to obtain paid membership packages without paying.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:43.523"
+  },
+  {
+    "id": "CVE-2025-49506",
+    "description": "APR-util versions 1.6.3 (and earlier) function apr_password_validate() was not constant-time with regards to hashes or passwords comparisons, potentially leaking their content via a side channel timing attack particularly on platforms without crypt() such as  Windows, BeOS, NetWare, or Android.\n\nUsers are recommended to upgrade to version 1.6.4, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T15:16:41.890"
+  },
+  {
     "id": "CVE-2026-64993",
     "description": "Dell RVTools versions prior to 4.8.1, contains an improper certificate validation vulnerability in the collector. A remote unauthenticated attacker could potentially exploit this vulnerability leading to loss of confidentiality and integrity.",
     "severity": "Medium",
@@ -2768,7 +3678,7 @@
     "id": "CVE-2026-61891",
     "description": "In Eclipse Theia versions up to and including 1.73.1, the `@theia/filesystem` backend exposes HTTP file-download endpoints (`GET /file`, `GET /files/`, `PUT /files/`) that convert a client-supplied URI directly to a filesystem path and stream the file, without confining it to the workspace or any allow-listed root. In browser (non-Electron) deployments the connection token is enforced only on WebSocket upgrades; the HTTP middleware in `@theia/core` re-issues the cookie and calls `next()` without rejecting tokenless HTTP requests, so these endpoints are reachable without a valid token. As a result an unauthenticated client can read any file readable by the backend process, including files outside the opened workspace (for example `/etc/hosts`, SSH keys, or tokens). Electron mode uses a separate `ElectronSecurityToken` and is not affected via this path.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Theia",
     "published": "2026-08-05T12:18:57.310"
   },
   {
@@ -2950,7 +3860,7 @@
     "id": "CVE-2026-60009",
     "description": "In Eclipse Theia versions up to and including 1.73.1, the `@theia/filesystem` backend binds `POST /file-upload` in every filesystem-enabled deployment. The handler takes an attacker-supplied absolute path from the multipart `uri` field and calls `fs.move(tmp, target, { overwrite: true })` with no workspace confinement and no authentication. In browser (non-Electron) deployments the connection token is enforced only on WebSocket upgrades; the HTTP middleware in `@theia/core` re-issues the cookie and calls `next()` without rejecting tokenless HTTP requests. Because `multipart/form-data` is a CORS-safelisted request type, a cross-origin web page can trigger the write with no preflight and no credentials, resulting in an unauthenticated arbitrary file write outside the workspace to any absolute path the backend process can write. This can escalate to remote code execution, for example by overwriting a startup-executed file such as `~/.bashrc`. Electron mode uses a separate `ElectronSecurityToken` and is not affected via this path.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Theia",
     "published": "2026-08-05T11:16:25.363"
   },
   {
@@ -2963,8 +3873,8 @@
   {
     "id": "CVE-2026-14574",
     "description": "In Eclipse Theia versions 0.7.0 and up until including 1.73.1, the `PreferenceUtils.merge` function in `@theia/core` recursively merges preference values without rejecting prototype-related keys (`__proto__`, `constructor`, `prototype`). Because this function is invoked by `PreferenceServiceImpl.doResolve` for every preference resolution across scopes (default, user, workspace, folder), a crafted preference value in a workspace settings file (`.theia/settings.json` or `.vscode/settings.json`) can pollute `Object.prototype` when the user opens the workspace, potentially altering application logic across the Theia process.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Theia",
     "published": "2026-08-05T11:16:25.030"
   },
   {
@@ -6694,43 +7604,43 @@
   {
     "id": "CVE-2025-15631",
     "description": "A\ncryptographic weakness exists in affected Omada devices where site credentials\nare protected using a legacy hashing algorithm that does not provide sufficient\nprotection.\n\n\n\n\n\n\n\n\n\nAn attacker\nwho obtains access to stored credential data may be able to recover valid credentials\nto gain unauthorized access to affected devices or management environments.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Omada fusion 2.5g firmware",
     "published": "2026-08-03T19:16:41.050"
   },
   {
     "id": "CVE-2025-15630",
     "description": "A race\ncondition exists in the cloud-based Omada device adoption process when an\nattacker may be able to interact with the adoption workflow before a legitimate\ndevice completes registration, resulting in provisioning information being\ndelivered to an attacker.\n\n\n\n\n\n\n\n\n\nSuccessful\nexploitation may allow disclosure of provisioning information intended for a\nlegitimate device.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Omada oc200 v3 firmware",
     "published": "2026-08-03T19:16:40.880"
   },
   {
     "id": "CVE-2025-15629",
     "description": "A cryptographic\nweakness exists in the Omada adoption protocol where session encryption keys\nused to protect communications between controllers and managed devices may be\npredictable due to insufficient entropy in session key generation.\n\n\n\n\n\n\n\n\n\nAn attacker\nwho successfully intercepts adoption-related communications may be able to recover\nsession encryption keys and decrypt affected communications.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Omada oc200 v3 firmware",
     "published": "2026-08-03T19:16:40.733"
   },
   {
     "id": "CVE-2025-15628",
     "description": "Affected\nOmada devices rely on embedded certificates that are shared across deployments\nto establish trust between controllers and managed devices.\n\n\n\n\n\n\n\n\n\nAn attacker\nwho obtains the embedded certificates may be able to impersonate trusted\ncontrollers or devices and intercept affected communications.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Omada oc200 v3 firmware",
     "published": "2026-08-03T19:16:40.567"
   },
   {
     "id": "CVE-2025-15627",
     "description": "A cryptographic\nweakness exists in the Omada adoption protocol. \nThe protocol relies on hard-coded cryptographic keys to establish trust and\nprotect authentication exchanges between controllers and managed devices during\ndevice adoption.\n\n\n\n\n\n\n\n\n\nAn attacker may\nbe able to impersonate trusted controllers or managed devices and gain access\nto sensitive adoption-related communications.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Omada oc200 v3 firmware",
     "published": "2026-08-03T19:16:40.407"
   },
   {
     "id": "CVE-2025-15544",
     "description": "A cryptographic\nweakness exists in the Omada device adoption process.  During adoption, authentication credentials associated\nwith site management are transmitted using a weak hashing algorithm that does\nnot provide sufficient protection. \n\n\n\n\n\n\n\n\n\nAn attacker who\nsuccessfully intercepts adoption-related authentication traffic may be able to\nrecover valid credentials and gain unauthorized access to managed devices or\ncontroller-managed environments.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Omada oc200 v3 firmware",
     "published": "2026-08-03T19:16:39.243"
   },
   {
@@ -6751,7 +7661,7 @@
     "id": "CVE-2026-40717",
     "description": "Dell Monitor driver, version 1.0.0.0, contains an Improper Link Resolution Before File Access ('Link Following') vulnerability. A low privileged attacker with local access could potentially exploit this vulnerability, leading to Elevation of Privileges.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Monitor driver",
     "published": "2026-08-03T18:16:38.907"
   },
   {
@@ -6771,8 +7681,8 @@
   {
     "id": "CVE-2025-9291",
     "description": "A\ncertification validation weakness exists in communication between affected\nOmada devices and cloud controllers. Certificate identity verification does not\nadequately validate that a presented certificate corresponds to the expected\ncloud controller hostname, which may allow certificate validation protections\nto be bypassed under specific conditions.\n\n\n\n\n\nSuccessful\nexploitation may allow interception or modification of communication between\naffected devices and cloud controllers.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Omada fusion 2.5g firmware",
     "published": "2026-08-03T18:16:34.047"
   },
   {
@@ -6849,7 +7759,7 @@
     "id": "CVE-2026-61372",
     "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Apache Jena Fuseki.\n\nThis issue affects Apache Jena Fuseki: through 6.1.0.\n\nUsers are recommended to upgrade to version 6.2.0, which fixes the issue.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Jena fuseki",
     "published": "2026-08-03T17:16:39.467"
   },
   {
@@ -6942,47 +7852,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-03T17:16:33.610"
-  },
-  {
-    "id": "CVE-2026-18651",
-    "description": "A flaw was found in 389 Directory Server. During SASL PLAIN authentication, the server installs connection-level bind credentials before performing the account-lock check. If the account is subsequently found to be locked, the bind is reported as failed to the client, but the already-installed authenticated state on the connection is not reverted. A client that supplies valid credentials for an account that has been administratively locked can continue to use the same connection with that account's privileges, defeating account lock as an access-revocation control.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T16:16:29.073"
-  },
-  {
-    "id": "CVE-2026-18568",
-    "description": "XML::Sig versions from 0.29 before 0.72 for Perl allow signature verification bypass because verify returns true when every signature was skipped before any cryptographic check.\n\nverify in lib/XML/Sig.pm counts the `//dsig:Signature` elements into `$numsigs` and iterates over them, but two paths reach `next` before any digest or key check runs: a `SignedInfo/Reference/@URI` that resolves to no element while `$numsigs` is greater than 1, and, when `id_attr` is set, a reference that does not match the requested ID. The loop records nothing about what it checked, so when every signature takes one of those paths control reaches the unconditional `return 1` that ends verify. Two `Signature` elements whose Reference URI names an ID that no element carries is enough, as is one such element combined with `id_attr`.\n\nAny caller that passes untrusted XML to verify can receive a true return for a document in which no digest and no signature value was checked; a `cert` or `cert_text` trust anchor does not change this, because no key check runs. Versions up to 0.28 use an XML::XPath based verify that has no such skip and are not affected.",
-    "severity": "High",
-    "tech": "\\",
-    "published": "2026-08-03T16:16:28.560"
-  },
-  {
-    "id": "CVE-2026-18508",
-    "description": "A flaw was found in GNU tar. When extracting an archive with the --one-top-level option, hardlink targets are not confined to the designated top-level directory and may resolve relative to the extraction working directory. A crafted archive can create hardlinks that escape the intended boundary and, when combined with a preexisting symbolic link under the working directory, may allow writing outside that boundary during a single extraction.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T16:16:28.387"
-  },
-  {
-    "id": "CVE-2026-18248",
-    "description": "@fastify/aws-lambda version 6.4.0 decorates each Fastify request with request.awsLambda.event and request.awsLambda.context, values that applications are documented to use for authorization decisions such as reading API Gateway authorizer claims. In the default configuration, the getter that populates this decoration reads the client-controlled x-apigateway-event and x-apigateway-context HTTP headers before falling back to the trusted internal request token, and those reserved headers are not stripped from the incoming event. An unauthenticated attacker who can set a single HTTP header can therefore forge the entire Lambda proxy event, including the authorizer context, and override the genuine one. This results in a full authentication and authorization bypass and privilege escalation for any application that trusts request.awsLambda.event for identity or access control. Only version 6.4.0 is affected. Patches: upgrade to @fastify/aws-lambda 6.4.1, which resolves the decoration only through the internal per-invocation token and strips the reserved headers before the request is processed.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T16:16:28.247"
-  },
-  {
-    "id": "CVE-2026-15430",
-    "description": "Improper access control in the IRP_MJ_WRITE command interface in\r\nWellbia XIGNCODE3 xhunter2.sys, version 2026.6.1.192, allows a local, unprivileged attacker to achieve local privilege escalation to\r\nNT AUTHORITY\\SYSTEM, extract credentials from PPL-protected\r\nlsass.exe, and terminate PPL-protected security processes.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T16:16:28.123"
-  },
-  {
-    "id": "CVE-2026-67609",
-    "description": "Telenia Software TVox 26.5.3 and prior 26.x versions, and 24.9.21 and prior 24.x versions, contain a privilege escalation vulnerability that allows attackers with access to the apache account to execute arbitrary commands as root by exploiting an insecure sudoers configuration in /etc/sudoers.d/telenia. The configuration grants the apache user NOPASSWD execution of /bin/nice, which can be leveraged to invoke arbitrary commands, enabling full root-level command execution without supplying a password.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T15:16:20.980"
   }
 ]
