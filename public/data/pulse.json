@@ -1,5 +1,523 @@
 [
   {
+    "id": "CVE-2026-64604",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: VMX: Grab vmcs12 on CR8 interception update iff vCPU is in guest mode\n\nWhen updating CR8 intercepts, get vmcs12 if and only if the vCPU is in\nguest mode so that a future change can have update CR8 intercepts during\nvCPU creation, without running afoul of get_vmcs12()'s lockdep assertion.\n\n  ------------[ cut here ]------------\n  debug_locks && !(lock_is_held(&(&vcpu->mutex)->dep_map) || !refcount_read(&vcpu->kvm->users_count))\n  WARNING: arch/x86/kvm/vmx/nested.h:61 at get_vmcs12 arch/x86/kvm/vmx/nested.h:60 [inline], CPU#0: syz.2.19/5879\n  WARNING: arch/x86/kvm/vmx/nested.h:61 at vmx_update_cr8_intercept+0x3de/0x4e0 arch/x86/kvm/vmx/vmx.c:6879, CPU#0: syz.2.19/5879\n  Modules linked in:\n  CPU: 0 UID: 0 PID: 5879 Comm: syz.2.19 Not tainted syzkaller #0 PREEMPT(full)\n  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.2-debian-1.16.2-1 04/01/2014\n  RIP: 0010:get_vmcs12 arch/x86/kvm/vmx/nested.h:60 [inline]\n  RIP: 0010:vmx_update_cr8_intercept+0x3de/0x4e0 arch/x86/kvm/vmx/vmx.c:6879\n  Call Trace:\n   <TASK>\n   apic_update_ppr arch/x86/kvm/lapic.c:984 [inline]\n   kvm_lapic_reset+0x1c24/0x2980 arch/x86/kvm/lapic.c:3023\n   kvm_vcpu_reset+0x44c/0x1bf0 arch/x86/kvm/x86.c:12986\n   kvm_arch_vcpu_create+0x746/0x8b0 arch/x86/kvm/x86.c:12847\n   kvm_vm_ioctl_create_vcpu+0x428/0x930 virt/kvm/kvm_main.c:4201\n   kvm_vm_ioctl+0x893/0xd50 virt/kvm/kvm_main.c:5159\n   vfs_ioctl fs/ioctl.c:51 [inline]\n   __do_sys_ioctl fs/ioctl.c:597 [inline]\n   __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583\n   do_syscall_x64 arch/x86/entry/syscall_64.c:63 [inline]\n   do_syscall_64+0x174/0x580 arch/x86/entry/syscall_64.c:94\n   entry_SYSCALL_64_after_hwframe+0x77/0x7f\n   </TASK>\n\nNo functional change intended.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:36.220"
+  },
+  {
+    "id": "CVE-2026-64603",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nplatform/x86: intel-hid: Protect ACPI notify handler against recursion\n\nSince commit e2ffcda16290 (\"ACPI: OSL: Allow Notify () handlers to run on\nall CPUs\") ACPI notify handlers like the intel-hid notify_handler() may\nrun on multiple CPU cores racing with themselves.\n\nOn convertibles and detachables (matched by DMI chassis-type 31 and 32 in\ndmi_auto_add_switch[]) the SW_TABLET_MODE input device is registered\nlazily from notify_handler() on the first tablet-mode event, via\nintel_hid_switches_setup(). When two such events race on different CPUs\nboth can pass the !priv->switches check and register the priv->switches\ninput device twice, resulting in a duplicate sysfs entry and a subsequent\nNULL pointer dereference.\n\nThis is the same class of bug fixed by commit e075c3b13a0a (\"platform/x86:\nintel-vbtn: Protect ACPI notify handler against recursion\") for the\nsibling intel-vbtn driver.\n\nProtect intel-hid notify_handler() from racing with itself with a mutex\nto fix this.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:36.083"
+  },
+  {
+    "id": "CVE-2026-64602",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niio: adc: spear: Initialize completion before requesting IRQ\n\nIn the report from Jaeyoung Chung:\n\n\"spear_adc_probe() in drivers/iio/adc/spear_adc.c registers its\ninterrupt handler with devm_request_irq() before it initializes\nst->completion with init_completion(). If an interrupt arrives after\ndevm_request_irq() and before init_completion(), the handler calls\ncomplete() on an uninitialized completion, causing a kernel panic.\n\nThe probe path, in spear_adc_probe():\n\n    iodev = devm_iio_device_alloc(&pdev->dev, sizeof(*st)); /* st kzalloc-zeroed */\n    ...\n    retval = devm_request_irq(&pdev->dev, irq, spear_adc_isr, 0,\n                              LPC32XXAD_NAME, st);           /* register handler */\n    ...\n    init_completion(&st->completion);                       /* initialize completion */\n\nspear_adc_isr() calls complete():\n\n    complete(&st->completion);\n\nIf the device raises an interrupt before init_completion() runs,\ncomplete() acquires the uninitialized wait.lock and walks the zeroed\ntask_list in swake_up_locked(). The zeroed task_list makes list_empty()\nreturn false, so swake_up_locked() dereferences a NULL list entry,\ntriggering a KASAN wild-memory-access.\"\n\nFix the chance of a spurious IRQ causing an uninitialized pointer\ndereference by moving init_completion() above devm_request_irq().",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:35.920"
+  },
+  {
+    "id": "CVE-2026-64601",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nALSA: us144mkii: capture_urb_complete: redundant usb_anchor_urb corrupts anchor list on each resubmission\n\nIn capture_urb_complete(), usb_anchor_urb() is called on every\ncompletion callback, but the URB is already anchored from the\ninitial submission in tascam_trigger_start(). Each redundant call\ncorrupts the anchor's doubly-linked list and inflates the URB\nrefcount. When usb_kill_anchored_urbs() traverses the list during\nstream stop / suspend / disconnect, the corrupted list leads to\nuse-after-free.\n\nRemove the redundant usb_anchor_urb() from the resubmit path.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:35.797"
+  },
+  {
+    "id": "CVE-2026-64599",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: amlogic - avoid double cleanup in meson_crypto_probe()\n\nWhen meson_allocate_chanlist() fails after a partial allocation, it already\nunwinds the allocated chanlist state through its local error path.\nmeson_crypto_probe() then jump to error_flow and calls\nmeson_free_chanlist() again, causing the same per-flow resources to be torn\ndown twice. In the reproduced failure path, the second teardown\nre-entered crypto_engine_exit() on an already destroyed worker and KASAN\nreported a slab-use-after-free in kthread_destroy_worker().\n\nPrevent double-free by handling partial allocation failures locally within\nmeson_allocate_chanlist() and skipping the outer cleanup path.\n\nThe bug was first flagged by an experimental analysis tool we are\ndeveloping for kernel memory-management bugs while analyzing\nv6.13-rc1. The tool is still under development and is not yet publicly\navailable.\n\nThe bug was reproduced in a QEMU x86_64 guest booted with KASAN on v7.1,\nusing the reproducer under tools/testing/meson_crypto_probe. The reproducer\nforces the second dma_alloc_attrs() call in the gxl-crypto probe path to\nreturn NULL, making meson_allocate_chanlist() fail after partial\ninitialization. On the unpatched kernel this reliably triggered a\nslab-use-after-free. With this fix applied, the same reproducer no longer\nemits any KASAN report and the probe fails cleanly with -ENOMEM.\n\n    ==================================================================\n    BUG: KASAN: slab-use-after-free in kthread_destroy_worker+0xb2/0xd0\n    Read of size 8 at addr ff1100010c057a68 by task insmod/265\n\n    CPU: 1 UID: 0 PID: 265 Comm: insmod Tainted: G           O        7.1.0-rc2-00376-g810af9adc907-dirty #10 PREEMPT(lazy)\n    Tainted: [O]=OOT_MODULE\n    Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.15.0-1 04/01/2014\n    Call Trace:\n     <TASK>\n     dump_stack_lvl+0x68/0xa0\n     print_report+0xcb/0x5e0\n     ? __virt_addr_valid+0x21d/0x3f0\n     ? kthread_destroy_worker+0xb2/0xd0\n     ? kthread_destroy_worker+0xb2/0xd0\n     kasan_report+0xca/0x100\n     ? kthread_destroy_worker+0xb2/0xd0\n     kthread_destroy_worker+0xb2/0xd0\n     meson_crypto_probe+0x4d0/0xc10 [amlogic_gxl_crypto]\n     platform_probe+0x99/0x140\n     really_probe+0x1c6/0x6a0\n     ? __pfx___device_attach_driver+0x10/0x10\n     __driver_probe_device+0x248/0x310\n     ? acpi_driver_match_device+0xb0/0x100\n     driver_probe_device+0x48/0x210\n     ? __pfx___device_attach_driver+0x10/0x10\n     __device_attach_driver+0x160/0x320\n     bus_for_each_drv+0x104/0x190\n     ? __pfx_bus_for_each_drv+0x10/0x10\n     ? _raw_spin_unlock_irqrestore+0x2c/0x50\n     __device_attach+0x19d/0x3b0\n     ? __pfx___device_attach+0x10/0x10\n     ? do_raw_spin_unlock+0x53/0x220\n     device_initial_probe+0x78/0xa0\n     bus_probe_device+0x5b/0x130\n     device_add+0xcfd/0x1430\n     ? __pfx_device_add+0x10/0x10\n     ? insert_resource+0x34/0x50\n     ? lock_release+0xc9/0x290\n     platform_device_add+0x24e/0x590\n     ? __pfx_meson_crypto_probe_repro_init+0x10/0x10 [meson_crypto_probe_repro]\n     meson_crypto_probe_repro_init+0x330/0xff0 [meson_crypto_probe_repro]\n     do_one_initcall+0xc0/0x450\n     ? __pfx_do_one_initcall+0x10/0x10\n     ? _raw_spin_unlock_irqrestore+0x2c/0x50\n     ? __create_object+0x59/0x80\n     ? kasan_unpoison+0x27/0x60\n     do_init_module+0x27b/0x7d0\n     ? __pfx_do_init_module+0x10/0x10\n     ? kasan_quarantine_put+0x84/0x1d0\n     ? kfree+0x32c/0x510\n     ? load_module+0x561e/0x5ff0\n     load_module+0x54fe/0x5ff0\n     ? __pfx_load_module+0x10/0x10\n     ? security_file_permission+0x20/0x40\n     ? kernel_read_file+0x23d/0x6e0\n     ? mmap_region+0x235/0x4a0\n     ? __pfx_kernel_read_file+0x10/0x10\n     ? __file_has_perm+0x2c0/0x3e0\n     init_module_from_file+0x158/0x180\n     ? __pfx_init_module_from_file+0x10/0x10\n     ? __lock_acquire+0x45a/0x1ba0\n     ? idempotent_init_module+0x315/0x610\n     ? lock_release+0xc9/0x290\n     ? lock\n---truncated---",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:35.603"
+  },
+  {
+    "id": "CVE-2026-64598",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsmb/client: Fix error code in smb2_aead_req_alloc()\n\nThe \"*num_sgs\" variable is a u32 so \"ERR_PTR(*num_sgs)\" doesn't work.\nWe would have to do something similar to the previous line where it's\ncast to int and then long.  However, it's simpler to store the return in\nan int ret variable.\n\nThis bug would eventually result in a crash when dereference the invalid\nerror pointer.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:35.473"
+  },
+  {
+    "id": "CVE-2026-64597",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsmb: client: fix double-free in SMB2_close() replay\n\nA response-bearing attempt can return a replayable error and free its\nresponse buffer. If SMB2_close_init() fails before the next send, cleanup\nretains the previous buffer type and frees that response again.\n\nReset response bookkeeping before each attempt to prevent the stale free.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:35.340"
+  },
+  {
+    "id": "CVE-2026-64596",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nlibfs: set SB_I_NOEXEC and SB_I_NODEV by default in init_pseudo()\n\nSince commit 1e7ab6f67824 (\"anon_inode: rework assertions\"),\npath_noexec() warns when an anonymous-inode file is mmap'd from a\nsuperblock that has not set SB_I_NOEXEC. dma-buf backs its files this\nway and never set the flag, so mmap of any exported buffer trips the\nwarning on a CONFIG_DEBUG_VFS=y kernel:\n\n  WARNING: CPU: 11 PID: 121813 at fs/exec.c:118 path_noexec+0x47/0x50\n   do_mmap+0x2b5/0x680\n   vm_mmap_pgoff+0x129/0x210\n   ksys_mmap_pgoff+0x177/0x240\n   __x64_sys_mmap+0x33/0x70\n\ninit_pseudo() sets up internal SB_NOUSER mounts that are never\npath-reachable. Set both flags here so every pseudo filesystem gets\nthem by default instead of each caller setting them.\n\nSB_I_NODEV is inert for unreachable mounts. SB_I_NOEXEC has one\nvisible effect: an executable mapping of a pseudo-fs fd, such as a\ndma-buf, now fails with -EPERM, which is the invariant the assertion\nenforces. No in-tree caller maps these executable.\n\nReproduce on CONFIG_DEBUG_VFS=y:\n\n  make -C tools/testing/selftests/dmabuf-heaps\n  sudo ./tools/testing/selftests/dmabuf-heaps/dmabuf-heap -t system",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:35.217"
+  },
+  {
+    "id": "CVE-2026-64595",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nHID: hid-lenovo-go: cancel cfg_setup work in hid_go_cfg_remove()\n\nhid_go_cfg_probe() initialises drvdata.go_cfg_setup and schedules it\nto run 2 ms later:\n\n    INIT_DELAYED_WORK(&drvdata.go_cfg_setup, &cfg_setup);\n    schedule_delayed_work(&drvdata.go_cfg_setup, msecs_to_jiffies(2));\n\ncfg_setup() dereferences drvdata.hdev to issue MCU command requests.\nhid_go_cfg_remove() tears down sysfs and stops the HID device, but\nnever drains the delayed work.  If the device is unbound within the\n2 ms scheduling delay (a probe failure rolling back via remove, or a\nfast rmmod after probe), the work fires after hid_destroy_device()\nhas dropped its reference and released the underlying hdev struct,\nleaving cfg_setup() with a stale drvdata.hdev pointer.\n\nMirror the sibling driver hid-lenovo-go-s.c, whose hid_gos_cfg_remove()\nalready calls cancel_delayed_work_sync() on its analogous work, and\ndrain go_cfg_setup at the top of hid_go_cfg_remove().  The cancel\nmust come before guard(mutex)(&drvdata.cfg_mutex) because cfg_setup()\nacquires that mutex; reversing the order would deadlock.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:35.097"
+  },
+  {
+    "id": "CVE-2026-64594",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nusb: gadget: f_fs: initialize reset_work at allocation time\n\nffs_fs_kill_sb() unconditionally calls cancel_work_sync() on\nffs->reset_work when a functionfs instance is unmounted:\n\n\tffs_data_reset(ffs);\n\tcancel_work_sync(&ffs->reset_work);\n\nHowever ffs->reset_work is only ever initialized via INIT_WORK() in\nffs_func_set_alt() and ffs_func_disable(), and only on the\nFFS_DEACTIVATED path. That state is reached solely by ffs_data_closed()\nwhen the instance is mounted with the \"no_disconnect\" option, so for the\ncommon case (no \"no_disconnect\", or mounted and unmounted without ever\nbeing deactivated) reset_work is never initialized.\n\nffs_data_new() allocates the ffs_data with kzalloc_obj() and does not\ninitialize reset_work, and ffs_data_reset()/ffs_data_clear() do not touch\nit either, so reset_work.func is left NULL. cancel_work_sync() on such a\nwork then trips the WARN_ON(!work->func) guard in __flush_work():\n\n  WARNING: kernel/workqueue.c:4301 at __flush_work+0x330/0x360, CPU#3: umount\n  Call trace:\n   __flush_work\n   cancel_work_sync\n   ffs_fs_kill_sb [usb_f_fs]\n   deactivate_locked_super\n   deactivate_super\n   cleanup_mnt\n   __cleanup_mnt\n   task_work_run\n   exit_to_user_mode_loop\n   el0_svc\n\nOn older kernels cancel_work_sync() on a zero-initialized work struct was\na silent no-op, which hid the missing initialization.\n\nInitialize reset_work once in ffs_data_new() so it is always valid for\nthe lifetime of the ffs_data, and drop the now-redundant INIT_WORK()\ncalls from the two deactivation paths.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:34.933"
+  },
+  {
+    "id": "CVE-2026-64593",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbtrfs: do not trim a device which is not writeable\n\n[BUG]\nThere is a bug report that btrfs/242 can randomly fail with the\nfollowing NULL pointer dereference:\n\n  run fstests btrfs/242 at 2026-06-01 10:25:08\n  BTRFS: device fsid d4d7f234-487c-4787-88e4-47a8b68c9874 devid 1 transid 9 /dev/sdc (8:32) scanned by mount (122609)\n  BTRFS info (device sdc): first mount of filesystem d4d7f234-487c-4787-88e4-47a8b68c9874\n  BTRFS info (device sdc): using crc32c checksum algorithm\n  BTRFS warning (device sdc): devid 2 uuid fbe72d72-3272-482d-80fb-ab88ed398192 is missing\n  BTRFS warning (device sdc): devid 2 uuid fbe72d72-3272-482d-80fb-ab88ed398192 is missing\n  BTRFS info (device sdc): allowing degraded mounts\n  BTRFS info (device sdc): turning on async discard\n  BTRFS info (device sdc): enabling free space tree\n  Unable to handle kernel NULL pointer dereference at virtual address 0000000000000018\n  user pgtable: 4k pages, 48-bit VAs, pgdp=000000013fd6b000\n  CPU: 4 UID: 0 PID: 122625 Comm: fstrim Not tainted 7.0.10-2-default #1 PREEMPT(full) openSUSE Tumbleweed e9a5f6b24978fba3bf015a992f865837fdfff3dd\n  Hardware name: QEMU KVM Virtual Machine, BIOS edk2-20250812-19.fc42 08/12/2025\n  pstate: 01400005 (nzcv daif +PAN -UAO -TCO +DIT -SSBS BTYPE=--)\n  pc : btrfs_trim_fs+0x34c/0xa00 [btrfs]\n  lr : btrfs_trim_fs+0x1f0/0xa00 [btrfs]\n  Call trace:\n   btrfs_trim_fs+0x34c/0xa00 [btrfs f02c1d570ceea621c69d302ba75dd61868083840] (P)\n   btrfs_ioctl_fitrim+0xe8/0x178 [btrfs f02c1d570ceea621c69d302ba75dd61868083840]\n   btrfs_ioctl+0xdd4/0x2bd8 [btrfs f02c1d570ceea621c69d302ba75dd61868083840]\n   __arm64_sys_ioctl+0xac/0x108\n   invoke_syscall.constprop.0+0x5c/0xd0\n   el0_svc_common.constprop.0+0x40/0xf0\n   do_el0_svc+0x24/0x40\n   el0_svc+0x40/0x1d0\n   el0t_64_sync_handler+0xa0/0xe8\n   el0t_64_sync+0x1b0/0x1b8\n  Code: 17ffff83 f94017e0 f9002be0 f9402ea0 (f9400c00)\n  ---[ end trace 0000000000000000  ]---\n\nAlso the reporter is very kind to test the following ASSERT() added to\nbtrfs_trim_free_extents_throttle():\n\n\tASSERT(device->bdev,\n\t       \"devid=%llu path=%s dev_state=0x%lx\\n\",\n\t       device->devid, btrfs_dev_name(device), device->dev_state);\n\nAnd it shows the following output:\n\n  assertion failed: device->bdev, in extent-tree.c:6630 (devid=2 path=/dev/sdd dev_state=0x82)\n\nWhich means the device->bdev is NULL, and the dev_state is\nBTRFS_DEV_STATE_IN_FS_METADATA | BTRFS_DEV_STATE_ITEM_FOUND, without\nBTRFS_DEV_STATE_WRITEABLE flag set.\n\n[CAUSE]\nThe pc points to the following call chain:\n\n  btrfs_trim_fs()\n  |- btrfs_trim_free_extents()\n     |- btrfs_trim_free_extents_throttle()\n        |- bdev_max_discard_sectors(device->bdev)\n\nSo the NULL pointer dereference is caused by device->bdev being NULL.\n\nThis looks impossible by a quick glance, as just before calling\nbtrfs_trim_free_extents_throttle(), we have skipped any device that has\nBTRFS_DEV_STATE_MISSING flag set.\n\nHowever in this particular case, there is a window where the missing\ndevice is later re-scanned, causing btrfs to remove the\nBTRFS_DEV_STATE_MISSING flag:\n\n  btrfs_control_ioctl()\n  |- btrfs_scan_one_device()\n     |- device_list_add()\n        |- rcu_assign_pointer(device->name, name);\n        |  This updates the missing device's path to the new good path.\n        |\n        |- clear_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)\n           This removes the BTRFS_DEV_STATE_MISSING flag.\n\nThis allows the missing device to re-appear and clear the\nBTRFS_DEV_STATE_MISSING flag.  However the device still does not have\nthe BTRFS_DEV_STATE_WRITEABLE flag set, nor is its bdev pointer updated.\n\nThe bdev pointer remains NULL, triggering the crash later.\n\n[FIX]\nThis is a big de-synchronization between BTRFS_DEV_STATE_MISSING and\ndevice->bdev pointer, and shows a gap in btrfs's re-appearing-device\nhandling.\n\nThe proper handling of re-appearing device will need quite some extra\nwork, which is out of the context of this small\n---truncated---",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:34.730"
+  },
+  {
+    "id": "CVE-2026-64592",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nriscv: mm: Unconditionally sfence.vma for spurious fault\n\nSvvptc does not guarantee that it's safe to just return here. Since we\nhave already cleared our bit, if, theoretically, the bounded timeframe\nfor the accessed page to become valid still hasn't happened after sret,\nwe could fault again and actually crash.\n\nHopefully, these spurious faults should be rare enough that this is an\nacceptable slowdown.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:34.610"
+  },
+  {
+    "id": "CVE-2026-64591",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu/vt-d: Avoid WARNING in sva unbind path\n\nThe Intel IOMMU driver allows SVA on devices even if they do not support\nPCI/PRI. Commit 39c20c4e83b9 (\"iommu/vt-d: Only handle IOPF for SVA when\nPRI is supported\") modified the SVA bind path to allow this configuration\nby skipping IOPF enablement when PRI is missing. However, it failed to\nupdate the unbind path.\n\nThis creates an imbalance: the unbind path attempts to disable IOPF for\na device that never had it enabled, triggering a WARNING in\nintel_iommu_disable_iopf():\n\n WARNING: drivers/iommu/intel/iommu.c:3475 at intel_iommu_disable_iopf+0x4f/0x90d\n Call Trace:\n  <TASK>\n  blocking_domain_set_dev_pasid+0x50/0x70\n  iommu_detach_device_pasid+0x89/0xc0\n  iommu_sva_unbind_device+0x73/0x150\n  xe_vm_close_and_put+0x4d2/0x1200 [xe]\n\nFix this by bypassing IOPF operations for SVA domains on non-PRI hardware\nin both the bind and unbind paths.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:34.497"
+  },
+  {
+    "id": "CVE-2026-64590",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndma-buf/udmabuf: skip redundant cpu sync to fix cacheline EEXIST warning\n\nWhen CONFIG_DMA_API_DEBUG_SG is enabled, importing a udmabuf into a DRM\ndriver (e.g. amdgpu for video playback in GNOME Videos / Showtime)\ntriggers a spurious warning:\n\n  DMA-API: amdgpu 0000:03:00.0: cacheline tracking EEXIST, \\\n      overlapping mappings aren't supported\n  WARNING: kernel/dma/debug.c:619 at add_dma_entry+0x473/0x5f0\n\nThe call chain is:\n\n  amdgpu_cs_ioctl\n   -> amdgpu_ttm_backend_bind\n    -> dma_buf_map_attachment\n     -> [udmabuf] map_udmabuf -> get_sg_table\n      -> dma_map_sgtable(dev, sg, direction, 0)  // attrs=0\n       -> debug_dma_map_sg -> add_dma_entry -> EEXIST\n\nThis happens because udmabuf builds a per-page scatter-gather list via\nsg_set_folio().  When begin_cpu_udmabuf() has already created an sg\ntable mapped for the misc device, and an importer such as amdgpu maps\nthe same pages for its own device via map_udmabuf(), the DMA debug\ninfrastructure sees two active mappings whose physical addresses share\ncacheline boundaries and warns about the overlap.\n\nThe DMA_ATTR_SKIP_CPU_SYNC flag suppresses this check in\nadd_dma_entry() because it signals that no CPU cache maintenance is\nperformed at map/unmap time, making the cacheline overlap harmless.\n\nAll other major dma-buf exporters already pass this flag:\n  - drm_gem_map_dma_buf() passes DMA_ATTR_SKIP_CPU_SYNC\n  - amdgpu_dma_buf_map() passes DMA_ATTR_SKIP_CPU_SYNC\n\nThe CPU sync at map/unmap time is also redundant for udmabuf:\nbegin_cpu_udmabuf() and end_cpu_udmabuf() already perform explicit\ncache synchronization via dma_sync_sgtable_for_cpu/device() when CPU\naccess is requested through the dma-buf interface.\n\nPass DMA_ATTR_SKIP_CPU_SYNC to dma_map_sgtable() and\ndma_unmap_sgtable() in udmabuf to suppress the spurious warning and\nskip the redundant sync.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:34.357"
+  },
+  {
+    "id": "CVE-2026-64589",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ni2c: core: fix NULL-deref on adapter registration failure\n\nIf adapter registration ever fails the release callback would trigger a\nNULL-pointer dereference as the completion struct has not been\ninitialised.\n\nNote that before the offending commit this would instead have resulted\nin a minor memory leak of the adapter name.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:34.240"
+  },
+  {
+    "id": "CVE-2026-64588",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: fix data races on ring->ready\n\nOn weakly-ordered architectures, the store to fiq->ops can be\nreordered past the store to ring->ready, allowing a CPU that sees\nring->ready == true via fuse_uring_ready() to dispatch requests\nthrough a stale fiq->ops pointer. Upgrade the store to\nsmp_store_release() and the load in fuse_uring_ready() to\nsmp_load_acquire() so that the preceding WRITE_ONCE(fiq->ops, ...)\nis visible to any CPU that observes ring->ready == true.\n\nAdditionally, fuse_uring_do_register() publishes ring->ready with\nWRITE_ONCE() but the fast-path check reads it with a plain load.\nThis is a marked-vs-unmarked access that KCSAN will flag. Wrap it in\nREAD_ONCE() to mark it without adding unnecessary ordering.\n\nAlso wrap the fc->ring load in fuse_uring_ready() in READ_ONCE() to\nprevent the compiler from reloading it between the NULL check and the\ndereference.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:34.123"
+  },
+  {
+    "id": "CVE-2026-64587",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: ethernet: arc: emac: quiesce interrupts before requesting IRQ\n\nNormal RX/TX interrupts are enabled later, in arc_emac_open(), so probe\nshould not see interrupt delivery in the usual case. However, hardware may\nstill present stale or latched interrupt status left by firmware or the\nbootloader.\n\nIf probe later unwinds after devm_request_irq() has installed the handler,\nsuch a stale interrupt can still reach arc_emac_intr() during teardown and\nrace with release of the associated net_device.\n\nAvoid that window by putting the device into a known quiescent state before\nrequesting the IRQ: disable all EMAC interrupt sources and clear any\npending EMAC interrupt status bits. This keeps the change hardware-focused\nand minimal, while preventing spurious IRQ delivery from leftover state.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:33.970"
+  },
+  {
+    "id": "CVE-2026-64586",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nwifi: brcmfmac: drain bus_reset work on device removal\n\nbrcmf_fw_crashed() and the debugfs \"reset\" entry both schedule\ndrvr->bus_reset, whose callback recovers drvr through container_of()\nand dereferences it.  The removal path frees drvr (brcmf_free ->\nwiphy_free) without draining the work, so a bus_reset callback pending\nor running during removal can outlive drvr.\n\nCancellation cannot live in brcmf_detach() or brcmf_free(): the work\ncallback reaches teardown through the bus .reset op (PCIe\nbrcmf_pcie_reset -> brcmf_detach; SDIO brcmf_sdio_bus_reset ->\nbrcmf_sdiod_remove -> brcmf_free), so cancelling there would wait for\nthe running work and deadlock.\n\nAdd a per-bus mutex (bus_reset_lock) and route all arming through\nbrcmf_bus_schedule_reset(), which under the lock skips when the bus is\nmarked removing.  Each bus remove entry calls\nbrcmf_bus_cancel_reset_work(), which under the same lock sets removing\nand cancels the work.  Holding the mutex across cancel_work_sync() makes\nthe set-removing + drain step atomic.  Every producer reaches the arming\npath from process context -- the PCIe firmware-halt notification runs in\nthe threaded IRQ handler (brcmf_pcie_isr_thread) and the SDIO hostmail\npath runs from the data workqueue -- so the mutex is taken only in\nsleepable contexts.  Where applicable the remove entry first stops the\nfirmware-crash producer: on PCIe mask the mailbox and synchronize_irq;\non SDIO unregister the bus interrupt and cancel the data worker, which\nalso reports firmware halts through brcmf_fw_crashed().  The mutex is\ninitialized at bus allocation.  The SDIO suspend power-off path frees\ndrvr through the same brcmf_sdiod_remove() and takes the same lock;\nresume re-allows the work only on a successful re-probe.\n\nAlso guard brcmf_fw_crashed() against a NULL bus_if/drvr: it can fire\nbefore brcmf_attach() wires up drvr, and it dereferences drvr\n(bphy_err/brcmf_dev_coredump) before reaching the arming gate.\n\nThe bus_reset work is shared across buses, so the drain is applied to\nevery remove path: PCIe (the .reset op introduced by the Fixes commit),\nSDIO (arms the same work through brcmf_fw_crashed()), and USB (via the\ndebugfs \"reset\" entry).  cancel_work_sync() drains a running or pending\nbus_reset work item before removal frees drvr, and patch 1/2 makes the\nscratch-buffer release safe when reset teardown has already released\nthose DMA buffers.\n\nThis patch fixes the lifetime of the bus_reset work item itself.  It does\nnot attempt to address the separate, pre-existing lifetime of the\nasynchronous firmware completion started by the PCIe reset path.  That\ncallback needs its own lifetime/ownership protocol and is being tracked\nseparately.\n\nThis issue was found by an in-house static analysis tool.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:33.830"
+  },
+  {
+    "id": "CVE-2026-64585",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncan: esd_usb: kill anchored URBs before freeing netdevs\n\nesd_usb_disconnect() frees each CAN netdev with free_candev() inside\nits per-netdev loop and only calls unlink_all_urbs(dev) afterwards.\nThe per-netdev private data (struct esd_usb_net_priv) is embedded in\nthe net_device allocation returned by alloc_candev(), so once\nfree_candev() has run, dev->nets[i] points to freed memory.\nunlink_all_urbs() then dereferences the freed dev->nets[i] to kill the\nper-netdev TX anchor (usb_kill_anchored_urbs(&priv->tx_submitted)),\nclear active_tx_jobs, and reset priv->tx_contexts[].\n\nReorder the teardown so the anchored URBs are killed before the netdevs\nare freed, matching other CAN/USB drivers in the same directory such as\nems_usb, usb_8dev and mcba_usb, which unregister, then unlink, then\nfree: unregister the netdevs first (which stops their TX queues), call\nunlink_all_urbs(dev) once, then free the netdevs.\n\nThis issue was found by an in-house static analysis tool.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:33.693"
+  },
+  {
+    "id": "CVE-2026-64584",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nusb: gadget: f_midi: cancel pending IN work before freeing the midi object\n\nThe f_midi driver embeds a work item (midi->work) whose handler,\nf_midi_in_work(), dereferences the enclosing struct f_midi through\ncontainer_of().  This work is armed from two sites: f_midi_complete(),\non a normal IN-endpoint completion, and f_midi_in_trigger(), on an ALSA\nrawmidi output-stream start.\n\nNeither f_midi_disable() nor f_midi_unbind() cancels midi->work.\nf_midi_disable() only disables the endpoints and drains the in_req_fifo;\nit does not synchronize the work item, and the sound card is released\nasynchronously to the final free of the midi object.\n\nThe midi object is reference-counted (midi->free_ref) and is freed in\nf_midi_free() only once both the usb_function reference and the rawmidi\nprivate_data reference have been dropped.  In f_midi_unbind(),\nf_midi_disable() runs before the sound card is released, so while the\nUSB endpoints are already disabled the rawmidi device is still usable by\nan open substream.  A concurrent userspace write on such a substream can\nreach f_midi_in_trigger() and queue midi->work again after\nf_midi_disable() has returned.  A work item armed this way may still be\npending when the last reference drops and f_midi_free() proceeds to\nkfree(midi), letting f_midi_in_work() dereference the struct after it\nhas been freed, a use-after-free.\n\nFor this reason cancelling midi->work in f_midi_disable() would not be\nsufficient: the ALSA trigger path can rearm the work after disable()\nreturns.  Cancelling at the refcount-zero free site is the boundary\nafter which neither arming source can survive, because by then both\nreferences that keep the midi object alive have been dropped: the USB\nendpoints are already disabled and the rawmidi device has been released.\n\nFix this by calling cancel_work_sync(&midi->work) in the refcount-zero\nblock of f_midi_free(), before the embedded work_struct is freed along\nwith the rest of the structure.  opts->lock is a sleeping mutex, so\ncalling cancel_work_sync() under it is permitted, and the handler takes\nmidi->transmit_lock rather than opts->lock, so no self-deadlock can\noccur while it waits for a running instance of the work to finish.\n\nThis issue was found by an in-house static analysis tool.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:33.543"
+  },
+  {
+    "id": "CVE-2026-64583",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nusb: gadget: udc: bdc: free IRQ and drain func_wake_notify before teardown\n\nThe Broadcom BDC UDC driver registers its IRQ handler with\ndevm_request_irq() in bdc_udc_init(), so the IRQ is released by devm\nonly after bdc_remove() returns.  devm releases resources in reverse\nLIFO order, but bdc_remove() runs bdc_udc_exit() and bdc_hw_exit() ->\nbdc_mem_free() manually before returning: bdc_udc_exit() tears down\nindividual endpoint objects via bdc_free_ep(), while bdc_hw_exit() ->\nbdc_mem_free() frees and NULLs the DMA-coherent status-report ring\n(bdc->srr.sr_bds) and kfree()s bdc->bdc_ep_array.  Both happen while\nthe IRQ handler (bdc_udc_interrupt, requested with IRQF_SHARED)\nremains deliverable in the window up to the post-remove devm\nfree_irq().\n\nOn receipt of a shared interrupt in that window, bdc_udc_interrupt()\ndereferences bdc->srr.sr_bds[bdc->srr.dqp_index] (NULL or freed DMA)\nand dispatches sr_handler callbacks that index into bdc_ep_array,\ncausing a NULL-deref or use-after-free.\n\nThe same window affects the delayed_work bdc->func_wake_notify, which is\narmed from the IRQ handler via bdc_sr_uspc() -> handle_link_state_change()\n-> schedule_delayed_work() and may self-rearm from its own callback\nbdc_func_wake_timer().  No cancel exists anywhere in the driver, so a\nqueued work item that fires after bdc_remove() returns and the bdc\nstructure is devm-freed dereferences freed memory.\n\nReplace devm_request_irq() with request_irq() and add an explicit\nfree_irq(bdc->irq, bdc) in bdc_remove().  Clear BDC_GIE before\nfree_irq() to stop the device from asserting interrupts, then\nfree_irq() drains any in-flight handler, then cancel_delayed_work_sync()\ndrains the func_wake_notify delayed work.  This ordering ensures the\nIRQ handler and delayed work cannot interfere with the subsequent\nendpoint and DMA teardown in bdc_udc_exit() and bdc_hw_exit().  Wire the\nmatching free_irq() into the bdc_udc_init() error path so the IRQ is\nreleased on probe failure, and route the bdc_init_ep() failure through\nerr0 instead of returning directly.\n\nThis issue was found by an in-house static analysis tool.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:33.390"
+  },
+  {
+    "id": "CVE-2026-5430",
+    "description": "The JWT authentication mechanism accepts tokens signed with algorithms other than those explicitly configured or supported. This allows an attacker to craft a JWT with an unsupported algorithm, which is then incorrectly validated, leading to unauthorized access.\n\nSuccessful exploitation of this vulnerability may result in unauthorized access to the system, including the potential compromise of administrative accounts and full account takeover. The CVSS score is adjusted to 9.8 (CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H) in single-tenant deployments, reflecting that the impact is contained within a single security authority boundary.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:33.240"
+  },
+  {
+    "id": "CVE-2026-1728",
+    "description": "Tokens issued to a low-privileged user are not sufficiently restricted, allowing them to be used to access product-level Admin REST APIs.\n\nExploitation of this vulnerability allows a low-privileged user to invoke the Admin REST APIs of WSO2 products, potentially leading to full administrative account takeover. This requires the attacker to already possess a low-privileged user account and be able to obtain a valid token for it.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:31.423"
+  },
+  {
+    "id": "CVE-2026-19021",
+    "description": "A security vulnerability has been detected in SourceCodester Computer Repair Shop Management System 1.0. Affected by this issue is some unknown functionality of the file /classes/Master.php?f=delete_product. Such manipulation of the argument ID leads to sql injection. It is possible to launch the attack remotely. The exploit has been disclosed publicly and may be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:31.240"
+  },
+  {
+    "id": "CVE-2026-19020",
+    "description": "A weakness has been identified in itsourcecode Hospital Management System 1.0. Affected by this vulnerability is an unknown functionality of the file /servicetype.php. This manipulation of the argument editid causes sql injection. It is possible to initiate the attack remotely. The exploit has been made available to the public and could be used for attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:31.053"
+  },
+  {
+    "id": "CVE-2026-19019",
+    "description": "A security flaw has been discovered in poco-ai poco-agent up to 0.5.4. Affected is the function WorkspaceManager._setup_session_persistence of the file executor/app/core/workspace.py of the component Claude File Handler. The manipulation results in incomplete cleanup. The attack may be performed from remote. Attacks of this nature are highly complex. The exploitability is told to be difficult. The exploit has been released to the public and may be used for attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:30.830"
+  },
+  {
+    "id": "CVE-2026-19011",
+    "description": "A vulnerability was detected in TinyAGI 0.0.20. The affected element is the function buildSystemPrompt of the file packages/server/src/routes/agents.ts. Performing a manipulation results in file inclusion. The attack may be initiated remotely. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:30.647"
+  },
+  {
+    "id": "CVE-2026-19010",
+    "description": "A security vulnerability has been detected in TinyAGI 0.0.20. Impacted is the function processMessage of the file packages/main/src/index.ts of the component Message API Endpoint. Such manipulation leads to missing authorization. The attack can be launched remotely. The exploit has been disclosed publicly and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:30.467"
+  },
+  {
+    "id": "CVE-2026-19009",
+    "description": "A weakness has been identified in TinyAGI 0.0.20. This issue affects the function collectFiles of the file packages/core/src/response.ts of the component Message API Endpoint. This manipulation causes file inclusion. The attack can be initiated remotely. The exploit has been made available to the public and could be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:30.287"
+  },
+  {
+    "id": "CVE-2026-19008",
+    "description": "A vulnerability was identified in mf-yang openclaw-cn up to 0.2.1. This issue affects the function assertNoSymlinkEscape of the file src/agents/sandbox-paths.ts of the component apply_patch Tool. Such manipulation leads to link following. It is possible to launch the attack remotely. The exploit is publicly available and might be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:30.087"
+  },
+  {
+    "id": "CVE-2026-18915",
+    "description": "Invocation of process using visible sensitive information vulnerability in TÜBİTAK BİLGEM Software Technologies Research Institute eta-otp-lock allows System Footprinting.\n\nThis issue affects eta-otp-lock: before 1.0.4.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:29.937"
+  },
+  {
+    "id": "CVE-2026-18649",
+    "description": "A flaw was found in the GStreamer gst-plugins-good package. The rtph264depay and rtph265depay RTP depayloader elements do not enforce a maximum size limit on the reassembly buffer used during fragmented RTP packet processing. A remote, unauthenticated attacker can send a continuous stream of RTP fragments without ever transmitting an end-of-fragment marker, causing the reassembly buffer to grow without bound until process memory is exhausted. This results in a denial of service through process termination.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:29.780"
+  },
+  {
+    "id": "CVE-2026-18597",
+    "description": "The PDF creation feature of Foxit PDF Services API supports referencing external files. Although local file access is restricted, an attacker could trigger an SSRF vulnerability by using URL redirection to bypass validation, leading to information disclosure.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:29.633"
+  },
+  {
+    "id": "CVE-2026-0637",
+    "description": "When an Event Publisher output adapter is configured with irrelevant properties, the affected products log these properties. This logging occurs without sufficient validation or sanitization of the property values.\n\nA malicious actor with access to the 'wso2carbon' log files could retrieve sensitive information, such as user credentials or other confidential data, that was inadvertently logged due to misconfiguration, potentially leading to unauthorized access.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:29.453"
+  },
+  {
+    "id": "CVE-2025-15039",
+    "description": "The Conditional Authentication (Adaptive Authentication) script does not correctly enforce the completion of all required authentication steps when a specific multi-step pattern involving certain authenticators is configured. This allows an attacker to bypass intermediate authentication challenges by exploiting how the script handles callbacks and re-execution of authentication steps.\n\nSuccessful exploitation allows a malicious actor to gain unauthorized access to a targeted user account. This vulnerability can only be exploited when all of the following conditions are met: the application login flow contains a specific secondary authenticator, the Conditional Authentication script is configured with particular event callbacks and re-executes an authentication step, the targeted user has one of the impacted authenticators enrolled, and the attacker successfully completes any preceding authentication steps.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:29.147"
+  },
+  {
+    "id": "CVE-2025-14779",
+    "description": "The Secret Type Management REST API does not correctly isolate access controls when deleting a secret type. The on-delete cascade logic, when triggered, fails to enforce organizational boundaries, leading to the removal of secrets associated with that type across all organizations.\n\nExploitation of this vulnerability can result in the unintended deletion of secrets across the entire deployment, potentially causing configuration failures, service interruptions, and a denial-of-service condition. This vulnerability requires delete permissions for the Secret Type Management REST API, which are by default only granted to administrators.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:28.980"
+  },
+  {
+    "id": "CVE-2025-13909",
+    "description": "The system accepts authentication requests without sufficient validation to enforce tenant isolation when using Email OTP, SMS OTP, or Magic Link as first-factor authenticators. This failure to adequately separate user data between tenants can lead to the exposure of personally identifiable information.\n\nSuccessful exploitation allows an attacker to disclose personally identifiable information of users in different tenants, resulting in privacy violations and potential regulatory non-compliance. This may include unauthorized access to user details such as mobile numbers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:28.803"
+  },
+  {
+    "id": "CVE-2025-13736",
+    "description": "When Multi-Attribute Login is enabled, the login interface fails to consistently mask the existence of user accounts. For valid users, the server resolves and displays their canonical username, while for non-existent users, it echoes the original input. This occurs regardless of the validate_username configuration.\n\nThe discovery of valid usernames can increase the risk of brute force attacks, social engineering attacks, and targeted information leakage. Attackers can leverage this information to craft more effective phishing campaigns or social engineering tactics to compromise user accounts or extract sensitive data.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:28.657"
+  },
+  {
+    "id": "CVE-2025-13394",
+    "description": "The Ajax processor within the Carbon console fails to adequately protect state-changing operations from Cross-Site Request Forgery (CSRF) attacks. Specifically, it utilizes the HTTP GET method for these operations, and while the SameSite=Lax cookie attribute is employed for mitigation, this mechanism is bypassed as it permits cookies to be sent with cross-origin top-level navigation requests, including GET requests. This allows an attacker to trick an authenticated user's browser into unknowingly executing unintended actions.\n\nAn attacker can exploit this vulnerability to perform unauthorized state-altering requests on behalf of authenticated users. This could lead to consequences such as data modification, account changes, or other actions that could result in data compromise or loss of user control over their account. However, this attack is only feasible if the Carbon console and related services are exposed to the public internet, which is not recommended according to WSO2's security guidelines.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:28.210"
+  },
+  {
+    "id": "CVE-2025-12627",
+    "description": "The user impersonation flow in WSO2 Identity Server fails to properly manage refresh tokens associated with impersonated sessions. This allows an attacker who has obtained an access token for an impersonated user to leverage the refresh token grant to obtain new access tokens, extending their ability to act as the legitimate user.\n\nAn attacker who gains access to an impersonated user's access token can exploit this weakness to renew their authorization. This results in the continued ability to perform actions on behalf of the actual user, compromising log integrity and traceability by masking the true actor.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:28.063"
+  },
+  {
+    "id": "CVE-2025-11850",
+    "description": "When secondary user stores are configured, the implicit-association resolver incorrectly initializes from a secondary user store and bypasses the primary user store during search and uniqueness checks. This allows a subject to be associated with an unintended local account if the same lookup claim (e.g., username or email) exists in both the primary and a secondary store.\n\nIf duplicate claim values exist across user stores, this issue can lead to identity confusion due to incorrect implicit associations when using an external Identity Provider (IDP). Legitimate user accounts in the primary user store may fail to associate correctly with their corresponding external IDP accounts, potentially restricting access if the secondary account has fewer privileges. Deployments are not affected if no secondary user stores are configured, implicit association is disabled, or claim values are globally unique.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:27.923"
+  },
+  {
+    "id": "CVE-2024-8995",
+    "description": "Unused authorization codes issued to deleted users are not being properly invalidated or removed from the system. This allows for the persistence of these codes, enabling them to be potentially reused.\n\nIf an attacker possesses both the authorization code and the associated client credentials (client ID and client secret), they can leverage these unused codes to obtain access tokens on behalf of users who have already been deleted. This may lead to unauthorized access to sensitive resources and services, contingent on the scopes originally authorized for the compromised authorization code.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:27.687"
+  },
+  {
+    "id": "CVE-2024-6832",
+    "description": "The account locking mechanism fails to trigger when secondary user stores are inaccessible. The software does not maintain a consistent state for account locking if it cannot reach all configured user stores, allowing an attacker to repeatedly attempt authentication with invalid credentials without triggering the lockout mechanism for users within active stores.\n\nWhen the account locking mechanism is bypassed due to the inaccessibility of secondary user stores, users in accessible user stores are left vulnerable to brute force attacks. A malicious actor can exploit this by attempting numerous invalid password combinations against a user account without the expected account lockout consequence.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:27.533"
+  },
+  {
+    "id": "CVE-2024-10302",
+    "description": "The user self-signup flow in multiple WSO2 products fails to adequately validate user-supplied input. This weakness allows arbitrary unvalidated data to be included within user claims, which are then used by downstream processes.\n\nAllowing unvalidated input into user claims can lead to various security risks. Malicious or malformed data injected during signup could be processed by other parts of the application, potentially enabling attacks such as content manipulation, redirection, user interface inconsistencies, unauthorized actions, and data exposure. The actual impact depends on how the compromised data is consumed and the privileges associated with the affected users.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:26.920"
+  },
+  {
+    "id": "CVE-2023-7355",
+    "description": "Rejected reason: Erroneously reserved under wrong year by automation defect; never assigned.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:26.850"
+  },
+  {
+    "id": "CVE-2023-7354",
+    "description": "Rejected reason: Erroneously reserved under wrong year by automation defect; never assigned.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:26.793"
+  },
+  {
+    "id": "CVE-2023-7353",
+    "description": "Rejected reason: Erroneously reserved under wrong year by automation defect; never assigned.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-06T08:16:26.207"
+  },
+  {
+    "id": "CVE-2026-19007",
+    "description": "A vulnerability was determined in mf-yang openclaw-cn up to 0.2.1. This vulnerability affects the function isApprovedElevatedSender of the file src/auto-reply/reply/reply-elevated.ts. This manipulation causes improper privilege management. It is possible to initiate the attack remotely. The exploit has been publicly disclosed and may be utilized. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:29.947"
+  },
+  {
+    "id": "CVE-2026-19006",
+    "description": "A vulnerability was found in mf-yang openclaw-cn 2026.2.5. This affects an unknown part of the file src/agents/bash-tools.exec.ts of the component Ggateway Exec Approval Flow. The manipulation results in incorrect authorization. The attack may be performed from remote. The exploit has been made public and could be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:29.780"
+  },
+  {
+    "id": "CVE-2026-19005",
+    "description": "A vulnerability was detected in nanocoai NanoClaw up to 2.0.64. Affected is the function handleCreateAgent of the file src/modules/agent-to-agent/create-agent.ts of the component Child-Agent Creation. Performing a manipulation results in improper privilege management. Remote exploitation of the attack is possible. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:29.583"
+  },
+  {
+    "id": "CVE-2026-18967",
+    "description": "A flaw was found in the SAML broker component of Keycloak, an identity and access management solution. When configured as a SAML broker using the IdP-Initiated flow, Keycloak fails to enforce the OneTimeUse condition in SAML assertions. This allows an attacker who captures a valid, unused assertion to replay it multiple times. Successful exploitation could allow an attacker to hijack a user's session and gain unauthorized access to the system as that user.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:29.413"
+  },
+  {
+    "id": "CVE-2026-18510",
+    "description": "The TranslatePress – Translate Multilingual sites with AI Translation plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Comment Content (URL-encoded gettext markers) in all versions up to, and including, 3.2.6 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Comment moderation may delay exploitation for first-time commenters, but does not prevent it, as the payload uses only WordPress-permitted tags and attributes with percent-encoded characters that pass wp_kses URL validation unmodified.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:29.270"
+  },
+  {
+    "id": "CVE-2026-18400",
+    "description": "The Slider, Gallery, and Carousel by MetaSlider – Image Slider, Video Slider plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'delay' Post Meta Setting in all versions up to, and including, 3.111.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with custom-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The ml-slider custom post type is registered without custom capability restrictions and the ml-slider_settings meta key is unprotected, allowing Author-level users to set the malicious delay value via XML-RPC custom_fields when creating an ml-slider post.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:29.100"
+  },
+  {
+    "id": "CVE-2026-18395",
+    "description": "The Child Pages Card WordPress plugin before 1.09 does not sanitise and escape some of its shortcode attributes before outputting them back in a page, allowing users with the contributor role and above to perform Stored Cross-Site Scripting attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.990"
+  },
+  {
+    "id": "CVE-2026-18050",
+    "description": "The Events Manager  WordPress plugin before 7.4 does not perform any authorization check on a REST route that serves temporarily stored file uploads, allowing unauthenticated users to retrieve another user's in-progress upload when its temporary identifier is known. The identifier is high-entropy, is disclosed only to the uploader, and the file is removed on submission or by a scheduled cleanup, so a cross-user read is not achievable by guessing alone.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.880"
+  },
+  {
+    "id": "CVE-2026-16954",
+    "description": "The AI Engine  WordPress plugin before 3.6.4 does not redact secret configuration values before exposing them in an admin page's inline script data, allowing users with the Editor role to read the site's stored third-party API key and authentication tokens in cleartext, despite those secrets being restricted to administrators everywhere else.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.777"
+  },
+  {
+    "id": "CVE-2026-16734",
+    "description": "The Stripe Payment Forms by WP Full Pay  WordPress plugin before 8.5.2 does not verify that the caller owns the Stripe payment intent referenced by two unauthenticated payment-form AJAX actions, allowing an unauthenticated visitor — using a nonce that is embedded in every public page containing a payment form — to change the amount of a payment intent that the Stripe Payment Forms by WP Full Pay  WordPress plugin before 8.5.2 then updates server-side through the Stripe API with the store's secret key. An ownership check added in 8.5.0 was applied to only one payment-intent handler, leaving the pricing-recalculation and payment-intent-update actions unprotected against amount manipulation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.647"
+  },
+  {
+    "id": "CVE-2026-16537",
+    "description": "The Slick Slider WordPress plugin before 0.5.3 does not sanitize and escape a shortcode attribute value before outputting it in an HTML attribute, allowing users with the Contributor role and above to perform Stored Cross-Site Scripting attacks that execute when a user views the affected post.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.520"
+  },
+  {
+    "id": "CVE-2026-16290",
+    "description": "The ProfileGrid  WordPress plugin before 6.0.0.0 does not perform authorization checks before returning a group's member list, and registers the handler for unauthenticated users, allowing any unauthenticated visitor to disclose the members and their identifiers of any group, including private or closed ones, bypassing the ProfileGrid  WordPress plugin before 6.0.0.0's member-visibility setting.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.410"
+  },
+  {
+    "id": "CVE-2026-16268",
+    "description": "The Newsletters WordPress plugin before 4.16 does not authenticate or validate a bounce-processing request before fetching a user-supplied URL on the server side, allowing unauthenticated attackers to make the site issue requests to arbitrary internal or external hosts.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.300"
+  },
+  {
+    "id": "CVE-2026-16065",
+    "description": "The Welcart e-Commerce WordPress plugin before 2.11.32 does not properly sanitise a value taken from an imported CSV file before using it in a SQL statement, allowing users with the Editor role and above (including its custom shop-management roles) to perform SQL injection attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.197"
+  },
+  {
+    "id": "CVE-2026-16054",
+    "description": "The Drag and Drop Multiple File Upload for WooCommerce WordPress plugin before 1.1.8 does not prevent unauthenticated users from obtaining a valid nonce that is the only control gating its file-deletion routine, allowing anonymous attackers to delete files staged in its upload directory and irreversibly destroy customers' pending order attachments.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:28.087"
+  },
+  {
+    "id": "CVE-2026-14829",
+    "description": "The Checkimate — WooCommerce Checkout, Abandoned Cart Recovery & Order Bumps WordPress plugin through 1.0.13 does not properly restrict access to its license-management functionality, relying on a shared secret computed entirely from publicly available information, allowing unauthenticated attackers to deactivate the Checkimate — WooCommerce Checkout, Abandoned Cart Recovery & Order Bumps WordPress plugin through 1.0.13's premium licensing state and erase the stored license key.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.980"
+  },
+  {
+    "id": "CVE-2026-14547",
+    "description": "The Estatik Real Estate Plugin WordPress plugin before 4.3.3 does not properly enforce its anti-spam check or restrict the recipient routing of its property request form, allowing unauthenticated users to send emails to arbitrary recipients with arbitrary subject, body and Reply-To, effectively using the site as a mail relay for spam or phishing.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.870"
+  },
+  {
+    "id": "CVE-2026-14314",
+    "description": "The PeproDev WooCommerce Receipt Uploader WordPress plugin through 2.8.0 does not verify that a requested attachment belongs to the order referenced by its access token, allowing unauthenticated attackers to forge a token and disclose image attachments, including other customers' uploaded payment receipts, that they do not own.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.760"
+  },
+  {
+    "id": "CVE-2026-14313",
+    "description": "PeproDev WooCommerce Receipt Uploader (PeproDev WooCommerce Receipt Uploader WordPress plugin through 2.8.0 slug: pepro-bacs-receipt-upload-for-woocommerce), all versions up to and including 2.8.0 (latest on wordpress.org; no fixed version available at the time of writing), is vulnerable to unauthenticated missing-authorization / IDOR write. Requires WooCommerce.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.653"
+  },
+  {
+    "id": "CVE-2026-14240",
+    "description": "The tourmaster WordPress plugin before 5.4.9 writes its order/booking export to a fixed, predictable file inside its publicly accessible directory with no access control, allowing unauthenticated users to download the exported customers' personal information once an administrator has run an export.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.540"
+  },
+  {
+    "id": "CVE-2026-14204",
+    "description": "The Google Authenticator WordPress plugin before 0.56 does not verify a CSRF nonce when saving its two-factor setup, allowing attackers to trick a logged-in user into overwriting their own 2FA secret with an attacker-controlled value, which enables two-factor authentication and locks the victim out of their account.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.430"
+  },
+  {
+    "id": "CVE-2026-13703",
+    "description": "The SEO Redirection Plugin  WordPress plugin before 9.19 does not perform a capability check in one of its authenticated AJAX actions, allowing any logged-in user such as a subscriber to read the site's configured 301 redirect rules, including their source and destination URLs.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.320"
+  },
+  {
+    "id": "CVE-2026-13154",
+    "description": "The Gutenberg Essential Blocks  WordPress plugin before 6.4.0 does not verify that an attacker-supplied post type is publicly viewable before querying it in one of its public REST routes, allowing unauthenticated users to read published entries of custom post types that the site registered as non-public.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.207"
+  },
+  {
+    "id": "CVE-2026-13153",
+    "description": "The Gutenberg Essential Blocks  WordPress plugin before 6.4.0 does not restrict access to one of its public REST routes and over-fetches a non-public WooCommerce per-product sales metric into the response, allowing unauthenticated users to read the lifetime number of units sold for any published product.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:27.100"
+  },
+  {
+    "id": "CVE-2026-12713",
+    "description": "The WPCargo Track & Trace WordPress plugin before 8.0.4 does not properly sanitise and escape a parameter before using it in a SQL statement, allowing unauthenticated users to perform SQL injection attacks. This affects a code path distinct from the one addressed by CVE-2024-44004.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:26.990"
+  },
+  {
+    "id": "CVE-2026-11588",
+    "description": "The EONSR AEO Agent WordPress plugin through 3.7.9 does not perform any authorisation check on one of its REST API routes and disables HTML sanitisation before saving the post, allowing unauthenticated attackers to create administrator-attributed published posts containing arbitrary web scripts that execute in the browser of any visitor, including administrators (Stored XSS).",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:26.873"
+  },
+  {
+    "id": "CVE-2025-15678",
+    "description": "The Nexter Blocks  WordPress plugin before 5.0.2 does not sanitize uploaded SVG files and allows SVG uploads for any user able to upload files (Author by default), allowing them to upload a file containing malicious JavaScript that executes when the file is accessed, leading to Stored Cross-Site Scripting.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-06T07:16:26.660"
+  },
+  {
     "id": "CVE-2026-19000",
     "description": "A vulnerability was identified in JeecgBoot up to 3.9.2. The affected element is an unknown function of the file /airag/chat/send of the component Anonymous Chat Attachment Parser. The manipulation leads to server-side request forgery. The attack can be initiated remotely. The exploit is publicly available and might be used. A fix is planned for the upcoming release.",
     "severity": "High",
@@ -6480,341 +6998,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-03T09:17:05.767"
-  },
-  {
-    "id": "CVE-2026-8794",
-    "description": "PaperCut NG/MF contains an observable timing discrepancy in its authentication component. An unauthenticated remote attacker can exploit this vulnerability to perform username enumeration by measuring response times during login attempts. The system executes a password hash comparison only when a valid account is supplied, creating a measurable timing oracle that reveals account existence.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:21.273"
-  },
-  {
-    "id": "CVE-2026-8793",
-    "description": "PaperCut NG/MF does not properly restrict excessive authentication attempts within its login component. An unauthenticated remote attacker can exploit this vulnerability to perform unrestricted brute-force or credential-stuffing attacks without triggering account lockout or rate-limiting mechanisms in some configurations.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:21.097"
-  },
-  {
-    "id": "CVE-2026-28147",
-    "description": "Missing Authorization vulnerability in Unlimited Elements Unlimited Elements For Elementor (Free Widgets, Addons, Templates) allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects Unlimited Elements For Elementor (Free Widgets, Addons, Templates): from n/a through 2.0.15.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:20.377"
-  },
-  {
-    "id": "CVE-2026-21555",
-    "description": "In modem, there is a possible improper input validation. This could lead to remote denial of service with no additional execution privileges needed",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:20.257"
-  },
-  {
-    "id": "CVE-2026-21554",
-    "description": "In modem, there is a possible improper input validation. This could lead to remote denial of service with no additional execution privileges needed",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:20.130"
-  },
-  {
-    "id": "CVE-2026-21553",
-    "description": "In modem, there is a possible improper input validation. This could lead to remote denial of service with no additional execution privileges needed",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:20.020"
-  },
-  {
-    "id": "CVE-2026-21552",
-    "description": "In modem, there is a possible improper input validation. This could lead to remote denial of service with no additional execution privileges needed",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:19.903"
-  },
-  {
-    "id": "CVE-2026-21551",
-    "description": "In modem, there is a possible improper input validation. This could lead to remote denial of service with no additional execution privileges needed",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:19.787"
-  },
-  {
-    "id": "CVE-2026-21550",
-    "description": "In modem, there is a possible improper input validation. This could lead to remote denial of service with no additional execution privileges needed",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:19.663"
-  },
-  {
-    "id": "CVE-2026-21549",
-    "description": "In modem, there is a possible improper input validation. This could lead to remote denial of service with no additional execution privileges needed",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:19.537"
-  },
-  {
-    "id": "CVE-2026-21548",
-    "description": "In nr modem, there is a possible improper input validation. This could lead to remote denial of service with System execution privileges needed.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:19.393"
-  },
-  {
-    "id": "CVE-2026-18593",
-    "description": "A weakness has been identified in vxcontrol PentAGI up to 2.1.0. This affects an unknown part of the file backend/pkg/templates/prompts/pentester.tmpl of the component Tool Management Protocol Handler. Executing a manipulation can lead to sandbox issue. It is possible to launch the attack remotely. The attack requires a high level of complexity. It is indicated that the exploitability is difficult. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:19.207"
-  },
-  {
-    "id": "CVE-2026-18592",
-    "description": "A security flaw has been discovered in osCommerce 4.14.63493. Affected by this issue is the function EmailController of the file app/lib/backend/controllers/EmailController.php of the component Email Template Configuration. Performing a manipulation of the argument email_templates_key results in sql injection. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:19.017"
-  },
-  {
-    "id": "CVE-2026-18591",
-    "description": "A vulnerability was identified in Meesho Online Shopping App up to 20260607 on Android. Affected by this vulnerability is an unknown functionality of the component com.meesho.supply. Such manipulation of the argument user_id/phone number/email address/name leads to cleartext storage of sensitive information. The attack can be executed directly on the physical device. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:18.823"
-  },
-  {
-    "id": "CVE-2026-18590",
-    "description": "A vulnerability was determined in Wavlink WL-NU516U1 708c073-mt7628. Affected is the function set_sys_adm of the file adm.cgi of the component Admin Password Handler. This manipulation causes os command injection. The attack is possible to be carried out remotely. The exploit has been publicly disclosed and may be utilized. It is suggested to upgrade the affected component. The vendor was contacted early, responded in a very professional manner and quickly released a fixed version of the affected product.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:18.613"
-  },
-  {
-    "id": "CVE-2026-12259",
-    "description": "In nltk version 3.9.4, the `nltk.downloader.Downloader._download_package()` function writes downloaded package bytes to disk and may extract them before enforcing SHA-256 or MD5 checksum validation. This allows an attacker to tamper with the package response body for `info.url` through a compromised mirror, malicious proxy, or other source-substitution condition, leading to the installation of attacker-controlled package bytes. The vulnerability can result in malicious corpus or model content being trusted by downstream users or applications.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T08:17:17.880"
-  },
-  {
-    "id": "CVE-2026-9593",
-    "description": "A vulnerability in the iDTM FDI allows an attacker with elevated privileges and access to the host system to enable the debug interface by placing a crafted file in the application directory, potentially resulting in unauthorized access to connected devices and exposure, modification, or disruption of device data or operation.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:44.200"
-  },
-  {
-    "id": "CVE-2026-4793",
-    "description": "An incorrect default permissions vulnerability in Synology Assistant before 7.0.7-50095 allows local users to read or write arbitrary files and conduct denial-of-service during installation.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:43.453"
-  },
-  {
-    "id": "CVE-2026-18589",
-    "description": "A vulnerability was found in Wavlink WL-NU516U1 708c073-mt7628. This impacts the function change_password of the file nas.cgi. The manipulation of the argument User1Passwd results in stack-based buffer overflow. The attack can be executed remotely. The exploit has been made public and could be used. The affected component should be upgraded. The vendor was contacted early, responded in a very professional manner and quickly released a fixed version of the affected product.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:43.260"
-  },
-  {
-    "id": "CVE-2026-18588",
-    "description": "A vulnerability has been found in Wavlink WL-NU516U1 708c073-mt7628. This affects the function fgets of the file nas.cgi. The manipulation of the argument CONTENT_LENGTH leads to stack-based buffer overflow. Remote exploitation of the attack is possible. You should upgrade the affected component. The vendor was contacted early, responded in a very professional manner and quickly released a fixed version of the affected product.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:43.047"
-  },
-  {
-    "id": "CVE-2026-18587",
-    "description": "A flaw has been found in Wavlink WL-NU516U1 708c073-mt7628. The impacted element is an unknown function of the component Config Import. Executing a manipulation of the argument Password can lead to os command injection. The attack may be launched remotely. This attack is characterized by high complexity. The exploitability is regarded as difficult. The exploit has been published and may be used. It is advisable to upgrade the affected component. The vendor was contacted early, responded in a very professional manner and quickly released a fixed version of the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:42.813"
-  },
-  {
-    "id": "CVE-2026-16572",
-    "description": "The LogMyTrip WordPress plugin through 1.9 does not sanitize and escape a value taken from a cookie before using it in a SQL query, allowing unauthenticated users to perform SQL injection attacks on any page that renders one of the LogMyTrip WordPress plugin through 1.9's shortcodes.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:42.227"
-  },
-  {
-    "id": "CVE-2026-16565",
-    "description": "The Dokan: AI Powered WooCommerce Multivendor Marketplace Solution  WordPress plugin before 5.0.9 does not verify product ownership on its product-attribute REST write endpoints, allowing users with a Dokan vendor account to modify the product attributes and default attributes of any other vendor's products on the marketplace.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:42.093"
-  },
-  {
-    "id": "CVE-2026-16564",
-    "description": "The Dokan: AI Powered WooCommerce Multivendor Marketplace Solution  WordPress plugin before 5.0.9 does not verify order ownership on a REST endpoint that performs bulk order-status changes, allowing users with a Dokan vendor account to modify the status of any WooCommerce order on the marketplace, including orders belonging to other vendors and the store's own customers.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.983"
-  },
-  {
-    "id": "CVE-2026-16563",
-    "description": "The Academy LMS WordPress plugin before 3.8.3 does not verify course enrollment or lesson publication status when returning a single lesson through its REST API, allowing users with a self-service student (Subscriber-level) account to disclose the content of arbitrary lessons, including lessons of paid courses they are not enrolled in and unpublished (draft, pending, private) lessons.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.877"
-  },
-  {
-    "id": "CVE-2026-16539",
-    "description": "The sm page duplicator WordPress plugin through 1.0.0 does not sanitise and escape a stored value before using it in a SQL statement when duplicating a page, allowing users with the Editor role and above to perform SQL Injection attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.770"
-  },
-  {
-    "id": "CVE-2026-16534",
-    "description": "The Import and export users and customers WordPress plugin before 2.4.2 does not enforce WordPress's role-assignment and per-user edit permissions during CSV import, allowing a user holding only the user-creation capability to create an administrator account and to overwrite an existing administrator's password or email.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.660"
-  },
-  {
-    "id": "CVE-2026-16532",
-    "description": "The Link Library WordPress plugin before 7.9.3 does not properly sanitise and escape a user-supplied value before using it in a SQL query, allowing unauthenticated users to perform SQL injection attacks.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.557"
-  },
-  {
-    "id": "CVE-2026-16300",
-    "description": "The ChamaWP  WordPress plugin before 1.0.13 does not properly validate a password reset request, allowing unauthenticated attackers to reset the password of arbitrary users, including administrators, which could lead to a full site takeover.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.453"
-  },
-  {
-    "id": "CVE-2026-16297",
-    "description": "The Clearfy Cache  WordPress plugin before 2.4.3 does not restrict the classes allowed when unserializing settings-import data, allowing users with administrator access to perform PHP Object Injection attacks, which may lead to remote code execution when a suitable gadget chain is present in the environment.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.350"
-  },
-  {
-    "id": "CVE-2026-16289",
-    "description": "The ProfileGrid  WordPress plugin before 6.0.0.0 does not perform authorization checks when listing a group's pending membership requests, allowing any authenticated user such as a Subscriber to disclose the names and request dates of the users awaiting approval to join any group, including private ones.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.240"
-  },
-  {
-    "id": "CVE-2026-16276",
-    "description": "The Classified Listing  WordPress plugin before 5.4.4 does not perform a capability check on an AJAX action that returns aggregated store revenue totals, allowing users with contributor-level access and above to read daily revenue figures normally restricted to administrators and report managers.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.133"
-  },
-  {
-    "id": "CVE-2026-16274",
-    "description": "The Classified Listing  WordPress plugin before 5.4.4 does not perform a capability or ownership check on an AJAX action that returns a post's content, allowing users with contributor-level access and above to read the content of any post, page, or custom post type on the site — including drafts, pending, and private posts owned by other users — regardless of ownership.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:41.020"
-  },
-  {
-    "id": "CVE-2026-16250",
-    "description": "The Personal QR Message WordPress plugin through 1.0 does not restrict the file types that can be uploaded through an unauthenticated handler, allowing unauthenticated users to upload arbitrary executable PHP files that are directly reachable, leading to remote code execution.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:40.910"
-  },
-  {
-    "id": "CVE-2026-16060",
-    "description": "The Insert or Embed Articulate Content into WordPress plugin through 4.3000000027 does not correctly validate the contents of an uploaded archive, relying on a bypassable check that lets an Editor-level user upload a server-executable file into a public directory, resulting in remote code execution on servers configured to execute it.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:40.633"
-  },
-  {
-    "id": "CVE-2026-16057",
-    "description": "The Contest Gallery  WordPress plugin before 30.0.7 does not perform per-object capability or nonce checks in one of its post-deletion handlers, gating it only by a coarse role-membership test, which allows any Author-level or higher user to permanently delete arbitrary posts, pages, and other content they do not own.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:40.523"
-  },
-  {
-    "id": "CVE-2026-15931",
-    "description": "The Simple Membership WordPress plugin before 4.7.8 does not sanitise a subscriber name value received from an unauthenticated payment approval request, nor escape it when displaying it in the administration dashboard, allowing unauthenticated attackers to store arbitrary JavaScript that executes in an administrator's session.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:40.420"
-  },
-  {
-    "id": "CVE-2026-15930",
-    "description": "The Simple Membership WordPress plugin before 4.7.8 does not verify whether user creation failed during registration before using the returned value as a user ID to update an account, allowing unauthenticated attackers to overwrite the primary administrator's account data (including the email address) and take over that account through the password reset flow.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:40.310"
-  },
-  {
-    "id": "CVE-2026-15383",
-    "description": "The Blog Floating Button WordPress plugin through 1.4.20 does not sanitize or escape the visitor User-Agent header, which it stores through an unauthenticated tracking REST endpoint and later renders unescaped in an administrator report page. This allows an unauthenticated attacker to store a malicious script that executes in the session of any administrator who views the access report, leading to site takeover.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:40.200"
-  },
-  {
-    "id": "CVE-2026-15260",
-    "description": "The GEO my WP WordPress plugin before 4.5.5.3 does not perform any ownership or capability check on two of its logged-in AJAX actions, allowing users with subscriber-level access or above to modify or permanently delete other users' and posts' geolocation records by supplying arbitrary record IDs.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:40.090"
-  },
-  {
-    "id": "CVE-2026-15254",
-    "description": "The Simply Schedule Appointments WordPress plugin before 1.6.12.11 does not perform a capability check on an administrative appointment-listing shortcode, and its per-user result scoping fails open for non-staff users, allowing users with the Contributor role and above to disclose all customers' appointment records, including names, email addresses, phone numbers and notes, across the whole site.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:39.987"
-  },
-  {
-    "id": "CVE-2026-15231",
-    "description": "The Tag, Category, and Taxonomy Manager  WordPress plugin before 3.51.0 does not verify that a user is authorized to access a referenced post before processing it and returning derived data, allowing users with contributor privileges to disclose data from private or draft posts they do not own.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:39.877"
-  },
-  {
-    "id": "CVE-2026-14557",
-    "description": "The SoftMarket — Digital Marketplace WordPress plugin through 1.0.0 does not properly validate an authentication token in one branch of its email-verification flow, allowing unauthenticated attackers to obtain a valid session as any verified user by supplying only that user's ID.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:39.533"
-  },
-  {
-    "id": "CVE-2026-13340",
-    "description": "The SVG Support WordPress plugin before 2.5.17 does not apply its SVG sanitisation to uploaded files using the .svgz extension, even though it registers and serves them as SVG, allowing a user permitted to upload SVGs (such as an Author once granted upload access) to store a script-bearing file that executes in the browser of anyone who later views it, including an administrator.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:39.303"
-  },
-  {
-    "id": "CVE-2026-12965",
-    "description": "The Super Store Finder WordPress plugin through 7.8 does not sanitize a parameter of an unauthenticated AJAX action before using it in a SQL query, allowing unauthenticated attackers to perform SQL injection and extract data from the database.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:39.190"
-  },
-  {
-    "id": "CVE-2026-12872",
-    "description": "The Webinfos WordPress plugin through 1.2 does not validate the type or name of uploaded files, nor restrict the upload action with any authentication, capability, or nonce check, allowing unauthenticated attackers to upload arbitrary files (including PHP) to a web-accessible directory, leading to remote code execution on servers that execute PHP from the uploads path.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:39.077"
-  },
-  {
-    "id": "CVE-2025-15673",
-    "description": "The Import and export users and customers WordPress plugin before 2.4.3 does not restrict the path of a file it reads and displays during a CSV import, allowing high-privileged users to read arbitrary files on the server.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:37.257"
-  },
-  {
-    "id": "CVE-2025-15672",
-    "description": "The ChamaWP  WordPress plugin before 1.0.13 does not properly validate user input before passing it to a PHP deserialization function, allowing unauthenticated attackers to inject arbitrary PHP objects, which could lead to remote code execution when a suitable gadget chain is present via other installed code.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-03T07:16:37.123"
   }
 ]
