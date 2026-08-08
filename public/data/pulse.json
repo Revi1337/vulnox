@@ -1,5 +1,201 @@
 [
   {
+    "id": "CVE-2026-64676",
+    "description": "Kata Containers is an open source implementation of lightweight Virtual Machines (VMs) that perform like containers. In versions prior to 4.0.0, the kata-agent is vulnerable to an authorization bypass in confidential-guest memory management. In Confidential Containers (CoCo) deployments, the kata-agent enforces an OPA/Rego-based AgentPolicy that must authorize every ttRPC API call, forming the security boundary that prevents an untrusted host from directing the confidential guest. Two ttRPC methods introduced with the mem-agent feature are missing this authorization check, so an untrusted host can invoke them unconditionally regardless of the guest's policy configuration. When mem-agent is enabled (off by default), this lets the host tamper with in-guest memory management by forcing swap, aggressive eviction, or compaction, resulting in attacker-controlled availability and performance degradation of the confidential workload entirely outside the agent-policy boundary. The impact does not include memory disclosure or code execution, and severity is bounded by the precondition that mem-agent must be explicitly enabled. This issue is fixed in version 4.0.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:59.480"
+  },
+  {
+    "id": "CVE-2026-58262",
+    "description": "Klever-Go is the Go implementation of the Klever blockchain protocol. Prior to 1.7.20, header signature verification counts the unused padding bits of the PubKeysBitmap toward the two-thirds validator quorum. These padding bits do not correspond to any validator and are ignored by the actual BLS aggregate-signature check, so a malicious or compromised block producer can set them to reach the required quorum while gathering fewer genuine validator signatures than the protocol demands. As a result, nodes that import or intercept the header accept it as correctly signed without a real two-thirds quorum, weakening consensus safety and undermining finality. This issue is fixed in version 1.7.20.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:59.327"
+  },
+  {
+    "id": "CVE-2026-48170",
+    "description": "`scim-patch`, a library to perform SCIM patch, prior to version 0.9.1 performs prototype pollution when applying a SCIM PATCH operation whose `value` object contains a key like `\"__proto__.someProp\"`. After one such patch,\n`Object.prototype.someProp` is set process-wide, affecting every plain object in the Node process. Any service that calls `scimPatch()` on attacker-controlled JSON (i.e. any SCIM endpoint accepting `PATCH` from an external IdP) is exploitable on a stock Node runtime. Version 0.9.1 contains a patch. A workaround is available. Calling `Object.freeze(Object.prototype)` (and the same on `Array.prototype`, `Function.prototype`) at process startup neutralizes this class of bug — assignment to a frozen prototype becomes a silent no-op in sloppy mode or a `TypeError` in strict mode. Node's `--frozen-intrinsics` flag does this for built-ins automatically.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:59.170"
+  },
+  {
+    "id": "CVE-2026-48169",
+    "description": "PraisonAI is a multi-agent teams system. Versions prior to 0.1.4 of the PraisonAI Platform API have two authorization failures that together break workspace isolation. The service layer for issues and projects performs global primary-key lookups without checking workspace ownership, so any authenticated user can read, modify, and delete resources in any workspace just by swapping UUIDs in their API requests. On top of that, every member management endpoint (add, update role, remove) only requires `min_role=\"member\"`, which lets any workspace member promote themselves to owner and kick out the original owner. A low-privilege member of one workspace can steal data from every other workspace and take over any workspace they belong to. Both issues come from the same gap: the route layer pulls `workspace_id` from the URL and verifies membership, but the service layer ignores the workspace scope for resource lookups and ignores the caller's role level for member operations. The `require_workspace_member()` dependency does its job correctly. The problem is that the service layer doesn't use the information it provides. Version 0.1.4 of the PraisonAI Platform API patch the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:59.013"
+  },
+  {
+    "id": "CVE-2026-47243",
+    "description": "Kata Containers is an open source project focusing on a standard implementation of lightweight Virtual Machines (VMs) that perform like containers. Prior to 3.31.0, the runtime-rs standalone virtio-fs path is vulnerable to a guest-root to host-root escape. In this configuration, Kata runs the host virtiofsd as root with --sandbox none --seccomp none, so an attacker with root-equivalent access inside the guest can bypass the guest virtio-fs client entirely by taking over the virtio-fs PCI device and building a virtqueue in userspace to submit raw FUSE requests directly to the host virtiofsd. A crafted FUSE_SYMLINK request whose new symlink name is an absolute host path is honored outside the configured shared directory, allowing guest root to create root-owned symlinks in sensitive host locations such as /etc/cron.d. By pointing such a symlink at a guest-controlled crontab payload reachable through a live runtime process's mount namespace, the attacker causes the host cron daemon to execute that payload as host root, crossing the Kata isolation boundary. This issue is fixed in version 3.31.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:58.753"
+  },
+  {
+    "id": "CVE-2026-46405",
+    "description": "OpenBao is an open source identity-based secrets management system. Prior to version 2.5.4, in OpenBao's Kerberos auth method on the `GET` handler, or when an `Authorization: Negotiate` header is supplied, the response is includes a `logical.Auth` object in addition to an error message. This results in tokens being created with only the default policy, default TTL, and no entity information, which are hidden by the returned error message. No access to these tokens by the caller occurs and the authentication token is not ever made accessible outside of `sys/raw`. This is fixed in OpenBao v2.5.4. As a workaround, users may set a rate limit quota to limit the creation of these paths. As the path is unauthenticated, it isn't possible to deny access to it.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:58.600"
+  },
+  {
+    "id": "CVE-2026-45808",
+    "description": "OpenBao is an open source identity-based secrets management system. Prior to version 2.5.4, OpenBao's namespaces provide multi-tenant separation. A tenant who intentionally leaks lease identifiers can have their lease and underlying credential revoked or renewed by a user in another tenant via the legacy, undocumented `sys/revoke` and `sys/renew` endpoints. This is fixed in OpenBao v2.5.4.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:58.370"
+  },
+  {
+    "id": "CVE-2026-11743",
+    "description": "The SF32LB MPI QSPI NOR flash driver (drivers/flash/flash_sf32lb_mpi_qspi_nor.c) validated the flash offset and length on its read and write paths with the test (offset + size) > data->size. Because offset is a signed off_t while size is unsigned, a negative offset is converted to a large unsigned value and the addition can wrap to a small result that passes the check. The read path then performs memcpy(dst, (void *)(data->base + offset), size) and the write path programs flash at offset and cache-invalidates data->base + offset, in both cases accessing memory outside the mapped flash window. The driver's erase path already rejected negative offsets, but read and write did not.\n\nIn builds with CONFIG_USERSPACE, flash_read and flash_write are syscalls whose verifiers validate the device object and the caller's buffer but deliberately delegate offset bounds checking to the driver. An unprivileged thread that has been granted access to this flash device can therefore call the syscall with a crafted negative offset and a buffer valid in its own memory domain, and reach the unchecked access.\n\nThe most direct impact is on the read path: by choosing a negative offset and matching size, an attacker slides the memcpy source below the flash base and copies arbitrary CPU-addressable memory into its own buffer, disclosing memory it is not authorized to read. The write path additionally allows programming flash at an out-of-range address and invalidating an attacker-chosen cache range, affecting integrity and availability. Reachability requires userspace to be enabled and the raw flash device object to be granted to an untrusted thread.\n\nThe fix replaces the check with qspi_nor_range_is_valid(), which rejects negative offsets and performs the bound comparison in overflow-safe 64-bit arithmetic on both paths, and additionally adds an SRAM DMA bounce buffer plus source/destination overlap rejection to prevent a separate DMA bus-hang condition.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:57.317"
+  },
+  {
+    "id": "CVE-2026-11742",
+    "description": "The kernel queue helper z_queue_node_peek() in kernel/queue.c dereferences a node taken from a queue's data_q list, reading the node's flag byte and, for items enqueued via k_queue_alloc_append/alloc_prepend, the data pointer of an internally allocated alloc_node struct. The implementations of z_impl_k_queue_peek_head() and z_impl_k_queue_peek_tail() performed this read-and-dereference without holding the queue's spinlock, while every other accessor of the same list — including k_queue_get(), which unlinks a node and k_free()s its backing alloc_node — operates under that lock.\n\nBecause peek was unsynchronized, a concurrent k_queue_get() on the same queue (on an SMP build, or under preemption/ISR concurrency) can free the node between the moment peek obtains the node pointer and the moment it dereferences it. The peek then reads flag bits and a data pointer out of freed, potentially re-allocated heap memory and returns a stale or dangling pointer to its caller. k_fifo and k_lifo are thin wrappers over k_queue, so this affects buffer queues used throughout the net_buf, Bluetooth, USB, and networking subsystems; the peek operations are also system calls reachable from CONFIG_USERSPACE threads.\n\nThe consequences are a use-after-free read that can leak stale heap contents (one pointer word) and, when the returned dangling pointer is subsequently consumed as a live buffer, a dereference that can crash the system or corrupt memory. Exploitation requires winning a small race window with local access (e.g. a userspace process racing k_queue_peek_* against k_queue_get on a shared queue, or two CPUs), so practical impact is bounded and of low severity.\n\nThe fix wraps both peek implementations with k_spin_lock/k_spin_unlock on the queue lock, making the read-and-dereference atomic with respect to the concurrent unlink-and-free and bringing peek into line with the rest of the queue's locking discipline.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-07T22:16:57.180"
+  },
+  {
+    "id": "CVE-2026-9031",
+    "description": "An input validation\nvulnerability exists in the HTTP-WRITEOEM handler due to insufficient validation\nof user-supplied data before it is processed by internal flash-write handling\nlogic.\n\n\n\n\n\n\n\n\n\nSuccessful\nexploitation may cause httpd process or device to crash, resulting in loss of access\nto the web interface and a denial-of-service condition.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:30.530"
+  },
+  {
+    "id": "CVE-2026-9030",
+    "description": "A denial-of-service\nvulnerability exists in httpd service on Archer A6 v4 where the asynchronous systool\ninstruction handlng path in httpd does not properly synchronize or safely manage\nconcurrent systool operations.  \n\n\n\n\n\nBy sending\ncrafted systool instructions through the asynchronous request path, successful\nexploitation may cause the httpd process or device management service to crash\nand may result in temporary loss of access to the web management interface or\ndevice reboot.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:30.370"
+  },
+  {
+    "id": "CVE-2026-71381",
+    "description": "Adobe Genuine Software Integrity Service was affected by an Incorrect Authorization vulnerability that could result in a Security feature bypass. An attacker could have leveraged this vulnerability to bypass security measures and gain unauthorized limited write access. Exploitation of this issue did not require user interaction, but required the attacker to have access to the local environment the application is installed on.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:30.147"
+  },
+  {
+    "id": "CVE-2026-70624",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:30.087"
+  },
+  {
+    "id": "CVE-2026-70623",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:30.010"
+  },
+  {
+    "id": "CVE-2026-69207",
+    "description": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to 4.12.34, the built-in CORS middleware, hono/cors, is vulnerable to a regular expression denial of service (ReDoS). During a preflight OPTIONS request, the middleware parses the attacker-controlled Access-Control-Request-Headers header using a whitespace-tolerant regular expression whose backtracking makes its running time quadratic in the input length. Because the header value is bounded only by the deployment's maximum HTTP header size, a single preflight carrying a long run of whitespace can consume seconds of CPU and block request processing. On runtimes that share one execution thread across requests, this stalls concurrent requests as well, and repeated requests can render the service unresponsive. This affects the default configuration, since the vulnerable path is reached whenever cors() is used with an unset or empty allowHeaders. Applications that set a non-empty allowHeaders are not affected. This issue is fixed in version 4.12.34.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:29.847"
+  },
+  {
+    "id": "CVE-2026-66061",
+    "description": "Home Assistant is open source home automation software focused on local control and privacy.  Prior to 2026.5.0, the iOS Companion app treats tag links (NFC or QR) delivered through an OS-level routing mechanism such as iOS universal links as if they were physically scanned, without validating the calling app or prompting the user. As a result, any untrusted app on the device can forward an arbitrary tag to Home Assistant, causing it to execute the associated automation as though a legitimate user had scanned an authorized tag. This allows silent, unattended automation execution by untrusted local callers. This issue has been fixed in version 2026.5.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:29.693"
+  },
+  {
+    "id": "CVE-2026-66060",
+    "description": "Home Assistant is open source home automation software focused on local control and privacy.  Prior to 2026.5.3,  the Companion app treats tag links (NFC or QR) delivered through an OS-level routing mechanism as if they were physically scanned, without validating the calling app or prompting the user. As a result, any untrusted app on the device can forward an arbitrary tag to Home Assistant, causing it to execute the associated automation as though a legitimate user had scanned an authorized tag. This allows silent, unattended automation execution by untrusted local callers. This issue is fixed in version 2026.8.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:29.520"
+  },
+  {
+    "id": "CVE-2026-59717",
+    "description": "Home Assistant is open source home automation software focused on local control and privacy. Prior to 2026.6.1, the Android Companion app is vulnerable to an open redirect. The app passes the URL fragment from a homeassistant://invite deep link into the onboarding flow without ever displaying the destination hostname. Because no screen in the invitation or onboarding flow shows the parsed server URL before onboarding commits to it, a victim has no way to distinguish a legitimate invite from a malicious one. An attacker can craft an invite so that a single tap on the legitimate-looking \"Connect to my Home Assistant server\" button opens their /auth/authorize endpoint in the URL-less onboarding WebView, presenting a look-alike login page that captures the victim's credentials. Since invitations are intended to onboard brand-new users, targets are especially unlikely to notice the substitution. This issue is fixed in version 2026.6.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:29.197"
+  },
+  {
+    "id": "CVE-2026-54338",
+    "description": "JupyterHub is software that allows users to create a multi-user server for Jupyter notebooks. Prior to 5.5.0, invalid input to form-based login authenticators can place an unbounded attacker-controlled username in failed-login logs, allowing an unauthenticated attacker to consume logging and storage resources. This issue is fixed in version 5.5.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:29.017"
+  },
+  {
+    "id": "CVE-2026-50540",
+    "description": "Kata Containers is an open source project focusing on a standard implementation of lightweight Virtual Machines (VMs) that perform like containers. Prior to version 4.0.0, kata-runtime is vulnerable to host code execution via an unvalidated configuration path annotation. The runtime accepts an arbitrary io.katacontainers.config_path pod annotation and loads the referenced host TOML file without restriction. As a result, a pod user who can place a file at a host-visible path can supply a configuration that selects an attacker-controlled hypervisor or virtio-fs daemon binary, executing code as root on the host. This issue is fixed in version 4.0.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:28.827"
+  },
+  {
+    "id": "CVE-2026-47664",
+    "description": "Pathling is a set of tools that make it easier to use FHIR and clinical terminology within health data analytics. Prior to version 2.0.0 of Pathling Server, the `$import-pnp` operation in Pathling Server accepts a caller-supplied `exportUrl` and uses it as the remote FHIR Bulk Export endpoint without constraining it to a trusted source. When PNP credentials are configured, Pathling builds a credentialed bulk-export client targeting the caller-chosen host, downloads manifest-selected files, and then reclassifies those staged files as trusted local `file://` imports - bypassing the configured `allowableSources` allowlist that protects the ordinary `$import` operation. This is fixed in Pathling Server 2.0.0. As a workaround, disable the `$import-pnp` operation (`pathling.operations.importPnpEnabled=false`) or do not configure PNP credentials.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:28.657"
+  },
+  {
+    "id": "CVE-2026-47663",
+    "description": "Pathling is a set of tools that make it easier to use FHIR and clinical terminology within health data analytics. Prior to version 2.0.0 of Pathling Server, Pathling's typed CRUD/search/batch FHIR surface allows an authenticated caller with only coarse operation authorities to act on attacker-chosen resource families because those entrypoints do not consistently enforce the documented per-resource `read` and `write` authorities. The documented authorization model requires an operation authority (e.g. `pathling:search`) to be paired with the matching per-resource `read` or `write` authority (e.g. `pathling:read:Patient`). Delete and batch are documented to require write authority for all referenced resource types. However, typed search, update, and related handlers are annotated only with `@OperationAccess(...)` and act on the provider-selected resource type without checking the corresponding per-resource authority. This is fixed in Pathling Server 2.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:28.500"
+  },
+  {
+    "id": "CVE-2026-47662",
+    "description": "Pathling is a set of tools that make it easier to use FHIR and clinical terminology within health data analytics. Prior to version 2.0.0 of Pathling Server, Pathling's typed CRUD/search/batch FHIR surface allows an authenticated caller with only coarse operation authorities to act on attacker-chosen resource families because those entrypoints do not consistently enforce the documented per-resource `read` and `write` authorities. The documented authorization model requires an operation authority (e.g. `pathling:search`) to be paired with the matching per-resource `read` or `write` authority (e.g. `pathling:read:Patient`). Delete and batch are documented to require write authority for all referenced resource types. However, typed search, update, and related handlers are annotated only with `@OperationAccess(...)` and act on the provider-selected resource type without checking the corresponding per-resource authority. This is fixed in Pathling Server 2.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:28.347"
+  },
+  {
+    "id": "CVE-2026-46358",
+    "description": "OpenBao is an open source identity-based secrets management system. Prior to version 2.5.4, OpenBao's inline auth functionality incorrectly redacted audit log entries, resulting in non-auth headers being removed and auth-related headers being retained in cleartext. This requires an attacker to compromise access to the audit device. Operators should review leaked source authentication material and rotate it as appropriate. This is fixed in OpenBao v2.5.4.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:28.040"
+  },
+  {
+    "id": "CVE-2026-19246",
+    "description": "A vulnerability has been found in HKUDS nanobot up to 0.2.1. This affects the function _download_image_data_url of the file nanobot/providers/image_generation.py of the component Provider-returned Image URL Handler. The manipulation leads to server-side request forgery. It is possible to initiate the attack remotely. The exploit has been disclosed to the public and may be used. The identifier of the patch is 5095. It is recommended to apply a patch to fix this issue. The vendor explains: \"We confirm that provider-returned image URLs required the same SSRF protections applied to other network retrieval paths. (...) The patch is currently available on main and is planned for the next patch release, v0.3.1.\"",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:27.857"
+  },
+  {
+    "id": "CVE-2026-19245",
+    "description": "A flaw has been found in HKUDS nanobot up to 0.2.1. The impacted element is the function ExecTool._prepare_command of the file nanobot/agent/tools/shell.py of the component Login-shell Environment Handler. Executing a manipulation can lead to information disclosure. The attack requires local access. The exploit has been published and may be used. Upgrading to version 0.3.0 is sufficient to resolve this issue. This patch is called 4525. The affected component should be upgraded. Multiple issues were reported to the project. They reacted with a high level of professionalism and kindness: \"The report concerns shell startup files reintroducing environment variables when command execution defaults to a login shell. The default was changed so exec does not use a login shell unless explicitly requested\".",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:27.667"
+  },
+  {
+    "id": "CVE-2026-19244",
+    "description": "A vulnerability was detected in HKUDS nanobot up to 0.2.1. The affected element is the function connect_mcp_servers of the file nanobot/agent/tools/mcp.py of the component MCP enabledTools Scope Handler. Performing a manipulation results in improper access controls. The attack is possible to be carried out remotely. The exploit is now public and may be used. Upgrading to version 0.3.0 is sufficient to fix this issue. The patch is named 4436. You should upgrade the affected component. Multiple issues were reported to the project. They reacted with a high level of professionalism and kindness: \"Both reports describe the same root cause: MCP resource and prompt wrappers could be registered outside the intended enabledTools scope. The registration boundary was corrected\".",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:27.470"
+  },
+  {
+    "id": "CVE-2026-11425",
+    "description": "Domoticz versions prior to 2026.3 contains a stored cross-site scripting vulnerability in the mobile dashboard that allows authenticated attackers to inject arbitrary HTML and JavaScript by updating Text or Alert subtype device values through the API. The mobile dashboard renders device data via ng-bind-html with only an nl2br() transform that performs no HTML escaping, allowing attackers to store malicious payloads that execute in any administrator's browser upon viewing the mobile dashboard, enabling session cookie theft and account takeover.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T21:17:27.010"
+  },
+  {
     "id": "CVE-2026-71870",
     "description": "pypdf is a free and open-source pure-python PDF library. Prior to 6.15.0, a crafted PDF can cause large memory consumption when pypdf/_cmap.py function parse_bfrange parses unusually large source-code or destination-string tokens in a font /ToUnicode CMap during text extraction. This issue is fixed in 6.15.0.",
     "severity": "Unknown",
@@ -7915,327 +8111,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-04T23:16:51.300"
-  },
-  {
-    "id": "CVE-2026-70620",
-    "description": "Odysseus before commit 87babb5 contains a server-side request forgery vulnerability that allows admin-privileged attackers to direct the server to probe internal network resources by supplying arbitrary URLs to the embedding endpoint configuration without scheme, host, IP range, or DNS rebind validation. Attackers can submit loopback addresses, RFC 1918 ranges, or link-local addresses through the embedding endpoint API to partially read responses from cloud instance metadata services, internal APIs, and other hosts reachable from the server.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:17.727"
-  },
-  {
-    "id": "CVE-2026-70619",
-    "description": "Odysseus before commit bf325f6 contains a missing authorization vulnerability that allows authenticated non-admin users to manage server-wide embedding backend configuration by invoking endpoint management routes that verify session authentication but omit the admin authorization guard. Attackers can supply an attacker-controlled URL to overwrite the embedding backend persisted in the endpoint configuration file and process environment, causing all subsequent embedding operations including chat messages, RAG queries, memory entries, and vault text to be transmitted in plaintext to the attacker-controlled destination, or delete the endpoint configuration to deny embedding service to all users.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:17.573"
-  },
-  {
-    "id": "CVE-2026-70594",
-    "description": "Ghost is a Node.js content management system. From 2.2.0 until 6.54.1, Ghost Admin did not invalidate existing sessions on login which could have allowed for session fixation attacks. Successful exploitation would have required another vulnerability on the same domain where Ghost Admin was hosted. This issue is fixed in version 6.54.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:17.423"
-  },
-  {
-    "id": "CVE-2026-70593",
-    "description": "Ghost is a Node.js content management system. From 0.10.0 until 6.54.1, a vulnerability in custom themes allowed a staff user to write files outside of the uploads directory. This could be used to alter the behavior of the installation through custom theme upload path traversal in LocalStorageBase and theme storage name handling. This issue is fixed in version 6.54.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:17.290"
-  },
-  {
-    "id": "CVE-2026-70592",
-    "description": "Ghost is a Node.js content management system. From 1.20.1 until 6.54.1, an Administrator-level user could remotely overwrite certain files on the filesystem through the database backup filename, leading to integrity and availability issues. The database export endpoint failed to reject path separators in the caller-supplied filename. This issue is fixed in version 6.54.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:17.140"
-  },
-  {
-    "id": "CVE-2026-70591",
-    "description": "Ghost is a Node.js content management system. From 0.10.0 until 6.54.1, a Server-Side Request Forgery in Ghost Admin image fetching allowed any staff-level user to perform a blind HTTP GET request against internal hosts. No output was returned, but this could have been used to probe open ports on internal hosts. This issue is fixed in version 6.54.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.997"
-  },
-  {
-    "id": "CVE-2026-70590",
-    "description": "Ghost is a Node.js content management system. Prior to 6.54.1, any staff-level user was able to leak the hashed passwords of other staff users through the Ghost Admin API. An offline password-guessing attack against the hashes could lead to account takeover if successful, but Device Verification should have prevented an attacker from logging in with a recovered password. Depending on the database used, leaked hashes may not have had the correct casing for all characters, increasing the difficulty of a password-guessing attack. This issue is fixed in version 6.54.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.850"
-  },
-  {
-    "id": "CVE-2026-70589",
-    "description": "Ghost is a Node.js content management system. From 4.22.0 until 6.54.1, a missing validation check allowed users to redeem subscription offers that were no longer active. This issue is fixed in version 6.54.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.707"
-  },
-  {
-    "id": "CVE-2026-67862",
-    "description": "open62541 1.5.5 contains a buffer-overflow in the high-level attribute reading logic in src/client/ua_client_highlevel.c. This allows a remote attacker to cause a denial of service.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.597"
-  },
-  {
-    "id": "CVE-2026-67861",
-    "description": "An issue in open62541 v.1.5.5 and before allows a remote attacker to cause a denial of service via the UA_Client_getRemoteDataTypes component",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.460"
-  },
-  {
-    "id": "CVE-2026-67860",
-    "description": "open62541 1.5.5 contains a heap-based buffer overflow in the default HistoryRead path when the default history database is used with the memory backend.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.357"
-  },
-  {
-    "id": "CVE-2026-67859",
-    "description": "Buffer Overflow vulnerability in open62541 v1.5.5 allows a remote attacker to cause a denial of service via the Discovery/LDS handling.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.223"
-  },
-  {
-    "id": "CVE-2026-67858",
-    "description": "Buffer Overflow vulnerability exists in open62541 1.5.5 when the Local Discovery Server (LDS) is built with multicast discovery enabled through the MDNSD backend. An unauthenticated remote attacker can send a RegisterServer or RegisterServer2 request containing many unique discoveryUrls. This allows remote attackers to cause a denial of service.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:16.087"
-  },
-  {
-    "id": "CVE-2026-67857",
-    "description": "open62541 1.5.5 contains an out-of-bounds read in the client-side function responseReadNamespacesArray() in src/client/ua_client_connect.c.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:15.957"
-  },
-  {
-    "id": "CVE-2026-67856",
-    "description": "An issue in open62541 v.1.5.5 and before allows a remote attacker to cause a denial of service via crafted CreateSubscription, CreateMonitoredItems(Sampling), Publish, TransferSubscriptions, and DeleteSubscriptions requests",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:15.850"
-  },
-  {
-    "id": "CVE-2026-67855",
-    "description": "open62541 contains a heap use-after-free in the GDS PushManagement certificate update workflow when UA_ENABLE_GDS_PUSHMANAGEMENT is enabled. This allows a remote attacker to cause a denial of service.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:15.733"
-  },
-  {
-    "id": "CVE-2026-52370",
-    "description": "A reflected cross-site scripting (XSS) vulnerability in the Forum posting function of O2OA v10 allows attackers to execute arbitrary Javascript in the context of the victim's browser via a crafted URL.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:15.610"
-  },
-  {
-    "id": "CVE-2026-51144",
-    "description": "Cross Site Scripting vulnerability in Soliton Systems MailZen Management Protal v.2.62, v.2.63 allows a remote attacker to execute arbitrary code via the Role Name, First Name, Last Name, and Username fields.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:15.487"
-  },
-  {
-    "id": "CVE-2026-45103",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. In versions prior to 3.6.6 and 4.0.0-rc1, the TCP message framing layer parses the Content-Length header using unsigned int arithmetic with no overflow check. When an attacker sends a Content-Length value that overflows unsigned int (e.g., 4294967296), the framing layer computes a wrapped-around value (e.g., 0) and splits the TCP stream at the wrong boundary, causing the body of the first SIP message to be processed as a separate message and enabling SIP message smuggling. Because Content-Length is parsed in the transport layer before authentication, an unauthenticated, network-based attacker can smuggle arbitrary SIP messages over any TCP-based transport (proto_tcp, proto_tls, proto_ws, proto_wss) on any instance with TCP enabled, with no routing-script preconditions. This allows smuggled messages to bypass front-end SBC/proxy security policies, inherit the connection's authentication context, and evade rate limiting. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:14.847"
-  },
-  {
-    "id": "CVE-2026-45100",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. Versions 3.4.0-beta through 3.6.5 and 4.0.0-beta contain a buffer overflow in the {s.b64encode} string transformation. The size check for {s.b64encode} only verifies that the input fits within the 64 KB transformation buffer, but base64 encoding expands the data by roughly a third, so an input between about 49,153 and 65,535 bytes produces more output than the buffer can hold and overflows it by up to 21,844 bytes. Because these transformation buffers sit next to each other in memory and are reused for chained transformations, the overflow writes attacker-controlled data into the adjacent buffer and corrupts values used by later transformations processing the same SIP message. A remote attacker can trigger this by sending a SIP message with a large header value (roughly 50,000 bytes or more) when the routing script applies  {s.b64encode}  to attacker-controlled input, making exploitability dependent on the deployment's routing configuration. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:14.670"
-  },
-  {
-    "id": "CVE-2026-45084",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. Versions 3.4.0 through 3.6.5 contain a denial of service vulnerability in the presence module. When the presence module's handle_publish() function processes a SIP PUBLISH request with an Event: presence header and a message body while the configuration option enable_sphere_check=1 is set, it invokes the get_content_type() macro without first calling parse_content_type_hdr(), causing it to dereference uninitialized or NULL Content-Type parsing state and crash. If a Content-Type header is present but unparsed, msg->content_type->parsed is NULL and is dereferenced as a content_t pointer; if the request lacks a Content-Type header entirely, msg->content_type itself is NULL, and both cases lead to a crash. A remote attacker can therefore cause a denial of service against an affected instance with a single PUBLISH request over UDP or TCP, using either a valid Content-Type: application/pidf+xml request or one with the header removed, and the vulnerable code path itself does not enforce authentication (though a deployment's routing configuration may require it before this route is reached). The issue has been fixed in version 3.6.6 and 4.0.0-rc1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:14.493"
-  },
-  {
-    "id": "CVE-2026-18817",
-    "description": "A security flaw has been discovered in Baserow up to 2.3.2. Affected by this issue is the function BaserowImpersonateAuthTokenSerializer of the file backend/src/baserow/api/admin/users/serializers.py of the component Inactive Non-Staff User Handler. Performing a manipulation results in improper authorization. Remote exploitation of the attack is possible. The complexity of an attack is rather high. The exploitation is known to be difficult. The presence of this vulnerability remains uncertain at this time. Upgrading to version 2.3.3 can resolve this issue. The affected component should be upgraded. The project maintainer explains: \"While the problem exists, I'm not really sure if it's a vulnerability. (....) Even though the back gives a token for a deactivate user, none of the endpoints actually work. That said, we will fix it, but so far it seems more like a bug instead of a vulnerability.\"",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:14.117"
-  },
-  {
-    "id": "CVE-2026-18816",
-    "description": "A vulnerability was identified in Baserow up to 2.3.2. Affected by this vulnerability is the function verify of the file backend/src/baserow/api/two_factor_auth/views.py of the component 2FA Verify Endpoint. Such manipulation leads to improper authentication. The attack may be launched remotely. This attack is characterized by high complexity. The exploitation appears to be difficult. Upgrading to version 2.3.3 addresses this issue. You should upgrade the affected component. The vendor was contacted early, responded in a very professional manner and quickly released a fixed version of the affected product.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:13.930"
-  },
-  {
-    "id": "CVE-2026-18814",
-    "description": "A vulnerability was found in H3C NX15 V100R017. This impacts the function reload.reload_config of the file /api/esps. The manipulation results in command injection. The attack can be launched remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T22:17:13.750"
-  },
-  {
-    "id": "CVE-2026-70588",
-    "description": "Ghost is a Node.js content management system. From 5.26.0 until 6.54.1, the Universal Import feature in Ghost Admin failed to properly sanitize imported content resulting in XSS in post content. This issue is fixed in version 6.54.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:38.750"
-  },
-  {
-    "id": "CVE-2026-70554",
-    "description": "MaxSite CMS contains a PHP object injection vulnerability that allows unauthenticated attackers to execute arbitrary code by passing attacker-controlled serialized data in the maxsite_comuser cookie directly to unserialize() without validation or class allowlisting. Attackers can craft a malicious serialized PHP object payload delivered in a single HTTP request to trigger magic methods during object graph reconstruction, enabling property-oriented programming attacks or remote code execution via available gadget chains such as those targeting SoapClient or Imagick extensions.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:38.613"
-  },
-  {
-    "id": "CVE-2026-70494",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.10.0 until 0.11.0, the DELETE /api/v1/folders/{id} handler in backend/open_webui/routers/folders.py allowed a user granted write access to a shared chat folder to permanently delete chats and messages belonging to the folder owner. The cascade following the authorization check is bound to the folder owner's id, but the subfolder check accepted any inherited write grant instead of requiring ownership or administrator status. A collaborator can destroy the owner's subtree or force-move chats out of it when delete_contents=false. This issue is fixed in 0.11.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:38.470"
-  },
-  {
-    "id": "CVE-2026-70493",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.9.6 until 0.11.0, the built-in knowledge search path in backend/open_webui/tools/knowledge_fs.py and backend/open_webui/tools/builtin.py let a chat participant choose a pattern used to grep knowledge files. Patterns containing regex metacharacters were compiled with Python's backtracking re engine and run against every line of every reachable file with no time limit, so a crafted pattern such as (x|x)*y and one matching uploaded file line can pin one CPU core and block the event loop. This causes availability impact for every other user of the affected worker. This issue is fixed in 0.11.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:38.327"
-  },
-  {
-    "id": "CVE-2026-70492",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.10.0 until 0.11.0, src/lib/components/chat/Messages/Markdown/KatexRenderer.svelte could store and render a chat message whose math block makes KaTeX fail with a stack overflow instead of a parse error. The catch branch fell back to inserting the original math source into the page as HTML through {@html} rather than as text, so script in the message runs in the browser of whoever views it, including shared chats and channels. The viewer's session token in localStorage can be stolen, and an administrator viewer can have their account taken over. This issue is fixed in 0.11.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:38.190"
-  },
-  {
-    "id": "CVE-2026-70491",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. In 0.10.2 and earlier, the GET /api/v1/tools/, GET /api/v1/tools/list, and GET /api/v1/tools/id/{id} endpoints in backend/open_webui/routers/tools.py returned full Python tool source to authenticated non-admin read-only users. ToolResponse deliberately omitted source and specs, but ToolUserResponse permitted extra fields and handlers spread a full tool model dump into the response, re-admitting omitted fields. A non-admin with a read grant can obtain another user's server-side tool source, which commonly embeds hard-coded API keys, credentials, and internal service URLs. This issue is fixed in 0.11.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:38.050"
-  },
-  {
-    "id": "CVE-2026-70490",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.8.8 until 0.11.0, the terminal WebSocket route in backend/open_webui/routers/terminals.py authenticated its own first-message JWT and never applied the verified-user role gate that get_verified_user enforces on HTTP terminal routes. An account whose role is pending, including a registered but unapproved account or an account deactivated back to pending, can open an interactive terminal session when at least one terminal server is configured and its access grants cover the account. This loses the account-approval boundary for terminal access while the HTTP terminal routes correctly reject the same account. This issue is fixed in 0.11.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:37.910"
-  },
-  {
-    "id": "CVE-2026-70489",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.9.0 until 0.11.0, automation recurrence parsing in backend/open_webui/utils/automations.py anchored minutely and hourly rules at a fixed date of 2000-01-01 and then walked forward one interval at a time to find the next run. A single FREQ=MINUTELY rule enumerates roughly a quarter-century of occurrences synchronously on the event loop that also serves scheduler, HTTP, and WebSocket traffic, and the scheduler recomputes the next run for every claimed row on each poll. This causes availability impact for every other user of the instance. This issue is fixed in 0.11.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:37.763"
-  },
-  {
-    "id": "CVE-2026-70488",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.9.6 until 0.11.0, the sync cleanup endpoint authorized write access to the knowledge base in the URL but then acted on directory and file ids supplied in the request body without checking that those objects belonged to that knowledge base. A user with write access to one knowledge base could delete directories and remove file embeddings from another knowledge base, causing documents to drop out of retrieval results and breaking chat-with-file for targeted documents without disclosing contents. This issue is fixed in 0.11.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:37.623"
-  },
-  {
-    "id": "CVE-2026-70487",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. From 0.8.8 until 0.11.0, inline direct model metadata accepted client-supplied knowledge attachments without filtering them against the caller's read access. Any authenticated user who knew another user's file id could have the builtin knowledge tools return indexed chunks from that file, causing a read-only cross-user confidentiality loss while leaving knowledge-base permissions and saved workspace model validation unaffected. This issue is fixed in 0.11.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:37.480"
-  },
-  {
-    "id": "CVE-2026-67979",
-    "description": "Incorrect access control in the Executive Services dynamic application start path component of NASA cFS v7.0.1 allows attackers to execute arbitrary code via placing a shared object on target storage.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:37.360"
-  },
-  {
-    "id": "CVE-2026-66902",
-    "description": "Google::Auth versions before 0.06 for Perl run a command named in an external_account credentials JSON via an ungated system call.\n\nThe Pluggable subclass reads credential_source.executable.command from the credentials JSON and runs it as `system($command)`, a single argument call that passes the whole string to /bin/sh -c. The executable's environment_variables map from the same JSON is copied into %ENV first. No opt-in gate guards the call. make_creds selects the Pluggable subclass whenever credential_source.executable is present, so the path is reached from the standard Application Default Credentials flow, including a \"type\": \"external_account\" configuration read from the file named by GOOGLE_APPLICATION_CREDENTIALS. Configurations without credential_source.executable do not select this subclass and do not reach the call.\n\nAny caller that builds credentials from a configuration it does not fully control runs the embedded command with the privileges of the application process.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:37.253"
-  },
-  {
-    "id": "CVE-2026-66901",
-    "description": "Google::Auth versions before 0.09 for Perl allow server side request forgery and credential exfiltration via unvalidated URLs taken from the credentials JSON.\n\nThe URLs the library requests are read from the credentials JSON, and their hosts were not checked against the universe domain before the request. For an external_account configuration, retrieve_subject_token fetched credential_source.url with headers from the same JSON, and fetch_access_token posted the subject token to token_url, then sent the STS access token it received to service_account_impersonation_url in an Authorization: Bearer header. The authorized_user, impersonated_service_account and service_account configurations posted the client secret and refresh token, the source access token, and a signed JWT assertion to their own JSON-supplied token_uri or impersonation URL.\n\nAny caller that builds credentials from a configuration it does not fully control issues those requests from the application's network position, reaching hosts the configuration names, including internal services and link-local metadata endpoints, and hands them the credentials each request carries. The service_account assertion is bound to aud, so it is not replayable against Google.\n\nVersion 0.06 added a _validate_url host check to the external_account class, keyed on a universe_domain read from the same credentials JSON. Version 0.07 gated a JSON-supplied universe domain behind GOOGLE_EXTERNAL_ACCOUNT_ALLOW_CUSTOM_UNIVERSES=1, deriving the pin flag from arguments that an earlier BUILDARGS pass had already merged on the make_creds path. Version 0.08 passed the pin decision through as an explicit constructor argument and moved _validate_url to Google::Auth::Credentials, adding the call to UserRefreshCredentials and ImpersonatedServiceAccountCredentials, and 0.09 added it to ServiceAccountCredentials.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:37.127"
-  },
-  {
-    "id": "CVE-2026-65986",
-    "description": "CVAT is an open source interactive video and image annotation tool for computer vision. Versions 2.5.0 through 2.66.0 contain a XSS vulnerability that can be accessed through annotation guide assets. When CVAT serves the files attached to an annotation guide, it labels them with a media type ( Content-Type ) that the attacker can influence, so instead of treating an uploaded file as plain data, the victim's browser can be told to treat it as an HTML page and run any JavaScript inside it. This issue has been fixed in version 2.67.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:36.990"
-  },
-  {
-    "id": "CVE-2026-54020",
-    "description": "Open WebUI is an extensible, feature-rich, and user-friendly self-hosted AI platform. Prior to 0.11.0, Open WebUI resolved a hostname during URL validation and rejected private, loopback, and link-local addresses, but the HTTP clients resolved the hostname again at connection time. An authenticated attacker who controlled authoritative DNS for a submitted hostname could answer with a public address during validation and an internal one during connection, reaching cloud metadata, loopback admin APIs, or internal services through URL ingest, chat image_url fetches, image editing, or OAuth profile-picture fetches, with most paths returning the response to the attacker and the OAuth path forwarding the OAuth access token. This issue is fixed in 0.11.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:36.703"
-  },
-  {
-    "id": "CVE-2026-51401",
-    "description": "An issue in Vim Project v9.2.0389 and earlier allows a local attacker to execute arbitrary code via the vms_fixfilename() function within file vim/src/os_vms.c",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:36.567"
-  },
-  {
-    "id": "CVE-2026-51400",
-    "description": "An issue in Vim Project v9.2.0389 and earlier allows a local attacker to execute arbitrary code via the vms_fixfilename() function within file vim/src/os_vms.c",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:36.433"
-  },
-  {
-    "id": "CVE-2026-45538",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. In versions 4.0.0 and prior, processing a SIP message with a header name longer than 255 bytes causes a stack buffer overflow when sip_to_json() is called in the routing script. Function sip_to_json() (modules/sipmsgops/sipmsgops.c) copies SIP header names into a fixed 255-byte stack buffer without bounds checking, performing a memcpy of the full header-name length even though the SIP parser imposes no such limit (a header name can be roughly 65000 bytes). As a result, when a routing script calls sip_to_json(), a SIP message with a header name longer than 255 bytes triggers a stack buffer overflow in which both the length and content of the overwrite are attacker-controlled, corrupting the saved frame pointer and return address. A single unauthenticated UDP packet to the SIP port (5060) can crash the process or, on builds without stack protections, hijack the return address to achieve remote code execution. This affects deployments whose routing script invokes sip_to_json(). This issue was not fixed at the time of publication.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:36.270"
-  },
-  {
-    "id": "CVE-2026-18813",
-    "description": "A vulnerability has been found in H3C NX15 V100R017. This affects the function delete of the file /api/esps. The manipulation of the argument esps.apcm.version leads to command injection. The attack can be initiated remotely. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:36.053"
-  },
-  {
-    "id": "CVE-2026-18812",
-    "description": "A flaw has been found in H3C NX15 V100R017. The impacted element is the function esps.ipv6.wan of the file /api/esps. Executing a manipulation of the argument workMode can lead to command injection. It is possible to launch the attack remotely. The exploit has been published and may be used. The vendor was contacted early about this disclosure.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:35.890"
-  },
-  {
-    "id": "CVE-2026-18811",
-    "description": "A vulnerability was detected in H3C NX15 V100R017. The affected element is the function Add of the file /api/esps. Performing a manipulation of the argument esps.filter.url results in command injection. It is possible to initiate the attack remotely. The exploit is now public and may be used. The vendor was contacted early about this disclosure.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:35.730"
-  },
-  {
-    "id": "CVE-2026-13227",
-    "description": "An Improper Authorization vulnerability exists in ERPNext version <v16.25.0 and <15.115.0  due to insufficient access control in the whitelisted API method erpnext.crm.doctype.prospect.prospect.get_opportunities.\n\nThis issue affects ERPNext: before 15.115.0, before 16.26.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-04T21:16:35.140"
   }
 ]
