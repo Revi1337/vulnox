@@ -1,5 +1,96 @@
 [
   {
+    "id": "CVE-2026-8798",
+    "description": "In Bouncy Castle for Java FIPS (BC-FJA) before bc-fips 2.1.3, the native entropy source used on Intel platforms retried the CPU entropy instructions without any bound. RDSEED and RDRAND report failure through their carry flag, and the JNI seeding routine spun re-issuing the instruction for as long as that flag stayed clear, so a persistent failure of the on-chip entropy source - whether from a hardware fault, from the underlying DRBG being exhausted by contention across many cores, or from a hypervisor that does not provide the instruction - left the calling thread looping indefinitely inside the JNI call, where it could be neither interrupted nor timed out. Any operation drawing from the native entropy source could therefore hang, denying service to the application. The retry loops are now bounded (200 attempts for RDSEED and 20 for RDRAND, twice the baselines given in Intel's Digital Random Number Generator software implementation guide), pausing between attempts and, on exhaustion, clearing any partially written buffer and throwing rather than continuing to spin. The clear is performed by an un-elidable memzero, which uses a volatile pointer and an assembly memory barrier so that a compiler cannot optimise the erase away as a dead store. Bouncy Castle for Java (bcprov) is not affected, as it has no native entropy source; the 1.0.X and 2.0.X FIPS series are not affected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-08T01:16:31.393"
+  },
+  {
+    "id": "CVE-2026-52880",
+    "description": "Klever-Go is the Go implementation of the Klever blockchain protocol. Versions from 1.7.14 through 1.7.17 are vulnerable to a remotely triggerable denial of service. Both REST APIs are started with the Gin Engine.Run convenience method, which serves requests through Go's default HTTP server with no ReadHeaderTimeout, ReadTimeout, or MaxHeaderBytes configured. As a result, incoming connections that never complete their request headers are held open indefinitely. When a REST listener is reachable beyond localhost through the documented all-interface bind or a Docker port-publish deployment, a single unauthenticated client can open many slow-header connections and hold them open until server file descriptors are exhausted, preventing the API from accepting new connections. This renders the REST API unavailable to legitimate clients. This issue is fixed in version 1.7.18.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:04.890"
+  },
+  {
+    "id": "CVE-2026-52879",
+    "description": "Klever-Go is the Go implementation of the Klever blockchain protocol. In versions 1.7.14 through 1.7.17, the direct-message ingress handler spawns a new goroutine for every incoming direct message before the processor-level antiflood layer makes any admission decision, with no semaphore, throttler, or bound on the number of concurrent in-flight spawns. Because the antiflood check runs inside the spawned goroutine rather than before it, a single connected peer can open a direct-send stream and send a stream of well-formed messages to force unbounded goroutine creation, where each goroutine allocates its own stack and holds a message reference until processing completes, adding scheduler and garbage-collection pressure faster than the runtime can drain it. This lets one peer degrade the node's availability and its ability to process legitimate traffic, resulting in a remotely triggerable denial of service. The issue is fixed in 1.7.18.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:04.743"
+  },
+  {
+    "id": "CVE-2026-52878",
+    "description": "Klever-Go is the Go implementation of the Klever blockchain protocol. Versions 1.7.14 through 1.7.17 are vulnerable to a nil-pointer panic triggered by a protobuf Transaction whose embedded RawData sub-message is omitted. This omission causes RawData to decode to nil. Every transaction gossiped on the Klever-Go P2P network is decoded and validated synchronously inside the libp2p pubsub topic-validator callback, where txVersionChecker.CheckTxVersion dereferences tx.RawData.Version with no nil check. Because the libp2p pubsub callback, the underlying go-libp2p-pubsub validation worker, and Klever's own network/p2p layer install no recover(), the panic propagates and crashes the entire node process. The attacker payload is a 3-byte protobuf message; no validator key, stake, funds, or on-chain account is required, and delivery aimed at enough of the BLS validator set can halt block production, resulting in a chain halt. This issue has been fixed in version 1.7.18.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:04.593"
+  },
+  {
+    "id": "CVE-2026-49343",
+    "description": "Klever-Go is the Go implementation of the Klever blockchain protocol. In versions prior to 1.7.18, the account-data trie syncers are vulnerable to a resource-exhaustion flaw that leaks bounded throttler slots on error paths. In syncDataTrie() (in both userAccountsSyncer.go and kappAccountsSyncer.go), StartProcessing() reserves a slot from the NumGoRoutinesThrottler, but the corresponding EndProcessing() is only called on the success path and on the duplicate-root early return. As a result, any error from trie.NewTrie(), trie.NewTrieSyncer(), or trieSyncer.StartSyncing() (including the network-dependent timeout path) permanently consumes one slot for the lifetime of the throttler. An attacker who can repeatedly cause trie-node sync failures or timeouts during bootstrap can exhaust the bounded throttler, after which further account-data trie syncs stop making progress and SyncAccounts() returns a timeout. Because epoch bootstrap in syncUserAccountsState() and syncKappAccountsState() aborts on any such error, this causes bootstrap to fail, a core availability issue affecting fresh, restarting, or resyncing nodes and validators. This issue is fixed in version 1.7.18.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:04.450"
+  },
+  {
+    "id": "CVE-2026-48122",
+    "description": "Ruby LSP is an implementation of the language server protocol for Ruby. Several workspace-level settings in the Ruby LSP VS Code extension prior to version 0.10.4 could override the path to the Ruby executable, the version manager executables, or the Bundler `Gemfile` used at startup. A malicious repository containing a `.vscode/settings.json` could set these values to attacker-controlled targets. Opening and trusting the repository would then execute code with the privileges of the developer. The Ruby LSP gem and clients of the language server in other editors are not affected. Version 0.10.4 of the Ruby LSP VS Code extension fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:04.287"
+  },
+  {
+    "id": "CVE-2026-48120",
+    "description": "Kakoune is a code editor. Prior to version 2026.05.21, the bundled, enabled by default, `autorestore.kak` script can be exploited by malicious backup files leading to arbitrary kakoune and shell commands being executed by simply opening a file. Kakoune 2026.05.21 fixes the issue. As a workaround, add `autorestore-disable` to the user kakrc will disable the autorestore feature.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:04.117"
+  },
+  {
+    "id": "CVE-2026-48047",
+    "description": "XWiki Platform WebJars API is a package for XWiki, a generic wiki platform. Starting with version 9.6-rc-1 and prior to versions 16.10.17, 17.4.9, and 17.10.3, a potential path traversal vulnerability allow an attacker who manages to get a malicious WebJar extension installed on the wiki to write arbitrary files. While the consequences could be severe like overriding configuration files and setting the superadmin password, the attack first requires that the attacker already has admin access to at least a subwiki to be able to install a malicious extension. Further, the attacker needs to publish a malicious extension in an extension repository that is configured in the instance. This vulnerability has been patched in XWiki 16.10.17, 17.4.9, 17.10.3, and 18.0.0RC1. XWiki is not aware of any workarounds except for being careful whom developers grant script and admin rights to.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:03.960"
+  },
+  {
+    "id": "CVE-2026-48026",
+    "description": "lakeFS is an open-source tool that transforms object storage into a Git-like repositories. Prior to version 1.81.1 of the open source edition and 1.84.0 of the enterprise edition, lakeFS Web UI renders markdown files from repository objects without sanitizing the resulting HTML. A user with write access to any repository branch can commit a `.md` object containing arbitrary HTML/JavaScript. Any other user who opens that object, or who navigates to a repository or directory containing a malicious `README.md`, executes the attacker-supplied script in their own authenticated session. lakeFS fixes the issue in v1.81.1 and lakeFS Enterprise fixes the issue in in v1.84.0. Enterprise customers using older versions can temporarily disable Markdown rendering by adding YAML to their config. No workaround exists for OSS release. Users are advised to upgrade to the latest version for both lakeFS and lakeFS-Enterprise.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:03.810"
+  },
+  {
+    "id": "CVE-2026-47249",
+    "description": "Klever-Go is the Go implementation of the Klever blockchain protocol. Prior to 1.7.18, the P2P resolver request handling logic is vulnerable to hash-array amplification. A connected peer can send a compressed RequestDataType_HashArrayType direct request that is only 442 bytes on the wire but expands into 200,000 decoded hash entries inside the resolver path. The resolver's antiflood logic counts only a single logical message and the compressed wire size, and while Batch.Decompress() caps the decompressed byte size, it never limits the number of decoded repeated-field items. As a result, both TxResolver and TrieNodeResolver preallocate and iterate over the entire unchecked set of decoded hashes, causing remote memory and CPU amplification against any node that accepts P2P peer connections. This issue is fixed in version 1.7.18.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:03.670"
+  },
+  {
+    "id": "CVE-2026-47127",
+    "description": "Ghostfolio is an open source wealth management software. Prior to version 3.4.0, Ghostfolio's Stripe checkout success-URL handler at `GET /api/v1/subscription/stripe/callback?checkoutSessionId=<id>` retrieves the Stripe Checkout Session by ID and unconditionally grants a Premium subscription to the session's `client_reference_id` — without ever checking `session.payment_status` or `session.status`. There is no separate Stripe webhook endpoint with `stripe-signature` verification; this callback is the sole code path that creates Stripe-driven subscriptions. Any authenticated user can self-grant a 1-year Premium subscription without ever paying. Version 3.4.0 rejects sessions unless `session.payment_status === 'paid'` AND `session.status === 'complete'` (fails closed). Additionally, new unique `stripeCheckoutSessionId` column → a session can't be redeemed twice (race-safe via DB unique constraint).",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:03.400"
+  },
+  {
+    "id": "CVE-2026-46409",
+    "description": "OpenYak is a local-first agent runtime for reliable tool-using models, with a desktop workspace built on top. Prior to version 1.1.3, the OpenYak desktop backend binds an HTTP API to `127.0.0.1:<random port>` (commonly 19141) without server-side Origin validation, loopback authentication, or Content-Type enforcement, and with a wildcard CORS policy. Any webpage a user visits while OpenYak is running can issue cross-origin requests to this local server — the browser acts as a proxy into loopback, bypassing OS-level network isolation. Chained, this lets a malicious page execute arbitrary shell commands on the host (RCE) via the build agent with `permission_presets.bash=true`, shut down the service, and exfiltrate chat history and account PII — with no user interaction beyond opening the page. Version 1.1.3 patches the issue.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:03.243"
+  },
+  {
+    "id": "CVE-2025-4438",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-07T23:17:03.147"
+  },
+  {
     "id": "CVE-2026-64676",
     "description": "Kata Containers is an open source implementation of lightweight Virtual Machines (VMs) that perform like containers. In versions prior to 4.0.0, the kata-agent is vulnerable to an authorization bypass in confidential-guest memory management. In Confidential Containers (CoCo) deployments, the kata-agent enforces an OPA/Rego-based AgentPolicy that must authorize every ttRPC API call, forming the security boundary that prevents an untrusted host from directing the confidential guest. Two ttRPC methods introduced with the mem-agent feature are missing this authorization check, so an untrusted host can invoke them unconditionally regardless of the guest's policy configuration. When mem-agent is enabled (off by default), this lets the host tamper with in-guest memory management by forcing swap, aggressive eviction, or compaction, resulting in attacker-controlled availability and performance degradation of the confidential workload entirely outside the agent-policy boundary. The impact does not include memory disclosure or code execution, and severity is bounded by the precondition that mem-agent must be explicitly enabled. This issue is fixed in version 4.0.0.",
     "severity": "Medium",
@@ -8027,89 +8118,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-05T02:16:37.403"
-  },
-  {
-    "id": "CVE-2026-18859",
-    "description": "A vulnerability was identified in ESAFENET CDG up to 20260615. Affected is an unknown function of the file /CDGServer3/ukey/usbkey;logindojojs. Such manipulation of the argument keyid leads to sql injection. The attack may be performed from remote. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-05T01:16:44.947"
-  },
-  {
-    "id": "CVE-2026-18856",
-    "description": "A vulnerability was determined in Poesis Rhymix CMS up to 2.1.33. This impacts the function procImporterAdminCheckXmlFile of the file modules/importer/importer.admin.controller.php of the component Data Import Module. This manipulation of the argument filename causes server-side request forgery. The attack is possible to be carried out remotely. The exploit has been publicly disclosed and may be utilized. Upgrading to version 2.1.34 will fix this issue. It is recommended to upgrade the affected component.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-05T01:16:44.757"
-  },
-  {
-    "id": "CVE-2026-46334",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. Versions prior to 3.6.6 and 4.0.0-rc1 contain a denial of service vulnerability in the SDP bandwidth-line parsing logic. A SIP request with Content-Type: application/sdp and a malformed session-level SDP bandwidth line missing the required colon delimiter can corrupt parsed SDP bandwidth metadata. When a route or module subsequently clones the corrupted SDP state, as occurs with dialog and QoS processing, the OpenSIPS worker process crashes. An unauthenticated remote attacker can therefore trigger a crash in any configuration whose routing script parses attacker-controlled SDP and applies dialog/QoS processing. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-05T00:17:00.177"
-  },
-  {
-    "id": "CVE-2026-45809",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. Versions prior to 3.6.6 and 4.0.0-rc1 contain a denial of service vulnerability in the watcherinfo generation functionality. An attacker can create an oversized watcher entry by sending a SUBSCRIBE Event: presence request with a long From URI, and then trigger presence.winfo watcherinfo XML generation for the same presentity. OpenSIPS copies the stored watcher URI into a fixed-size stack buffer, overflowing it and crashing the process. A remote attacker can crash an OpenSIPS worker in deployments that expose handle_subscribe() and allow watcherinfo (presence.winfo) generation. The issue is configuration-dependent because the presence and presence_xml modules must be loaded and SUBSCRIBE routing must be reachable. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-05T00:17:00.030"
-  },
-  {
-    "id": "CVE-2026-45705",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. In versions prior to 3.6.6 and 4.0.0-rc1, the find_line_delimiter() function in the multipart body parser performs an out-of-bounds read via strncmp() when searching for MIME boundary delimiters. After finding a -- pattern near the end of the body, the function compares delimiter.len bytes (typically 20-70) starting from a position at or past the logical end of the body buffer, reading past the body boundary. The bug triggers when a SIP message has Content-Type: multipart/mixed with a boundary parameter and its body contains -- within two to three bytes of the body's end without being followed by the actual boundary delimiter. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-05T00:16:59.890"
-  },
-  {
-    "id": "CVE-2026-18854",
-    "description": "A vulnerability has been found in Shandong Hoteam PDM Product Data Management System up to 8.3.10. The impacted element is the function GetStoredClassByFilter of the file /Base/BaseService.asmx/DataService. The manipulation of the argument FilterString leads to sql injection. Remote exploitation of the attack is possible. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-05T00:16:59.717"
-  },
-  {
-    "id": "CVE-2026-18853",
-    "description": "A security vulnerability has been detected in ZomboDroid Meme Generator App 4.6830 on Android. This issue affects the function t5.l.c of the component com.zombodroid.MemeGenerator. Such manipulation leads to path traversal. Local access is required to approach this attack. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-05T00:16:59.547"
-  },
-  {
-    "id": "CVE-2026-18852",
-    "description": "A vulnerability has been found in epsilla-cloud vectordb up to 0.3.18/df5a5f5afb85a2376a0f2f316c79dea9b2c6ac7a. This impacts the function SplitTokens/ShuntingYard of the file engine/query/expr/expr.cpp of the component Filter Parser. Such manipulation leads to improper check for unusual conditions. The attack needs to be performed locally. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-05T00:16:59.370"
-  },
-  {
-    "id": "CVE-2026-18103",
-    "description": "A flaw was found in dhcp-server. A remote attacker with network access to the OMAPI (Open Management Application Programming Interface) port, especially if not secured with TSIG (Transaction Signature) key authentication, could send a specially crafted lease creation request. This request, containing an overly long InfiniBand MAC address, triggers a buffer overflow in the `print_hw_addr()` function. Successful exploitation leads to a persistent denial of service (DoS), causing the `dhcpd` service to crash and preventing it from restarting without manual intervention.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-05T00:16:59.110"
-  },
-  {
-    "id": "CVE-2026-45537",
-    "description": "OpenSIPS is a Session Initiation Protocol (SIP) server implementation. In versions prior to 3.6.6 and 4.0.0-rc1, the construct_uri() function concatenates multiple URI components (protocol, username, domain, port, params) into a fixed 1024-byte global BSS buffer without any bounds checking. When a routing script calls construct_uri() with an attacker-controlled username, a combined component length exceeding 1024 bytes overflows the buffer, corrupting adjacent global data with attacker-controlled content. The overflow reaches disable_503_translation, a global flag controlling SIP 503 response handling, allowing an attacker to deterministically set the flag via the URI username and alter the server's routing behavior for subsequent messages. Because the same buffer is shared with contact_builder(), the overflow also corrupts that function's data, and without a memory sanitizer the adjacent globals are silently overwritten on every request containing a long username. This issue has been fixed in versions 3.6.6 and 4.0.0-rc1.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-04T23:16:51.687"
-  },
-  {
-    "id": "CVE-2026-18819",
-    "description": "A security vulnerability has been detected in RackTables up to 0.22.0/e5fff9f8aab339798ed47e8c6d7d977ed97a82bd. This vulnerability affects unknown code. The manipulation leads to cross-site request forgery. The attack is possible to be carried out remotely. The exploit has been disclosed publicly and may be used. The project maintainer confirms: \"[I]t seems plausible, in that RackTables does not at this time have any CSRF prevention. You may assign a CVE ID to this, but there is no guarantee it will be handled in urgent, or even timely, manner, or at all.\"",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T23:16:51.493"
-  },
-  {
-    "id": "CVE-2026-18818",
-    "description": "A weakness has been identified in Ehco1996 django-sspanel up to 2023.12.26. This affects the function TicketDetailView of the file apps/sspanel/views.py of the component Support Ticket Handler. Executing a manipulation can lead to authorization bypass. The attack can be executed remotely. The vendor was contacted early about this disclosure but did not respond in any way. This vulnerability only affects products that are no longer supported by the maintainer.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-04T23:16:51.300"
   }
 ]
