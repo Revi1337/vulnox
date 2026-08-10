@@ -1,12 +1,5 @@
 [
   {
-    "id": "CVE-2026-58281",
-    "description": "Deserialization of untrusted data in Microsoft Edge (Chromium-based) allows an unauthorized attacker to execute code over a network.",
-    "severity": "High",
-    "tech": "Edge chromium",
-    "published": "2026-07-11T21:16:23.903"
-  },
-  {
     "id": "CVE-2026-15470",
     "description": "A vulnerability has been found in Eleveo Call Recording Software 9.7.0. Affected by this issue is some unknown functionality of the file /callrec/group.jsp. Such manipulation leads to improper authorization. The attack may be launched remotely. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
     "severity": "Medium",
@@ -22781,14 +22774,14 @@
     "id": "CVE-2026-21575",
     "description": "This High severity RCE (Remote Code Execution) vulnerability was introduced in version 3.4.11 of Sourcetree for Mac and Sourcetree for Windows. \n\t\n\tThis RCE (Remote Code Execution) vulnerability, with a CVSS Score of 7.1, allows an authenticated attacker to execute arbitrary code which has high impact to confidentiality, high impact to integrity, high impact to availability, and requires user interaction. \n\t\n\tAtlassian recommends that Sourcetree for Mac and Sourcetree for Windows customers upgrade to latest version, if you are unable to do so, upgrade your instance to one of the specified supported fixed versions:\n\t\t\n\t\t* Sourcetree for Mac and Sourcetree for Windows 3.4: Upgrade to a release greater than or equal to 3.4.13\n\t\t\n\t\t\n\t\n\tSee the release notes (https://www.sourcetreeapp.com/download-archives). You can download the latest version of Sourcetree for Mac and Sourcetree for Windows from the download center (https://www.sourcetreeapp.com/download-archives). \n\t\n\tThis vulnerability was reported via our Bug Bounty program.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Sourcetree",
     "published": "2026-07-21T18:16:57.170"
   },
   {
     "id": "CVE-2026-21577",
     "description": "This High severity DoS (Denial of Service) vulnerability was introduced in versions 9.0.1, 9.1.0, 9.2.0, 9.3.1, 9.4.0, 9.5.1, 10.0.2, 10.1.0 and 10.2.0 of Confluence Data Center.\r\n\r\nThis DoS (Denial of Service) vulnerability, with a CVSS Score of 7.1, allows an authenticated attacker to cause a resource to be unavailable for its intended users by temporarily or indefinitely disrupting services of a host connected to a network.\r\n\r\nAtlassian recommends that Confluence Data Center customers upgrade to latest version, if you are unable to do so, upgrade your instance to one of the specified supported fixed versions:\r\n Confluence Data Center 9.2: Upgrade to a release greater than or equal to 9.2.17\r\n\r\n Confluence Data Center 10.2: Upgrade to a release greater than or equal to 10.2.7\r\n\r\nSee the release notes ([https://confluence.atlassian.com/doc/confluence-release-notes-327.html]). You can download the latest version of Confluence Data Center from the download center ([https://www.atlassian.com/software/confluence/download-archives]).\r\n\r\nThis vulnerability was reported via our Penetration Testing program.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Confluence data center",
     "published": "2026-07-21T18:16:57.327"
   },
   {
@@ -28493,7 +28486,7 @@
     "id": "CVE-2026-60842",
     "description": "Vulnerability in the Oracle Knowledge Management product of Oracle E-Business Suite (component: Search).  Supported versions that are affected are 12.2.5-12.2.15. Easily exploitable vulnerability allows unauthenticated attacker with network access via HTTP to compromise Oracle Knowledge Management.  Successful attacks require human interaction from a person other than the attacker and while the vulnerability is in Oracle Knowledge Management, attacks may significantly impact additional products (scope change). Successful attacks of this vulnerability can result in  unauthorized update, insert or delete access to some of Oracle Knowledge Management accessible data as well as  unauthorized read access to a subset of Oracle Knowledge Management accessible data. CVSS 3.1 Base Score 6.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Knowledge management",
     "published": "2026-07-21T22:18:21.977"
   },
   {
@@ -71748,5 +71741,334 @@
     "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T20:17:35.707"
+  },
+  {
+    "id": "CVE-2026-11809",
+    "description": "The UpdateHub OTA client in subsys/mgmt/updatehub/updatehub.c contains an out-of-bounds / uninitialized-memory read in z_impl_updatehub_probe(). The probe response from the UpdateHub server is copied into a heap buffer (metadata) that is correctly NUL-terminated, but a second buffer (metadata_copy) is allocated with k_malloc (unzeroed) and filled with memcpy(metadata_copy, metadata, strlen(metadata)), which omits the terminating NUL. Everything after the copied content remains uninitialized heap.\n\nWhen the first json_obj_parse() over the array descriptor fails, the code falls back to json_obj_parse(metadata_copy, strlen(metadata_copy), ...). The strlen() call scans past the copied bytes through uninitialized heap and, if no zero byte is found before the end of the allocation, reads beyond the buffer; the resulting over-long length is then parsed as JSON. The probe payload is fully controlled by the (malicious, compromised, or — without the optional CONFIG_UPDATEHUB_DTLS — on-path) UpdateHub server, which can craft a large payload that fails the first parse to drive this path.\n\nThe consequence is a read of uninitialized heap, with a worst case of an out-of-bounds read past the metadata_copy allocation that can fault and crash the update thread/device, producing a network-triggerable denial of service. The over-read data is consumed only internally to evaluate the update and is not returned to the attacker, so there is no direct information disclosure and no out-of-bounds write.\n\nThe fix zeroes metadata_copy with memset before the copy, guaranteeing NUL termination and bounding strlen() within the allocation.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:18.190"
+  },
+  {
+    "id": "CVE-2026-11810",
+    "description": "The UpdateHub firmware-update agent's probe handler (z_impl_updatehub_probe() in subsys/mgmt/updatehub/updatehub.c) parses the JSON metadata returned by the update server into a fixed two-level nested-array struct. After parsing it validates only the outer array length (objects_len != 2) and then dereferences objects[1].objects[0].objects.sha256sum via strlen() without checking that the inner object array of element [1] is non-empty.\n\nThe metadata is attacker-influenceable network input: the agent fetches it over CoAP from the configured UpdateHub server during its routine OTA probe. A malicious or compromised update server (or, when DTLS is disabled, a network man-in-the-middle) can return a response whose second outer object array is empty. Because the parse target is zero-initialised, the corresponding objects[1].objects[0].objects.sha256sum pointer is NULL, and the subsequent strlen() dereferences address zero. The same defect exists in both the 'any boards' and 'some boards' metadata layouts.\n\nThe resulting CPU fault is fatal under Zephyr's default error handling, halting or resetting the device, so the flaw is a remotely triggerable denial of service. Impact is limited to availability; it is a read from NULL with no out-of-bounds write, memory corruption, or information disclosure. The fix rejects metadata whose inner object array is empty before any dereference, on both layouts.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:19.223"
+  },
+  {
+    "id": "CVE-2026-13717",
+    "description": "A flaw was found in the Red Hat OpenShift AI (RHOAI) MaaS Gateway. Improper configuration of the Gateway in a model-serving context allows a standard user with low privileges to intercept, read, log, and alter all MaaS model traffic. This includes sensitive information such as access keys, input prompts, and outputs, leading to significant information disclosure and data tampering.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:19.343"
+  },
+  {
+    "id": "CVE-2026-14450",
+    "description": "A flaw was found in the MaaS API. This vulnerability allows any pod within the cluster to bypass the Kuadrant AuthPolicy gateway by forging HTTP headers, specifically `X-MaaS-Username` and `X-MaaS-Group`, which are trusted verbatim. This lack of first-party authentication enables an attacker to gain unauthorized access and escalate privileges. The concrete consequences include the ability to mint Kubernetes ServiceAccount tokens in other tenants' namespaces, revoke API keys, and exfiltrate sensitive model access configuration.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:19.487"
+  },
+  {
+    "id": "CVE-2026-15467",
+    "description": "A flaw was found in the trustyai-service-operator's LMEvalJob controller. An authenticated user within the cluster can exploit this vulnerability by configuring a sidecar container to bypass existing security policies. This allows the user to enable and execute untrusted remote code, leading to arbitrary code execution within the cluster.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:19.617"
+  },
+  {
+    "id": "CVE-2026-15581",
+    "description": "A flaw was found in the TrustyAI Service (TAS) deployment. This vulnerability allows any pod on the cluster network to bypass authentication and directly access the TAS backend API. An attacker can exploit this to read, tamper with, or delete monitoring data and configurations, and inject arbitrary data into the service, potentially disrupting tenant operations.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:19.743"
+  },
+  {
+    "id": "CVE-2026-16456",
+    "description": "A flaw was found in the `odh-model-controller`. An authenticated user with permissions to create custom resources can exploit a vulnerability in the `loadSecret` function. This function improperly reads the Secret namespace from user-controlled input without validation. This allows an attacker to read sensitive API keys and cloud credentials from other namespaces, leading to information disclosure.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:19.867"
+  },
+  {
+    "id": "CVE-2026-18608",
+    "description": "A flaw was found in the Data Science Pipelines Operator (DSPO). The operator's ClusterRole, which defines its permissions, includes extensive privileges beyond what is necessary for its operation. These excessive permissions, such as the ability to execute commands within pods and manage cluster-wide roles, could be exploited. If the DSPO pod were compromised, an attacker could leverage these privileges to gain full administrative control over the entire Kubernetes cluster.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:19.990"
+  },
+  {
+    "id": "CVE-2026-18611",
+    "description": "A flaw was found in the Data Science Pipelines Operator. This vulnerability allows an unauthenticated attacker to derive sensitive credentials, such as MariaDB root/user passwords and MinIO access/secret keys, if they can access the MinIO Route or MariaDB Service. The flaw occurs because the operator uses a cryptographically weak pseudo-random number generator (PRNG) to generate these credentials, making them predictable. Successful exploitation could lead to unauthorized access to all pipeline artifacts and metadata, resulting in significant information disclosure.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:20.120"
+  },
+  {
+    "id": "CVE-2026-18617",
+    "description": "A flaw was found in the Data Science Pipelines Operator (DSPO). A namespace editor can exploit a vulnerability in the spec.database.customExtraParams field, which allows for the injection of dangerous parameters into the MySQL Data Source Name (DSN) string. By manipulating these parameters, an attacker can enable LOCAL INFILE functionality and exfiltrate sensitive files, such as the service account token, from the operator pod. This can lead to privilege escalation, allowing a namespace editor to gain cluster-admin privileges.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:20.250"
+  },
+  {
+    "id": "CVE-2026-18618",
+    "description": "A flaw was found in ml-metadata. The statically-linked gRPC stack in ml-metadata is outdated, making it vulnerable to known HTTP/2 denial of service (DoS) issues. An in-cluster attacker, with network access to the MLMD pod, could exploit these vulnerabilities by sending specially crafted HTTP/2 requests. This could lead to a denial of service by crashing the MLMD pod, disrupting all pipeline runs in the affected namespace.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:20.370"
+  },
+  {
+    "id": "CVE-2026-18620",
+    "description": "A flaw was found in Data Science Pipelines. A restricted user, or tenant, can exploit an improper authorization vulnerability in the setDefaultServiceAccount function. By specifying a more privileged ServiceAccount (SA) during a CreateRun request, an attacker can bypass authorization checks. This allows the tenant to run their containers with elevated privileges, potentially leading to the disclosure of sensitive information (secrets) and the ability to execute commands within other users' pods.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:20.490"
+  },
+  {
+    "id": "CVE-2026-18621",
+    "description": "A flaw was found in Data Science Pipelines (DSP). An attacker with namespace editor privileges can bypass security hardening by submitting a malicious Argo Workflow through the V1 API path. This allows the API server to create pods with elevated privileges, acting as a 'confused deputy' on behalf of the attacker. Successful exploitation grants the attacker node-root access, enabling arbitrary code execution and full control over the underlying node.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:20.617"
+  },
+  {
+    "id": "CVE-2026-18941",
+    "description": "A flaw was found in Feast and feast-operator. The default configuration for both the Feast SDK and the feast-operator is \"no_auth,\" meaning no security manager is installed. This default allows unauthenticated and unauthorized access to feature-server, registry-server, and offline-server endpoints. A remote attacker, by exploiting this missing authentication, could achieve remote code execution (RCE) by storing a malicious User-Defined Function (UDF) on the feature-server, trigger a denial of service (DoS) by forcing re-materialization of all tenant features, and gain unauthorized access to cross-tenant data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:20.777"
+  },
+  {
+    "id": "CVE-2026-18942",
+    "description": "A flaw was found in the Feast operator. A malicious tenant could inject arbitrary code into their feature repository. This code would be executed by an automated process with elevated privileges, allowing the tenant to steal sensitive credentials. This could lead to a direct escalation of privileges, granting the tenant administrative control over the Kubernetes cluster.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:20.960"
+  },
+  {
+    "id": "CVE-2026-18947",
+    "description": "A flaw was found in Feast. An authorization bypass vulnerability exists in the /materialize and /materialize-incremental endpoints. By sending a specially crafted request that omits the feature_views field, an attacker can bypass intended permission checks. This allows an unauthenticated remote attacker, or any authenticated user, to trigger a full re-materialization of all feature views. The consequence is a Denial of Service (DoS) due to data corruption and significant resource consumption across all tenants.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:21.130"
+  },
+  {
+    "id": "CVE-2026-18948",
+    "description": "A flaw was found in Feast. The system improperly deserializes user-defined functions (UDFs) stored in its registry, which are serialized using the 'dill' library. This allows a remote attacker to store a malicious UDF, leading to unauthenticated arbitrary code execution on the feature server in default configurations. An authenticated attacker can also achieve arbitrary code execution on the registry server by bypassing authorization checks during deserialization. This vulnerability can result in cross-tenant data access and lateral movement within the system.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:21.290"
+  },
+  {
+    "id": "CVE-2026-18949",
+    "description": "A flaw was found in odh-dashboard. This vulnerability allows an attacker, who has compromised the dashboard's Service Account (SA) token, to exploit overly broad permissions granted to the SA. This enables the attacker to escalate their privileges to cluster-administrator level, gain access to sensitive data like credentials and keys across the entire cluster, and disrupt multi-tenant isolation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:21.443"
+  },
+  {
+    "id": "CVE-2026-18950",
+    "description": "A flaw was found in odh-dashboard. An authenticated user of the dashboard can exploit a vulnerability related to how RoleBindings are created. The system does not properly validate the `roleRef` field, allowing a user to specify an arbitrary role, including highly privileged ones like `cluster-admin`. This can lead to privilege escalation, where an attacker gains unauthorized elevated access within their namespace and potentially persistent control over the system.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:21.583"
+  },
+  {
+    "id": "CVE-2026-18951",
+    "description": "A flaw was found in the Red Hat OpenShift AI (RHOAI) overlay for the training operator. The RHOAI overlay incorrectly aggregates `trainjobs` management permissions into the native Kubernetes `edit ClusterRole`. This allows any user with `edit ClusterRole` permissions in a namespace to create, modify, and delete `TrainJobs`. When combined with a separate vulnerability (TRN-01) that permits arbitrary pod configurations, a remote attacker with namespace editor privileges could exploit this to escalate privileges, potentially leading to arbitrary code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:21.710"
+  },
+  {
+    "id": "CVE-2026-18982",
+    "description": "A flaw was found in the RHOAI training-operator. This vulnerability allows a user with standard edit or admin roles in any Kubernetes namespace to escalate their privileges. Through the creation of training jobs, an attacker can impersonate service accounts, access the host filesystem, and potentially execute arbitrary code remotely. This issue arises from the aggregation of training job permissions onto native Kubernetes edit and admin ClusterRoles, coupled with unrestricted PodTemplateSpec passthrough.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:21.833"
+  },
+  {
+    "id": "CVE-2026-19411",
+    "description": "A NULL pointer vulnerability has been found in the the shim application of dp.c library. A missing NULL pointer could allow attackers to perform a denial of service attack on a system that uses shim application for UEFI bootloader.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:23.060"
+  },
+  {
+    "id": "CVE-2026-48160",
+    "description": "react-tracked provides state usage tracking with Proxies. Between 2026-05-18 19:26:36 and 2026-05-19 15:22:45, the default branch contained malicious commits 6978272a7d6ca02225cb747ea69f427512e33699 through 949f1a3d6bb1ff7d1a0dec892afd773e742627e8 that executed remote attacker-controlled code on developer machines during `npm install`. The commits were removed by force-push, but local clones, forks, and direct-SHA URLs may still contain them, and `npm install` against an affected checkout will still execute the code today. The package was not published to npm. `src/install.js` was added and wired into the `postinstall` script. It fetched a JavaScript payload from an attacker-controlled HTTPS endpoint (configurable via an environment variable), disabled TLS verification, and evaluated the response as code with `require` available. Execution was deliberately skipped on CI and cloud/serverless environments, targeting developer workstations. The second-stage payload was attacker-hosted and cannot be reconstructed. Assume full compromise of anything reachable from a Node process with the user's permissions. Those who ran `npm install` against an affected checkout on a developer machine on or after 2026-05-18 19:26:36 should treat the machine as compromised, rotate every credential the machine could reach, audit account activity** since 2026-05-18 19:26:36, and clean local clones.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:23.303"
+  },
+  {
+    "id": "CVE-2026-63622",
+    "description": "A flaw was found in libvirt. A local attacker, specifically a process running as the confined `swtpm` user, could exploit a symlink-following vulnerability in the `virFileChownFiles()` function. By planting a symbolic link within the `swtpm` state directory, the attacker could trick the root-level libvirt daemon into changing the ownership of an arbitrary file to the `swtpm` user. This allows for privilege escalation from the `swtpm` sandbox to root-level file ownership control.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:23.550"
+  },
+  {
+    "id": "CVE-2026-72743",
+    "description": "SQLBot through 1.10.0, fixed in commit c3f40a5, contains a stored cross-site scripting vulnerability in the SQText dashboard component that renders TinyMCE output via v-html without sanitization. Attackers who can modify dashboard text widget content can inject arbitrary HTML and JavaScript that executes for all users viewing the dashboard.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:24.370"
+  },
+  {
+    "id": "CVE-2026-72903",
+    "description": "Tabby (formerly Terminus) is a highly configurable terminal emulator. Prior to 1.0.235, a malicious SFTP server can return a backslash traversal filename through entry.name. In tabby-ssh/src/session/sftp.ts, SFTPSession.readdir() and _makeFile() use POSIX path processing that preserves the backslashes as ordinary filename characters. In tabby-ssh/src/components/sftpPanel.component.ts, downloadFolderRecursive() propagates item.name into the local relative path. In tabby-electron/src/services/platform.service.ts, ElectronDirectoryDownload.createFile() passes that path to Windows-native path.join(), and in tabby-electron/src/sftpContextMenu.ts, EditSFTPContextMenu.edit() passes item.name to path.join() for the temporary edit path. Windows interprets the preserved backslashes and parent-directory components as traversal, allowing attacker-controlled content to be created or overwritten outside the selected download directory or temporary edit directory. This issue is fixed in version 1.0.235.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:24.980"
+  },
+  {
+    "id": "CVE-2026-72904",
+    "description": "Firecrawl turns entire websites into LLM-ready markdown or structured data. Prior to 2.11.32, a critical arbitrary file read vulnerability exists in Firecrawl's extraction functionality due to unsafe schema dereferencing of user-supplied JSON schemas in apps/api/src/lib/extract/helpers/dereference-schema.ts. The affected code invokes the json-schema-ref-parser dependency with default resolver settings, allowing external and local file references to be resolved during schema processing. An authenticated attacker can supply a malicious schema containing a $ref within default, const, or enum fields that are not traversed by AJV validation. By triggering a dereference error, file contents from the extract worker filesystem may be included in persisted error messages returned through the extraction API, enabling arbitrary file reads and SSRF against internal or external HTTP endpoints. This issue is fixed in version 2.11.32.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.117"
+  },
+  {
+    "id": "CVE-2026-72905",
+    "description": "Rejected reason: Further research determined the issue is not a vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.253"
+  },
+  {
+    "id": "CVE-2026-72906",
+    "description": "ERPNext is a free and open source Enterprise Resource Planning tool. Prior to 15.111.0 and 16.22.0, the send_auto_email function in erpnext/accounts/doctype/process_statement_of_accounts/process_statement_of_accounts.py lacks a Process Statement Of Accounts permission check, allowing an authenticated low-privilege user to trigger automated emails outside the permitted role. This issue is fixed in versions 15.111.0 and 16.22.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.320"
+  },
+  {
+    "id": "CVE-2026-72907",
+    "description": "ERPNext is a free and open source Enterprise Resource Planning tool. Prior to 15.111.0 and 16.22.0, the add_ac function in erpnext/accounts/utils.py accepts the ignore_permissions argument without enforcing Account create permission, allowing an authenticated limited user to create unauthorized accounting master records and affect financial data integrity and audit trails. This issue is fixed in versions 15.111.0 and 16.22.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.460"
+  },
+  {
+    "id": "CVE-2026-72908",
+    "description": "ERPNext is a free and open source Enterprise Resource Planning tool. Prior to 15.109.0 and 16.20.0, the get_tax_template function in erpnext/accounts/doctype/tax_rule/tax_rule.py constructs an SQL WHERE clause from request-influenced posting_date and args values, allowing an authenticated low-privilege user to inject SQL and extract sensitive information. This issue is fixed in versions 15.109.0 and 16.20.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.593"
+  },
+  {
+    "id": "CVE-2026-72909",
+    "description": "ERPNext is a free and open source Enterprise Resource Planning tool. Prior to 15.112.0 and 16.23.0, the ReceivablePayableReport prepare_conditions path in erpnext/accounts/report/accounts_receivable/accounts_receivable.py does not apply Customer and Supplier user permissions to the Payment Ledger Entry dynamic-link party field, allowing any authenticated user to read unauthorized cross-company financial data in Accounts Receivable and Accounts Payable reports. This issue is fixed in versions 15.112.0 and 16.23.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.727"
+  },
+  {
+    "id": "CVE-2026-72910",
+    "description": "ERPNext is a free and open source Enterprise Resource Planning tool. Prior to 15.112.0 and 16.22.0, the merge_account, pause_job_for_doc, trigger_job_for_doc, change_release_date, and update_cost_center functions across erpnext/accounts/doctype/account/account.py, erpnext/accounts/doctype/process_payment_reconciliation/process_payment_reconciliation.py, erpnext/accounts/doctype/purchase_invoice/purchase_invoice.py, and erpnext/accounts/utils.py omit required write permission checks, allowing authenticated limited users to modify protected data beyond their roles. This issue is fixed in versions 15.112.0 and 16.22.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.860"
+  },
+  {
+    "id": "CVE-2026-72911",
+    "description": "ERPNext is a free and open source Enterprise Resource Planning tool. Prior to 15.118.0 and 16.29.0, the validate_template and render_template calls in erpnext/accounts/doctype/process_statement_of_accounts/process_statement_of_accounts.py render subject, body, and pdf_name fields with unrestricted globals including frappe.utils, allowing an authenticated user with a common operational role to inject template expressions, execute arbitrary server-side code, and read data across the application. This issue is fixed in versions 15.118.0 and 16.29.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:25.993"
+  },
+  {
+    "id": "CVE-2026-72912",
+    "description": "CyberChef is a web app for encryption, encoding, compression, and data analysis. Prior to 11.3.0, CyberChef's pretty-recipe parser in src/core/Utils.mjs can exhaust client-side CPU when a malformed #recipe= URL fragment containing a large number of unmatched quote characters reaches Utils.parseRecipeConfig(). The function synchronously applies a complex global regular expression that may perform heavy backtracking before rejecting the input, causing the victim's browser tab to freeze during startup for seconds or longer. No code execution, data exfiltration, or privilege escalation occurs. This issue is fixed in version 11.3.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:26.130"
+  },
+  {
+    "id": "CVE-2026-72913",
+    "description": "Kitty is a cross-platform GPU based terminal. Prior to 0.48.2, the @kitty-echo and @kitty-ssh DCS handlers in kitty/window.py write unauthenticated data to the child shell's stdin, where handle_remote_echo accepts printable shell command characters and handle_remote_ssh calls get_ssh_data in kittens/ssh/utils.py, which emits a newline; chaining the handlers can execute attacker-controlled commands when a user displays untrusted terminal data. This issue is fixed in version 0.48.2.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:26.297"
+  },
+  {
+    "id": "CVE-2026-73030",
+    "description": "unearth through 0.18.2, fixed in commit 6c78164, contains a path traversal vulnerability in the is_within_directory function that fails to normalize paths before validation, allowing ../ sequences to bypass directory containment checks. Attackers can supply malicious tar archives with symlink members or traversal sequences to write files to arbitrary filesystem locations accessible to the process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:26.450"
+  },
+  {
+    "id": "CVE-2026-73033",
+    "description": "Sucuri Security WordPress plugin through version 2.7.3 contains a path traversal vulnerability in the pageIntegritySubmission() method in src/integrity.lib.php that allows authenticated administrators to delete arbitrary files by supplying directory traversal sequences in the sucuriscan_integrity parameter. Attackers can manipulate the unsanitized file path concatenated with ABSPATH to traverse outside the WordPress installation directory and invoke unlink() on sensitive files such as wp-config.php and .htaccess, causing site outage or enabling malicious reinstallation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:26.610"
+  },
+  {
+    "id": "CVE-2026-73035",
+    "description": "npm-check-updates through 23.0.2, fixed in commit b554b84, contains a terminal escape sequence injection vulnerability that allows an attacker to embed arbitrary terminal control characters in a dependency's package.json homepage or repository URL fields. When a developer runs ncu with the --format homepage or --format repo option, unfiltered escape sequences are written directly to the terminal, enabling malicious output manipulation or other terminal-dependent effects.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T21:17:26.760"
+  },
+  {
+    "id": "CVE-2025-32736",
+    "description": "Cross-Site Request Forgery weaknesses in the Administrative Console of PingFederate versions before version 13.1 may allow actors to perform unauthorized actions via specially-crafted links triggered by administrators with active sessions.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:08.580"
+  },
+  {
+    "id": "CVE-2026-6426",
+    "description": "A type mismatch vulnerability was found in QEMU's vhost inflight migration VMState handling. The destination buffer size is stored as a uint64_t but read by the VMS_VBUFFER load path as a signed int32_t. On little-endian hosts, a crafted incoming migration state with bit 31 set causes the value to be interpreted as negative and then implicitly converted to a very large size_t, leading qemu_get_buffer() to copy migration-stream data beyond the bounds of the mmap-backed inflight region.\n\nThis can result in a crash of the QEMU process or memory corruption. Exploitation requires control of the migration producer or write access to the migration channel, combined with a destination configured to use vhost inflight migration.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:10.027"
+  },
+  {
+    "id": "CVE-2026-72914",
+    "description": "Mastodon is a free, open-source social network server based on ActivityPub. Prior to 4.4.21, 4.5.14, 4.6.4, and 4.7.0-beta.1, the administrative statistics endpoints handled by Api::V1::Admin::MeasuresController and Api::V1::Admin::RetentionController checked authorization only after beginning expensive calculations. Anonymous callers could submit keys, start_at, and end_at parameters that caused long-running SQL queries in Admin::Metrics::Measure, Admin::Metrics::Retention, and Admin::Metrics::Dimension::BaseDimension, allowing repeated requests to exhaust server resources. This issue is fixed in versions 4.4.21, 4.5.14, 4.6.4, and 4.7.0-beta.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:10.193"
+  },
+  {
+    "id": "CVE-2026-72915",
+    "description": "Mastodon is a free, open-source social network server based on ActivityPub. From 4.6.0-beta.1 until 4.6.4 and 4.7.0-beta.1, any logged-in local user could use the show action in app/controllers/admin/collections_controller.rb to access personally identifying information about another local user in a collection because the controller used the general collection policy instead of the admin collection policy namespace. The exposed data included the other user's current email address and last-used IP address. This issue is fixed in versions 4.6.4 and 4.7.0-beta.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:10.360"
+  },
+  {
+    "id": "CVE-2026-72916",
+    "description": "Mastodon is a free, open-source social network server based on ActivityPub. Prior to 4.4.21, 4.5.14, 4.6.4, and 4.7.0-beta.1, PrivateAddressCheck.private_address? in app/lib/private_address_check.rb normalized IPv4-mapped IPv6 addresses but did not recognize IPv4-compatible IPv6 addresses with IPAddr#ipv4_compat?. An attacker could supply an address in the omitted range to bypass the ALLOWED_PRIVATE_ADDRESSES protection and make Mastodon send HTTP requests to loopback interfaces, potentially accessing private resources and services. Exploitation requires a system that supports the obsolete IPv4-compatible IPv6 mechanism. This issue is fixed in versions 4.4.21, 4.5.14, 4.6.4, and 4.7.0-beta.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:10.510"
+  },
+  {
+    "id": "CVE-2026-72917",
+    "description": "AnythingLLM is an application that turns pieces of content into context that any LLM can use as references during chatting. From 1.0.0 to 1.15.0, AnythingLLM's unauthenticated account-recovery flow in server/utils/PasswordRecovery/index.js uses recoverAccount() to deduplicate the raw recoveryCodes values before trimming them, so one valid code submitted twice with different surrounding whitespace can satisfy the two-code check. Each normalized value can also match the same stored hash instead of consuming a distinct hash. An attacker who knows the target username and one recovery code can call POST /api/system/recover-account in multi-user mode, receive a password-reset token, and use POST /api/system/reset-password to take over the account, including an administrator account.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:10.660"
+  },
+  {
+    "id": "CVE-2026-72918",
+    "description": "Rocket.Chat is an open-source, secure, fully customizable communications platform. Prior to 7.10.14, 8.0.8, 8.1.7, 8.2.7, 8.3.7, 8.4.5, 8.5.2, and 8.6.1, the stream-notify-user stream in the WebSocket protocol allows an authenticated user to write arbitrary notification bodies because the sender is not checked, and the client-side UI can create an ephemeral fake message in another user's currently open chat. This issue is fixed in versions 7.10.14, 8.0.8, 8.1.7, 8.2.7, 8.3.7, 8.4.5, 8.5.2, and 8.6.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:10.807"
+  },
+  {
+    "id": "CVE-2026-72919",
+    "description": "Rocket.Chat is an open-source, secure, fully customizable communications platform. Prior to 7.10.14, 8.0.8, 8.1.7, 8.2.7, 8.3.7, 8.4.5, 8.5.2, and 8.6.1, the channels.convertToTeam REST endpoint allows an authenticated registered user with the create-team permission to convert an unrelated public channel by supplying channelName instead of channelId because the edit-room permission is checked only for channelId. This issue is fixed in versions 7.10.14, 8.0.8, 8.1.7, 8.2.7, 8.3.7, 8.4.5, 8.5.2, and 8.6.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T22:17:10.957"
   }
 ]
