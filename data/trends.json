@@ -1,12 +1,5 @@
 [
   {
-    "id": "CVE-2026-10660",
-    "description": "The Bluetooth BAP Broadcast Assistant GATT client in subsys/bluetooth/audio/bap_broadcast_assistant.c reassembled remote Broadcast Receive State data into a single file-static net_buf_simple (att_buf, BT_ATT_MAX_ATTRIBUTE_LEN = 512 bytes) shared by all connection instances, while the BUSY flag, long-read handle, and reset/offset state were per-connection.\n\nWhen the device acts as a Broadcast Assistant connected to multiple Scan Delegator peripherals, notification and long-read callbacks from different connections interleave on the shared buffer: the append in notify_handler (net_buf_simple_add_mem at the not-busy branch) performs no tailroom check, so receive-state notifications from two or more delegators accumulate on the same 512-byte buffer and, with a sufficiently large configured ATT MTU (BT_L2CAP_TX_MTU up to 2000) and two-to-three concurrent connections, write past the buffer into adjacent .bss (net_buf_simple_add only asserts in debug builds).\n\nEven below the overflow threshold, one connection's net_buf_simple_reset zeroes the shared length while another connection's reassembly and GATT read offset are in flight, mixing one peer's data into another's parse. A malicious or compromised Scan Delegator (or two colluding peers) over BLE can trigger this, causing out-of-bounds writes (memory corruption / denial of service) and cross-connection data corruption.\n\nThe fix moves the buffer into the per-connection instance struct so each connection reassembles into its own buffer. Affects Zephyr releases shipping the Broadcast Assistant with the shared buffer, including v4.4.0 and earlier.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-11T17:16:23.920"
-  },
-  {
     "id": "CVE-2026-58281",
     "description": "Deserialization of untrusted data in Microsoft Edge (Chromium-based) allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
@@ -32195,7 +32188,7 @@
   {
     "id": "CVE-2026-16232",
     "description": "An authentication bypass vulnerability in the Check Point SmartConsole login process allows an unauthenticated remote attacker to obtain an application login token and use it to authenticate with full administrative privileges. Successful exploitation allows the attacker to modify security policies and security configurations. Remote exploitation requires internet access to the Management Server IP address and a configuration that does not restrict Trusted Clients. Check Point is aware that this vulnerability is being exploited and has affected a very small number of customers.",
-    "severity": "Critical",
+    "severity": "Unknown",
     "tech": "Multi-domain security management",
     "published": "2026-07-22T14:17:15.513"
   },
@@ -40336,8 +40329,8 @@
   {
     "id": "CVE-2026-55953",
     "description": "The Erlang/OTP ssl TLS 1.2 (and earlier) and DTLS client does not verify that the cipher suite selected by the server in ServerHello was among the suites offered by the client in ClientHello. The client-side tls_handshake:hello/5 handler validates the negotiated protocol version and the downgrade sentinel but hands the server-chosen suite directly to ssl_handshake:handle_server_hello_extensions/9, which installs it without a membership check. The TLS 1.3 client path performs this check (per RFC 8446), so it is not affected.\n\nAn on-path attacker between the client and the intended server can respond with a ServerHello selecting an anonymous key exchange suite such as TLS_DH_anon_* or TLS_ECDH_anon_* that the client never offered. Anonymous suites do not require the server to present a certificate, so the entire verify_peer and cacerts configuration is bypassed: the attacker completes the handshake with its own ephemeral parameters, no certificate is validated, no hostname is checked, and ssl:connect returns {ok, Socket}. All subsequent application traffic is readable and modifiable by the attacker.\n\nThis issue affects OTP from OTP R13B03 before OTP 27.3.4.15, from OTP 28.0 before OTP 28.5.0.4, and from OTP 29.0 before OTP 29.0.4, corresponding to ssl from 3.10.7 before 11.2.12.11, from 11.3 before 11.6.0.4, and from 11.7 before 11.7.4. Whether OTP before OTP R13B03, corresponding to ssl before 3.10.7, is affected is unknown.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Erlang\\/otp",
     "published": "2026-07-27T16:17:49.500"
   },
   {
@@ -59265,7 +59258,7 @@
     "id": "CVE-2026-46581",
     "description": "In Eclipse Mojarra versions 2.3 and following, URL handing in `DefaultFaceletFactory` does not properly sanitize and/or block remote URLs, allowing an attacker to specify a URL to a remote Facelet which will be included and processed as part of the normal request, with the privileges of the target server. This could allow access to restricted files such as `WEB-INF/web.xml` or `/etc/passwd`.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Mojarra",
     "published": "2026-08-05T12:18:57.190"
   },
   {
@@ -59601,7 +59594,7 @@
     "id": "CVE-2026-16443",
     "description": "A flaw was found in the SAML metadata import functionality of the keycloak-services component, which is the core engine for identity brokering in Red Hat Build of Keycloak. When importing identity provider metadata that lacks specific usage attributes for keys, the system incorrectly disables signature validation for SAML responses even if a signing certificate is provided. This issue allows an unauthenticated attacker to forge a SAML response and gain unauthorized access to a user account by knowing their external identifier.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Build of keycloak",
     "published": "2026-08-05T14:17:03.697"
   },
   {
@@ -59643,21 +59636,21 @@
     "id": "CVE-2026-15573",
     "description": "A flaw was found in Keycloak's Authorization Services. The component responsible for matching request paths to security policies (PathMatcher) does not properly normalize URIs before comparison. By adding extra characters like a trailing slash or matrix parameters to a URL, an attacker can trick the system into applying a less restrictive security policy than intended. This allows an authenticated user to access administrative or restricted areas they should not have permission to see.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Build of keycloak",
     "published": "2026-08-05T15:16:36.397"
   },
   {
     "id": "CVE-2026-16071",
     "description": "A flaw was found in the LDAP storage provider of Keycloak, which is used to federate user identities from external directories. The issue occurs when a delegated administrator performs a search using a specific LDAP entry Distinguished Name (DN). Due to missing validation, the system allows lookups for users located outside the configured search boundary, leading to the disclosure of account information from unauthorized parts of the directory and unintended importing of those users into local storage.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Build of keycloak",
     "published": "2026-08-05T15:16:37.440"
   },
   {
     "id": "CVE-2026-16100",
     "description": "A flaw was found in the user-event metrics recording of Keycloak. When metrics are enabled, the system records raw error messages from failed account operations as Prometheus metric labels. Because these error messages can include user-supplied input like nonexistent client IDs, an authenticated user can create a massive number of unique metric entries, eventually exhausting system memory and causing the service to crash or become unavailable.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Build of keycloak",
     "published": "2026-08-05T15:16:37.573"
   },
   {
@@ -59706,7 +59699,7 @@
     "id": "CVE-2026-13477",
     "description": "IBM QRadar 7.6.0.0 through 7.6.0.1, and 7.5.0 through 7.5.0 UP 15 Interim Fix 005 could allow an authenticated privileged user to execute arbitrary commands with normal user privileges on the system due to improper validation of user supplied input.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Qradar security information and event manager",
     "published": "2026-08-05T16:16:49.863"
   },
   {
@@ -59993,7 +59986,7 @@
     "id": "CVE-2026-17617",
     "description": "IBM Application Gateway Operator 22.2 through 26.06 is vulnerable to Server-Side Request Forgery (SSRF) due to insufficient validation of URLs specified in custom resources.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Application gateway operator",
     "published": "2026-08-05T17:16:44.543"
   },
   {
@@ -60490,7 +60483,7 @@
     "id": "CVE-2026-63457",
     "description": "A potential denial of service vulnerability exists in HPE Integrated Lights-Out 6 (iLO 6) prior to v1.78.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Integrated lights-out 6 firmware",
     "published": "2026-08-05T19:17:31.703"
   },
   {
@@ -60636,15 +60629,15 @@
   {
     "id": "CVE-2026-66298",
     "description": "Origin Validation Error vulnerability in livebook-dev livebook allows untrusted notebook output JavaScript to trigger session-wide keyboard shortcuts, including forced evaluation of all cells and runtime restart.\n\nLivebook's JS-view feature renders notebook-defined JavaScript inside a sandboxed, cross-origin iframe specifically because that JavaScript is untrusted. The trusted iframe shell in iframe/priv/static/iframe/v5.html forwards every keydown event fired in its own window to the parent page without consulting Event.isTrusted, so an event synthesized by the untrusted script through window.dispatchEvent is forwarded exactly as a genuine keystroke would be. The parent-side relay in assets/js/hooks/js_view.js reconstructs and re-dispatches it on the live page with no further validation, and because assets/js/hooks/session.js registers the global shortcut handler on the document in the capture phase, that handler acts on the replicated event regardless of how it was produced.\n\nSandboxed output JavaScript can therefore drive Livebook's session-wide keyboard shortcuts. Two of them reach LivebookWeb.SessionLive and execute immediately with no confirmation: the shortcut for queueing full evaluation runs every cell in the notebook, and the shortcut for reconnecting the runtime disconnects and reconnects it, discarding in-memory state. A third shortcut deletes the focused cell behind a confirmation dialog that the user can permanently dismiss, after which it too executes silently.\n\nForced full evaluation is the significant consequence, because it causes the notebook's own Elixir code to run without the user choosing to evaluate anything. A user who merely opens a notebook obtained from a third party, or reached from published documentation, can have its code executed on their runtime. Livebook also mirrors cell outputs to every connected client, so a malicious output triggers in a collaborator's browser as soon as it renders.\n\nThis issue affects livebook: from 0.5.0 before 0.18.7 and from 0.19.0 before 0.19.9.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Livebook",
     "published": "2026-08-05T20:17:12.203"
   },
   {
     "id": "CVE-2026-66881",
     "description": "Relative Path Traversal vulnerability in livebook-dev livebook allows an attacker-authored notebook to write a file with attacker-controlled content to an arbitrary path.\n\nA .livemd notebook can declare file_entries metadata, each entry carrying a name. Every path that creates a file entry through the user interface validates that name with Livebook.Notebook.validate_file_entry_name/2, which requires a flat filename of alphanumerics, dashes, underscores and dots, ending in an extension. The import path does not: Livebook.LiveMarkdown.Import.file_entry_metadata_to_attrs/1 in lib/livebook/live_markdown/import.ex takes the name verbatim from the notebook source.\n\nFor a URL-type file entry, Livebook.Session.file_entry_cache_file/2 in lib/livebook/session.ex resolves that name beneath the session's temporary directory without checking that the result stays inside it, and Livebook.FileSystem.Utils.resolve_unix_like_path/2 collapses parent-directory segments while clamping only at the filesystem root. When the entry's content is requested and no cached copy exists, Livebook fetches the entry's URL and writes the response body to the resolved path, creating parent directories as needed. The attacker therefore controls both the destination and the contents of the written file, which may land anywhere the Livebook process can write. The same missing containment check is present in Livebook.Session.to_attachment_file_entry/2.\n\nA victim who opens an attacker-supplied notebook and causes the entry to be fetched triggers the write within their own authenticated session; the attacker needs no account on the target instance. URL-type entries are also not placed under notebook stamping quarantine on import, so no warning is shown.\n\nThis issue affects livebook: from 0.11.0 before 0.18.7 and from 0.19.0 before 0.19.9.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Livebook",
     "published": "2026-08-05T20:17:12.600"
   },
   {
@@ -68258,8 +68251,8 @@
   },
   {
     "id": "CVE-2026-19429",
-    "description": "Jenkins FilePath.untarFrom() (all versions) validates symlink destinations but not targets, bypassing CVE-2026-33001. Any user with Item/Build access triggers tar extraction via POST /job/{name}/build, writing persistent symlinks into the tool cache. Symlinks to secrets/master.key, hudson.util.Secret, credentials.xml, and users/*/config.xml read via GET /job/{name}/lastBuild/consoleText enable offline AES decryption of all credentials and admin API tokens without bcrypt cracking, achieving RCE.",
-    "severity": "High",
+    "description": "Jenkins FilePath.untarFrom() in all versions, including those with the CVE-2026-33001 patch applied, validates symlink destinations but not targets. The CVE-2026-33001 fix enforces that the symlink file is created within the workspace boundary, but the symlink target — the path returned by te.getLinkName() and passed directly to symlinkTo() — is never validated and may point to any path on the controller filesystem. An attacker with Item/Configure permission can configure a job to extract a malicious .tar or .tar.gz archive via a tool installer or custom build step. When FilePath.untarFrom() processes the archive, it creates symlinks inside the workspace that resolve to arbitrary controller paths. By targeting the entire $JENKINS_HOME/secrets/ directory — including master.key, hudson.util.Secret, hudson.model.Secrets.xml, and any other files present — an attacker can exfiltrate all Jenkins cryptographic material through the workspace viewer (GET /job/{name}/ws/) or build artifacts. Combined with credentials.xml and per-user config.xml files, this enables offline AES-128 decryption of all {AQA...}-format credential entries, exposing in plaintext every password, API key, cloud provider secret, and SSH private key stored in the Jenkins credential store — compromising all downstream systems those credentials protect.",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T13:17:58.940"
   },
@@ -70814,7 +70807,7 @@
   {
     "id": "CVE-2026-66738",
     "description": "SPIP before 4.4.18 contains a code injection vulnerability in SQLite-backed installations. The navigation menu endpoint improperly handles array-typed user input, which bypasses input sanitization and allows the value to break out of an internal quoted string context when evaluated as PHP. An authenticated attacker with at minimum editor (redacteur) privileges can submit a single crafted GET request to /ecrire/?exec=navigation to execute arbitrary OS commands in the web server process. MySQL-backed installations are not affected.",
-    "severity": "Critical",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-10T16:19:48.607"
   },
@@ -70880,5 +70873,516 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T16:19:50.097"
+  },
+  {
+    "id": "CVE-2026-12624",
+    "description": "Vault’s ACL policy engine did not consistently enforce a wildcard (glob) deny rule against LIST requests made with a trailing slash on the denied path. This may allow a token holding a broader allow rule alongside a narrower wildcard deny rule to enumerate the names of entries beneath a path it was intended to be denied access to. This vulnerability (CVE-2026-12624) is fixed in Vault Community Edition 2.0.3 and Vault Enterprise 2.0.3, 1.21.8, 1.20.13, and 1.19.19.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:29.293"
+  },
+  {
+    "id": "CVE-2026-22651",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.523"
+  },
+  {
+    "id": "CVE-2026-22652",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.597"
+  },
+  {
+    "id": "CVE-2026-22653",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.650"
+  },
+  {
+    "id": "CVE-2026-22654",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.700"
+  },
+  {
+    "id": "CVE-2026-22655",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.753"
+  },
+  {
+    "id": "CVE-2026-22656",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.807"
+  },
+  {
+    "id": "CVE-2026-22657",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.860"
+  },
+  {
+    "id": "CVE-2026-22658",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.910"
+  },
+  {
+    "id": "CVE-2026-23675",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:31.957"
+  },
+  {
+    "id": "CVE-2026-23676",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.017"
+  },
+  {
+    "id": "CVE-2026-23677",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.073"
+  },
+  {
+    "id": "CVE-2026-23690",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.127"
+  },
+  {
+    "id": "CVE-2026-23691",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.180"
+  },
+  {
+    "id": "CVE-2026-23692",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.240"
+  },
+  {
+    "id": "CVE-2026-23765",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.293"
+  },
+  {
+    "id": "CVE-2026-24438",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.347"
+  },
+  {
+    "id": "CVE-2026-25074",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.407"
+  },
+  {
+    "id": "CVE-2026-25549",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.463"
+  },
+  {
+    "id": "CVE-2026-26229",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.517"
+  },
+  {
+    "id": "CVE-2026-26348",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.580"
+  },
+  {
+    "id": "CVE-2026-26349",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.633"
+  },
+  {
+    "id": "CVE-2026-28533",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.687"
+  },
+  {
+    "id": "CVE-2026-28534",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.753"
+  },
+  {
+    "id": "CVE-2026-28998",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.817"
+  },
+  {
+    "id": "CVE-2026-28999",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.877"
+  },
+  {
+    "id": "CVE-2026-29010",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.930"
+  },
+  {
+    "id": "CVE-2026-29011",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:32.983"
+  },
+  {
+    "id": "CVE-2026-29012",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.040"
+  },
+  {
+    "id": "CVE-2026-29024",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.097"
+  },
+  {
+    "id": "CVE-2026-29025",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.150"
+  },
+  {
+    "id": "CVE-2026-29026",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.203"
+  },
+  {
+    "id": "CVE-2026-29027",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.257"
+  },
+  {
+    "id": "CVE-2026-29028",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.307"
+  },
+  {
+    "id": "CVE-2026-29029",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.360"
+  },
+  {
+    "id": "CVE-2026-29030",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.413"
+  },
+  {
+    "id": "CVE-2026-29031",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.467"
+  },
+  {
+    "id": "CVE-2026-29032",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.520"
+  },
+  {
+    "id": "CVE-2026-29033",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.573"
+  },
+  {
+    "id": "CVE-2026-29517",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.630"
+  },
+  {
+    "id": "CVE-2026-34423",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.683"
+  },
+  {
+    "id": "CVE-2026-35005",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.743"
+  },
+  {
+    "id": "CVE-2026-35006",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.807"
+  },
+  {
+    "id": "CVE-2026-35026",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.860"
+  },
+  {
+    "id": "CVE-2026-35027",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.917"
+  },
+  {
+    "id": "CVE-2026-35028",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:33.970"
+  },
+  {
+    "id": "CVE-2026-40512",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:34.460"
+  },
+  {
+    "id": "CVE-2026-56619",
+    "description": "HCL BigFix Mobile is vulnerable to Reflected Cross-Site Scripting (Reflected XSS) due to insufficient validation and output encoding of user-controlled input.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:35.170"
+  },
+  {
+    "id": "CVE-2026-63623",
+    "description": "A flaw was found in libvirt. During storage volume clone or convert operations, newly created volume images were temporarily world-readable. This was caused by the `qemu-img` utility running with overly permissive file creation settings, allowing any local user to read the full guest disk contents. This vulnerability could lead to sensitive information disclosure from guest virtual machines.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:35.413"
+  },
+  {
+    "id": "CVE-2026-71576",
+    "description": "A flaw was found in multicluster-global-hub. The manager component improperly validates the source identity of incoming CloudEvents on Kafka status topics. A remote attacker, after compromising a managed hub and obtaining its Kafka client certificate, can manipulate the self-asserted source identity. This allows the attacker to falsify or delete critical data, such as compliance, inventory, and cluster health information, belonging to other hubs in the database.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:36.060"
+  },
+  {
+    "id": "CVE-2026-71577",
+    "description": "A flaw was found in multicluster-global-hub. During a ManagedClusterMigration, the system incorrectly grants all managed hubs read access to a shared communication topic. This allows a compromised managed hub to intercept and collect sensitive bootstrap kubeconfigs, which contain API server tokens intended for other hubs. These tokens have an extended validity of approximately 9.86 years, significantly increasing the risk of unauthorized access and information disclosure to other managed clusters.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:36.197"
+  },
+  {
+    "id": "CVE-2026-72727",
+    "description": "Discourse is an open-source discussion platform. Prior to 026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0, a low-privileged user could place crafted content in the moderation review queue that executed stored cross-site scripting when a moderator viewed it on a site with a modified or disabled default Content Security Policy. This issue is fixed in versions 2026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:36.833"
+  },
+  {
+    "id": "CVE-2026-72728",
+    "description": "Discourse is an open-source discussion platform. Prior to 2026.1.7, an authenticated user could submit specially formed URLs that bypassed the Onebox allowlist and embedded malicious content in a site. This issue is fixed in versions 2026.1.7, 2026.6.2, 2026.7.1, and 2026.8.0-latest.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:37.013"
+  },
+  {
+    "id": "CVE-2026-72729",
+    "description": "Discourse is an open-source discussion platform. Prior to 2026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0, the discourse-local-dates plugin rendered crafted local-date format data as HTML on sites with a modified or disabled default Content Security Policy. This issue is fixed in versions 2026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:37.337"
+  },
+  {
+    "id": "CVE-2026-72730",
+    "description": "Discourse is an open-source discussion platform. Prior to 2026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0, the Rich Text Editor rendered a chat-transcript username as HTML, allowing stored cross-site scripting. This issue is fixed in versions 2026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:37.507"
+  },
+  {
+    "id": "CVE-2026-72731",
+    "description": "Discourse is an open-source discussion platform. From 2026.1.0-latest until 2026.1.7, 2026.6.2, 2026.7.1, and 2026.8.0-latest.1, anyone able to run a parameterized Data Explorer query, including non-staff members of a group a query is shared with, could craft parameter values that escaped the intended query and executed arbitrary SQL through plugins/discourse-data-explorer/lib/discourse_data_explorer/data_explorer.rb and plugins/discourse-data-explorer/lib/discourse_data_explorer/workflows/sql_action/v1.rb. Recursive parameter interpolation allowed one parameter value to introduce another parameter, and parameter declarations in SQL comments could be used to inject a statement. Queries run in a read-only transaction, so data could not be modified, but any table could be read. This issue is fixed in versions 2026.1.7, 2026.6.2, 2026.7.1, and 2026.8.0-latest.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T17:17:37.663"
+  },
+  {
+    "id": "CVE-2026-10754",
+    "description": "Pega Platform versions 8.5.0 through 25.1.2 are affected by an improper validation of cryptographic signatures that may allow an attacker to bypass security controls.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:17:39.053"
+  },
+  {
+    "id": "CVE-2026-16626",
+    "description": "Improper restriction of XML external entity reference vulnerability (unauthenticated) in Jaspersoft JasperReports Server.\n\nThis issue affects JasperReports Server: from 9.0.0 before HF-9 and from 10.0.0 before HF-10.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:17:41.667"
+  },
+  {
+    "id": "CVE-2026-48159",
+    "description": "use-reducer-async is a React useReducer with async actions. Between 2026-05-18 16:29:52 and 2026-05-19 15:26:07, the default branch contained malicious commits da72edbde5705efcec6c62e0a3dcb73687b78dc8 through df07d5711458d8b46e11dd7afaaa21e88cafabfb that executed remote attacker-controlled code on developer machines during `npm install`. The commits were removed by force-push, but local clones, forks, and direct-SHA URLs may still contain them, and `npm install` against an affected checkout will still execute the code today. The package was not published to npm. `src/install.js` was added and wired into the `postinstall` script. It fetched a JavaScript payload from an attacker-controlled HTTPS endpoint (configurable via an environment variable), disabled TLS verification, and evaluated the response as code with `require` available. Execution was deliberately skipped on CI and cloud/serverless environments, targeting developer workstations. The second-stage payload was attacker-hosted and cannot be reconstructed. Assume full compromise of anything reachable from a Node process with the user's permissions. Those who ran `npm install` against an affected checkout on a developer machine on or after 2026-05-18 16:29:52 should treat the machine as compromised, rotate every credential the machine could reach, audit account activity since 2026-05-18 16:29:52, and clean local clones.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:17:49.547"
+  },
+  {
+    "id": "CVE-2026-70622",
+    "description": "tar-rs versions 0.4.11 through 0.4.46 contain a symlink escape vulnerability in the Builder::append_dir_all() function that allows attackers to read files outside the intended source root directory by planting symlinks in an attacker-controlled directory. When a privileged process archives an untrusted directory, the function follows symlinks without verifying that resolved targets remain within the source root, causing out-of-bounds files to be included in the archive as regular files and disclosed to the attacker.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:50.610"
+  },
+  {
+    "id": "CVE-2026-72732",
+    "description": "Discourse is an open-source discussion platform. Prior to 2026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0, the discourse_templates endpoint exposed hidden tag names because DiscourseTemplates::TemplatesSerializer in plugins/discourse-templates/app/serializers/discourse_templates/templates_serializer.rb did not filter tags through the request Guardian. The serializer did not respect tag group permissions, allowing users to see tags they were not permitted to view. This issue is fixed in versions 2026.1.6, 2026.5.2, 2026.6.1, and 2026.7.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:51.530"
+  },
+  {
+    "id": "CVE-2026-72733",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). Prior to 0.29.13, the backup.restoreBackupWithLogs tRPC subscription builds database restore shell pipelines from the user-controlled databaseName and backupFile fields without safely separating them from shell syntax. packages/server/src/utils/restore/utils.ts interpolates databaseName into database-specific restore commands, while packages/server/src/utils/restore/postgres.ts and the analogous restore modules interpolate backupFile into rclone paths. An authenticated member with backup-restore permission can inject operating-system commands that execute in the Dokploy host context through execAsync or execAsyncRemote, even when no valid database container or backup file exists. This issue is fixed in version 0.29.13.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:51.673"
+  },
+  {
+    "id": "CVE-2026-72734",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). From 0.28.7 until 0.29.13, the server.remove tRPC mutation in apps/dokploy/server/api/routers/server.ts accepts a caller-controlled serverId and calls haveActiveServices, findServerById, removeDeploymentsByServerId, and deleteServer without verifying that currentServer.organizationId equals ctx.session.activeOrganizationId. An authenticated owner or administrator with server:delete in one organization who previously observed another organization's serverId can delete that organization's server registration and deployment records, interrupt Dokploy management, and receive the associated plaintext SSH private key even though server.one denies the same cross-organization read. This issue is fixed in version 0.29.13.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:51.823"
+  },
+  {
+    "id": "CVE-2026-72735",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). Prior to 0.29.13, writeTraefikConfigRemote in packages/server/src/utils/traefik/application.ts serializes user-controlled Traefik configuration with yaml.stringify and interpolates the resulting yamlStr into an echo command executed through execAsyncRemote. Single quotes in redirect regex and replacement fields, basic authentication usernames, domain host values, or middleware configuration can terminate the shell quoting and execute arbitrary commands on managed remote servers with the configured SSH user's privileges. This vulnerability is caused by an incomplete fix for CVE-2026-45630. This issue is fixed in version 0.29.13.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:51.977"
+  },
+  {
+    "id": "CVE-2026-72736",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). Prior to 0.29.13, Dokploy passes user-controlled values directly into shell commands via unquoted template literal interpolation in the registry credential testing and Docker Swarm cluster management endbpoints. Both endpoints have a safe local code path (using execFileAsync or the Docker API) but a vulnerable remote path (using execAsyncRemote which runs the shell string via SSH). This vulnerability is fixed in 0.29.13.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:52.123"
+  },
+  {
+    "id": "CVE-2026-72737",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). In 0.29.8 and earlier, backup.create, backup.update, and backup.restoreBackupWithLogs in apps/dokploy/server/api/routers/backup.ts accept a client-controlled destinationId and use the referenced destination without verifying that destination.organizationId equals ctx.session.activeOrganizationId. An authenticated member with backup permissions for a service in one organization can cause another organization's S3 accessKey and secretAccessKey to be materialized by packages/server/src/utils/backups/utils.ts getS3Credentials on the attacker's service host, read that organization's backup objects, or redirect and poison backups across tenant boundaries.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:52.280"
+  },
+  {
+    "id": "CVE-2026-72738",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). Prior to 0.29.13, the backup.listBackupFiles tRPC endpoint in apps/dokploy/server/api/routers/backup.ts passes the search parameter through normalizeS3Path and interpolates it into an rclone lsjson command executed by child_process.exec(), allowing an authenticated user with backup:read permission to execute arbitrary commands on the Dokploy host. This issue is fixed in version 0.29.13.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:52.430"
+  },
+  {
+    "id": "CVE-2026-72739",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). Prior to 0.29.13, the createCommand() function constructs shell commands by interpolating compose service names and configuration into bash command strings. When a compose with a maliciously crafted name or service definition is deployed, the shell metacharacters are interpreted as command separators, allowing arbitrary command execution on the Docker host. This vulnerability is fixed in 0.29.13.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:52.577"
+  },
+  {
+    "id": "CVE-2026-72740",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). Prior to 0.29.13, packages/server/src/utils/providers/git.ts parses the user-controlled customGitUrl with sanitizeRepoPathSSH and interpolates its domain into the ssh-keyscan command from addHostToKnownHostsCommand without shell quoting, allowing an authenticated member with service deployment permission and an attached SSH key to execute arbitrary commands on the Dokploy host during deployment. This issue is fixed in version 0.29.13.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:52.723"
+  },
+  {
+    "id": "CVE-2026-72862",
+    "description": "Dokploy is a free, self-hostable Platform as a Service (PaaS). Prior to 0.29.13, the mariadb.ts, mongo.ts, mysql.ts, postgres.ts, redis.ts, and libsql.ts Dokploy database service deployment functions pass user-controlled dockerImage fields unquoted into docker pull ${dockerImage} shell commands on the remote-server code path. This vulnerability is fixed in 0.29.13.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:53.047"
+  },
+  {
+    "id": "CVE-2026-72898",
+    "description": "Metabase allows a remote, unauthenticated attacker to inject arbitrary SQL via the '/reset_password' database endpoint and gain administrator access to the connected Metabase instance.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:53.300"
+  },
+  {
+    "id": "CVE-2026-72899",
+    "description": "Metabase allows an unauthenticated attacker to inject arbitrary SQL via a publicly shared card or dashboard that exposes a field-filter (dimension) parameter.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:53.490"
+  },
+  {
+    "id": "CVE-2026-72900",
+    "description": "Metabase allows an authenticated, low-privileged attacker to read the entire Metabase application database.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T18:18:53.637"
   }
 ]
