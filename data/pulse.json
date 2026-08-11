@@ -1,5 +1,446 @@
 [
   {
+    "id": "CVE-2026-68092",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ntime/jiffies: Register jiffies clocksource before usage\n\nTeddy reported that a XEN HVM has a long boot delay, which was bisected to\nthe recent enhancements to the negative motion detection. It turned out\nthat the jiffies clocksource is used in early boot before it is registered,\nwhich leaves the max_delta_raw field at zero. That causes the read out to\nbe clamped to the max delta of 0, which means time is not making progress.\n\nCure it by ensuring that it is initialized before its first usage in\ntimekeeping_init().",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:22.030"
+  },
+  {
+    "id": "CVE-2026-68091",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nHID: wacom: stop hardware after post-start probe failures\n\nwacom_parse_and_register() starts HID hardware before registering inputs\nand initializing pad LEDs/remotes. Those later steps can fail, but their\nerror paths currently release Wacom resources without stopping the HID\nhardware.\n\nRoute post-hid_hw_start() failures through hid_hw_stop() before\nreleasing driver resources.\n\nThis issue was identified during our ongoing static-analysis research while\nreviewing kernel code.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:21.870"
+  },
+  {
+    "id": "CVE-2026-68090",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndebugobjects: Plug race against a concurrent OOM disable\n\nsyzbot reported a puzzling splat:\n\n   WARNING: kernel/time/hrtimer.c:443 at stub_timer+0xa/0x20\n\nstub_timer() is installed as timer callback function in\nhrtimer_fixup_assert_init(), which is invoked when\ndebug_object_assert_init() can't find a shadow object. In that case debug\nobjects emits a warning about it before invoking the fixup.\n\nThough the provided console log lacks this warning and instead has the\nfollowing a few seconds before the splat:\n\n     ODEBUG: Out of memory. ODEBUG disabled\n\nSo the object was looked up in debug_object_assert_init() and the lookup\nfailed due a concurrent out of memory situation which disabled debug\nobjects and freed the shadow objects:\n\ndebug_object_assert_init()\n        if (!debug_objects_enabled)\n        \treturn;                         obj = alloc();\n                \t\t\t\tif (!obj) {\n\t\t\t\t\t\t\t// Out of memory\n                                                \tdebug_objects_enabled = false;\n                                                        free_objects();\n        obj = lookup_or_alloc();\n\n        // The lookup failed because the other side\n        // removed the objects, so this returns\n        // an error code as the object in question\n        // is not statically initialized\n\n\tif (!IS_ERR_OR_NULL(obj))\n        \treturn;\n        if (!obj) {\n        \tdebug_oom();\n                return;\n        }\n\n        print(...)\n           if (!debug_objects_enabled)\n                return;\n\n        fixup(...)\n\nThe debug object splat is skipped because debug_objects_enabled is false,\nbut the fixup callback is invoked unconditionally, which makes the timer\ndisfunctional.\n\nThis is only a problem in debug_object_assert_init() and\ndebug_object_activate() as both have to handle statically initialized\nobjects and therefore must handle the error pointer return case\ngracefully. All other places only handle the found/not found case and the\nNULL pointer return is a signal for OOM. Otherwise they get a valid shadow\nobject.\n\nPlug the hole by checking whether debug objects are still enabled before\ninvoking the print and fixup function in those two places.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:21.717"
+  },
+  {
+    "id": "CVE-2026-68089",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niio: core: fix uninitialized data in debugfs\n\nIf *ppos is non-zero then simple_write_to_buffer() will not initialize\nthe start of buf[].  Non zero values for *ppos aren't going to work\nanyway.  Test for them at the start of the function and return -EINVAL.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:21.603"
+  },
+  {
+    "id": "CVE-2026-68088",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nusb: gadget: function: rndis: add length check to response query\n\nAdd variable representations for BufLength and BufOffset in\nrndis_query_response(), and perform a length check on them.\n\nThis is identical to how rndis_set_response() handles these parameters.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:21.467"
+  },
+  {
+    "id": "CVE-2026-68087",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nHID: wacom: use GFP_ATOMIC in wacom_wac_queue_flush()\n\nwacom_wac_queue_flush() is called via the .raw_event callback\n(wacom_raw_event → wacom_wac_pen_serial_enforce → wacom_wac_queue_flush).\nFor USB HID devices, this callback is invoked from hid_irq_in(), which\nis a URB completion handler running in atomic context. Using GFP_KERNEL\nin this path can sleep, leading to a \"scheduling while atomic\" bug.\n\nUse GFP_ATOMIC instead. The existing code already handles allocation\nfailure by skipping the fifo entry and continuing.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:21.340"
+  },
+  {
+    "id": "CVE-2026-68086",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm/khugepaged: write all dirty file folios when collapsing\n\n[There is no upstream commit, as this code was removed by upstream\n commit 044925f9b565 (\"mm: fs: remove filemap_nr_thps*() functions and their users\")]\n\nAs-is, khugepaged and writable-file opening exclude each other. A file\ncannot be open writeable and have THPs (because the filesystem is not aware\nof them). khugepaged will never collapse file pages for files that are\nopened writeable. On an open(O_RDWR/O_WRONLY), the page cache for that\nparticular file is dropped. This is fine because nothing could've been\ndirtied.\n\nHowever, there is an edge-case: collapse_file() might not be able to\ncoexist with concurrent writers, but it can coexist with dirty folios\n(from previous writers). Therefore, the following can happen:\n\nopen(file, O_RDWR)\nwrite(file)\nclose(file)\nmadvise(file_mapping, MADV_COLLAPSE, some non-dirty range)\nopen(file, O_RDWR)\n nr_thps > 0\n  truncate_inode_pages()\n    /* THPs are cleared out, but so are the dirty folios */\n\nWhen this edge-case happens, there is data loss, as the dirty folios are\nfully discarded.\n\nFix it by fully writing back the page cache (and waiting) when collapsing\nfile THPs. Doing so provides the guarantee that no dirty folio will be\nobserved while there are active THPs. To fully ensure this is safe, the\ninvalidate_lock needs to be held while doing the writeout, so that\ndo_dentry_open()'s page cache truncation excludes this write-and-wait.\n\nAs a side effect, move the nr_thps counter bumping outside the i_pages\nlock. This is correct since the counter itself is an atomic_t and the\nproducer <-> consumer correctness is provided by a full memory barrier:\nsmp_mb() in collapse_file()/memory barrier implied by full ordering in\nget_write_access() -> atomic_inc_unless_negative().",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:21.207"
+  },
+  {
+    "id": "CVE-2026-68085",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nBluetooth: hci_uart: clear HCI_UART_SENDING when write_work is canceled\n\nHCI_UART_SENDING bit in tx_state means write_work is pending and blocks\nqueueing it again.  Currently this bit is not cleared when canceling the\nwork in hci_uart_close(), which blocks future writes when device is\nreopened later if write_work was pending.\n\nFix by clearing HCI_UART_SENDING when canceling the work.\n\nAlso make clearing of tx_skb safe by using disable_work_sync +\nenable_work instead of just cancel_work_sync.  hci_uart_flush() purges\nthe proto tx queue so we can cancel the pending write_work there,\ninstead of doing it just in hci_uart_close().  Re-enable and possibly\nrequeue the work after queue flush.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:21.060"
+  },
+  {
+    "id": "CVE-2026-68084",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nstaging: vme_user: fix location monitor leak in tsi148 bridge\n\ntsi148_probe() allocates a location monitor resource and links it into\ntsi148_bridge->lm_resources. The probe error path frees this list, but\ntsi148_remove() only frees the dma, slave and master resource lists, so\nthe location monitor resource is leaked on device unbind or module\nunload.\n\nFree the lm_resources list in tsi148_remove() as well, before\ntsi148_bridge is freed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:20.933"
+  },
+  {
+    "id": "CVE-2026-68083",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nksmbd: fix path resolution in ksmbd_vfs_kern_path_create\n\nThe SMB2 open lookup is rooted at the share with LOOKUP_BENEATH, but the\ncreate/mkdir/hardlink sink is not: ksmbd_vfs_kern_path_create() builds an\nabsolute path with convert_to_unix_name() and resolves it from AT_FDCWD\nvia start_creating_path(), so a \"..\" component is walked from the real\nfilesystem root and escapes the export.\n\nAn authenticated client races a missing path component so the rooted open\nlookup returns -ENOENT (taking the create branch) while the same component\nis present (a directory) when the create walk runs; the create then\nresolves \"..\" out of the share.\n\nRoot the create walk at the share like the lookup and rename paths already\nare: resolve the parent with vfs_path_parent_lookup(..., LOOKUP_BENEATH,\n&share_conf->vfs_path) and create the final component with\nstart_creating_noperm(). convert_to_unix_name() then has no callers and is\nremoved.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:20.807"
+  },
+  {
+    "id": "CVE-2026-64941",
+    "description": "URL Redirection to Untrusted Site ('Open Redirect') vulnerability in phoenixframework phoenix_live_view allows an attacker to send a victim's browser to an origin of the attacker's choosing via a :to value containing ASCII tab, LF or CR.\n\nredirect/2 validates :to through the private validate_local_url!/2 in lib/phoenix_live_view.ex, which is intended to guarantee the target is a path within the application. It rejects a leading // and any backslash, but not ASCII tab, LF or CR. Browsers strip those three characters before parsing a URL, so a value such as /<TAB>/example.com passes validation as a path and is then resolved as the scheme-relative URL //example.com. The live navigation functions share the guard but are not affected, because the client expands their target against the current origin. push_patch/2 is also affected before 0.7.0, which is when that expansion was added.\n\nThis issue affects phoenix_live_view: from 0.5.0 before 1.0.19, from 1.1.0-rc.0 before 1.1.33, and from 1.2.0-rc.0 before 1.2.9.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:19.873"
+  },
+  {
+    "id": "CVE-2026-59088",
+    "description": "A flaw was found in GIMP. A signed integer overflow vulnerability exists in the `file-fli` plugin when processing FLI image files. This occurs due to an incorrect calculation during memory allocation for image buffers, where the multiplication of image width and height can exceed the maximum integer value. A remote attacker could exploit this by tricking a user into opening a specially crafted FLI file, leading to the application crashing and resulting in a denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T12:17:19.563"
+  },
+  {
+    "id": "CVE-2026-72594",
+    "description": "A stored cross-site scripting (XSS) vulnerability in lobehub/lobe-chat through v2.2.13 allows a low-privileged authenticated user to inject arbitrary JavaScript into the application by uploading a crafted SVG file as a user avatar.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:32.610"
+  },
+  {
+    "id": "CVE-2026-72593",
+    "description": "A missing authentication vulnerability in dulldusk/phpfm through 1.8.0 allows an unauthenticated remote attacker to access the full file manager functionality including reading, writing, deleting, and uploading files anywhere on the server filesystem.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:32.490"
+  },
+  {
+    "id": "CVE-2026-72592",
+    "description": "An unrestricted file upload vulnerability in dulldusk/phpfm through 1.8.0 allows an unauthenticated remote attacker to execute arbitrary PHP code on the server. The application ships with an empty upload extension filter ( = array) and no authentication enabled by default (auth_pass is empty string), allowing an unauthenticated attacker to upload a PHP webshell and execute it by browsing to the uploaded path.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:32.370"
+  },
+  {
+    "id": "CVE-2026-72591",
+    "description": "A server-side request forgery (SSRF) vulnerability in gabehf/Koito through v0.3.2 allows an authenticated user to make the server perform HTTP requests to arbitrary internal or external hosts by supplying a crafted image_url value in the PATCH /apis/web/v1/album/{id}/image endpoint.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:32.253"
+  },
+  {
+    "id": "CVE-2026-72590",
+    "description": "An OS command injection vulnerability in alseambusher/crontab-ui through 0.4.2 allows an unauthenticated remote attacker to inject arbitrary cron job entries by sending a crafted GET request to /crontab with URL-encoded newlines in the env_vars parameter.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:32.123"
+  },
+  {
+    "id": "CVE-2026-72589",
+    "description": "An OS command injection vulnerability in alseambusher/crontab-ui through 0.4.2 allows an unauthenticated remote attacker to execute arbitrary system commands by importing a crafted crontab database file. The POST /import endpoint accepts arbitrary .db files and overwrites the application database without validation.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:32.003"
+  },
+  {
+    "id": "CVE-2026-72588",
+    "description": "A user enumeration vulnerability in bluewave-labs/Checkmate through 2.1.0 allows an unauthenticated remote attacker to determine whether a given email address is registered. The POST /api/v1/auth/recovery/request endpoint returns HTTP 200 for registered email addresses and a different status code for unregistered ones, enabling attackers to enumerate valid user accounts.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.880"
+  },
+  {
+    "id": "CVE-2026-72587",
+    "description": "A cache poisoning vulnerability in CoreBunch/Instatic through 0.0.14 allows an unauthenticated remote attacker to poison the shared process-wide render cache by manipulating the u query parameter of the GET /_instatic/hole/<nodeId> server island endpoint.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.760"
+  },
+  {
+    "id": "CVE-2026-72586",
+    "description": "A missing authentication vulnerability in frangoteam/FUXA through 1.3.3 allows an unauthenticated remote attacker to query all historical sensor data via the DAQ_QUERY Socket.IO event. When secureEnabled=true, all other sensitive Socket.IO events (DEVICE_BROWSE, HOST_INTERFACES, DEVICE_TAGS_REQUEST, etc.) call isSocketAdminAuthorized to verify the connection token, but the DAQ_QUERY handler in server/runtime/index.js lacks this check entirely.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.637"
+  },
+  {
+    "id": "CVE-2026-72585",
+    "description": "An authorization bypass vulnerability in Grafana through 13.2.0 allows an Editor-role user to delete protected contact points (receivers) without the required alert.notifications.receivers.protected:write permission.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.510"
+  },
+  {
+    "id": "CVE-2026-72584",
+    "description": "A time-of-check/time-of-use (TOCTOU) race condition in fastschema through v0.15.1 allows an unauthenticated remote attacker to bypass the OTP attempt limit on the account recovery flow, enabling brute-force attacks on 6-digit OTP codes.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.390"
+  },
+  {
+    "id": "CVE-2026-72583",
+    "description": "A stored cross-site scripting (XSS) vulnerability in fastschema through v0.15.1 allows a low-privileged authenticated user to upload an SVG file containing malicious JavaScript by bypassing the MIME type allow-list check.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.270"
+  },
+  {
+    "id": "CVE-2026-72582",
+    "description": "A NULL pointer dereference vulnerability in fastschema through v0.15.1 allows an unauthenticated remote attacker to crash the server process with a single HTTP request. The sendOTPEmail function in pkg/auth/local.go dereferences a pointer obtained from an unchecked error path without validating it is non-nil, causing a fatal panic that terminates the entire server when a recovery request is sent to the /api/auth/local/recover endpoint.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.137"
+  },
+  {
+    "id": "CVE-2026-72581",
+    "description": "A server-side request forgery (SSRF) vulnerability in duhow/xiaoai-patch through commit fb07049 allows a remote attacker to make the Xiaomi smart speaker perform HTTP requests to arbitrary internal or external URLs. The /auth endpoint in api/main.py uses the user-supplied url POST parameter to redirect to a Home Assistant instance without validating the destination URL, enabling internal network scanning and access to internal services.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:31.017"
+  },
+  {
+    "id": "CVE-2026-72580",
+    "description": "An OS command injection vulnerability in duhow/xiaoai-patch through commit fb07049 allows a remote attacker to execute arbitrary system commands on Xiaomi smart speakers running the patch. The /mute and /unmute endpoint handlers in api/main.py pass the user-supplied silent query parameter directly to os.system() without sanitization, enabling command injection via shell metacharacters.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.897"
+  },
+  {
+    "id": "CVE-2026-72579",
+    "description": "An OS command injection vulnerability in NASA HyperCP (main branch) allows a network-adjacent attacker who can intercept or spoof responses from oceandata.sci.gsfc.nasa.gov to execute arbitrary system commands on the researcher's workstation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.780"
+  },
+  {
+    "id": "CVE-2026-72578",
+    "description": "A cross-site request forgery (CSRF) vulnerability in FreePBX Framework 17.0 allows an unauthenticated remote attacker to perform administrative actions on behalf of an authenticated administrator.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.660"
+  },
+  {
+    "id": "CVE-2026-72577",
+    "description": "Multiple vulnerabilities in NASA fprime-gds through 3.4.3 allow an unauthenticated remote attacker to achieve arbitrary code execution on the ground station host and inject arbitrary commands to connected spacecraft. The Flask application in src/fprime_gds/flask/app.py applies no authentication to any endpoint.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.533"
+  },
+  {
+    "id": "CVE-2026-72576",
+    "description": "A stored cross-site scripting (XSS) vulnerability in Bludit 4.0.0-beta allows a low-privileged authenticated user (Author role) to inject arbitrary JavaScript by uploading a crafted SVG file as the site logo. A stored script tag in the SVG executes in the browser of any user who loads the logo.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.407"
+  },
+  {
+    "id": "CVE-2026-72575",
+    "description": "An improper authorization vulnerability in daptin through v0.12.34 allows unauthenticated remote attackers to read, create, update, and delete usergroup records. The permission check functions (CanRead, CanPeek, CanCreate, CanUpdate, CanDelete, CanRefer) in server/permission/permission.go return true whenever p.UserId equals the requesting userId, but fail to reject the null/zero reference — unlike CanExecute, which explicitly guards it.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.277"
+  },
+  {
+    "id": "CVE-2026-72574",
+    "description": "A host header injection vulnerability in picocms/Pico through 2.1.4 allows an unauthenticated remote attacker to control the origin of JavaScript and CSS assets loaded by the default theme. When base_url is unset (the default), Pico::getBaseUrl in lib/Pico.php builds the base URL from unvalidated Host, X-Forwarded-Host, X-Forwarded-Proto, and X-Forwarded-Port request headers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.137"
+  },
+  {
+    "id": "CVE-2026-72573",
+    "description": "An OS command injection vulnerability in 4xmen/pm2panel (all versions) allows an authenticated remote attacker to execute arbitrary system commands on the host. The pm2panel.js handler at line 188 passes the unsanitized req.query.id parameter directly to exec('pm2 restart ' + id) without input validation or shell escaping, enabling command chaining via semicolons or other shell metacharacters.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:30.010"
+  },
+  {
+    "id": "CVE-2026-72572",
+    "description": "A path traversal vulnerability in o1lab/xmysql (all versions) allows an unauthenticated remote attacker to read and download arbitrary files from the server. The lib/xapi.js file at lines 338 and 424 uses the user-controlled req.query.name parameter in path.join(cwd, name) without sanitization before passing it to res.download, enabling directory traversal via ../ sequences to access sensitive system files.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:29.883"
+  },
+  {
+    "id": "CVE-2026-72571",
+    "description": "A path traversal vulnerability in mustafaakin/cast-localvideo (all versions) allows an unauthenticated remote attacker to read arbitrary files from the server. The app.js handler at lines 151-153 passes the user-supplied req.body.dir parameter directly to res.sendFile() without sanitization, enabling directory traversal via absolute paths or ../ sequences to read sensitive system files.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:29.760"
+  },
+  {
+    "id": "CVE-2026-72570",
+    "description": "A stored cross-site scripting (XSS) vulnerability in cube-root/directory-serve through 1.3.7 allows an attacker to inject arbitrary JavaScript into the web interface by uploading a file with a crafted filename containing HTML attribute-breaking characters.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:29.633"
+  },
+  {
+    "id": "CVE-2026-72569",
+    "description": "A path traversal vulnerability in cube-root/directory-serve through 1.3.7 allows an unauthenticated remote attacker to delete arbitrary files outside the intended served directory when the application is run with the --delete option.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:29.503"
+  },
+  {
+    "id": "CVE-2026-72568",
+    "description": "An out-of-bounds read vulnerability in Redis through 8.8.1 allows an adjacent unauthenticated attacker to cause denial of service or information disclosure by sending a specially crafted PING message to the Redis Cluster Bus port.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:29.373"
+  },
+  {
+    "id": "CVE-2026-72567",
+    "description": "An improper path validation vulnerability in AsyncFuncAI/deepwiki-open through commit 16f35a0 allows unauthenticated remote attackers to write to or delete arbitrary files with root privileges. The api/api.py wiki-cache endpoint constructs file paths from user-controlled owner, repo, and repo_type fields without sanitization, enabling path traversal.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:29.220"
+  },
+  {
+    "id": "CVE-2026-72566",
+    "description": "A server-side request forgery (SSRF) vulnerability in automatisch through commit 41f3c56 allows a low-privileged authenticated user with 'manage Flow' permission to make the server fetch arbitrary URLs and retrieve the full response body via the HTTP Request app's Custom Request action.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:29.100"
+  },
+  {
+    "id": "CVE-2026-72565",
+    "description": "A SQL injection vulnerability in Tencent APIJSON through 8.1.8 allows unauthenticated remote attackers to bypass per-table access control and read arbitrary database tables via the Map-form @having operator.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:28.973"
+  },
+  {
+    "id": "CVE-2026-72564",
+    "description": "An improper authorization vulnerability in fosrl/pangolin through v1.20.0 allows an authenticated remote attacker to authenticate to any resource in any organization by reusing an access token issued for a different resource.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:28.837"
+  },
+  {
+    "id": "CVE-2026-71394",
+    "description": "GNU Emacs for Android improperly validates the table header input in sfnt_read_table_directory() in src/sfnt.c. Due to an incorrect comparison variable in the read-length check, a crafted font file that claims to contain more table directory entries than actually present causes the parser to return a struct with uninitialized heap memory in the table directory entries. An attacker can deliver a malicious font file via email, EWW (Emacs Web Wowser), or documents with custom faces, causing Emacs to load it. This leads to the use of uninitialized heap data in subsequent table lookups, potentially resulting in information disclosure, crashes, or arbitrary memory access on 32-bit targets.\n\n\nThis issue is fixed after commit 7621ee1d01229d50e5c0cddea6bf0b01095a62cf",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:28.697"
+  },
+  {
+    "id": "CVE-2026-71393",
+    "description": "GNU Emacs for Android is vulnerable to an integer overflow in sfnt_read_name_table() in src/sfnt.c. The function computes an allocation size using a 32-bit length value from a TrueType font file without overflow checking. On 32-bit targets, a crafted font causes the calculation to wrap, resulting in an undersized heap allocation. A subsequent read() call writes beyond the buffer, causing a heap buffer overflow. An attacker can deliver a malicious font file via email, EWW (Emacs Web Wowser), or documents with custom faces, causing Emacs to load it. This can lead to heap memory corruption and potential code execution.\n\n\n\n\nThis issue was fixed in commit d51a4722316efe0960994d371e1859099894d1ca",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:28.560"
+  },
+  {
+    "id": "CVE-2026-71392",
+    "description": "GNU Emacs for Android is vulnerable to an integer overflow in the sfnt_read_cmap_format_12() function in src/sfnt.c. When processing a crafted TrueType font file, an unguarded addition in the xmalloc allocation call wraps around on 32-bit builds, causing a heap buffer overflow write. An attacker can deliver a malicious font file via email, EWW (Emacs Web Wowser), or documents with custom faces, causing Emacs to load it. This results in heap memory corruption that can lead to code execution.\n\n\nThis issue was fixed in commit c4e20777c26548722a37b03db93243e83a0d6188",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:28.397"
+  },
+  {
+    "id": "CVE-2026-71391",
+    "description": "GNU Emacs for Android contains an off-by-one error in the gvar table parser in src/sfnt.c. The shared-coordinate index boundary check in sfnt_vary_simple_glyph() and sfnt_vary_compound_glyph() uses a strict greater-than comparison instead of greater-than-or-equal, allowing a crafted TrueType variable font to bypass the check and trigger a heap-based out-of-bounds read via memcpy. An attacker can deliver a malicious font file via email, EWW (Emacs Web Wowser), or documents with custom faces, causing Emacs to load it. This exposes heap memory contents which can be later used to defeat ASLR.\n\n\nThis issue was fixed in commit 95ab9ef627b212d74d321c5bbb5b56a1be7b9fbe",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:28.233"
+  },
+  {
+    "id": "CVE-2026-66642",
+    "description": "Cross-Site Request Forgery (CSRF) vulnerability in WP Umbrella allows Cross Site Request Forgery.\n\nThis issue affects WP Umbrella: from 2.24.2 through 2.26.2.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:28.067"
+  },
+  {
+    "id": "CVE-2026-66486",
+    "description": "GNU cpio is vulnerable to improper encoding or escaping of output in its archive member listing functionality. When listing archive members via cpio -it, member names are printed directly to output without quoting or escaping. An attacker can craft a cpio archive containing member names with embedded newline characters or ANSI escape sequences, causing forged listing entries or terminal control sequence injection when the listing is displayed.\n\n\n\n\nThis issue has been fixed in commit 2ff9600c9ef32e88759843cdbde74c8db5ae9b30",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:27.907"
+  },
+  {
+    "id": "CVE-2026-66485",
+    "description": "GNU cpio is vulnerable to an uncontrolled memory allocation in the make_path function at src/makepath.c. The function uses alloca to allocate stack memory based on the length of argpath, which is derived from an archive-controlled pathname during extraction. A malicious cpio archive containing a sufficiently long nested pathname causes an unbounded stack allocation, resulting in a stack overflow and crash of the cpio process. An attacker who can supply a crafted cpio archive to a victim who extracts it can cause a denial of service.\n\nThis issue has been fixed in commit 3cd514031371d8aeeaf2048aa10103e02831aaa9",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:27.773"
+  },
+  {
+    "id": "CVE-2026-66484",
+    "description": "GNU cpio contains a Path Traversal vulnerability in its tar archive extraction functionality. When extracting a tar archive in copy-in mode with the --no-absolute-filenames option, the extracted file name is normalized but the tar hard-link target is passed to the link_to_name function without equivalent sanitization before calling link function. A tar archive provided by an attacker, containing a hard-link entry whose linkname is set to an absolute path outside the extraction directory, can cause cpio to create a hard link to an existing file outside the intended extraction directory, breaking the expected guarantee of --no-absolute-filenames and allowing archive-controlled linkage to external files.\n\nThis issue has been fixed in commit e2b9cbdd3354d2b1569b7390d1bc15c1930559ad",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:27.620"
+  },
+  {
+    "id": "CVE-2026-65948",
+    "description": "UnixAuth lacks brute-force protection in Apache Ranger versions <= 2.8.0. \nNote:  UnixAuth is NOT a recommended option for production deployments. \nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:27.483"
+  },
+  {
+    "id": "CVE-2026-65945",
+    "description": "Logs contain replayable JWT tokens in Apache Ranger versions <= 2.8.0\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:27.363"
+  },
+  {
+    "id": "CVE-2026-65942",
+    "description": "TLS hostname verification issue in Apache Ranger Client Code in versions <= 2.8.0.\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:27.240"
+  },
+  {
+    "id": "CVE-2026-61899",
+    "description": "Vulnerability in tapestry-core in Apache Tapestry 5.5.0+ on all platforms allows attackers to download clsspath assets via specially crafted URLs.\nUsers are recommended to upgrade to version 5.9.1, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:27.117"
+  },
+  {
+    "id": "CVE-2026-59087",
+    "description": "A flaw was found in the GIMP image manipulation program, specifically within its Seattle Filmworks file loader. A remote attacker could exploit this vulnerability by tricking a user into opening a specially crafted Seattle Filmworks file. This could lead to a heap overflow, allowing the attacker to write several kilobytes of controlled data beyond the intended memory buffer. Such an overflow can result in memory corruption, potentially leading to arbitrary code execution or a denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:26.910"
+  },
+  {
+    "id": "CVE-2026-55814",
+    "description": "Missing Authentication in Apache Ranger Download APIs on versions <= 2.8.0.\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:26.790"
+  },
+  {
+    "id": "CVE-2026-55799",
+    "description": "Remote Code Execution Vulnerability in GraalScriptEngineCreator in Apache Ranger <= 2.8.0\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:26.670"
+  },
+  {
+    "id": "CVE-2026-44416",
+    "description": "Remote Code Execution via Arbitrary Class Instantiation in plugin-schema-registry component in Apache Ranger <= 2.8.0.\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:26.547"
+  },
+  {
+    "id": "CVE-2026-42537",
+    "description": "Remote Code Execution via JDBC URL Injection in Apache Ranger <= 2.8.0\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:26.420"
+  },
+  {
+    "id": "CVE-2026-40920",
+    "description": "Privilege Escalation via URL Parameter is reported in Apache Ranger versions <= 2.8.0.\n\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:26.287"
+  },
+  {
+    "id": "CVE-2026-32227",
+    "description": "SQL Injection vulnerability vulnerability in Apache Ranger.\n\nThis issue affects .\n\nUsers are recommended to upgrade to version 2.9.0, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:26.160"
+  },
+  {
+    "id": "CVE-2026-28672",
+    "description": "Improper Neutralization of Special Elements used in a Command ('Command Injection') vulnerability in Apache Ranger.\n\nThis issue affects Apache Ranger: from 0.6 through 2.8.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-10T11:17:25.190"
+  },
+  {
     "id": "CVE-2026-66915",
     "description": "Joomla Extension - fabrikar.com - Remote code execution in Fabrik < 4.6.7 - An unauthenticated attacker could execute arbitrary code by using the ajax_calc feature of the calc plugin.",
     "severity": "Unknown",
@@ -2700,12 +3141,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-07T13:16:49.493"
-  },
-  {
-    "id": "CVE-2026-15816",
-    "description": "A flaw was found in dracut. The die() error-handling function writes its message into a shell script under the initramfs emergency-hook directory without properly shell-quoting it. When the message contains data derived from the DHCP ROOT_PATH option, an attacker on the adjacent network who controls a rogue DHCP server can inject a command-substitution sequence that executes as root the next time dracut sources its emergency hook scripts during standard boot-failure handling.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-07T11:17:05.100"
   }
 ]
