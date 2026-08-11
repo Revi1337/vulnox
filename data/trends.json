@@ -1,40 +1,5 @@
 [
   {
-    "id": "CVE-2026-15471",
-    "description": "A vulnerability was found in Eleveo Call Recording Software 9.7.0. This affects an unknown part of the file /callrec/pci_dss_status.jsp. Performing a manipulation results in improper authorization. Remote exploitation of the attack is possible. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-12T02:16:14.703"
-  },
-  {
-    "id": "CVE-2026-15472",
-    "description": "A vulnerability was determined in Eleveo Call Recording Software 9.7.0. This vulnerability affects unknown code of the file /callrec/composeEmailAction.do. Executing a manipulation can lead to improper authorization. The attack can be executed remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-12T02:16:16.380"
-  },
-  {
-    "id": "CVE-2026-15473",
-    "description": "A vulnerability was identified in Eleveo Call Recording Software 9.7.0. This issue affects some unknown processing of the file /callrec/restoreCallAction.do of the component Recorded Calls Page. The manipulation leads to improper authorization. The attack is possible to be carried out remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-12T03:16:09.530"
-  },
-  {
-    "id": "CVE-2026-15474",
-    "description": "A security flaw has been discovered in Eleveo Call Recording Software 9.7.0. Impacted is an unknown function of the file /callrec/audio.jsp of the component Call Recording Handler. The manipulation of the argument callId results in improper authorization. The attack may be performed from remote. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-12T03:16:10.700"
-  },
-  {
-    "id": "CVE-2026-15475",
-    "description": "A weakness has been identified in MiniTool Partition Wizard up to 13.6. The affected element is an unknown function in the library pwdrvio.sys of the component Signed Kernel Driver. This manipulation causes improper access controls. The attack can only be executed locally. The exploit has been made available to the public and could be used for attacks. Upgrading to version 13.9 is sufficient to fix this issue. The affected component should be upgraded. The vendor was contacted early about this disclosure.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-12T03:16:10.860"
-  },
-  {
     "id": "CVE-2026-15476",
     "description": "A security vulnerability has been detected in QILING Disk Master 6.0.0.0. The impacted element is an unknown function in the library diskbckp.sys of the component Kernel Driver. Such manipulation leads to improper access controls. The attack can only be performed from a local environment. The exploit has been disclosed publicly and may be used. It is suggested to upgrade the affected component.",
     "severity": "Medium",
@@ -17270,8 +17235,8 @@
   },
   {
     "id": "CVE-2026-63872",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nesp: fix page frag reference leak on skb_to_sgvec failure\n\nIn esp_output_tail(), when esp->inplace is false, the old skb page frags\nare replaced with a new page from the xfrm page_frag cache. The source\nscatterlist (sg) is built from the old frags before the replacement, and\nesp_ssg_unref() is responsible for releasing the old page references\nafter the crypto operation completes.\n\nHowever, if the second skb_to_sgvec() call (which builds the destination\nscatterlist from the new page) fails, the code jumps to error_free which\nonly calls kfree(tmp). The old page frag references captured in the\nsource scatterlist are never released:\n\n  1. sg[] is built from old frags via skb_to_sgvec() (no extra get_page)\n  2. nr_frags is set to 1 and frag[0] is replaced with the new page\n  3. Second skb_to_sgvec() fails -> goto error_free\n  4. kfree(tmp) frees the sg[] memory but old frags are not unref'd\n  5. kfree_skb() only releases frag[0] (the new page), not the old ones\n\nFix this by adding a bool parameter to esp_ssg_unref() that, when true,\nunconditionally unrefs the source scatterlist frags without checking\nreq->src and req->dst, since those fields are not yet initialized by\naead_request_set_crypt() at the point of the error. Existing callers\npass false to preserve the original behavior.\n\nThe same issue exists in both esp4 and esp6 as the code is identical.",
-    "severity": "High",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-19T15:16:54.247"
   },
@@ -68804,7 +68769,7 @@
   },
   {
     "id": "CVE-2026-68171",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\narm64: syscall: Ensure saved x0 is kept in-sync with tracer updates\n\nWhen seccomp support was originally added to arm64 in a1ae65b21941\n(\"arm64: add seccomp support\"), seccomp was erroneously called _before_\nthe ptrace syscall-enter-stop and therefore the tracer could trivially\nmanipulate the syscall register state after the seccomp check had\npassed. This was subsequently fixed in a5cd110cb836 (\"arm64/ptrace: run\nseccomp after ptrace\") by moving the seccomp check after the tracer has\nrun. Unfortunately, a decade later, that fix has been reported to be\nincomplete.\n\nOn arm64, both the first argument to a syscall and its eventual return\nvalue are allocated to register x0. In order to facilitate syscall\nrestarting and querying of syscall arguments on the syscall exit path,\nthe original value of x0 is stashed in 'struct pt_regs::orig_x0' early\nduring the syscall entry path and is returned for the first argument by\nsyscall_get_arguments(). Unlike 32-bit Arm, this stashed value is not\ndirectly exposed via ptrace() and so changes to register x0 made by the\ntracer on a syscall-enter-stop are not reflected in 'orig_x0'. This\nmeans that seccomp, syscall tracepoints and audit can observe a stale\nvalue for the register compared to the argument that will be observed by\nthe actual syscall.\n\nRe-sync 'orig_x0' from x0 on the syscall entry path following a\npotential ptrace stop (i.e. PTRACE_EVENTMSG_SYSCALL_ENTRY or\nSECCOMP_RET_TRACE). This behaviour is limited to native tasks (because\ncompat tasks expose 'orig_r0' to ptrace) where the syscall is not being\nskipped (because x0 is updated to hold the return value of -ENOSYS in\nthat case).",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-10T13:20:03.780"
@@ -72357,5 +72322,33 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-11T01:17:24.403"
+  },
+  {
+    "id": "CVE-2026-19424",
+    "description": "Chiline Cloud developed by Inventec Appliances has a Insecure Direct Object Reference vulnerability. Unauthenticated remote attackers can modify a specific parameter to read other users' sensitive data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T03:17:36.157"
+  },
+  {
+    "id": "CVE-2026-24329",
+    "description": "A flaw was found in wildfly-core. A remote user authenticated as an administrative user can inject a malformed payload into the Inet Address field through the Management Model. This injection causes the server to crash and become unrecoverable, as the payload is written into the standalone.xml configuration file. Manual intervention is required to restore server operation, leading to a denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T03:17:36.313"
+  },
+  {
+    "id": "CVE-2026-24330",
+    "description": "A flaw was found in wildfly-core. A remote attacker, authenticated as a 'deployer' account, can import and deploy a malicious archive file from an untrusted source. This is achieved by leveraging WildFly libraries to craft a Java project that allows an HTTP POST request to upload and deploy the malicious archive. This could lead to further exploitation, such as arbitrary file read vulnerabilities.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T03:17:36.463"
+  },
+  {
+    "id": "CVE-2026-8917",
+    "description": "Untrusted Pointer Dereference in ASUS GPU Tweak III, GPUTweakII, AI Suite3, and VGAdll: An IOCTL vulnerability allows a local attacker to write a specific value to an arbitrary memory address, potentially leading to privilege escalation.\nRefer to the ' \nSecurity Update for ASUS GPU Tweak III, GPU Tweak II, AI Suite 3, and Armoury Crate Security Bulletin   ' section on the ASUS Security Advisory for more information.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T03:18:01.900"
   }
 ]
