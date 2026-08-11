@@ -1,12 +1,5 @@
 [
   {
-    "id": "CVE-2026-58596",
-    "description": "Untrusted pointer dereference in Microsoft Edge (Chromium-based) allows an unauthorized attacker to elevate privileges over a network.",
-    "severity": "High",
-    "tech": "Edge chromium",
-    "published": "2026-07-12T16:16:31.350"
-  },
-  {
     "id": "CVE-2026-10663",
     "description": "In Zephyr's experimental USB host stack (CONFIG_USB_HOST_STACK), usbh_device_disconnect() (subsys/usb/host/usbh_device.c) freed the root usb_device slab object without clearing the cached pointer ctx->root. The bus removal handler dev_removed_handler() (subsys/usb/host/usbh_core.c) decides what to tear down solely from ctx->root, checking only that it is non-NULL.\n\nBecause UHC controller drivers (e.g. uhc_max3421e, uhc_mcux_common) synthesize UHC_EVT_DEV_REMOVED directly from physical bus line state with no debounce or state guard, an attacker with physical USB access (or a rogue device that bounces its connection) can deliver a second device-removed event after a root device disconnect. The handler then re-enters usbh_device_disconnect() with the dangling pointer, locking a mutex inside the freed object (use-after-free), removing the freed node from the device list, and calling k_mem_slab_free() on the already-freed block (double-free). If the slab block has been reissued to a newly attached device in between, this corrupts a live object.\n\nImpact is denial of service (crash) and memory corruption; the attack vector is physical/local. The flaw was introduced in v4.4.0 by the connect/disconnect refactor and is fixed by clearing ctx->root in usbh_device_disconnect() before freeing.",
     "severity": "Medium",
@@ -2166,21 +2159,21 @@
     "id": "CVE-2026-51536",
     "description": "In OpENer 2.3.0 (commit 76b95cf) when parsing incoming CIP (Common Industrial Protocol) network packets, the length parameter is inconsistently typed across the call stack. Specifically, an upstream length calculated as an int is passed to a downstream function that expects an EipInt16 (a 16-bit signed integer). If a maliciously crafted packet with specific length fields is processed, the length parameter can overflow or be truncated into a negative value. This negative length bypasses subsequent bounds checking (due to signed/unsigned comparison issues) and is ultimately used in memory operations, leading to a Stack Buffer Overflow when reading data in DecodePaddedEPath.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Opener",
     "published": "2026-07-13T22:16:47.263"
   },
   {
     "id": "CVE-2026-51537",
     "description": "EIPStackGroup OpENer 2.3.0 (commit 76b95cf) has an out-of-bounds read issue in Connection Manager handling of ForwardOpen requests when processing short malformed packets. An attacker can send a valid ENIP outer frame carrying a malformed CIP ForwardOpen/LargeForwardOpen request, causing the parser to continue reading fields even when request data is insufficient. This issue is remotely triggerable via network traffic and does not require authentication.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Opener",
     "published": "2026-07-13T22:16:47.387"
   },
   {
     "id": "CVE-2026-51538",
     "description": "EIPStackGroup OpENer 2.3.0 (commit 76b95cf) suffers from an Incorrect Access Control vulnerability in its handling of encapsulation sessions. When the server processes critical encapsulation commands, it verifies whether the provided session_handle exists in the global session list, but it fails to verify whether that handle belongs to the specific TCP connection issuing the request. Because there is no strong binding between a session handle and its originating socket, any attacker on the network can use a valid session handle created by another legitimate client to bypass access controls.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Opener",
     "published": "2026-07-13T22:16:47.497"
   },
   {
@@ -2194,14 +2187,14 @@
     "id": "CVE-2026-51540",
     "description": "OpENer 2.3.0 (master branch up to commit 76b95cf) is vulnerable to a severe memory corruption issue caused by an integer underflow in the processing of connected explicit messages (SendUnitData).",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Opener",
     "published": "2026-07-13T22:16:47.703"
   },
   {
     "id": "CVE-2026-51541",
     "description": "OpENer 2.3.0 (commit 76b95cf) has an out-of-bounds read issue in CIP message parsing when handling malformed explicit requests with a forged EPath size. An attacker can send a valid ENIP SendRRData frame carrying a very short CIP payload whose path_size field claims that many more path words are present than are actually available. Because the parser trusts the attacker-controlled path_size and continues decoding path segments without a remaining-length boundary, it reads beyond the end of the stack receive buffer.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Opener",
     "published": "2026-07-13T22:16:47.807"
   },
   {
@@ -10405,7 +10398,7 @@
     "id": "CVE-2026-60005",
     "description": "NGINX Plus and NGINX Open Source have a vulnerability in the ngx_http_slice_module module. When the slice directive and unnamed regex captures are configured or when a background cache update happens, unauthenticated attackers can send requests that may cause uninitialized memory access in the NGINX worker process, leading to limited disclosure of memory or a restart.\n\nImpact:\nThis vulnerability may allow remote, unauthenticated attackers to have limited control to disclose memory contents or restart the NGINX worker process. There is no control plane exposure; this is a data plane issue only.\nNote: The ngx_http_slice_module module is not enabled by default; it's enabled with the --with-http_slice_module configuration parameter.\n\nNote: Software versions which have reached End of Technical Support (EoTS) are not evaluated.",
     "severity": "High",
-    "tech": "Nginx app protect waf",
+    "tech": "Nginx gateway fabric",
     "published": "2026-07-15T16:16:49.820"
   },
   {
@@ -15109,7 +15102,7 @@
     "id": "CVE-2026-8861",
     "description": "IBM Security Verify could allow a remote attacker to obtain sensitive information when a detailed technical error message is returned in the browser.  This information could be used in further attacks against the system.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-07-17T20:17:31.760"
   },
   {
@@ -18462,98 +18455,98 @@
     "id": "CVE-2026-64088",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tt: fix negative tt_buff_len\n\nbatadv_orig_node::tt_buff_len was declared as s16, but the field is never\nintended to hold a negative value. When a value greater than 32767 is\nassigned, it wraps to a negative signed integer.\n\nIn batadv_send_other_tt_response(), tt_buff_len is temporarily widened to\ns32. The incorrectly negative s16 value propagates into the s32, causing\nbatadv_tt_prepare_tvlv_global_data() to allocate a full sized buffer but\npopulates only a small portion of it with the collected changeset. All\nremaining bits are kept uninitialized.\n\nUsing an u16 avoids this type confusion and ensures that no (negative) sign\nextension is performed in batadv_send_other_tt_response().",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:49.557"
   },
   {
     "id": "CVE-2026-64089",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tt: fix negative last_changeset_len\n\nbatadv_piv_tt::last_changeset_len len was declared as s16, but the field is\nnever intended to hold a negative value. When a value greater than 32767 is\nassigned, it wraps to a negative signed integer.\n\nIn batadv_send_my_tt_response(), last_changeset_len is temporarily widened\nto s32. The incorrectly negative s16 value propagates into the s32, causing\nbatadv_tt_prepare_tvlv_local_data() to allocate a full sized buffer but\npopulates only a small portion of it with the collected changeset. All\nremaining bits are kept uninitialized.\n\nUsing an u16 avoids this type confusion and ensures that no (negative) sign\nextension is performed in batadv_send_my_tt_response().",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:49.697"
   },
   {
     "id": "CVE-2026-64090",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tt: avoid empty VLAN responses\n\nThe commit 16116dac2339 (\"batman-adv: prevent TT request storms by not\nsending inconsistent TT TLVLs\") added checks to the local (direct) TT\nresponse code. But the response can also be done indirectly by another node\nusing the global TT state. To avoid such inconsistency states reported in\nthe original fix, also avoid sending empty VLANs for replies from the\nglobal TT state.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:49.837"
   },
   {
     "id": "CVE-2026-64091",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tt: fix TOCTOU race for reported vlans\n\nThe local TT based TVLV is generated by first checking the number of VLANs\nwhich have at least one TT entry. A new buffer with the correct size for\nthe VLANs is then allocated. Only then, the list of VLANs s used to fill\nthe VLAN entries in the buffer. During this time, the meshif_vlan_list_lock\nis held. But the actual number of TT entries of each VLAN can still\nincrease during this time - just not the number of VLANs in the list.\n\nBut the prefilter used in the buffer size calculation might still cause an\nincrease of the number of VLANs which need to be stored. Simply because a\nVLAN might now suddenly have at least one entry when it had none in the\npre-alloc check - and then needs to occupy space which was not allocated.\n\nIt is better to overestimate the buffer size at the beginning and then fill\nthe buffer only with the VLANs which are not empty.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:49.967"
   },
   {
     "id": "CVE-2026-64092",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tp_meter: fix tp_vars reference leak in receiver shutdown\n\nThe receiver shutdown timer handler, batadv_tp_receiver_shutdown(), is\nresponsible for releasing the tp_vars reference it holds. However, the\nexisting logic for coordinating this release with batadv_tp_stop_all() was\nflawed.\n\ntimer_shutdown_sync() guarantees the timer will not fire again after it\nreturns, but it returns non-zero only when the timer was pending at the\ntime of the call. If the timer had already expired (and\nbatadv_tp_stop_all() would unsucessfully try to  rearm itself),\nbatadv_tp_stop_all() skips its batadv_tp_vars_put(), and\nbatadv_tp_receiver_shutdown() fails to put its own reference as well.\n\nFix this by introducing a new atomic variable receiving that is set to 1\nwhen the receiver is initialized and cleared atomically with atomic_xchg()\nby whichever side claims it first. Only the side that observes the\ntransition from 1 to 0 is responsible for releasing the tp_vars timer\nreference, eliminating the uncertainty.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.110"
   },
   {
     "id": "CVE-2026-64093",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: tp_meter: directly shut down timer on cleanup\n\nbatadv_tp_sender_cleanup() was calling timer_delete_sync() followed by\ntimer_delete() to guard against the timer handler re-arming itself between\nthe two calls. This double-deletion hack relied on the sending status being\nset to 0 to suppress re-arming.\n\nReplace both calls with a single timer_shutdown_sync(). This function both\nwaits for any running timer callback to complete (like timer_delete_sync())\nand permanently disarms the timer so it cannot be re-armed afterwards,\nmaking re-arming prevention unconditional and self-documenting.\n\nThe re-arming property is also required because otherwise:\n\n1. context 0 (batadv_tp_recv_ack()) checks in\n   batadv_tp_reset_sender_timer() if sending is still 1 -> it is\n2. context 1 changes in batadv_tp_sender_shutdown() sending to 0 and in\n   this process forces the kthread to stop timer in\n   batadv_tp_sender_cleanup()\n3. context 0 continues in batadv_tp_reset_sender_timer() and rearms the\n   timer -> but the reference for it is already gone",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.230"
   },
   {
     "id": "CVE-2026-64094",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: bla: avoid NULL-ptr deref for claim via dropped interface\n\nWithout rtnl_lock held, a hardif might be retrieved as primary interface of\na meshif, but then (while operating on this interface) getting decoupled\nfrom the mesh interface. In this case, the meshif still exists but the\npointer from the primary hardif to the meshif is set to NULL.\n\nThe mesh_iface must be checked first to be non-NULL before continuing to\nsend an ARP request using meshif.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.353"
   },
   {
     "id": "CVE-2026-64095",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: bla: avoid double decrement of bla.num_requests\n\nThe bla.num_requests is increased when no request_sent was in progress. And\nit is decremented in various places (announcement was received, backbone is\npurged, periodic work). But the check if the request_sent is actually set\nto a specific state and the atomic_dec/_inc are not safe because they are\nnot atomic (TOCTOU) and multiple such code portions can run concurrently.\n\nAt the same time, it is necessary to modify request_sent (state) and\nbla.num_requests atomically. Otherwise batadv_bla_send_request() might set\nrequest_sent to 1 and is interrupted.  batadv_handle_announce() can then\nset request_sent back to 0 and decrement num_requests before\nbatadv_bla_send_request() incremented it.\n\nThe two operations must therefore be locked. And since state (request_sent)\nand wait_periods are only accessed inside this lock, they can be converted\nto simpler datatypes. And to avoid that the bla.num_requests is touched by\na parallel running context with a valid backbone_gw reference after\nbatadv_bla_purge_backbone_gw() ran, a third state \"stopped\" is required to\ncorrectly signal that a backbone_gw is in the state of being cleaned up.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.470"
   },
   {
     "id": "CVE-2026-64096",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nbatman-adv: mcast: fix use-after-free in orig_node RCU release\n\nbatadv_mcast_purge_orig() removes entries from RCU-protected hlists but\ndoes not wait for an RCU grace period before returning. Concurrent RCU\nreaders may still accesses references to those entries at the point of\nremoval. RCU-protected readers trying to operate on entries like\norig->mcast_want_all_ipv6_node will then access already freed memory.\n\nFix this by moving batadv_mcast_purge_orig() to batadv_orig_node_release(),\njust before the call_rcu() invocation. This ensures RCU readers that were\nactive at purge time have drained before the orig_node memory is reclaimed.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.600"
   },
   {
     "id": "CVE-2026-64097",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/amd/display: Validate GPIO pin LUT table size before iterating\n\n[Why&How]\nThe GPIO pin table parsers in get_gpio_i2c_info() and\nbios_parser_get_gpio_pin_info() derive an element count from the VBIOS\ntable_header.structuresize field, then iterate over gpio_pin[] entries.\nHowever, GET_IMAGE() only validates that the table header itself fits\nwithin the BIOS image. If the VBIOS reports a structuresize larger than\nthe actual mapped data, the loop reads past the end of the BIOS image,\ncausing an out-of-bounds read.\n\nFix this by calling bios_get_image() to validate that the full claimed\nstructuresize is accessible within the BIOS image before entering the\nloop in both functions.\n\n(cherry picked from commit ba5e95b43b773ae1bf1f66ee6b31eb774e65afe3)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.727"
   },
   {
     "id": "CVE-2026-64098",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/virtio: use uninterruptible resv lock for plane updates\n\nvirtio_gpu_cursor_plane_update() and virtio_gpu_resource_flush() lock\nthe framebuffer BO's dma_resv via virtio_gpu_array_lock_resv() and\nignore its return value. The function can fail with -EINTR from\ndma_resv_lock_interruptible() (signal during lock wait) or with\n-ENOMEM from dma_resv_reserve_fences() (fence slot allocation),\nleaving the resv lock not held. The queue path then walks the object\narray and calls dma_resv_add_fence(), which requires the lock held;\nwith lockdep enabled this trips dma_resv_assert_held():\n\n  WARNING: drivers/dma-buf/dma-resv.c:296 at dma_resv_add_fence+0x71e/0x840\n  Call Trace:\n   virtio_gpu_array_add_fence\n   virtio_gpu_queue_ctrl_sgs\n   virtio_gpu_queue_fenced_ctrl_buffer\n   virtio_gpu_cursor_plane_update\n   drm_atomic_helper_commit_planes\n   drm_atomic_helper_commit_tail\n   commit_tail\n   drm_atomic_helper_commit\n   drm_atomic_commit\n   drm_atomic_helper_update_plane\n   __setplane_atomic\n   drm_mode_cursor_universal\n   drm_mode_cursor_common\n   drm_mode_cursor_ioctl\n   drm_ioctl\n   __x64_sys_ioctl\n\nBeyond the WARN, mutating the dma_resv fence list without the lock\nraces with concurrent readers/writers and can corrupt the list.\n\nBoth call sites run inside the .atomic_update plane callback, which\nDRM atomic helpers do not allow to fail (by the time it runs, the\ncommit has been signed off to userspace and there is no clean\nrollback path). Moving the lock acquisition to .prepare_fb was\nrejected because the broader lock scope deadlocks against other BO\nlocking paths in the same atomic commit.\n\nIntroduce virtio_gpu_lock_one_resv_uninterruptible() that uses\ndma_resv_lock() instead of dma_resv_lock_interruptible(). This\neliminates the -EINTR failure mode -- the realistic syzbot trigger\n-- without extending the lock hold across the commit. The helper\nlocks a single BO and rejects nents > 1 with -EINVAL; both fix\nsites lock exactly one BO.\n\nUse it from virtio_gpu_cursor_plane_update() and\nvirtio_gpu_resource_flush(); check the return value to handle the\nremaining -ENOMEM case from dma_resv_reserve_fences() by freeing\nthe objs and skipping the plane update for that frame. The\nframebuffer BOs touched here are not shared with other contexts\nand lock contention is expected to be brief, so the loss of\nsignal-interruptibility is acceptable.\n\nOther callers of virtio_gpu_array_lock_resv() (the ioctl paths)\ncontinue to use the interruptible variant.\n\nThe bug was reported by syzbot, triggered via fault injection\n(fail_nth) on the DRM_IOCTL_MODE_CURSOR path, which forces the\n-ENOMEM branch in dma_resv_reserve_fences().",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.843"
   },
   {
     "id": "CVE-2026-64099",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/v3d: Fix use-after-free of CPU job query arrays on error path\n\nThe CPU job ioctl's fail label calls kvfree() on cpu_job's timestamp and\nperformance query arrays after v3d_job_cleanup(), which drops the job's\nlast reference and frees cpu_job. Reading cpu_job at that point is a\nuse-after-free. Also, on the early v3d_job_init() failure path, it is a\nNULL dereference, since v3d_job_deallocate() zeroes the local pointer.\n\nIn the success path, the arrays are released from the scheduler's\n.free_job callback, but on the error path, they are freed manually, as\nthe job was never pushed to the scheduler. While the success path deals\nwith this correctly, the fail path doesn't.\n\nOn top of that, the manual kvfree() calls only free the array storage;\nthey don't drm_syncobj_put() the per-query syncobjs that\nv3d_timestamp_query_info_free() and v3d_performance_query_info_free()\nrelease on the success path. So the same fail path that triggers the\nuse-after-free also leaks one syncobj reference per query.\n\nUnify the CPU job teardown into the CPU job's kref destructor, mirroring\nv3d_render_job_free(). The scheduler's .free_job slot reverts to the\ngeneric v3d_sched_job_free() and the fail label drops the manual\nkvfree() calls, leaving a single teardown path that is reached from both\nthe scheduler and the ioctl error path. That removes the use-after-free,\nthe NULL dereference, and the syncobj leak by construction.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:50.983"
   },
   {
     "id": "CVE-2026-64100",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/msm: Fix shrinker deadlock\n\nWith PROVE_LOCKING on an Snapdragon X1 and VM reclaim pressure, we see:\n\n   ======================================================\n   WARNING: possible circular locking dependency detected\n   7.0.0-debug+ #43 Tainted: G        W\n   ------------------------------------------------------\n   kswapd0/82 is trying to acquire lock:\n   ffff800080ec3870 (reservation_ww_class_acquire){+.+.}-{0:0}, at: msm_gem_shrinker_scan+0x17c/0x400 [msm]\n\n   but task is already holding lock:\n   ffffc31709b263b8 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x88/0x988\n\n   which lock already depends on the new lock.\n\n   the existing dependency chain (in reverse order) is:\n\n   -> #2 (fs_reclaim){+.+.}-{0:0}:\n          __lock_acquire+0x4d0/0xad0\n          lock_acquire.part.0+0xc4/0x248\n          lock_acquire+0x8c/0x248\n          fs_reclaim_acquire+0xd0/0xf0\n          dma_resv_lockdep+0x224/0x348\n          do_one_initcall+0x84/0x5d0\n          do_initcalls+0x194/0x1d8\n          kernel_init_freeable+0x128/0x180\n          kernel_init+0x2c/0x160\n          ret_from_fork+0x10/0x20\n\n   -> #1 (reservation_ww_class_mutex){+.+.}-{4:4}:\n          __lock_acquire+0x4d0/0xad0\n          lock_acquire.part.0+0xc4/0x248\n          lock_acquire+0x8c/0x248\n          dma_resv_lockdep+0x1a8/0x348\n          do_one_initcall+0x84/0x5d0\n          do_initcalls+0x194/0x1d8\n          kernel_init_freeable+0x128/0x180\n          kernel_init+0x2c/0x160\n          ret_from_fork+0x10/0x20\n\n   -> #0 (reservation_ww_class_acquire){+.+.}-{0:0}:\n          check_prev_add+0x114/0x790\n          validate_chain+0x594/0x6f0\n          __lock_acquire+0x4d0/0xad0\n          lock_acquire.part.0+0xc4/0x248\n          lock_acquire+0x8c/0x248\n          drm_gem_lru_scan+0x1ac/0x440\n          msm_gem_shrinker_scan+0x17c/0x400 [msm]\n          do_shrink_slab+0x150/0x4a0\n          shrink_slab+0x144/0x460\n          shrink_one+0x9c/0x1b0\n          shrink_many+0x27c/0x5c0\n          shrink_node+0x344/0x550\n          balance_pgdat+0x2c0/0x988\n          kswapd+0x11c/0x318\n          kthread+0x10c/0x128\n          ret_from_fork+0x10/0x20\n\n   other info that might help us debug this:\n   Chain exists of:\n     reservation_ww_class_acquire --> reservation_ww_class_mutex --> fs_reclaim\n    Possible unsafe locking scenario:\n          CPU0                    CPU1\n          ----                    ----\n     lock(fs_reclaim);\n                                  lock(reservation_ww_class_mutex);\n                                  lock(fs_reclaim);\n     lock(reservation_ww_class_acquire);\n\n    *** DEADLOCK ***\n   1 lock held by kswapd0/82:\n    #0: ffffc31709b263b8 (fs_reclaim){+.+.}-{0:0}, at: balance_pgdat+0x88/0x988\n\n   stack backtrace:\n   CPU: 4 UID: 0 PID: 82 Comm: kswapd0 Tainted: G        W           7.0.0-debug+ #43 PREEMPT(full)\n   Tainted: [W]=WARN\n   Hardware name: LENOVO 21BX0016US/21BX0016US, BIOS N3HET94W (1.66 ) 09/15/2025\n   Call trace:\n    show_stack+0x20/0x40 (C)\n    dump_stack_lvl+0x9c/0xd0\n    dump_stack+0x18/0x30\n    print_circular_bug+0x114/0x120\n    check_noncircular+0x178/0x198\n    check_prev_add+0x114/0x790\n    validate_chain+0x594/0x6f0\n    __lock_acquire+0x4d0/0xad0\n    lock_acquire.part.0+0xc4/0x248\n    lock_acquire+0x8c/0x248\n    drm_gem_lru_scan+0x1ac/0x440\n    msm_gem_shrinker_scan+0x17c/0x400 [msm]\n    do_shrink_slab+0x150/0x4a0\n    shrink_slab+0x144/0x460\n    shrink_one+0x9c/0x1b0\n    shrink_many+0x27c/0x5c0\n    shrink_node+0x344/0x550\n    balance_pgdat+0x2c0/0x988\n    kswapd+0x11c/0x318\n    kthread+0x10c/0x128\n    ret_from_fork+0x10/0x20\n\nkswapd0 holding fs_reclaim calls the MSM shrinker, which calls\ndma_resv_lock. This in turn acquires fs_reclaim.\n\nFix this deadlock by using dma_resv_trylock() instead, dropping the\nsubsequently unused passed wait-wound lock 'ticket'.\n\nPatchwork: https://patchwork.freedesktop.org/patch/723564/\n[rob: fixup compile errors, replace lockdep splat with somethin\n---truncated---",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:51.140"
   },
   {
     "id": "CVE-2026-64101",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfwctl: pds: Validate RPC input size before parsing\n\nThe fwctl core allocates the device-specific RPC input buffer with\nfwctl_rpc.in_len and passes that buffer to the driver callback.\n\npdsfc_fw_rpc() casts the buffer to struct fwctl_rpc_pds and then calls\npdsfc_validate_rpc(), which reads fields from that structure before\nchecking that the input buffer is large enough to contain it. A short\nin_len can make pds_fwctl read beyond the allocation.\n\nReject pds RPC buffers that are smaller than struct fwctl_rpc_pds before\nparsing any pds-specific fields.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:51.273"
   },
   {
@@ -28976,28 +28969,28 @@
     "id": "CVE-2026-61043",
     "description": "Vulnerability in the Oracle Production Scheduling product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with logon to the infrastructure where Oracle Production Scheduling executes to compromise Oracle Production Scheduling.  Successful attacks require human interaction from a person other than the attacker and while the vulnerability is in Oracle Production Scheduling, attacks may significantly impact additional products (scope change). Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Production Scheduling accessible data as well as  unauthorized read access to a subset of Oracle Production Scheduling accessible data. CVSS 3.1 Base Score 6.7 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:C/C:L/I:H/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:18:35.163"
   },
   {
     "id": "CVE-2026-61044",
     "description": "Vulnerability in the Oracle Production Scheduling product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows high privileged attacker with network access via HTTP to compromise Oracle Production Scheduling.  Successful attacks of this vulnerability can result in  unauthorized update, insert or delete access to some of Oracle Production Scheduling accessible data as well as  unauthorized read access to a subset of Oracle Production Scheduling accessible data and unauthorized ability to cause a partial denial of service (partial DOS) of Oracle Production Scheduling. CVSS 3.1 Base Score 4.7 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:L/I:L/A:L).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:18:35.283"
   },
   {
     "id": "CVE-2026-61046",
     "description": "Vulnerability in the Oracle Production Scheduling product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Difficult to exploit vulnerability allows high privileged attacker with network access via HTTP to compromise Oracle Production Scheduling.  While the vulnerability is in Oracle Production Scheduling, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Production Scheduling accessible data as well as  unauthorized read access to a subset of Oracle Production Scheduling accessible data. CVSS 3.1 Base Score 6.6 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:C/C:L/I:H/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:18:35.390"
   },
   {
     "id": "CVE-2026-61047",
     "description": "Vulnerability in the Oracle Production Scheduling product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Difficult to exploit vulnerability allows high privileged attacker with logon to the infrastructure where Oracle Production Scheduling executes to compromise Oracle Production Scheduling.  Successful attacks of this vulnerability can result in  unauthorized update, insert or delete access to some of Oracle Production Scheduling accessible data. CVSS 3.1 Base Score 1.9 (Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:H/PR:H/UI:N/S:U/C:N/I:L/A:N).",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:18:35.503"
   },
   {
@@ -30474,7 +30467,7 @@
     "id": "CVE-2026-61303",
     "description": "Vulnerability in the Oracle EDI Gateway product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Difficult to exploit vulnerability allows high privileged attacker with logon to the infrastructure where Oracle EDI Gateway executes to compromise Oracle EDI Gateway.  Successful attacks of this vulnerability can result in  unauthorized read access to a subset of Oracle EDI Gateway accessible data. CVSS 3.1 Base Score 1.9 (Confidentiality impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:H/PR:H/UI:N/S:U/C:L/I:N/A:N).",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:18:59.430"
   },
   {
@@ -30516,21 +30509,21 @@
     "id": "CVE-2026-61314",
     "description": "Vulnerability in the Oracle EDI Gateway product of Oracle E-Business Suite (component: All Miscellaneous EDI Issues).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows high privileged attacker with network access via HTTP to compromise Oracle EDI Gateway.  Successful attacks of this vulnerability can result in takeover of Oracle EDI Gateway. CVSS 3.1 Base Score 7.2 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:19:00.090"
   },
   {
     "id": "CVE-2026-61315",
     "description": "Vulnerability in the Oracle EDI Gateway product of Oracle E-Business Suite (component: EDI).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle EDI Gateway.  Successful attacks of this vulnerability can result in  unauthorized read access to a subset of Oracle EDI Gateway accessible data. CVSS 3.1 Base Score 4.3 (Confidentiality impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:19:00.207"
   },
   {
     "id": "CVE-2026-61316",
     "description": "Vulnerability in the Oracle EDI Gateway product of Oracle E-Business Suite (component: EDI).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle EDI Gateway.  Successful attacks of this vulnerability can result in  unauthorized read access to a subset of Oracle EDI Gateway accessible data. CVSS 3.1 Base Score 4.3 (Confidentiality impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "E-business suite",
     "published": "2026-07-21T22:19:00.317"
   },
   {
@@ -30593,7 +30586,7 @@
     "id": "CVE-2026-61333",
     "description": "Vulnerability in the Oracle Product Workbench product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Product Workbench.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Product Workbench accessible data as well as  unauthorized access to critical data or complete access to all Oracle Product Workbench accessible data. CVSS 3.1 Base Score 8.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Product workbench",
     "published": "2026-07-21T22:19:01.353"
   },
   {
@@ -30607,7 +30600,7 @@
     "id": "CVE-2026-61335",
     "description": "Vulnerability in the Oracle Product Workbench product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Product Workbench.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Product Workbench accessible data as well as  unauthorized access to critical data or complete access to all Oracle Product Workbench accessible data. CVSS 3.1 Base Score 8.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Product workbench",
     "published": "2026-07-21T22:19:01.583"
   },
   {
@@ -34506,7 +34499,7 @@
     "id": "CVE-2026-65906",
     "description": "In JetBrains TeamCity before 2026.1.2, 2025.11.6 сode execution via Kotlin DSL sandbox escape was possible",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Teamcity",
     "published": "2026-07-23T13:16:31.733"
   },
   {
@@ -66866,21 +66859,21 @@
   {
     "id": "CVE-2026-14237",
     "description": "The vitepos WordPress plugin before 3.6.0, Vitepos  WordPress plugin before 3.5.0 do not perform a per-target authorization check in their point-of-sale password-reset API and grant the custom Outlet Manager role an over-broad password-reset capability by default, allowing an Outlet Manager to reset any user's password, including an administrator's, and take over the account.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:46.937"
   },
   {
     "id": "CVE-2026-14238",
     "description": "The vitepos WordPress plugin before 3.6.0 does not sanitize or parameterize an identifier taken from a REST request body before using it in a database query in one of its report endpoints, allowing users with administrator-level access to perform SQL injection.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:47.053"
   },
   {
     "id": "CVE-2026-14293",
     "description": "The Autopay WordPress plugin before 5.0.1 does not perform any capability or nonce check before saving a styling option from a public request, and does not escape that value when it is later output on the checkout page, allowing unauthenticated attackers to store JavaScript that executes in the browser of any user, including administrators, who loads the checkout page.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:47.160"
   },
@@ -66901,7 +66894,7 @@
   {
     "id": "CVE-2026-15047",
     "description": "The s2Member  WordPress plugin before 260805 does not escape several shortcode attributes before outputting them inside an inline script context, allowing users with contributor-level access to inject arbitrary JavaScript that executes when a viewer opens the post (stored XSS).",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:47.493"
   },
@@ -67055,7 +67048,7 @@
   {
     "id": "CVE-2026-18200",
     "description": "The FoodBoxBooker WordPress plugin before 1.0.8 does not verify that the user account being updated belongs to the user making the request, allowing authenticated users, with Subscriber-level access and above, to modify the profile details of arbitrary users, including administrators.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:49.937"
   },
@@ -67090,7 +67083,7 @@
   {
     "id": "CVE-2026-18786",
     "description": "The CheckView  WordPress plugin before 2.3.2 does not restrict its REST API authentication filter to its own routes and unconditionally discards the authentication error raised for any request whose URI merely contains a CheckView  WordPress plugin before 2.3.2-specific string, making it possible for unauthenticated attackers to bypass the REST nonce check and perform any REST action available to a logged-in administrator, such as creating a new administrator account, via a crafted link an administrator is tricked into opening.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:50.487"
   },
@@ -67132,7 +67125,7 @@
   {
     "id": "CVE-2026-19074",
     "description": "The Advanced Classifieds & Directory Pro Advanced Classifieds & Directory Pro WordPress plugin before 3.4.3 (<= 3.4.2) is vulnerable to unauthenticated sensitive information exposure via the AJAX action `acadp_public_custom_fields_listings`.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:51.157"
   },
@@ -71080,7 +71073,7 @@
   {
     "id": "CVE-2026-68872",
     "description": "The AWS Systems Manager Parameter Store and Secrets Manager backends in Apache Airflow's Amazon provider resolved a team-scoped Connection or Variable id through the team-agnostic lookup when the team-scoped lookup missed. In a deployment running multi-team mode with either backend, a caller in one team could resolve a secret belonging to another team by supplying an id that spells out that team's namespace, obtaining its credentials in full. No unusual configuration is required beyond enabling multi-team mode and using one of these backends. Users are advised to upgrade to apache-airflow-providers-amazon 9.34.0 or later, which refuses the team-agnostic fall-through for an id that could name a team namespace.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T19:17:30.587"
   },
@@ -73158,9 +73151,583 @@
   },
   {
     "id": "CVE-2026-73210",
-    "description": "A Server-Side Request Forgery (SSRF) vulnerability existed in Lookyloo's PlaywrightCapture when the only_global_lookup option was enabled.\n\nPlaywrightCapture implements this option to prevent captures from accessing local, loopback, or otherwise non-public network resources. However, favicon retrieval was performed separately from the browser request-routing protections. Favicon URLs extracted from rendered HTML were resolved and subsequently fetched directly using an aiohttp.ClientSession.\n\nAn attacker able to supply or control a web page processed by PlaywrightCapture could include a crafted favicon reference, for example pointing to a loopback address, private IP address, or another resource reachable only from the PlaywrightCapture host. When the page was processed, the favicon retrieval routine could issue an HTTP request to this destination despite only_global_lookup being enabled.\n\nThis bypass could therefore be used to make the PlaywrightCapture host interact with internal network services that should not be reachable through a capture. Depending on the targeted service and its response, this could enable internal service discovery, access to internal resources, or interaction with HTTP endpoints available only from the capture infrastructure.\n\nThe patch introduces a common URL validation routine and applies it to favicon retrieval. Direct non-global IP addresses, localhost, .local domains, malformed URLs, and other explicitly non-public destinations are rejected before the favicon request is performed.",
+    "description": "A Server-Side Request Forgery (SSRF) vulnerability existed in Lookyloo's PlaywrightCapture when the only_global_lookup option was enabled.\n\nPlaywrightCapture implements this option to prevent captures from accessing local, loopback, or otherwise non-public network resources. However, favicon retrieval was performed separately from the browser request-routing protections. Favicon URLs extracted from rendered HTML were resolved and subsequently fetched directly using an aiohttp.ClientSession.\n\nAn attacker able to supply or control a web page processed by PlaywrightCapture could include a crafted favicon reference, for example pointing to a loopback address, private IP address, or another resource reachable only from the PlaywrightCapture host. When the page was processed, the favicon retrieval routine could issue an HTTP request to this destination despite only_global_lookup being enabled.\n\nThis bypass could therefore be used to make the PlaywrightCapture host interact with internal network services that should not be reachable through a capture. Depending on the targeted service and its response, this could enable internal service discovery, access to internal resources, or interaction with HTTP endpoints available only from the capture infrastructure.\n\nThe patch introduces a common URL validation routine and applies it to favicon retrieval. Direct non-global IP addresses, localhost, .local domains, malformed URLs, and other explicitly non-public destinations are rejected before the favicon request is performed.\n\nThis fix is a complementary fix to CVE-2026-44439 - GCVE-0-2026-44439 - GHSA-687H-XW6F-Q2QW",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-11T14:17:16.070"
+  },
+  {
+    "id": "CVE-2020-37257",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:21.503"
+  },
+  {
+    "id": "CVE-2020-37258",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.190"
+  },
+  {
+    "id": "CVE-2020-37259",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.250"
+  },
+  {
+    "id": "CVE-2020-37260",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.310"
+  },
+  {
+    "id": "CVE-2020-37261",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.370"
+  },
+  {
+    "id": "CVE-2020-37262",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.430"
+  },
+  {
+    "id": "CVE-2020-37263",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.493"
+  },
+  {
+    "id": "CVE-2020-37264",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.557"
+  },
+  {
+    "id": "CVE-2020-37265",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.610"
+  },
+  {
+    "id": "CVE-2021-47988",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.690"
+  },
+  {
+    "id": "CVE-2021-47989",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.757"
+  },
+  {
+    "id": "CVE-2021-47990",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.817"
+  },
+  {
+    "id": "CVE-2021-47991",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.870"
+  },
+  {
+    "id": "CVE-2021-47992",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.927"
+  },
+  {
+    "id": "CVE-2021-47993",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:22.990"
+  },
+  {
+    "id": "CVE-2021-47994",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.050"
+  },
+  {
+    "id": "CVE-2021-47995",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.107"
+  },
+  {
+    "id": "CVE-2022-50974",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.180"
+  },
+  {
+    "id": "CVE-2023-54367",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.260"
+  },
+  {
+    "id": "CVE-2023-54368",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.330"
+  },
+  {
+    "id": "CVE-2023-54369",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.387"
+  },
+  {
+    "id": "CVE-2023-54370",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.437"
+  },
+  {
+    "id": "CVE-2023-54371",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.493"
+  },
+  {
+    "id": "CVE-2023-54372",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.553"
+  },
+  {
+    "id": "CVE-2023-54373",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.607"
+  },
+  {
+    "id": "CVE-2023-54374",
+    "description": "Rejected reason: This CVE ID has been rejected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:23.667"
+  },
+  {
+    "id": "CVE-2026-17061",
+    "description": "A Deserialization of Untrusted Data vulnerability affecting SIMULIA Execution Engine from Release 2023 through Release 2026 could lead to an unauthenticated remote code execution.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:27.783"
+  },
+  {
+    "id": "CVE-2026-17535",
+    "description": "Velociraptor's NTFS parsing library mishandles several out of bound and memory exhaustion bugs which may be triggered by maliciously crafted NTFS images.\n\nTypically Velociraptor's NTFS parser is used on live NTFS filesystems, limiting the opportunity of attackers corrupting the filesystem. However, in some applications (e.g.  dead disk forensics https://docs.velociraptor.app/docs/forensic/deaddisk/ ) Velociraptor may be used on untrusted NTFS image files. \n\nIf an attacker is able to inject maliciously corrupted NTFS Volumes they can cause a crash and a Denial of Service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:27.927"
+  },
+  {
+    "id": "CVE-2026-18125",
+    "description": "An out-of-bounds read in the Agent of Ivanti Endpoint Manager before version 2024 SU7 allows a remote unauthenticated attacker to crash an agent service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:28.053"
+  },
+  {
+    "id": "CVE-2026-18127",
+    "description": "External control of a filename in the Core of Ivanti Endpoint Manager before version 2024 SU7 allows a remote authenticated attacker full write control over an S3 bucket configured for session recording storage.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:28.193"
+  },
+  {
+    "id": "CVE-2026-18129",
+    "description": "Cleartext transmission of sensitive information in the Core of Ivanti Endpoint Manager before version 2024 SU7 allows a remote unauthenticated attacker in a MITM position to leak credentials for external SQL connections.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:28.327"
+  },
+  {
+    "id": "CVE-2026-18635",
+    "description": "Velociraptor's VQL has a query() plugin which allows running a VQL query in a different org or user context. To be able to run as a different user, the calling user needs to have the IMPERSONATE permission (usually only given to administrators). Velociraptor versions prior to 0.77.2 evaluate this permission against the caller's org instead of against the target org.\n\nThis allows an administrator in one org to impersonate another user in another org, in which they may not have the IMPERSONATE permission.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:28.627"
+  },
+  {
+    "id": "CVE-2026-18636",
+    "description": "The Velociraptor gRPC API has a VFSGetBuffer endpoint which allows reading files from the datastore. To prevent users from reading sensitive files or accessing other orgs, the requested path is prefix checked against a list of denied prefixes. This prefix check can be bypassed allowing a user to access usually denied files. If the user has read permission in the ROOT org, this allows access to other orgs, in which the user may not have permission.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:28.760"
+  },
+  {
+    "id": "CVE-2026-18860",
+    "description": "Velociraptor allows multi-tenant deployments named \"Orgs\".\n\nBy default Velociraptor, uses the ROOT org, but users can create child orgs for other tenants within the same deployment.\n\nUsers can have different permissions in each org. To manage Orgs, Velociraptor usually examines the ORG_ADMIN permission on the ROOT org.\n\nThis issue results from the Velociraptor server allowing for the deletion of Orgs by incorrectly checking the ORG_ADMIN permission of callers within the calling ORG instead of the ROOT org. However, Org admins of child orgs were able to add this permission to their ACL token within their own org. This allows an administrator in a child org, which is not also an administrator in the ROOT org, to delete other orgs.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:28.887"
+  },
+  {
+    "id": "CVE-2026-47702",
+    "description": "TypeBot is a chatbot builder tool. In version 3.16.1, API tokens (bearer credentials used to authenticate against the builder API) are stored in the database as cleartext strings. An attacker who gains read access to the database (e.g., via SQL injection, backup exposure, or insider access) can extract all API tokens and impersonate any user without requiring a password or multi-factor authentication. Version 3.17.0 fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:30.560"
+  },
+  {
+    "id": "CVE-2026-72920",
+    "description": "SeaweedFS is a distributed storage system. Prior to 4.24, the filer registers the SeaweedIdentityAccessManagement gRPC service without mandatory authentication when jwt.filer_signing.key is unset, allowing any client that can reach the filer gRPC port to invoke CreateUser, CreateAccessKey, PutPolicy, and related IAM RPCs to mint credentials and gain S3 administrative control. This issue is fixed in versions 4.24.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:38.053"
+  },
+  {
+    "id": "CVE-2026-72921",
+    "description": "SeaweedFS is a distributed storage system. Prior to 4.24, the weed/server/filer_server_handlers.go allowed_prefixes authorization check used strings.HasPrefix on raw path strings, so a filer JWT scoped to /tenant1 also authorized sibling paths such as /tenant1234, /tenant1-old, and /tenant1backup, enabling cross-tenant reads and writes with a valid scoped token. This issue is fixed in version 4.24.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:38.217"
+  },
+  {
+    "id": "CVE-2026-72922",
+    "description": "AutoGPT is a workflow automation platform for creating, deploying, and managing continuous artificial intelligence agents. Prior to 0.6.70, AutoGPT's autogpt_platform/backend/backend/api/features/integrations/router.py webhook_ingress_generic route selected get_webhook_manager(provider) from the untrusted provider URL segment without verifying webhook.provider, allowing a request to /compass/webhooks/{webhook_id}/ingress to use CompassWebhookManager's inherited no-op BaseWebhooksManager.verify_signature instead of GenericWebhooksManager.verify_signature, bypass X-Webhook-Secret for a configured secret_token, and execute a generic webhook graph as its owner. This issue is fixed in version 0.6.70.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:38.350"
+  },
+  {
+    "id": "CVE-2026-72925",
+    "description": "SWC is a TypeScript / JavaScript compiler written in Rust. Prior to @swc/html 1.15.47-nightly-20260729.1 and swc_html_minifier 59.0.0, the minifyJson processing in crates/swc_html_minifier/src/lib.rs parsed and serialized attacker-controlled JSON in application/json and application/ld+json script elements without the escape_json_for_html_script behavior to re-escape less-than signs, allowing a closing script sequence to terminate the element early and execute script in the generated page's origin. This issue is fixed in @swc/html 1.15.47-nightly-20260729.1 and swc_html_minifier 59.0.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:38.497"
+  },
+  {
+    "id": "CVE-2026-73066",
+    "description": "Tesseract is an open source OCR engine. Prior to 5.5.3, a crafted .traineddata LSTM model component loaded through Tesseract's deserializer can cause an unchecked signed integer multiplication in Convolve::DeSerialize in src/lstm/convolve.cpp to wrap the convolution output-channel count, undersizing the forward-pass output buffer while writes use the unwrapped element count and causing a heap out-of-bounds write during OCR recognition. This issue is fixed in version 5.5.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:38.777"
+  },
+  {
+    "id": "CVE-2026-73067",
+    "description": "Tesseract is an open source OCR engine. Prior to 5.5.3, a crafted .traineddata model loaded through TessBaseAPI::Init can cause SquishedDawg::read_squished_dawg in src/dict/dawg.cpp to accept an unterminated forward-edge run, after which SquishedDawg::Load calls num_forward_edges(0) and last_edge in src/dict/dawg.h reads beyond edges_, causing a heap out-of-bounds read and process crash before image processing. This issue is fixed in version 5.5.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T15:17:38.927"
+  },
+  {
+    "id": "CVE-2025-31114",
+    "description": "Fooocus is an image generating software. In versions 2.5.5 and prior, the Fooocus web UI is vulnerable to remote code execution due to the unsafe use of eval when processing metadata JSON. An attacker with access to the Fooocus web UI may be able to execute arbitrary code on the instance. As of time of publication, no known patched versions are available, but a suggested fix pull request is available.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:26.520"
+  },
+  {
+    "id": "CVE-2026-11733",
+    "description": "A buffer overflow vulnerability in the listed NETGEAR models allows a device administrator to temporarily interrupt the normal operation of the affected device.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:26.917"
+  },
+  {
+    "id": "CVE-2026-11734",
+    "description": "A buffer overflow vulnerability in the listed NETGEAR models allows an authenticated admin user to cause the affected device to become temporarily unavailable.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:27.140"
+  },
+  {
+    "id": "CVE-2026-11735",
+    "description": "A stack-based buffer overflow vulnerability affects the listed NETGEAR models allowing an authenticated admin user to make unauthorized modification to the router's software and functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:27.360"
+  },
+  {
+    "id": "CVE-2026-11736",
+    "description": "A stack-based buffer overflow vulnerability affects certain NETGEAR models allowing an authenticated admin user to make unauthorized modification to router software and functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:27.653"
+  },
+  {
+    "id": "CVE-2026-11737",
+    "description": "Insufficient input validation vulnerability in the listed \nNETGEAR models allows authenticated administrators connected to the \nlocal network to make unauthorized modification to the device software and \nfunctionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:27.917"
+  },
+  {
+    "id": "CVE-2026-11738",
+    "description": "Insufficient input validation vulnerability in the listed NETGEAR models allows authenticated administrators connected to the local network to make unauthorized modification to router software and functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:28.120"
+  },
+  {
+    "id": "CVE-2026-11739",
+    "description": "A command injection vulnerability in certain affected NETGEAR Nighthawk \ndevices allows a network-adjacent attacker with the ability to intercept\n and modify local network traffic (attacker in the middle) to compromise\n the confidentiality and integrity of the affected device.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:28.260"
+  },
+  {
+    "id": "CVE-2026-11814",
+    "description": "A command injection vulnerability in the listed NETGEAR models allows a network-adjacent attacker with the ability to intercept and modify local network traffic (attacker-in-the-middle) to compromise the confidentiality and integrity of the affected device. This issue is limited to certain region-specific SKUs.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:28.540"
+  },
+  {
+    "id": "CVE-2026-14180",
+    "description": "A flaw was found in the ChunkReader component of the Undertow HTTP server, which is used by WildFly and JBoss EAP to handle chunked transfer encoding. The issue occurs because the parser uses a single internal variable to store both the remaining chunk size and state flags. By sending a specially crafted request with an extremely large chunk size, an attacker can cause these values to overlap, tricking the parser into thinking a request has finished prematurely. This can allow a second, \"smuggled\" request to be processed out of sync, potentially bypassing security controls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:28.923"
+  },
+  {
+    "id": "CVE-2026-18638",
+    "description": "Any authenticated Velociraptor user — including one holding only the readerrole — can terminate the entire server process with a single request, by calling SetPassword with a username that does not exist.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:30.457"
+  },
+  {
+    "id": "CVE-2026-18639",
+    "description": "When Velociraptor is configured to use an OIDC IdP for authentication, it uses the email claim as a username. However, some IdP allow users to change the email claim without verification. Some IdPs do not set the \"email_verified\" claim and do not actually verify the email.\n\nThis allows a user to impersonate another user by setting their email address within the IdP, allowing account takeover.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:30.590"
+  },
+  {
+    "id": "CVE-2026-18640",
+    "description": "The NewNotebook API does not sufficiently sanitize its parameters allowing an authenticated user with NOTEBOOK_EDIT permission to write the notebook record outside the org's data store directory. The file written must have an extension of \".json.db\" but can otherwise overwrite other metadata files (such as ACL records, hunts etc). This can corrupt these files and cause data corruption.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:30.713"
+  },
+  {
+    "id": "CVE-2026-19078",
+    "description": "A flaw was found in the oauth-server component. This open redirect vulnerability occurs when the 'then' parameter in the grant approval handler is not properly validated. A remote attacker can craft a malicious URL that, when approved or denied by an authenticated user, redirects them to an attacker-controlled website. This could enable phishing attacks, potentially tricking users into revealing sensitive information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:31.620"
+  },
+  {
+    "id": "CVE-2026-19546",
+    "description": "A flaw was found in DBI. This is a fix for a partial fix for CVE-2026-14380 for RHEL 9.8.z and 10.2.z.\n\nFor a detailed Statement, Description and Mitigation please reffer to the original https://access.redhat.com/security/cve/cve-2026-19546.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:31.767"
+  },
+  {
+    "id": "CVE-2026-42142",
+    "description": "TypeBot is a chatbot builder tool. Prior to version 3.17.0, the `handleGetSheets` API handler (`POST /api/sheets/getSheets`) does not validate workspace membership, allowing any authenticated user to access and decrypt another workspace's Google Sheets OAuth credentials and retrieve spreadsheet data (sheet names, IDs, column headers). Version 3.17.0 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:31.900"
+  },
+  {
+    "id": "CVE-2026-48495",
+    "description": "TypeBot is a chatbot builder tool. Prior to version 3.17.0, the Google Sheets OAuth callback decodes a base64-encoded JSON `state` parameter and trusts the embedded `workspaceId`, `typebotId`, `blockId`, and `redirectUrl` without cryptographic integrity protection or authorization checks. The callback route is authenticated, but it does not verify that the authenticated user has write access to the target workspace or Typebot before creating credentials in the workspace or updating Typebot groups. An authenticated user who can obtain a valid Google OAuth `code` can alter the `state` value to create Google Sheets credentials in another workspace and, if target IDs are known, attach those credentials to a block in another Typebot. Version 3.17.0 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:32.170"
+  },
+  {
+    "id": "CVE-2026-48766",
+    "description": "TypeBot is a chatbot builder tool. Versions prior to 3.17.0 allow a low-privilege guest member of a workspace to exfiltrate stored OpenAI-compatible API keys by invoking the OpenAI model-listing helper with an attacker-controlled `baseUrl`. The vulnerable path decrypts the selected workspace credential, creates an OpenAI client with the secret in both `apiKey` and the explicit `api-key` header, and then sends the outbound request to the caller-supplied URL. Because the permission check accepts any readable workspace member and `listCredentials` reveals credential identifiers to guests, a guest can force the server to deliver the workspace secret to attacker infrastructure. Version 3.17.0 patches the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:32.320"
+  },
+  {
+    "id": "CVE-2026-53413",
+    "description": "Missing bounds check in the annotator function of Zoom Clients allows buffer over-write, which may allow a meeting participant to achieve remote code execution of another participant via network access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:32.580"
+  },
+  {
+    "id": "CVE-2026-53414",
+    "description": "Missing bounds check in the annotator function of Zoom Clients allows buffer over-read, which may allow a meeting participant to conduct a denial of service on another participant via network access.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:32.713"
+  },
+  {
+    "id": "CVE-2026-53415",
+    "description": "Use after Free in the annotator function of Zoom Clients may allow a meeting participant to achieve remote code execution of another participant via network access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:32.833"
+  },
+  {
+    "id": "CVE-2026-53416",
+    "description": "Path traversal in Zoom VDI Client and Plugins may allow an authenticated user to conduct information disclosure via local access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:32.960"
+  },
+  {
+    "id": "CVE-2026-56720",
+    "description": "CamaleonCMS version 2.9.2 and earlier contains a missing authorization vulnerability in the admin users controller that allows any authenticated user to access any other user's profile data by supplying an arbitrary user ID parameter. Attackers can send a GET request to the admin profile endpoint with an enumerable sequential integer user ID to disclose profile information of any user, including administrators, due to the profile action being excluded from the role validation filter with no compensating ownership check.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:33.403"
+  },
+  {
+    "id": "CVE-2026-56721",
+    "description": "CamaleonCMS version 2.9.2 and earlier contains a privilege escalation vulnerability via insecure direct object reference (IDOR) that allows authenticated low-privileged attackers to overwrite any user's credentials by exploiting a parameter confusion flaw between the authorization filter and action body in the UsersController. Attackers can send a PATCH request to the updated_ajax endpoint setting params[:id] to their own user ID to pass the self-authorization check while simultaneously setting params[:user_id] to a victim's ID, causing the controller to load and mutate the victim's account, including overwriting administrator passwords to achieve full site takeover.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:33.563"
+  },
+  {
+    "id": "CVE-2026-67179",
+    "description": "Genkit does not properly validate host request headers. Any host on the developer's network, and any website the developer visits (via DNS rebinding), can reach POST /api/runAction on the Dev UI server (default port 4000) and execute any registered Genkit action and read the result. Fixed on 2026-06-18.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:34.113"
+  },
+  {
+    "id": "CVE-2026-67180",
+    "description": "Google Turbinia allows arbitrary command execution via worker tasks. An attacker with privileges to submit a processing request or influence an evidence path/name obtains code execution on the worker fleet. Fixed on 2026-07-10.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:34.257"
+  },
+  {
+    "id": "CVE-2026-6726",
+    "description": "An information leakage vulnerability was reported in the TCG TPM 2.0 reference code that could allow a local attacker with elevated privileges to obtain a credential from a TPM-aware CA for a falsified TPM key (such as an Attestation Key, DevID Key or TLS authentication key) and falsify other TPM 2.0 attestations with this key.  See also TCG VRT0010.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:34.397"
+  },
+  {
+    "id": "CVE-2026-6727",
+    "description": "A timing side-channel vulnerability exists in the RSA OAEP decryption implementation. A privileged local attacker with access to the TPM command interface may be able to exploit timing differences to recover information that could allow decryption of ciphertexts encrypted to TPM-managed RSA keys, including the RSA Endorsement Key (EK), including import blobs, credential blobs, and session salts. Under certain conditions, this may also enable the forgery of TPM 2.0 attestations. Refer to TCGVRT0011.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:34.503"
+  },
+  {
+    "id": "CVE-2026-73068",
+    "description": "ToolJet is the open-source foundation am AI-native platform for building and deploying internal tools, workflows and AI agents. Prior to 3.20.207, the ToolJet Database HTTP API in server/src/modules/tooljet-db/controller.ts authorizes operations against the :organizationId URL path value without verifying that the caller belongs to that organization. JwtAuthGuard validates the tj-workspace-id header against the caller's memberships, while server/src/modules/tooljet-db/ability/index.ts grants VIEW_TABLES, VIEW_TABLE, and JOIN_TABLES without binding them to the path organization. An authenticated user can set tj-workspace-id to the user's own workspace and target another workspace through GET /api/tooljet-db/organizations/:organizationId/tables, GET /api/tooljet-db/organizations/:organizationId/table/:tableName, POST /api/tooljet-db/organizations/:organizationId/join, and the related table-management routes, allowing disclosure of table names, schemas, and rows and allowing tables to be created, altered, bulk populated, or dropped across tenant boundaries. This issue is fixed in version 3.20.207-lts.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:37.947"
+  },
+  {
+    "id": "CVE-2026-73069",
+    "description": "Twenty is an open-source CRM (customer relationship management) platform. Prior to 2.15.0, Twenty allowed a workspace administrator with the DATA_MODEL permission to supply settings.asExpression for the system TS_VECTOR field searchVector through PATCH /rest/metadata/fields/:id or the updateOneField GraphQL mutation, causing buildSqlColumnDefinition in packages/twenty-server/src/engine/twenty-orm/workspace-schema-manager/utils/build-sql-column-definition.util.ts to concatenate unescaped input into GENERATED ALWAYS AS (...) and execute arbitrary PostgreSQL statements as the application database user. This issue is fixed in version 2.15.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:38.090"
+  },
+  {
+    "id": "CVE-2026-73070",
+    "description": "Vim is an open source, command line text editor. Prior to 9.2.0842, the socket server backend in src/socketserver.c accepts unbounded client connections in socketserver_accept(), causing descriptors to overflow fd_set structures in src/channel.c and fixed-size struct pollfd arrays in src/os_unix.c, which allows a local process that can connect to the server socket to corrupt stack memory or terminate the Vim server. This issue is fixed in version 9.2.0842.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:38.257"
+  },
+  {
+    "id": "CVE-2026-73071",
+    "description": "Vim is an open source, command line text editor. From 9.2.0511 until 9.2.0844, json_decode_item() in src/json.c can retain a stale pointer after json_decode_string() invokes channel_fill() to refill and free the current buffer, causing the error path to read freed memory instead of reader->js_buf + reader->js_used when an invalid JSON string spans buffers. This issue is fixed in version 9.2.0844.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:38.413"
+  },
+  {
+    "id": "CVE-2026-73072",
+    "description": "Vim is an open source, command line text editor. Prior to 9.2.0846, set_sofo() in src/spellfile.c reuses sl_sal_first[] without resetting values left by set_sal_first(), so a crafted spell file containing an SN_SAL section before an SN_SOFO section causes under-counted mapping lists and attacker-influenced writes beyond a heap allocation. This issue is fixed in version 9.2.0846.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:38.553"
+  },
+  {
+    "id": "CVE-2026-73074",
+    "description": "Vim is an open source, command line text editor. Prior to 9.2.0841, prop_add_one() in src/textprop.c uses the proplen value from get_text_props() to increment a uint16_t property count beyond 0xffff, wrapping the count to zero and copying existing text-property records into a heap allocation sized for none of them. This issue is fixed in version 9.2.0841.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:38.697"
+  },
+  {
+    "id": "CVE-2026-73075",
+    "description": "Vim is an open source, command line text editor. From 9.2.0469 until 9.2.0843, popup_mark_opacity_zindex() in src/popupwin.c can use a negative w_winrow for a text-property-anchored popup with clipwindow and opacity, indexing before the screen array instead of accounting for w_popup_topoff and causing an out-of-bounds read and conditional write. This issue is fixed in version 9.2.0843.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:38.840"
+  },
+  {
+    "id": "CVE-2026-73076",
+    "description": "Vim is an open source, command line text editor. Prior to 9.2.0847, runtime/autoload/vimball.vim allows a crafted vimball member named .VimballRecord to overwrite the installation record with attacker-chosen commands. When vimball#RmVimball() later processes the matching record entry, the stored Ex commands, including operating-system commands invoked through :!, execute with the privileges of the user running Vim. This issue is fixed in version 9.2.0847.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:38.980"
+  },
+  {
+    "id": "CVE-2026-73077",
+    "description": "Vim is an open source, command line text editor. Prior to 9.2.0839, the runtime/ftplugin/sh.vim, runtime/ftplugin/zsh.vim, and runtime/ftplugin/ps1.vim filetype plugins pass attacker-controlled Visual-mode selections from K through keywordprg commands without safely separating shell arguments. fnameescape() and PATH_ESC_CHARS do not neutralize shell metacharacters before ShKeywordPrg, ZshKeywordPrg, or GetHelp invokes bash, zsh, or PowerShell, allowing arbitrary operating-system commands to execute with the privileges of the user running Vim. This issue is fixed in version 9.2.0839.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:39.430"
+  },
+  {
+    "id": "CVE-2026-73078",
+    "description": "Vim is an open source, command line text editor. Prior to 9.2.0840, runtime/plugin/netrwPlugin.vim loads netrw and runtime/pack/dist/opt/netrw/autoload/netrw.vim constructs Bookmarks, History, and Targets menu entries by interpolating attacker-controlled directory paths into executed :menu commands. s:NetrwBookmarkMenu(), s:NetrwTgtMenu(), g:netrw_menu_escape, EX_TRLBAR, and netrw#MakeTgt() fail to neutralize the | command separator or single quotes at five construction sites, allowing a crafted path browsed or bookmarked in GUI Vim to execute arbitrary Ex and operating-system commands. This issue is fixed in version 9.2.0840.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:39.573"
+  },
+  {
+    "id": "CVE-2026-73079",
+    "description": "Sub2API is an AI API gateway platform designed to distribute and manage API quotas from AI product subscriptions. From 0.1.135, to 0.1.168, platform API keys issued to tenants are exchanged for upstream requests made with shared provider accounts (ChatGPT/Codex OAuth, OpenAI platform keys, or an operator-configured base URL) that belong to the operator, not to the caller. The `POST /responses/*subpath` wildcard routes spliced the client-supplied subpath into the upstream URL with no validation. This lets an authenticated tenant relay requests to arbitrary upstream endpoints using pooled account credentials via a path traversal. This vulnerability is fixed in 0.1.169.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:39.713"
+  },
+  {
+    "id": "CVE-2026-73080",
+    "description": "SeaweedFS is a distributed storage system. Prior to 4.24, VolumeServer.FetchAndWriteNeedle in weed/server/volume_grpc_remote.go fetches a caller-supplied remote endpoint through weed/remote_storage/s3/s3_storage_client.go and writes the response into a needle. The RPC performs no authentication and no target validation, allowing anyone who can reach a volume server's gRPC port to cause requests to arbitrary hosts, including loopback, link-local, RFC 1918, and cloud metadata endpoints such as 169.254.169.254, and read the response. On cloud deployments, this can disclose instance metadata and IAM credentials and reach otherwise unexposed internal services. The volume server gRPC plane is unauthenticated by default, and configuring documented JWT signing keys does not protect this RPC. This issue is fixed in version 4.24.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:39.857"
+  },
+  {
+    "id": "CVE-2026-9214",
+    "description": "Insufficient input validation vulnerability in the NETGEAR R7000 models\n allows authenticated administrators connected to the local network to \nmake unauthorized modification to router software and functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-11T16:17:40.490"
   }
 ]
