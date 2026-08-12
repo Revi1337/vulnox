@@ -1,103 +1,5 @@
 [
   {
-    "id": "CVE-2026-13221",
-    "description": "Perl versions through 5.43.9 produce silently incorrect regular expression matches when an alternation of more than 65535 fixed string branches is compiled into a trie in Perl_study_chunk.\n\nWhen such branches are combined into a trie, the delta between the first branch and the shared tail is stored in a 16-bit field. A branch count above 65535 overflows the field, and the trie's match decision table is truncated with no warning or error.\n\nA pattern of this shape produces false positive matches (matching strings it should not) and false negative matches (failing to match strings it should). When such a pattern gates an access or filtering decision, the result is wrong.",
-    "severity": "Critical",
-    "tech": "Perl",
-    "published": "2026-07-13T17:16:48.923"
-  },
-  {
-    "id": "CVE-2026-57432",
-    "description": "Perl versions through 5.43.10 have an integer overflow in S_measure_struct leading to an out-of-bounds heap read in pack and unpack.\n\nS_measure_struct adds each item's size times its repeat count to a running total with no overflow check, so a large repeat count in a pack or unpack template wraps the signed SSize_t total negative. The @, X, and x position codes then guard their moves with a signed length comparison that passes when the length is negative, advancing the buffer pointer out of bounds.\n\nA template derived from untrusted input can read heap memory past the buffer and return it to the caller.",
-    "severity": "High",
-    "tech": "Perl",
-    "published": "2026-07-13T17:17:55.670"
-  },
-  {
-    "id": "CVE-2026-57433",
-    "description": "Storable versions before 3.41 for Perl have a signed integer overflow when deserializing a crafted SX_HOOK record.\n\nretrieve_hook_common reads a signed 32-bit item count from an SX_HOOK record and calls av_extend with that count plus one. A count of I32_MAX wraps the addition to a negative value.\n\nA crafted blob passed to thaw or retrieve triggers the overflow; av_extend receives the negative count and dies with a panic, terminating the deserialization.",
-    "severity": "Critical",
-    "tech": "Storable",
-    "published": "2026-07-13T17:17:55.783"
-  },
-  {
-    "id": "CVE-2026-53364",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nBluetooth: hci_conn: Fix memory leak in hci_le_big_terminate()\n\nhci_le_big_terminate() allocates iso_list_data via kzalloc_obj but\nreturns 0 without freeing it when neither pa_sync_term nor big_sync_term\nflags are set after evaluating the PA and BIG sync connection state.\n\nThis early-return path was introduced when hci_le_big_terminate() was\nrefactored to take struct hci_conn instead of raw u8 parameters, adding\nPA/BIG flag evaluation logic. The existing kfree() on hci_cmd_sync_queue\nfailure does not cover this path.",
-    "severity": "Medium",
-    "tech": "Linux kernel",
-    "published": "2026-07-13T18:16:28.297"
-  },
-  {
-    "id": "CVE-2026-53365",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nvsock/virtio: fix zerocopy completion for multi-skb sends\n\nWhen a large message is fragmented into multiple skbs, the zerocopy\nuarg is only allocated and attached to the last skb in the loop.\nNon-final skbs carry pinned user pages with no completion tracking,\nso the kernel has no way to notify userspace when those pages are safe\nto reuse. If the loop breaks early the uarg is never allocated at all,\nleaking pinned pages with no completion notification.\n\nFix this by following the approach used by TCP: allocate the zerocopy\nuarg (if not provided by the caller) before the send loop and attach\nit to every skb via skb_zcopy_set(), which takes a reference per skb.\nEach skb's completion properly decrements the refcount, and the\nnotification only fires after the last skb is freed.\nOn failure, if no data was sent, the uarg is cleanly aborted via\nnet_zcopy_put_abort().\n\nThis issue was initially discovered by sashiko while reviewing commit\n1cb36e252211 (\"vsock/virtio: fix MSG_ZEROCOPY pinned-pages accounting\")\nbut was pre-existing.",
-    "severity": "Medium",
-    "tech": "Linux kernel",
-    "published": "2026-07-13T18:16:28.433"
-  },
-  {
-    "id": "CVE-2026-60103",
-    "description": "Blender 3.0.0 through 5.1.2 contains an out-of-bounds read vulnerability that allows attackers to trigger a crash or read adjacent heap memory by supplying a crafted .blend file with a malicious signed short member_index value in the SDNA block. The member_index field is used as an array index into the sdna->members[] array in sdna_expand_names() without bounds validation, allowing any value outside the allocated range to produce an invalid pointer subsequently passed to strlen(), resulting in a SIGSEGV crash or unintended heap memory disclosure.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:29.353"
-  },
-  {
-    "id": "CVE-2026-61462",
-    "description": "mcp-gitlab contains a path traversal vulnerability in the job_id parameter of build/index.js that allows attackers to redirect GitLab API requests to arbitrary endpoints. Attackers can supply crafted job_id values like ../../../user to escape the intended path prefix and access arbitrary GitLab API resources using the operator's personal access token.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:29.633"
-  },
-  {
-    "id": "CVE-2026-61463",
-    "description": "Shiori contains a privilege escalation vulnerability in the account update endpoint that allows authenticated users to modify the owner field without authorization checks. Attackers can escalate to administrator by submitting a crafted PATCH request with owner: true, then re-authenticate to obtain an admin JWT token granting full system access.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:29.770"
-  },
-  {
-    "id": "CVE-2026-61500",
-    "description": "Rejetto HFS 3.0.0 through 3.2.0 derives its session-cookie signing key from the non-cryptographic Math.random() generator and discloses outputs of the same generator to unauthenticated clients during login. A remote attacker can collect a small number of login responses, reconstruct the generator's state, recover the signing key, and forge a valid administrator session cookie, leading to full administrative access and remote code execution via the server_code configuration feature.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:29.903"
-  },
-  {
-    "id": "CVE-2026-61501",
-    "description": "Rejetto HFS 3.0.0 through 3.2.0 renders log entries in the administration panel as HTML without sanitization. A remote unauthenticated attacker can submit a failed login with a crafted username that is written to the error log and executes JavaScript in an administrator's browser when the logs are viewed, allowing the attacker to create accounts or execute code on the server with the administrator's privileges.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:30.043"
-  },
-  {
-    "id": "CVE-2026-61502",
-    "description": "Rejetto HFS 3.0.0 through 3.2.0 accepts state-changing API requests via the GET method and exempts GET requests from its anti-CSRF header check. A remote attacker can perform administrative actions including account creation and configuration changes leading to code execution - by causing a logged-in administrator's browser to navigate to a crafted URL, or without any credentials against default installations when the attack originates from the server's own machine.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:30.173"
-  },
-  {
-    "id": "CVE-2026-61503",
-    "description": "Rejetto HFS 3.0.0 through 3.2.0 returns observably different responses from its login endpoint depending on whether the submitted username exists. A remote unauthenticated attacker can use this to confirm valid account names, including the default admin account, facilitating password-guessing and session-forgery attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:30.307"
-  },
-  {
-    "id": "CVE-2026-61504",
-    "description": "Rejetto HFS 3.0.0 through 3.2.0 does not escape file names in its fallback \"basic\" web listing, and this listing can be forced by any browser via the ?get=basic parameter. A user with upload permission - or an anonymous user on servers with an open upload folder - can store a file whose name contains script that executes in the browser of anyone viewing the listing.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:30.437"
-  },
-  {
-    "id": "CVE-2026-61505",
-    "description": "Rejetto HFS 3.0.0 through 3.2.0 allows path traversal through the lang query parameter, permitting a remote unauthenticated attacker to read certain JSON files outside the shared folders. Exploitation is constrained to files matching a narrow naming and format pattern, limiting practical impact.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-13T18:16:30.563"
-  },
-  {
     "id": "CVE-2025-45869",
     "description": "LogicalDOC Enterprise Version up to and before v9.1.1 is vulnerable to Server-Side Request Forgery (SSRF). An unauthenticated attacker can exploit the ShareFileCallback servlet by manipulating input parameters to trigger a server-side request to an attacker-controlled host.",
     "severity": "High",
@@ -947,8 +849,8 @@
   {
     "id": "CVE-2026-6851",
     "description": "An Improper link resolution before file access ('link following') vulnerability in the File Shredder module as used in Bitdefender Total Security and Internet Security on Windows allows a less-privileged local user to elevate rights by leveraging a race conditions via Symbolic Links.\n\nThis issue affects Total Security: before 27.0.58.315; Internet Security: before 27.0.58.315.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Internet security",
     "published": "2026-07-14T08:16:24.000"
   },
   {
@@ -1137,7 +1039,7 @@
     "id": "CVE-2026-62422",
     "description": "In JetBrains YouTrack before 2026.1.13757,\n2025.3.148033,\n2025.2.148048,\n2025.1.148120,\n2024.3.148430,\n2024.2.148429 authentication bypass via direct database access leading to administrative access was possible",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Youtrack",
     "published": "2026-07-14T11:16:48.367"
   },
   {
@@ -8697,7 +8599,7 @@
     "id": "CVE-2026-45804",
     "description": "Diffusers is the a library for pretrained diffusion models. Prior to 0.38.0, Diffusers' DiffusionPipeline.from_pretrained flow can bypass the trust_remote_code guard because download() validates model_index.json and custom pipeline code before later loading from a cached folder that can change, allowing a Hub repository with custom .py pipeline code to execute through the custom pipeline flow without passing custom_pipeline or trust_remote_code=True. This issue is fixed in version 0.38.0.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Diffusers",
     "published": "2026-07-15T17:16:48.310"
   },
   {
@@ -13681,70 +13583,70 @@
     "id": "CVE-2023-54366",
     "description": "SurrealDB before 1.0.1 sets default table permissions to FULL instead of NONE, allowing SELECT, CREATE, UPDATE, and DELETE operations on tables without explicit permissions. Attackers with database access or unauthenticated users on publicly exposed instances can perform unrestricted operations on unprotected tables within their authorization scope.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:07.603"
   },
   {
     "id": "CVE-2024-58356",
     "description": "SurrealDB before 2.1.4 silently fails to overwrite table definitions when the DEFINE TABLE ... OVERWRITE clause is used on tables defined with TYPE RELATION. Because table definitions include the PERMISSIONS clause, an attempt to tighten a table's permissions via OVERWRITE does not take effect, and the administrator may incorrectly believe the change was applied. As a result, a client authorized to run queries may continue to access data in that table that the updated (but unapplied) permissions were intended to restrict.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:08.363"
   },
   {
     "id": "CVE-2024-58357",
     "description": "SurrealDB versions before 2.1.0 contain an uncaught exception vulnerability in the rand::time() function that panics when unwrap is called on a None result from timestamp_opt. Authorized clients can repeatedly invoke rand::time() to reliably trigger server panics and cause denial of service.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:08.503"
   },
   {
     "id": "CVE-2024-58358",
     "description": "SurrealDB versions before 2.1.0 contain a denial of service vulnerability in role conversion that allows privileged owner users to define users with nonexistent roles. Attackers can trigger an uncaught panic by signing in with a user assigned an invalid role, crashing the server.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:08.643"
   },
   {
     "id": "CVE-2024-58359",
     "description": "SurrealDB versions before 2.1.0 contain a denial of service vulnerability in the sorting mechanism when using ORDER BY rand() clause. Authorized clients can execute queries with ORDER BY rand() to trigger a panic in the sorting function, crashing the server.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:08.780"
   },
   {
     "id": "CVE-2024-58361",
     "description": "SurrealDB versions before 2.0.4 contain an uncaught exception handling vulnerability in the parser error rendering code when processing empty strings. Authorized clients can execute malformed queries with empty string conversions to record, duration, or datetime types that cause a panic in error rendering, crashing the server.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:08.917"
   },
   {
     "id": "CVE-2024-58362",
     "description": "SurrealDB before 1.5.5 (and 2.0.0-beta before 2.0.0-beta.3) accepts an arbitrary object in the signin and signup operations of the RPC API without recursively validating it for non-computed values. When a record access method defines a SIGNIN or SIGNUP query and the RPC API is exposed to untrusted users, an unauthenticated attacker can encode a binary object containing a subquery using the bincode serialization format and supply it in place of credentials. The subquery is then executed within the database owner's SIGNIN/SIGNUP query under a system user session with the editor role, allowing the attacker to select, create, update, and delete non-IAM resources (though not view the query results directly, and not affect IAM resources, which require the owner role).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:09.047"
   },
   {
     "id": "CVE-2024-58363",
     "description": "SurrealDB before 1.5.4 fails to properly validate authentication when a scope user switches databases using the USE clause or use method. Attackers with an authenticated session can impersonate an unrelated user in a different database if a user record with an identical identifier exists, allowing unauthorized actions if permissions rely solely on the $auth parameter.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:09.187"
   },
   {
     "id": "CVE-2024-58364",
     "description": "SurrealDB versions before 1.2.1 contain an uncaught exception handling vulnerability in span rendering when parsing queries with errors on line terminator characters. Authorized clients can submit malformed queries that trigger a panic in the span rendering code, crashing the server and causing denial of service.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:09.320"
   },
   {
     "id": "CVE-2024-58365",
     "description": "SurrealDB versions before 1.2.0 contain an uncaught exception vulnerability in the query executor when processing calls to nonexistent built-in functions. Authorized clients can craft pre-parsed queries invoking nonexistent functions to trigger a panic that crashes the server.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Surrealdb",
     "published": "2026-07-18T14:17:09.460"
   },
   {
@@ -33911,21 +33813,21 @@
     "id": "CVE-2026-49743",
     "description": "Software installed and run as a non-privileged user may conduct improper GPU system calls to manipulate the lifetimes of synchronisation objects in the kernel, leading to read/write UAFs.\n\n\n\nDuring workload submission involving a fence exported by the GPU driver, the reference count of the underlying synchronisation primitive is not properly incremented. This can be exploited, by destroying the exported fence and prematurely release the underlying primitive, resulting in a potential use-after-free condition.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Ddk",
     "published": "2026-07-24T09:16:24.667"
   },
   {
     "id": "CVE-2026-49744",
     "description": "Kernel software installed and running inside a Guest VM may post improper commands to the GPU Firmware to trigger a write of data outside the Guest's virtualised GPU memory.\n\n\n\nOut of bounds accesses triggered by malware introduced to a Guest KMD could allow privilege escalation which escapes virtualization boundaries.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Ddk",
     "published": "2026-07-24T09:16:24.787"
   },
   {
     "id": "CVE-2026-49745",
     "description": "Kernel software installed and running inside a Guest VM may post improper commands to the GPU Firmware to trigger a write of data outside the Guest's virtualised GPU memory.\n\n\n\nSoftware installed and run under a Guest VM can send commands to the GPU which result in out of bounds memory accesses. These can be used to escalate privileges.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Ddk",
     "published": "2026-07-24T09:16:24.897"
   },
   {
@@ -34891,7 +34793,7 @@
     "id": "CVE-2026-16280",
     "description": "An integer overflow when calculating physical offsets for sparse PMRs may result in 32-bit truncation of address computations for PMRs larger than 4 GB. This can lead to incorrect GPU MMU mappings and may allow a non-privileged user to trigger access to unintended physical memory, resulting in memory corruption or information disclosure.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Ddk",
     "published": "2026-07-24T23:16:50.393"
   },
   {
@@ -47939,28 +47841,28 @@
     "id": "CVE-2026-9322",
     "description": "IBM WebSphere Application Server 9.0, and 8.5 and IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.7 are vulnerable to a denial of service via a crafted HTTP request.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Websphere application server",
     "published": "2026-07-30T17:16:34.580"
   },
   {
     "id": "CVE-2024-25039",
     "description": "IBM Engineering Requirements Management DOORS and DOORS Web Access 9.7.2.1 through 9.7.2.11, and 9.6.1.1 through 9.6.1.13 do not limit the length of a connection which could allow for a Slowloris HTTP denial of service attack to take place. This can cause the web server to become unresponsive.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Engineering requirements management doors web access",
     "published": "2026-07-30T19:16:56.507"
   },
   {
     "id": "CVE-2024-40683",
     "description": "IBM Operations Analytics - Log Analysis 1.3.5.0, 1.3.5.1, 1.3.5.2, 1.3.5.3, 1.3.6.0, 1.3.6.1, 1.3.7.0, 1.3.7.1, 1.3.7.2, and 1.3.8.0, 1.3.8.1, 1.3.8.2, 1.3.8.3, 1.3.8.4 does not invalidate session after a password chance which could allow an authenticated user to impersonate another user on the system.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Operations analytics - log analysis",
     "published": "2026-07-30T19:16:57.767"
   },
   {
     "id": "CVE-2025-0152",
     "description": "IBM Engineering Requirements Management DOORS and DOORS Web Access 9.7.2.1 through 9.7.2.11, and 9.6.1.1 through 9.6.1.13 is vulnerable to cross-site scripting. This vulnerability allows an unauthenticated attacker to embed arbitrary JavaScript code in the Web UI thus altering the intended functionality potentially leading to credentials disclosure within a trusted session.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Engineering requirements management doors web access",
     "published": "2026-07-30T19:16:57.910"
   },
   {
@@ -64367,7 +64269,7 @@
   {
     "id": "CVE-2026-17510",
     "description": "Crypt::OpenSSL::PKCS12 versions before 1.98 for Perl allow a NULL pointer dereference in print_attribute via a zero length BMPSTRING attribute.\n\nprint_attribute() sizes the destination buffer for a BMPSTRING attribute from its declared byte length with `Renew(*attribute, length, char)`. A zero length attribute makes that a zero size reallocation, which Perl implements as a free returning NULL, so the buffer pointer becomes NULL, the following `strncpy` copies nothing, and the caller dereferences NULL in the `strlen()` it passes to `newSVpvn()`. A zero length BMPSTRING is even length, so the ASN.1 decoder accepts it and the value reaches this code. The UTF8STRING, OCTET STRING and BIT STRING arms size on `length + 1` or `length * 4 + 1` and are unaffected.\n\nAny caller that passes an untrusted PKCS#12 file to info_as_hash() can crash the process. info() prints attribute values directly without sizing a buffer and is unaffected.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-09T02:16:34.117"
   },
@@ -64752,7 +64654,7 @@
   {
     "id": "CVE-2026-15534",
     "description": "Perl versions through 5.45.1 have out-of-bounds heap reads and writes during regular expression matching via an undersized superlinear cache in S_regmatch.\n\nThe regex engine's superlinear cache holds one bit per subject position for each participating WHILEM node, so the bit count is the subject length plus one times the number of nodes. Nothing checks that product for positive overflow of the signed 32-bit count: a 286331153 byte subject matched against a pattern with 15 participating nodes stores the count as 14, leaving a two byte cache. The cache is then indexed from the real match position and node number, so reads go past the end of the allocation, and on failure CACHEsayNO sets a bit past it.\n\nA caller that matches an attacker controlled subject of this size against a pattern of this shape can crash the process or corrupt heap memory.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-09T18:16:42.800"
   },
@@ -65312,7 +65214,7 @@
   {
     "id": "CVE-2026-19089",
     "description": "The Product Input Fields for WooCommerce WordPress plugin before 2.0.2 does not validate uploaded file types when its accepted-types setting is left empty, which its own documentation advertises as accepting all files, allowing unauthenticated attackers to upload arbitrary files and achieve remote code execution on servers that do not honour the directory's access rules.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:51.490"
   },
@@ -71072,15 +70974,15 @@
   },
   {
     "id": "CVE-2026-72745",
-    "description": "FreeRDP before 3.30.0 contains an out-of-bounds vulnerability in kerberos_DecryptMessage() (winpr/libwinpr/sspi/Kerberos/kerberos.c). The 16-bit EC (extra count) field of a peer-supplied GSS Wrap token (RFC 4121) is used directly in pointer arithmetic to locate the encrypted regions without being bounds-checked, while only RRC and the total buffer length are validated. A malicious peer (server or client) can supply a large EC value (up to 0xFFFF) during CredSSP/NLA authentication, moving the decrypt operation's base pointers past the end of the ~60-byte token buffer. Because the AES-CTS-HMAC enctypes decrypt in place before the HMAC integrity check, this results in an out-of-bounds read and in-place out-of-bounds write, potentially leading to information disclosure, memory corruption, or denial of service.",
-    "severity": "High",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority as it's a duplicate of CVE-2026-73242.",
+    "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-11T13:19:05.370"
   },
   {
     "id": "CVE-2026-72746",
-    "description": "FreeRDP before 3.30.0 contains a server-side authentication bypass in the RDSTLS handshake. When a server is configured with RdstlsSecurity = TRUE, the handshake dispatches inbound PDUs based solely on the attacker-supplied wire pduType without verifying that the received PDU is the one required at the current step. Because the rdpRdstls object is calloc-zeroed, its resultCode defaults to 0 (RDSTLS_RESULT_SUCCESS). An unauthenticated remote client can send a Capabilities PDU instead of the required Authentication Request PDU; rdstls_process_capabilities() returns success without ever setting resultCode, so the server responds with an AUTHRSP carrying resultCode SUCCESS and treats the session as authenticated without evaluating any password, redirection GUID, or auto-reconnect cookie. This affects the released FreeRDP 3.x series (e.g., 3.27.1) and master HEAD; at the time of the advisory no patched version was available.",
-    "severity": "High",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority as it's a duplicate of CVE-2026-73241.",
+    "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-11T13:19:05.520"
   },
@@ -72670,14 +72572,14 @@
     "id": "CVE-2026-50516",
     "description": "Missing authentication for critical function in Microsoft Azure Kubernetes Service allows an unauthorized attacker to elevate privileges over a network.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Azure kubernetes service",
     "published": "2026-08-11T17:18:02.900"
   },
   {
     "id": "CVE-2026-54113",
     "description": "Allocation of resources without limits or throttling in Windows Kernel allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:03.457"
   },
   {
@@ -72698,21 +72600,21 @@
     "id": "CVE-2026-54984",
     "description": "Heap-based buffer overflow in Windows Imaging Component allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:03.917"
   },
   {
     "id": "CVE-2026-56174",
     "description": "Untrusted search path in Windows Narrator Braille allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1809",
     "published": "2026-08-11T17:18:04.220"
   },
   {
     "id": "CVE-2026-56179",
     "description": "Origin validation error in Windows Network Address Translation (NAT) allows an unauthorized attacker to perform spoofing over an adjacent network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 11 24h2",
     "published": "2026-08-11T17:18:04.363"
   },
   {
@@ -72782,7 +72684,7 @@
     "id": "CVE-2026-59122",
     "description": "Concurrent execution using shared resource with improper synchronization ('race condition') in Windows Telephony Service allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:06.090"
   },
   {
@@ -72796,14 +72698,14 @@
     "id": "CVE-2026-59125",
     "description": "Use after free in Virtual Hard Disk (VHD) Miniport Driver allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:06.417"
   },
   {
     "id": "CVE-2026-59126",
     "description": "Concurrent execution using shared resource with improper synchronization ('race condition') in Windows Event Logging Service allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 21h2",
     "published": "2026-08-11T17:18:06.583"
   },
   {
@@ -72817,28 +72719,28 @@
     "id": "CVE-2026-59128",
     "description": "Out-of-bounds read in Windows Encrypting File System (EFS) allows an authorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:06.917"
   },
   {
     "id": "CVE-2026-59130",
     "description": "No cwe for this issue in AMD Zen allows an authorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:07.100"
   },
   {
     "id": "CVE-2026-59131",
     "description": "No cwe for this issue in AMD Zen allows an authorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:07.263"
   },
   {
     "id": "CVE-2026-59132",
     "description": "Null pointer dereference in Windows TCP/IP allows an unauthorized attacker to deny service over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:07.430"
   },
   {
@@ -72859,28 +72761,28 @@
     "id": "CVE-2026-59135",
     "description": "Weak authentication in Microsoft Windows Search Component allows an authorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:07.980"
   },
   {
     "id": "CVE-2026-59136",
     "description": "Use of uninitialized resource in Microsoft COM for Windows allows an authorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:08.170"
   },
   {
     "id": "CVE-2026-59137",
     "description": "Use of uninitialized resource in Windows Event Logging Service allows an authorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:08.360"
   },
   {
     "id": "CVE-2026-59138",
     "description": "Null pointer dereference in Microsoft Remote Registry Service allows an authorized attacker to deny service over a network.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-08-11T17:18:08.547"
   },
   {
@@ -72894,7 +72796,7 @@
     "id": "CVE-2026-61346",
     "description": "Use after free in Windows Graphics Kernel allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1809",
     "published": "2026-08-11T17:18:08.910"
   },
   {
@@ -75001,7 +74903,7 @@
     "id": "CVE-2026-68802",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.930"
   },
   {
@@ -76414,7 +76316,7 @@
   {
     "id": "CVE-2026-18634",
     "description": "An insecure handling of serialized objects vulnerability was found in the one of the service of GMS application 9.5.1 (Build 9510.1044) and earlier versions. A local attacker with the ability to interact with the service could exploit this behavior to perform unauthorized actions through the affected component.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-11T21:17:30.880"
   },
@@ -77065,7 +76967,7 @@
   {
     "id": "CVE-2026-15249",
     "description": "The Patterns Kit WordPress plugin through 1.0.3 does not escape a link attribute before its client-side script inserts it into the page, allowing users with a role as low as Contributor to store a payload that executes in the browser of a user who views the content and clicks the affected element.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T06:18:09.433"
   },
@@ -77086,14 +76988,14 @@
   {
     "id": "CVE-2026-16066",
     "description": "The Welcart e-Commerce WordPress plugin before 2.11.34 does not sanitise or escape a product field before outputting it on the product pages, allowing users with the Author role and above to inject arbitrary web scripts that execute in the browser of any visitor viewing the product page.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T06:18:15.797"
   },
   {
     "id": "CVE-2026-16253",
     "description": "The Total Upkeep  WordPress plugin before 1.17.3 does not adequately protect the secret that authorizes its backup-restore functionality and exposes it to unauthenticated users, allowing them to disclose sensitive backup information and to force a full site restore that overwrites the live site's files and database.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-12T06:18:55.103"
   },
@@ -77121,28 +77023,28 @@
   {
     "id": "CVE-2026-16977",
     "description": "The Form Maker by 10Web  WordPress plugin before 1.15.45 does not properly parameterize a user-controlled value that is substituted into a dynamic SQL query built for a database-backed choice field, allowing subscriber-level users to perform second-order SQL injection.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-12T06:19:18.193"
   },
   {
     "id": "CVE-2026-17013",
     "description": "The WP Photo Album Plus WordPress plugin before 9.2.07.002 does not sanitise and escape a parameter before reflecting it into an inline script block, which could allow unauthenticated attackers to perform Reflected Cross-Site Scripting attacks against anyone who is tricked into opening a crafted link to a page displaying one of its galleries.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T06:19:18.297"
   },
   {
     "id": "CVE-2026-18035",
     "description": "The User Access Manager WordPress plugin before 2.3.15 does not apply its access restrictions to REST API requests, allowing unauthenticated attackers to read the content of posts, pages and custom post types that have been restricted to specific user groups.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T06:19:22.667"
   },
   {
     "id": "CVE-2026-18046",
     "description": "The Cookie Consent  WordPress plugin before 0.0.10 does not correctly enforce its intended administrator-only capability check on the REST route that stores its geolocation service license key, so the route falls back to an authentication-only gate, allowing any authenticated user such as a subscriber to overwrite the stored key and disrupt the Cookie Consent  WordPress plugin before 0.0.10's geolocation-based consent banner targeting.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T06:19:22.783"
   },
@@ -77156,21 +77058,21 @@
   {
     "id": "CVE-2026-18049",
     "description": "The WP Photo Album Plus WordPress plugin before 9.2.07.002 does not perform any capability or nonce check on one of its public endpoint actions and builds an option name from a client-supplied value without restricting it to its own options, allowing unauthenticated users to read the value of other autoloaded options whose names end in a matching suffix.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-12T06:19:34.650"
   },
   {
     "id": "CVE-2026-18057",
     "description": "The Events Manager  WordPress plugin before 7.4.1 does not sanitise and escape a user-controlled value before using it in a SQL statement, allowing users with a subscriber account and above to perform SQL injection attacks and tamper with booking consent records belonging to other people.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-12T06:19:34.757"
   },
   {
     "id": "CVE-2026-18230",
     "description": "The WP Directory Kit WordPress plugin before 1.5.6 does not sanitise and escape a parameter before using it in a SQL statement through one of its authenticated AJAX actions, which lacks an authorization check, allowing any authenticated user such as a Subscriber to perform SQL injection attacks.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-12T06:20:07.317"
   },
@@ -77240,7 +77142,7 @@
   {
     "id": "CVE-2026-19217",
     "description": "The Royal Addons for Elementor  WordPress plugin before 1.7.1065 does not validate a widget setting used to build an HTML tag before outputting it, which could allow users with the Contributor role and above to perform Stored Cross-Site Scripting attacks.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T06:21:47.283"
   },
@@ -77352,7 +77254,7 @@
   {
     "id": "CVE-2026-68868",
     "description": "The Google Cloud Secret Manager secrets backend in Apache Airflow's Google provider never applied the team scope when resolving Connections and Variables: the caller's `team_name` was accepted by the backend but dropped at the internal call boundary, so every lookup resolved against the team-agnostic secret name. In a deployment running multi-team mode with this backend, a task or Dag belonging to one team resolved another team's Connection or Variable, obtaining its credentials in full. No unusual configuration is required beyond enabling multi-team mode and using this backend. Users are advised to upgrade to apache-airflow-providers-google 22.3.0 or later, which builds and applies the team-scoped secret name.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T11:17:10.063"
   },
@@ -78003,7 +77905,7 @@
   {
     "id": "CVE-2026-54183",
     "description": "Apache Airflow's secrets masker hides values stored under sensitive key names when they are displayed in the UI. The masker's recursion-depth limit did not descend into values nested inside a list, tuple, or set beyond that limit, so an Airflow Variable holding such a deeply-nested value was shown unmasked in the Variables UI. The exposure is limited to the UI: any authenticated user who can see the Variable in the UI can already read its full value through the Variables REST API, so this does not disclose data the user could not otherwise obtain — the masking is a shoulder-surfing defense for the UI, not an access-control boundary.\n\nThis is an incomplete-fix follow-up to CVE-2026-42358, whose fix made only the dictionary walk unbounded; lists, tuples, and sets beyond the depth limit remained unmasked in the UI. Deployments that applied the CVE-2026-42358 fix should also upgrade to address this residual case. Upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T16:17:04.640"
   },
@@ -78017,7 +77919,7 @@
   {
     "id": "CVE-2026-59242",
     "description": "Apache Airflow's XCom `GET /api/v2/{...}/xcomEntries/{key}?deserialize=true` endpoint passed a string-literal payload through `BaseXCom.deserialize_value` without the `_check_forbidden_xcom_keys` guard, allowing an authenticated API user with XCom write-and-read access to instantiate arbitrary `airflow.*` classes on the API server (CWE-502). An authenticated user who can write an XCom value and then read it back with `deserialize=true` triggers the unsafe instantiation. Users are advised to upgrade to apache-airflow 3.3.1 or later, which rejects reserved XCom serialization keys submitted as JSON string literals.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-12T16:17:09.067"
   },
@@ -78101,7 +78003,7 @@
   {
     "id": "CVE-2026-67260",
     "description": "Apache Airflow 3.3.0 moved human-in-the-loop tasks from the triggerer to a new `awaiting_input` task state swept by the scheduler. That sweep deserializes the task instance's `next_kwargs` without an allow-list, so a Dag author — who controls that value through the task execution API — can cause an arbitrary module import and object instantiation inside the scheduler process, or terminate the scheduler job. No non-default configuration is required: the sweep runs unconditionally every 15 seconds, and the default `allowed_deserialization_classes` setting does not cover this code path. Versions before 3.3.0 are not affected, because human-in-the-loop tasks deferred onto the triggerer instead. This is a different code path from CVE-2026-58076, which covers the same unguarded exception-node deserialization reached elsewhere — deployments that applied that fix must upgrade for this issue as well. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-12T16:17:14.813"
   },
@@ -78209,5 +78111,418 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-12T16:17:23.000"
+  },
+  {
+    "id": "CVE-2026-16694",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 is vulnerable to stored cross-site scripting. This vulnerability allows an authenticated user to embed arbitrary JavaScript code in the Web UI thus altering the intended functionality potentially leading to credentials disclosure within a trusted session.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:23.993"
+  },
+  {
+    "id": "CVE-2026-17094",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information and manipulate files due to a path traversal vulnerability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:24.443"
+  },
+  {
+    "id": "CVE-2026-17095",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to unsafe reflection.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:24.570"
+  },
+  {
+    "id": "CVE-2026-18098",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information and compromise system integrity due to an XML injection flaw.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:24.993"
+  },
+  {
+    "id": "CVE-2026-18106",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to improper validation of user-supplied path input.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:25.120"
+  },
+  {
+    "id": "CVE-2026-18144",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to improper authorization.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:25.247"
+  },
+  {
+    "id": "CVE-2026-18246",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to an interpretation conflict in the multipart parser.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:25.527"
+  },
+  {
+    "id": "CVE-2026-18499",
+    "description": "IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.8 is vulnerable to a privilege escalation when using Liberty collectives.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:25.650"
+  },
+  {
+    "id": "CVE-2026-18683",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 is vulnerable to privilege escalation via Navigator for i. An authenticated user could elevate privileges to a root user to execute commands.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:25.790"
+  },
+  {
+    "id": "CVE-2026-18847",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote unauthenticated attacker to harvest credentials due to spoofing of Navigator for i.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:25.920"
+  },
+  {
+    "id": "CVE-2026-48550",
+    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 are vulnerable to reflected cross-site scripting in cmd.cgi via the NagFormId parameter. An unauthenticated remote attacker can craft a malicious link that, when followed by an authenticated user, executes arbitrary JavaScript in the victim's browser.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:27.190"
+  },
+  {
+    "id": "CVE-2026-48551",
+    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 contain a cross-site request forgery protection bypass via a self-supplied double-submit cookie. An attacker can supply matching cookie and request parameter values to bypass CSRF protection, enabling unauthenticated attackers to run commands as authorized users via malicious links.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:27.353"
+  },
+  {
+    "id": "CVE-2026-48552",
+    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 are vulnerable to DOM-based cross-site scripting in jsonquery.js. Unencoded JSON string values reflected from stored fields are inserted into the DOM without sanitization, allowing attackers to run arbitrary JavaScript in the victim's browser.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:27.523"
+  },
+  {
+    "id": "CVE-2026-48553",
+    "description": "Nagios Core before 4.5.13 and Nagios XI before 2026R1.5 are vulnerable to authenticated remote code execution via custom-variable macro injection through the Nagios Remote Data Processor (NRDP). When a custom variable defined on a host, service, or contact is referenced in a shell-executed command line, an authenticated attacker with NRDP access can inject OS commands through the macro value. Exploitation requires a non-default configuration in which a custom variable is defined and referenced in a shell-executed command.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:27.697"
+  },
+  {
+    "id": "CVE-2026-48554",
+    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 are vulnerable to authenticated remote code execution via unfiltered NOTIFICATION-family macro substitution through the com_data parameter. When a notification command references $NOTIFICATIONCOMMENT$ or $NOTIFICATIONAUTHOR$ in a shell-reachable position, authenticated UI users can run arbitrary commands as the nagios user. Exploitation requires a non-default configuration in which a notification command references these macros in a shell-executed command line.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:27.840"
+  },
+  {
+    "id": "CVE-2026-73237",
+    "description": "XSS vulnerability in Markdown handling in Apache Allura.\n\nThis issue affects Apache Allura: from 1.10.0 before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:31.960"
+  },
+  {
+    "id": "CVE-2026-73238",
+    "description": "XSS vulnerability in code display in Apache Allura.\n\nThis issue affects Apache Allura: before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:32.080"
+  },
+  {
+    "id": "CVE-2026-73239",
+    "description": "Insecure Direct Object Reference (IDOR) due to missing permission checks for multiple Artifact types in Apache Allura.\n\nThis issue affects Apache Allura: before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:32.190"
+  },
+  {
+    "id": "CVE-2026-73240",
+    "description": "Specifically crafted inputs may lead to git argument injection in Apache Allura.\n\nThis issue affects Apache Allura: before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:32.307"
+  },
+  {
+    "id": "CVE-2026-73295",
+    "description": "Material for MkDocs is a powerful documentation framework built on top of MkDocs. From 7.2.0 until 9.7.7, the mountSearchSuggest function in src/templates/assets/javascripts/components/search/suggest/index.ts contains a DOM-based cross-site scripting vulnerability in the optional search.suggest feature that allows a crafted q URL parameter to execute JavaScript in a documentation site's origin after user interaction. This issue is fixed in version 9.7.7.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:32.637"
+  },
+  {
+    "id": "CVE-2026-73296",
+    "description": "Microsoft UFO open-source framework for intelligent automation across devices and platforms. Prior to 3.0.8, create_mobile_data_collection_server and create_mobile_action_server in ufo/client/mcp/http_servers/mobile_mcp_server.py exposed Streamable HTTP MCP services on TCP ports 8020 and 8021 without authentication, allowing an unauthenticated remote attacker to invoke capture_screenshot, get_ui_tree, tap, swipe, type_text, launch_app, press_key, and click_control against an ADB-connected Android device, disclose screen and device data, and modify device state. This issue is fixed in version 3.0.8.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:32.780"
+  },
+  {
+    "id": "CVE-2026-73297",
+    "description": "Microsoft UFO open-source framework for intelligent automation across devices and platforms. Prior to 3.0.8, _is_blocked_ip in ufo/utils/url_security.py did not block NAT64 prefixes 64:ff9b::/96 and 64:ff9b:1::/48, the 6to4 prefix 2002::/16, or the Teredo prefix 2001::/32 and did not re-check embedded IPv4 destinations, allowing an unauthenticated remote attacker who can influence URLs processed by validate_url to bypass the SSRF guard and reach cloud metadata, internal services, or localhost. This issue is fixed in version 3.0.8.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T17:17:32.933"
+  },
+  {
+    "id": "CVE-2026-15423",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 19.0 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to execute CI/CD pipelines on a protected branch without the required push permissions due to improper authorization in pipeline reference validation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:23.820"
+  },
+  {
+    "id": "CVE-2026-16627",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 19.2 before 19.2.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to escalate privileges due to improper sanitization of HTML content rendered in a CI job modal.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:24.160"
+  },
+  {
+    "id": "CVE-2026-16856",
+    "description": "IBM i 7.6, and 7.5 could allow a local attacker to gain elevated privileges due to improper neutralization of special elements used in an OS command.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:24.277"
+  },
+  {
+    "id": "CVE-2026-16860",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary code due to an uncontrolled search path element.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:24.397"
+  },
+  {
+    "id": "CVE-2026-16863",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to an out-of-bounds read.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:24.517"
+  },
+  {
+    "id": "CVE-2026-16904",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary commands due to improper privilege management during monitor owner reassignment.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:24.633"
+  },
+  {
+    "id": "CVE-2026-16906",
+    "description": "IBM i 7.6, and 7.5 could allow a remote authenticated attacker to execute arbitrary commands with elevated privileges due to improper neutralization of special elements used in an OS command.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:24.773"
+  },
+  {
+    "id": "CVE-2026-16907",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary code due to improper bounds checking.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:24.890"
+  },
+  {
+    "id": "CVE-2026-16931",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to cause a denial of service due to improper handling of zero-length TCP options.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:25.010"
+  },
+  {
+    "id": "CVE-2026-16956",
+    "description": "IBM Db2 Mirror for i 7.4, 7.5, and 7.6 could allow a remote attacker to execute arbitrary commands due to improper neutralization of special elements used in an OS command.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:25.133"
+  },
+  {
+    "id": "CVE-2026-17109",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to add unexpected parameters to a command due to parameter injection.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:25.503"
+  },
+  {
+    "id": "CVE-2026-17110",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary commands and obtain sensitive information due to improper privilege management.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:25.717"
+  },
+  {
+    "id": "CVE-2026-17218",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to execute arbitrary code due to an out-of-bounds write.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:25.867"
+  },
+  {
+    "id": "CVE-2026-17222",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to modify data in certain SQL tables due to improper neutralization of special elements used in an SQL command.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.027"
+  },
+  {
+    "id": "CVE-2026-17248",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to cause a denial of service due to improper neutralization of special elements in an OS command.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.190"
+  },
+  {
+    "id": "CVE-2026-17266",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to improper limitation of a pathname to a restricted directory.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.313"
+  },
+  {
+    "id": "CVE-2026-17268",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to improper validation of a session token.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.437"
+  },
+  {
+    "id": "CVE-2026-17271",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to cause a denial of service due to improper validation of input size.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.557"
+  },
+  {
+    "id": "CVE-2026-17276",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to escalate privileges due to improper authorization in the handling of high-authority threads.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.680"
+  },
+  {
+    "id": "CVE-2026-17418",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a local authenticated attacker to cause a denial of service due to improper neutralization of special elements used in an SQL command.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.807"
+  },
+  {
+    "id": "CVE-2026-17419",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to modify SQL tables due to improper neutralization of special elements used in an SQL command.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:26.950"
+  },
+  {
+    "id": "CVE-2026-17420",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to improper neutralization of special elements in an SQL parameter.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:27.073"
+  },
+  {
+    "id": "CVE-2026-18235",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary Control Language commands due to insufficient input validation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:28.000"
+  },
+  {
+    "id": "CVE-2026-18244",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.7 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2 that under certain conditions could have allowed an authenticated user to view restricted configuration settings due to improper authorization checks on a group settings page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:28.127"
+  },
+  {
+    "id": "CVE-2026-18250",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information and bypass security restrictions due to a race condition.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:28.253"
+  },
+  {
+    "id": "CVE-2026-18669",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 is vulnerable to a privilege escalation as the result of a remote code execution vulnerability in the activation engine component. An authenticated attacker can execute a maliciously planted script with root authority.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:28.723"
+  },
+  {
+    "id": "CVE-2026-18713",
+    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 s vulnerable to privilege escalation via Navigator for i. An authenticated user could elevate privileges to a root user to execute commands.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:28.967"
+  },
+  {
+    "id": "CVE-2026-42018",
+    "description": "JFrog Artifactory could return an internal anonymous-user token to an unauthenticated caller when anonymous access is disabled, potentially exposing sensitive resources.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:29.473"
+  },
+  {
+    "id": "CVE-2026-44741",
+    "description": "Pimcore's Admin Classic Bundle provides a Backend UI for Pimcore. Versions prior to 2.3.6 and 1.7.18 have a SQL injection vulnerability in Pimcore's translation grid date filter — the user-supplied `property` field from the filter JSON is interpolated directly into a `UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(...)))` SQL expression without parameterization or allowlist validation. Versiosn 2.3.6 and 1.7.18 fix the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:29.823"
+  },
+  {
+    "id": "CVE-2026-49467",
+    "description": "Pingvin Share X is a secure and easy self-hosted file sharing platform. A vulnerability in versions 1.5.0 through 1.18.0 allow an attacker to bypass password verification when managing Time-based One-Time Password (TOTP) settings. The root cause is a missing `await` keyword on calls to the asynchronous `verifyPassword` method in `authTotp.service.ts` and the `authenticateUser` method in `auth.service.ts`. In JavaScript, an unawaited `Promise` is always truthy. So the logic intended to throw a `ForbiddenException` when a password is incorrect. It never executes because the expression evaluates the existence of the `Promise` object rather than its resolved boolean result. The vulnerability is fixed in version 1.18.1 by ensuring all asynchronous authentication calls are properly awaited. There are no official workarounds. If a user is locked out, an administrator must manually reset the user's TOTP status in the database.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:17:30.637"
+  },
+  {
+    "id": "CVE-2026-69106",
+    "description": "A low-privileged user may poison cached artifact metadata under specific conditions, potentially causing consumers to retrieve untrusted content.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:18:11.273"
+  },
+  {
+    "id": "CVE-2026-73298",
+    "description": "The Microsoft Container Migration Solution Accelerator is a multi-service application that provides a multi-agent, AI-driven migration solution for moving container service configurations to Azure Kubernetes Service. In version 2.1.2 and earlier, a security vulnerability was identified in the Container Migration Solution Accelerator, specifically an authenticated IDOR (Insecure Direct Object Reference) that allows users to read, write, and delete processes belonging to other authenticated users. The issue affects multiple API endpoints, where ownership checks are missing, enabling unauthorized access and modification of migration data across users within the same organization. The vulnerability is present in both process and file management APIs, and the application relies on Entra ID authentication but lacks proper authorization controls between users. Authenticated users are able to access, modify, and delete processes and files belonging to other users without proper authorization checks.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:18:15.057"
+  },
+  {
+    "id": "CVE-2026-73299",
+    "description": "Prompty is a markdown file format (.prompty) for LLM prompts. Prior to 0.1.5 and 2.0.0-beta.5, the TypeScript Nunjucks renderer evaluated untrusted .prompty template bodies with unrestricted JavaScript member access. An attacker-controlled template could traverse constructor and prototype properties to execute JavaScript in the host Node.js process. This issue is fixed in versions 0.1.5 and 2.0.0-beta.5.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:18:15.197"
+  },
+  {
+    "id": "CVE-2026-73300",
+    "description": "Budibase is an open-source low-code platform. Prior to 3.40.0, the MySQL integration component in Budibase is configured with multipleStatements: true, enabling execution of multiple SQL statements in a single query. Attackers can inject malicious SQL commands through user input fields, leading to complete database compromise. This vulnerability is fixed in 3.40.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:18:15.340"
+  },
+  {
+    "id": "CVE-2026-73327",
+    "description": "Joomla 6.1.1 contains a path traversal vulnerability in the com_joomlaupdate extension that allows a Super User to be induced into extracting a crafted archive containing directory traversal sequences or absolute paths in ZIP entry filenames. Attackers can supply malicious ZIP entry names with parent-directory segments or absolute paths to the extract.php extraction routine, causing files to be written outside the intended destination root and enabling persistent remote code execution via planted PHP files.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:18:15.480"
+  },
+  {
+    "id": "CVE-2026-7427",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.5 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2 that under certain conditions could have allowed an unauthenticated user to cause a denial of service due to improper input validation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:18:16.157"
+  },
+  {
+    "id": "CVE-2026-8667",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.6 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2  that under certain conditions could have allowed an authenticated user with developer role to modify certain package registry metadata without the required maintainer-level permissions due to improper authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T18:18:16.283"
   }
 ]
