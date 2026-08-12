@@ -1,26 +1,5 @@
 [
   {
-    "id": "CVE-2026-58065",
-    "description": "The Apache Airflow Git provider runs its git-over-SSH operations with `StrictHostKeyChecking=no` by default, disabling SSH host-key verification. An attacker who can intercept the network path between an Airflow worker and the Git server can impersonate the server (man-in-the-middle), capturing the SSH deploy key or injecting malicious repository content. Deployments that use the Git DAG bundle or Git provider to clone over SSH with a deploy key are affected. The fix changes the default to verify host keys; upgrade to apache-airflow-providers-git `0.4.1` or later and configure a `known_hosts` file.",
-    "severity": "High",
-    "tech": "Apache-airflow-providers-git",
-    "published": "2026-07-13T16:16:41.757"
-  },
-  {
-    "id": "CVE-2026-59245",
-    "description": "In the Apache Airflow FAB auth manager, a DAG whose `dag_id` is `DAGs` collided with the global all-DAGs permission resource name produced by `resource_name()`, so a user granted per-DAG `access_control` on that one DAG was silently granted the global all-DAGs permission (privilege escalation). The escalation triggers when a DAG named `DAGs` exists and a lower-privileged user is given per-DAG access to it, granting that user read/edit access to every DAG. Users are advised to upgrade to `apache-airflow-providers-fab` 3.7.2 or later, which disambiguates the resource-name collision.",
-    "severity": "High",
-    "tech": "Apache-airflow-providers-fab",
-    "published": "2026-07-13T16:16:41.880"
-  },
-  {
-    "id": "CVE-2026-61692",
-    "description": "Rejected reason: ** REJECT ** DO NOT USE THIS CANDIDATE NUMBER. ConsultIDs: CVE-2026-61454. Reason: This candidate is a duplicate of CVE-2026-61454. Notes: All CVE users should reference CVE-2026-61454 instead of this candidate.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-13T16:16:42.910"
-  },
-  {
     "id": "CVE-2026-13221",
     "description": "Perl versions through 5.43.9 produce silently incorrect regular expression matches when an alternation of more than 65535 fixed string branches is compiled into a trie in Perl_study_chunk.\n\nWhen such branches are combined into a trie, the delta between the first branch and the shared tail is stored in a 16-bit field. A branch count above 65535 overflows the field, and the trie's match decision table is truncated with no warning or error.\n\nA pattern of this shape produces false positive matches (matching strings it should not) and false negative matches (failing to match strings it should). When such a pattern gates an access or filtering decision, the result is wrong.",
     "severity": "Critical",
@@ -16740,105 +16719,105 @@
     "id": "CVE-2026-64102",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nRDMA/siw: Reject MPA FPDU length underflow before signed receive math\n\nA malicious connected siw peer can send an iWARP FPDU whose MPA length\nfield (c_hdr->mpa_len, 16 bit big-endian, peer-controlled) is smaller\nthan the fixed DDP/RDMAP header for the announced opcode. Soft-iWARP\nparses the full header in siw_get_hdr() based on iwarp_pktinfo[opcode]\n.hdr_len, but never compares mpa_len against that header length.\n\nsiw_tcp_rx_data() then derives\n\n    srx->fpdu_part_rem = be16_to_cpu(mpa_len) - fpdu_part_rcvd\n                         + MPA_HDR_SIZE;\n\nwhere fpdu_part_rcvd equals iwarp_pktinfo[opcode].hdr_len at this\npoint. For a tagged WRITE (hdr_len 16, MPA_HDR_SIZE 2) the smallest\non-wire mpa_len of 0 yields fpdu_part_rem = -14, and any mpa_len below\nhdr_len - MPA_HDR_SIZE underflows to a negative int.\n\nThe signed value then flows into siw_proc_write()/siw_proc_rresp() as\n\n    bytes = min(srx->fpdu_part_rem, srx->skb_new);\n\nis handed to siw_check_mem() as an int len (whose interval check\naddr + len > mem->va + mem->len is satisfied for a valid base when\nlen is negative), and reaches siw_rx_data() -> siw_rx_kva() /\nsiw_rx_umem() -> skb_copy_bits() as a signed copy length. The header\ncopy branch in skb_copy_bits() promotes that to size_t, producing a\nmulti-gigabyte read.\n\nKASAN under a KUnit harness that drives the real kernel TCP receive\npath -- a loopback AF_INET socketpair, the malformed FPDU written via\nkernel_sendmsg, sk_data_ready firing in softirq, tcp_read_sock\ndispatching to siw_tcp_rx_data -- reports:\n\n    BUG: KASAN: use-after-free in skb_copy_bits+0x284/0x480\n    Read of size 4294967295 at addr ffff888...\n    Call Trace:\n     skb_copy_bits\n     siw_rx_kva\n     siw_rx_data\n     siw_check_mem\n     siw_proc_write\n     siw_tcp_rx_data\n     __tcp_read_sock\n     siw_qp_llp_data_ready\n     tcp_data_ready\n     tcp_data_queue\n\nAdd the missing invariant at the earliest point where the peer header\nis fully assembled. iwarp_pktinfo[*].hdr_len - MPA_HDR_SIZE is exactly\nthe value the siw transmitter uses as the minimum mpa_len for each\nopcode (drivers/infiniband/sw/siw/siw_qp.c:33), so this matches the\nprotocol contract. Out-of-range FPDUs terminate the connection with\nTERM_ERROR_LAYER_LLP / LLP_ETYPE_MPA / LLP_ECODE_FPDU_START -- which\nis RFC 5044 Section 8 error code 3 (\"Marker and ULPDU Length fields\ndo not agree on the start of an FPDU\"), the correct framing-error\nclass for this inconsistency.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:51.383"
   },
   {
     "id": "CVE-2026-64103",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nscsi: isci: Fix use-after-free in device removal path\n\nThe ISCI completion tasklet is initialized in isci_host_alloc()\n(drivers/scsi/isci/init.c:496) and scheduled from both MSI-X and legacy\ninterrupt handlers (drivers/scsi/isci/host.c:223,613).\n\nisci_host_deinit() stops the controller and waits for stop completion,\nbut it never kills completion_tasklet before teardown continues. A\ntop-of-function tasklet_kill() is not sufficient here: interrupts are\nonly disabled when isci_host_stop_complete() runs, so until\nwait_for_stop() returns the IRQ handlers can still requeue the\ntasklet. The tasklet callback also re-enables interrupts after draining\ncompletions, so killing the tasklet before the source is quiesced leaves\nthe same race open.\n\nOnce wait_for_stop() returns, no further IRQ-driven scheduling can\noccur. Kill completion_tasklet there so teardown cannot race a queued\ntasklet running on a dead ihost. On remove or unload, the stale callback\ncan otherwise dereference ihost and touch ihost->smu_registers after the\nhost lifetime ends.\n\nA UML + KASAN analogue reproduced the failure class both with no\ntasklet_kill() and with tasklet_kill() placed before source quiesce, and\nstayed clean once the kill happened after quiescing the scheduling\nsource.\n\nThis mirrors commit f6ab594672d4 (\"scsi: aic94xx: fix use-after-free in\ndevice removal path\"), but ISCI needs the kill after wait_for_stop().",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:51.533"
   },
   {
     "id": "CVE-2026-64104",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nvirt: sev-guest: Explicitly leak pages in unknown state\n\nWhen set_memory_{encrypted,decrypted}() fail, the user cannot know at which\npoint the function failed, meaning that the pages are left in an unknown state\nfrom the point of view of the caller.\n\nSince the pages may be left in an unencrypted state, they are not suitable for\ngeneral use, and cannot be returned safely to the buddy allocator. Avoid the\nissue by never freeing the pages, and then do the proper accounting by calling\nsnp_leak_pages().",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:51.677"
   },
   {
     "id": "CVE-2026-64105",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: arm64: vgic: Free private_irqs when init fails after allocation\n\nCompanion to commit 250f25367b58 (\"KVM: arm64: Tear down vGIC on\nfailed vCPU creation\"), which added the missing kvm_vgic_vcpu_destroy()\ncall to the kvm_share_hyp() failure path in kvm_arch_vcpu_create(). The\nkvm_vgic_vcpu_init() failure path immediately above it has the same\nshape and still needs the same cleanup.\n\nCall kvm_vgic_vcpu_destroy() when kvm_vgic_vcpu_init() fails so private\nIRQs allocated before a redistributor iodev registration failure are\nreleased before the failed vCPU is freed.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:51.780"
   },
   {
     "id": "CVE-2026-64106",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nKVM: arm64: vgic-its: Reject restored DTE with out-of-range num_eventid_bits\n\nUserspace can restore an ITS Device Table Entry whose Size field encodes\nmore EventID bits than the virtual ITS supports.  The live MAPD path\nrejects that state, but vgic_its_restore_dte() accepts it and stores the\nout-of-range value in dev->num_eventid_bits.\n\nReject restored DTEs with num_eventid_bits > VITS_TYPER_IDBITS before\nallocating the device.  This mirrors the MAPD check and prevents the\nrestored state from reaching vgic_its_restore_itt(), where the unchecked\nvalue can be converted into an oversized scan_its_table() range.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:51.887"
   },
   {
     "id": "CVE-2026-64107",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nASoC: codecs: pcm512x: fix null-ptr dereference in pcm512x_overclock_xxx_put()\n\nIn the pcm512x chipset driver, pcm512x_overclock_xxx_put() is defined as\na general mixer kcontrol instead of a DAPM kcontrol, so struct\nsnd_soc_dapm_context must not be accessed via\nsnd_soc_dapm_kcontrol_to_dapm().\n\nThis causes a NULL pointer dereference, so it must be modified to use\nsnd_soc_component_to_dapm().",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.000"
   },
   {
     "id": "CVE-2026-64108",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncifs: Fix busy dentry used after unmounting\n\nSince commit 340cea84f691c (\"cifs: open files should not hold ref on\nsuperblock\"), cifs file only holds the dentry ref_cnt, the cifs file\nclose work(cfile->deferred) could be executed after unmounting, which\nwill trigger a warning in generic_shutdown_super:\n BUG: Dentry 00000000a14a6845{i=c,n=file}  still in use (1) [unmount of\n cifs cifs]\n\nThe detailed processs is:\n   process A           process B           kworker\n fd = open(PATH)\n  vfs_open\n   file->__f_path = *path // dentry->d_lockref.count = 1\n   cifs_open\n    cifs_new_fileinfo\n     cfile->dentry = dget(dentry) // dentry->d_lockref.count = 2\n close(fd)\n  __fput\n  cifs_close\n   queue_delayed_work(deferredclose_wq, cfile->deferred)\n  dput(dentry) // dentry->d_lockref.count = 1\n\t\t\t                 smb2_deferred_work_close\n\t\t\t\t\t  _cifsFileInfo_put\n\t\t\t\t\t   list_del(&cifs_file->flist)\n                    umount\n\t\t     cleanup_mnt\n\t\t      deactivate_super\n\t\t       cifs_kill_sb\n\t\t        cifs_close_all_deferred_files_sb\n\t\t\t cifs_close_all_deferred_files\n\t\t\t  // cannot find cfile, skip _cifsFileInfo_put\n\t\t\tkill_anon_super\n\t\t\t generic_shutdown_super\n\t\t\t  shrink_dcache_for_umount\n\t\t\t   umount_check\n\t\t\t    WARN ! // dentry->d_lockref.count = 1\n\t\t\t\t\t   cifsFileInfo_put_final\n\t\t\t\t\t    dput(cifs_file->dentry)\n\t\t                            // dentry->d_lockref.count = 0\n\nFix it by flushing 'deferredclose_wq' before calling kill_anon_super.\n\nFetch a reproducer in https://bugzilla.kernel.org/show_bug.cgi?id=221548.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.100"
   },
   {
     "id": "CVE-2026-64109",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\naf_unix: Fix UAF read of tail->len in unix_stream_data_wait()\n\nunix_stream_data_wait() does skb_peek_tail(&sk->sk_receive_queue) without\nholding any lock that prevents SKBs on that queue from being dequeued and\nfreed.\nThis has been the case since commit 79f632c71bea (\"unix/stream: fix\npeeking with an offset larger than data in queue\").\nThe first consequence of this is that the pointer comparison\n`tail != last` can be false even if `last` semantically refers to an\nalready-freed SKB while `tail` is a new SKB allocated at the same address;\nwhich can cause unix_stream_data_wait() to wrongly keep blocking after new\ndata has arrived, but only in a weird scenario where a peeking recv() and\na normal recv() on the same socket are racing, which is probably not a\nreal problem.\n\nBut since commit 2b514574f7e8 (\"net: af_unix: implement splice for stream\naf_unix sockets\"), `tail` is actually dereferenced, which can cause UAF in\nthe following race scenario (where test_setup() runs single-threaded,\nand afterwards, test_thread1() and test_thread2() run concurrently in\ntwo threads:\n```\nstatic int socks[2];\nvoid test_setup(void) {\n  socketpair(AF_UNIX, SOCK_STREAM, 0, socks);\n  send(socks[1], \"A\", 1, 0);\n  int peekoff = 1;\n  setsockopt(socks[0], SOL_SOCKET, SO_PEEK_OFF, &peekoff, sizeof(peekoff));\n}\nvoid test_thread1(void) {\n  char dummy;\n  recv(socks[0], &dummy, 1, MSG_PEEK);\n}\nvoid test_thread2(void) {\n  char dummy;\n  recv(socks[0], &dummy, 1, 0);\n  shutdown(socks[1], SHUT_WR);\n}\n```\n\nwhen racing like this:\n```\nthread1                       thread2\nunix_stream_read_generic\n  mutex_lock(&u->iolock)\n  skb_peek(&sk->sk_receive_queue)\n  skb_peek_next(skb, &sk->sk_receive_queue)\n  mutex_unlock(&u->iolock)\n                              unix_stream_read_generic\n                                unix_state_lock(sk)\n                                skb_peek(&sk->sk_receive_queue)\n                                unix_state_unlock(sk)\n  unix_stream_data_wait\n    unix_state_lock(sk)\n    tail = skb_peek_tail(&sk->sk_receive_queue)\n                                spin_lock(&sk->sk_receive_queue.lock)\n                                __skb_unlink(skb, &sk->sk_receive_queue)\n                                spin_unlock(&sk->sk_receive_queue.lock)\n                                consume_skb(skb) [frees the SKB]\n    `tail != last`: false\n    `tail`: true\n    `tail->len != last_len` ***UAF***\n```\n\nFix the UAF by removing the read of tail->len; checking tail->len would\nonly make sense if SKBs in the receive queue of a UNIX socket could grow,\nwhich can no longer happen.\n\nKuniyuki explained:\n\n> When commit 869e7c62486e (\"net: af_unix: implement stream sendpage\n> support\") added sendpage() support, data could be appended to the last\n> skb in the receiver's queue.\n>\n> That's why we needed to check if the length of the last skb was changed\n> while waiting for new data in unix_stream_data_wait().\n>\n> However, commit a0dbf5f818f9 (\"af_unix: Support MSG_SPLICE_PAGES\") and\n> commit 57d44a354a43 (\"unix: Convert unix_stream_sendpage() to use\n> MSG_SPLICE_PAGES\") refactored sendmsg(), and now data is always added\n> to a new skb.\n\nThat means this fix is not suitable for kernels before 6.5.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.233"
   },
   {
     "id": "CVE-2026-64110",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nigc: fix potential skb leak in igc_fpe_xmit_smd_frame()\n\nWhen igc_fpe_init_tx_descriptor() fails, no one takes care of an\nallocated skb, leaking it. [1]\nUse dev_kfree_skb_any() on failure.\n\nTested on an I226 adapter with the following command, while injecting\nfaults in igc_fpe_init_tx_descriptor() to trigger the error path.\n # ethtool --set-mm $DEV verify-enabled on tx-enabled on pmac-enabled on\n\n[1]\nunreferenced object 0xffff888113c6cdc0 (size 224):\n...\n  backtrace (crc be3d3fda):\n    kmem_cache_alloc_node_noprof+0x3b1/0x410\n    __alloc_skb+0xde/0x830\n    igc_fpe_xmit_smd_frame.isra.0+0xad/0x1b0\n    igc_fpe_send_mpacket+0x37/0x90\n    ethtool_mmsv_verify_timer+0x15e/0x300",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.370"
   },
   {
     "id": "CVE-2026-64111",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nlsm: hold cred_guard_mutex for lsm_set_self_attr()\n\nJust as proc_pid_attr_write() already does before calling the LSM\nhook. This only matters for SELinux and AppArmor which check\nwhether the process is being ptraced and if so, whether to\nallow the transition.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.463"
   },
   {
     "id": "CVE-2026-64112",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nrbd: eliminate a race in lock_dwork draining on unmap\n\nGiven how rbd_lock_add_request() and rbd_img_exclusive_lock() are\nwritten, lock_dwork may be (re)queued more than it's actually needed:\nfor example in case a new I/O request comes in while we are in the\nmiddle of rbd_acquire_lock() on behalf of another I/O request.  This is\nexpected and with rbd_release_lock() preemptively canceling lock_dwork\nis benign under normal operation.\n\nA more problematic example is maybe_kick_acquire():\n\n    if (have_requests || delayed_work_pending(&rbd_dev->lock_dwork)) {\n            dout(\"%s rbd_dev %p kicking lock_dwork\\n\", __func__, rbd_dev);\n            mod_delayed_work(rbd_dev->task_wq, &rbd_dev->lock_dwork, 0);\n    }\n\nIt's not unrealistic for lock_dwork to get canceled right after\ndelayed_work_pending() returns true and for mod_delayed_work() to\nrequeue it right there anyway.  This is a classic TOCTOU race.\n\nWhen it comes to unmapping the image, there is an implicit assumption\nof no self-initiated exclusive lock activity past the point of return\nfrom rbd_dev_image_unlock() which unlocks the lock if it happens to be\nheld.  This unlock is assumed to be final and lock_dwork (as well as\nall other exclusive lock tasks, really) isn't expected to get queued\nagain.  However, lock_dwork is canceled only in cancel_tasks_sync()\n(i.e. later in the unmap sequence) and on top of that the cancellation\ncan get in effect nullified by maybe_kick_acquire().  This may result\nin rbd_acquire_lock() executing after rbd_dev_device_release() and\nrbd_dev_image_release() run and free and/or reset a bunch of things.\nOne of the possible failure modes then is a violated\n\n    rbd_assert(rbd_image_format_valid(rbd_dev->image_format));\n\nin rbd_dev_header_info() which is called via rbd_dev_refresh() from\nrbd_post_acquire_action().\n\nRedo exclusive lock task draining to provide saner semantics and try\nto meet the assumptions around rbd_dev_image_unlock().",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.567"
   },
   {
     "id": "CVE-2026-64113",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nixgbevf: fix use-after-free in VEPA multicast source pruning\n\nixgbevf_clean_rx_irq() prunes frames whose source MAC matches the VF's\nown address (VEPA multicast workaround) by freeing the skb and\ncontinuing to the next descriptor:\n\n    dev_kfree_skb_irq(skb);\n    continue;\n\nThe skb pointer is declared outside the while loop and persists across\niterations.  Because the continue skips the \"skb = NULL\" reset at the\nbottom of the loop, the next iteration enters the \"else if (skb)\" path\nand calls ixgbevf_add_rx_frag() on the freed skb, dereferencing\nskb_shinfo(skb)->nr_frags - a use-after-free in NAPI softirq context.\n\nThe sibling driver iavf already handles this correctly by nulling the\npointer before continuing.  Apply the same pattern here.\n\nI do not have ixgbevf hardware; the bug was found by static analysis\n(scan_drop_continue_loops.py + semgrep drop_continue_in_loop, multi-tool\ncorroboration with the highest score in the scan).  The UAF was confirmed\nunder KASAN by loading a test module that reproduces the exact code\npattern (alloc skb, kfree_skb, then read skb_shinfo(skb)->nr_frags):\n\n  BUG: KASAN: slab-use-after-free in ixgbevf_uaf_test_init+0x100/0x1000\n  Read of size 8 at addr 000000006163ae78 by task insmod/30\n  freed 208-byte region [000000006163adc0, 000000006163ae90)\n\nQEMU emulates igb (82576) but not ixgbe (82599), and the igbvf VF\ndriver does not include the VEPA source pruning path, so a full\nend-to-end reproduction with emulated hardware was not possible.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.680"
   },
   {
     "id": "CVE-2026-64114",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipv4: raw: reject IP_HDRINCL packets with ihl < 5\n\nraw_send_hdrinc() validates that the caller-supplied IPv4 header\nfits within the message length:\n\n    iphlen = iph->ihl * 4;\n    err = -EINVAL;\n    if (iphlen > length)\n        goto error_free;\n\n    if (iphlen >= sizeof(*iph)) {\n        /* fix up saddr, tot_len, id, csum, transport_header */\n    }\n\nIt does not, however, reject ihl < 5.  For such a packet the\n\"if (iphlen >= sizeof(*iph))\" branch is skipped, leaving the\ncrafted iphdr untouched, but the packet is still handed to\n__ip_local_out() and onward.  Downstream consumers that read\niph->ihl assume a sane value: net/ipv4/ah4.c:ah_output() in\nparticular subtracts sizeof(struct iphdr) from top_iph->ihl * 4\nand passes the (signed-int-negative, then cast to size_t)\nresult to memcpy(), producing an OOB access of length close to\nSIZE_MAX and a host kernel panic.\n\nAn IPv4 header with ihl < 5 is malformed by definition (RFC 791:\n\"Internet Header Length is the length of the internet header in\n32 bit words ... Note that the minimum value for a correct header\nis 5.\").  The kernel should not be willing to inject such a\npacket into its own output path.\n\nReject \"iphlen < sizeof(*iph)\" alongside the existing\n\"iphlen > length\" check.  This matches the principle that locally\nconstructed packets that re-enter the IP stack must pass the same\nbasic sanity tests that a foreign packet would be subjected to.\n\nOnce this lands, the \"if (iphlen >= sizeof(*iph))\" wrapper around\nthe fixup branch becomes redundant; left in place to keep the\npatch minimal and backport-friendly.  A follow-up can unwrap it.\n\nNote that commit 86f4c90a1c5c (\"ipv4, ipv6: ensure raw socket\nmessage is big enough to hold an IP header\") ensures the message\nbuffer is large enough to hold an iphdr, but does not constrain\nthe self-reported iph->ihl.\n\nReachability: the malformed packet source is any caller with\nCAP_NET_RAW, including an unprivileged process in a user+net\nnamespace on a kernel with CONFIG_USER_NS=y.  The reproduced AH\ncrash also requires a matching xfrm AH policy on the outgoing\nroute; a container granted CAP_NET_ADMIN can install that state\nand policy in its netns.  Loopback bypasses xfrm_output, so the\ntrigger uses a real netdev.\n\nReproduced on UML + KASAN: kernel-mode fault at addr 0x0 with\nmemcpy_orig at the crash site.  Same shape reproduces inside a\nrootless Docker container with --cap-add NET_ADMIN on a stock\ndistro kernel.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.820"
   },
   {
     "id": "CVE-2026-64115",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nvsock/vmci: fix UAF when peer resets connection during handshake\n\nvmci_transport_recv_connecting_server() returned err = 0 for a peer\nRST in its default switch arm:\n\n\terr = pkt->type == VMCI_TRANSPORT_PACKET_TYPE_RST ? 0 : -EINVAL;\n\nThat made vmci_transport_recv_listen() skip vsock_remove_pending(),\nleaving the pending socket on the listener's pending_links with\nsk_state = TCP_CLOSE while destroy: still dropped the explicit\nreference taken before schedule_delayed_work().\n\nOne second later vsock_pending_work() observed is_pending=true and\nperformed full cleanup: vsock_remove_pending() then the two trailing\nsock_put(sk) calls -- the first reached refcount 0 and __sk_freed\nthe socket, and the second wrote into the freed object:\n\n  BUG: KASAN: slab-use-after-free in refcount_warn_saturate\n  Write of size 4 at addr ffff88800b1cac80 by task kworker\n  Workqueue: events vsock_pending_work\n\nTreat peer RST like any other unexpected packet type (err = -EINVAL).\nAll destroy: arms now return err < 0, so vmci_transport_recv_listen()\nremoves pending from pending_links synchronously and\nvsock_pending_work() takes the is_pending=false / !rejected branch,\ndropping only its own work reference.  This also closes the\nmulti-packet race Sashiko reported on v2: pending is removed from\nthe list before any subsequent packet can find it.\n\nThe pre-existing sk_acceptq_removed() gap on the err < 0 path of\nvmci_transport_recv_listen() that Sashiko also noted is not\nintroduced or changed by this patch.\n\nTested on lts-6.12.79 with KASAN: 52/100 unpatched -> 0/100 patched.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:52.967"
   },
   {
     "id": "CVE-2026-64116",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipv6: ioam: add NULL check for idev in ipv6_hop_ioam()\n\nReported by Sashiko:\n\nThe function ipv6_hop_ioam() accesses\n__in6_dev_get(skb->dev)->cnf.ioam6_enabled without validating the returned\nidev pointer. Because addrconf_ifdown() can concurrently clear dev->ip6_ptr\nvia RCU, __in6_dev_get() can return NULL during interface teardown, which\ncould cause a NULL pointer dereference when processing an IOAM Hop-by-Hop\noption.\n\nLet's add a check and use SKB_DROP_REASON_IPV6DISABLED accordingly.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:53.103"
   },
   {
@@ -17272,21 +17251,21 @@
     "id": "CVE-2026-64178",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nBluetooth: bnep: Fix UAF read of dev->name\n\nbnep_add_connection() needs to keep holding the bnep_session_sem while\nreading dev->name (just like bnep_get_connlist() does); otherwise the\nbnep_session() thread can concurrently free the net_device, which can for\nexample be triggered by a concurrent bnep_del_connection().\n\n(This UAF is fairly uninteresting from a security perspective;\ncalling bnep_add_connection() requires passing a capable(CAP_NET_ADMIN)\ncheck. It also requires completely tearing down a netdev during a fairly\ntight race window.)",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:18:00.147"
   },
   {
     "id": "CVE-2026-64179",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: wwan: iosm: fix potential memory leaks in ipc_imem_init()\n\nThe memory allocated in ipc_protocol_init() is not freed on the error\npaths that follow in ipc_imem_init(). Fix that by calling the\ncorresponding release function ipc_protocol_deinit() in the error path.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:18:00.277"
   },
   {
     "id": "CVE-2026-64180",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm/memory_hotplug: fix memory block reference leak on remove\n\nPatch series \"mm: Fix memory block leaks and locking\", v2.\n\nThis series fixes two memory block device reference leaks and one locking\nissue around the per-memory_block hwpoison counter.\n\n\nThis patch (of 2):\n\nremove_memory_blocks_and_altmaps() looks up each memory block with\nfind_memory_block(), which acquires a reference to the memory block\ndevice.\n\nThat reference is never dropped on this path, resulting in a leaked device\nreference when removing memory blocks and their altmaps.  Drop the\nreference after retrieving mem->altmap and clearing mem->altmap, before\nremoving the memory block device.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:18:00.397"
   },
   {
@@ -21457,15 +21436,15 @@
   {
     "id": "CVE-2026-8982",
     "description": "Two undocumented privileged accounts exist in Autel Maxi Charger Single firmware through V1.03.51. The accounts use vendor-defined password derivation mechanisms based on device-specific values, allowing an attacker with knowledge of the algorithm and required inputs to authenticate to the web management interface with administrative privileges.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Maxicharger single charger firmware",
     "published": "2026-07-21T21:16:54.710"
   },
   {
     "id": "CVE-2026-8983",
     "description": "Autel Maxi Charger Single firmware through V1.03.51 contains a hard-coded authentication token that bypasses authorization checks for multiple management endpoints. An attacker can supply the special token value to invoke privileged functionality without valid authentication.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Maxicharger single charger firmware",
     "published": "2026-07-21T21:16:54.837"
   },
   {
@@ -26477,14 +26456,14 @@
     "id": "CVE-2026-60875",
     "description": "Vulnerability in the Oracle Trade Management product of Oracle E-Business Suite (component: Claim LOV).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Trade Management.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Trade Management accessible data as well as  unauthorized access to critical data or complete access to all Oracle Trade Management accessible data. CVSS 3.1 Base Score 8.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Trade management",
     "published": "2026-07-21T22:18:24.243"
   },
   {
     "id": "CVE-2026-60877",
     "description": "Vulnerability in the Oracle Trade Management product of Oracle E-Business Suite (component: Claim LOV).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Trade Management.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Trade Management accessible data as well as  unauthorized access to critical data or complete access to all Oracle Trade Management accessible data. CVSS 3.1 Base Score 8.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Trade management",
     "published": "2026-07-21T22:18:24.353"
   },
   {
@@ -26512,7 +26491,7 @@
     "id": "CVE-2026-60890",
     "description": "Vulnerability in the Oracle Payroll product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Payroll.  Successful attacks of this vulnerability can result in takeover of Oracle Payroll. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Payroll",
     "published": "2026-07-21T22:18:24.810"
   },
   {
@@ -26533,14 +26512,14 @@
     "id": "CVE-2026-60893",
     "description": "Vulnerability in the Oracle Payroll product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with logon to the infrastructure where Oracle Payroll executes to compromise Oracle Payroll.  While the vulnerability is in Oracle Payroll, attacks may significantly impact additional products (scope change).  Successful attacks of this vulnerability can result in  unauthorized access to critical data or complete access to all Oracle Payroll accessible data. CVSS 3.1 Base Score 6.5 (Confidentiality impacts).  CVSS Vector: (CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N).",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Payroll",
     "published": "2026-07-21T22:18:25.137"
   },
   {
     "id": "CVE-2026-60894",
     "description": "Vulnerability in the Oracle Payroll product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Difficult to exploit vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Payroll.  Successful attacks of this vulnerability can result in takeover of Oracle Payroll. CVSS 3.1 Base Score 7.5 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Payroll",
     "published": "2026-07-21T22:18:25.247"
   },
   {
@@ -26554,7 +26533,7 @@
     "id": "CVE-2026-60897",
     "description": "Vulnerability in the Oracle Payroll product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Payroll.  Successful attacks of this vulnerability can result in takeover of Oracle Payroll. CVSS 3.1 Base Score 8.8 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Payroll",
     "published": "2026-07-21T22:18:25.463"
   },
   {
@@ -26953,7 +26932,7 @@
     "id": "CVE-2026-60988",
     "description": "Vulnerability in the Oracle Project Portfolio Analysis product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Difficult to exploit vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Project Portfolio Analysis.  Successful attacks of this vulnerability can result in takeover of Oracle Project Portfolio Analysis. CVSS 3.1 Base Score 7.5 (Confidentiality, Integrity and Availability impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Project portfolio analysis",
     "published": "2026-07-21T22:18:31.910"
   },
   {
@@ -26981,7 +26960,7 @@
     "id": "CVE-2026-61000",
     "description": "Vulnerability in the Oracle Process Manufacturing Systems product of Oracle E-Business Suite (component: Internal Operations).  Supported versions that are affected are 12.2.3-12.2.15. Easily exploitable vulnerability allows low privileged attacker with network access via HTTP to compromise Oracle Process Manufacturing Systems.  Successful attacks of this vulnerability can result in  unauthorized creation, deletion or modification access to critical data or all Oracle Process Manufacturing Systems accessible data as well as  unauthorized access to critical data or complete access to all Oracle Process Manufacturing Systems accessible data. CVSS 3.1 Base Score 8.1 (Confidentiality and Integrity impacts).  CVSS Vector: (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N).",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Process manufacturing systems",
     "published": "2026-07-21T22:18:32.350"
   },
   {
@@ -34638,43 +34617,43 @@
   {
     "id": "CVE-2026-64250",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nLoongArch: Report dying CPU to RCU in stop_this_cpu()\n\nThis is a port of MIPS commit 9f3f3bdc6d9dac1 (\"MIPS: smp: report dying\nCPU to RCU in stop_this_cpu()\"). smp_send_stop() parks all secondary\nCPUs in stop_this_cpu(). And the function marks the CPU offline for the\nscheduler via set_cpu_online(false) but never informs RCU, so RCU keeps\nexpecting a quiescent state from CPUs that are now spinning forever with\ninterrupts disabled.\n\nAs long as nothing waits for an RCU grace period after smp_send_stop()\nthis is harmless, which is why it went unnoticed. However, since commit\n91840be8f710370 (\"irq_work: Fix use-after-free in irq_work_single() on\nPREEMPT_RT\"), irq_work_sync() calls synchronize_rcu() on architectures\nwithout an irq_work self-IPI, i.e. where arch_irq_work_has_interrupt()\nreturns false. Any irq_work_sync() issued in the reboot/shutdown/halt\npath after smp_send_stop() then blocks on a grace period that can never\ncomplete, hanging the reboot:\n\n  WARNING: CPU: 0 PID: 15 at kernel/irq_work.c:144 irq_work_queue_on\n  ...\n  rcu: INFO: rcu_sched detected stalls on CPUs/tasks:\n  rcu: Offline CPU 1 blocking current GP.\n  rcu: Offline CPU 2 blocking current GP.\n  rcu: Offline CPU 3 blocking current GP.\n\nThis issue needs some hacks to reproduce, and it was not noticed on\nLoongArch because arch_irq_work_has_interrupt() usually returns true.\n\nCall rcutree_report_cpu_dead() once interrupts are disabled, mirroring\nthe generic CPU-hotplug offline path, so RCU stops waiting on the parked\nCPUs and grace periods can still complete. LoongArch shuts down all CPUs\nhere without going through the CPU-hotplug mechanism, so this report is\nnot otherwise issued.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-24T16:16:54.577"
   },
   {
     "id": "CVE-2026-64251",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\npwrseq: core: fix use-after-free in pwrseq_debugfs_seq_next()\n\npwrseq_debugfs_seq_next() declares 'next' with __free(put_device),\nwhich causes put_device() to be called on the returned pointer when\nthe variable goes out of scope.  This results in a use-after-free\nsince the seq_file framework receives a pointer whose reference has\nalready been dropped.\n\nSimply removing __free(put_device) would fix the UAF but would leak\nthe reference acquired by bus_find_next_device(), as stop() only\ncalls up_read(&pwrseq_sem) and never releases the device reference.\n\nFix this by making the reference counting consistent across all\nseq_file callbacks, matching the standard pattern used by PCI and\nSCSI:\n\n- start(): use get_device() so it returns a referenced pointer.\n- next(): explicitly put_device(curr) to release the previous\n  device's reference (no NULL check needed - the seq_file framework\n  only calls next() while the previous return was non-NULL).\n- stop(): put_device(data) to release the last iterated device's\n  reference, with a NULL guard since stop() may be called with NULL\n  when start() returned NULL or next() reached end-of-sequence.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-24T16:16:54.713"
   },
   {
     "id": "CVE-2026-64252",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nMIPS: DEC: Prevent initial console buffer from landing in XKPHYS\n\nIn 64-bit configurations calling the initial console output handler from\na kernel thread other than the initial one will result in a situation\nwhere the stack has been placed in the XKPHYS 64-bit memory segment and\nconsequently so has been the buffer allocated there that is used as the\nargument corresponding to the `%s' output conversion specifier for the\nfirmware's printf() entry point.\n\nThis 64-bit address will then be truncated by 32-bit firmware, resulting\nin an attempt to access the wrong memory location, which in turn will\ncause all kinds of unpredictable behaviour, such as a kernel crash:\n\n  Console: colour dummy device 160x64\n  Calibrating delay loop... 49.36 BogoMIPS (lpj=192512)\n  pid_max: default: 32768 minimum: 301\n  CPU 0 Unable to handle kernel paging request at virtual address 000000000203bd00, epc == ffffffffbfc08364, ra == ffffffffbfc08800\n  Oops[#1]:\n  CPU: 0 PID: 0 Comm: swapper Not tainted 5.18.0-rc2-00254-gfb649bda6f56-dirty #121\n  $ 0   : 0000000000000000 0000000000000001 0000000000000023 ffffffff80684ba0\n  $ 4   : 000000000203bd00 ffffffffbfc0f3b4 ffffffffffffffff 0000000000000073\n  $ 8   : 0a303d7469000000 0000000000000000 0000000000000073 ffffffffbfc0f473\n  $12   : 0000000000000002 0000000000000000 ffffffff80684c1c 0000000000000000\n  $16   : 0000000000000000 ffffffff80596dc9 0000000000000000 ffffffffbfc09240\n  $20   : ffffffff80684c40 ffffffffbfc0f400 000000000000002d 000000000000002b\n  $24   : ffffffffffffffbf 000000000203bd00\n  $28   : ffffffff805f0000 ffffffff80684b58 0000000000000030 ffffffffbfc08800\n  Hi    : 0000000000000000\n  Lo    : 0000000000000aa8\n  epc   : ffffffffbfc08364 0xffffffffbfc08364\n  ra    : ffffffffbfc08800 0xffffffffbfc08800\n  Status: 140120e2        KX SX UX KERNEL EXL\n  Cause : 00000008 (ExcCode 02)\n  BadVA : 000000000203bd00\n  PrId  : 00000430 (R4000SC)\n  Modules linked in:\n  Process swapper (pid: 0, threadinfo=(____ptrval____), task=(____ptrval____), tls=0000000000000000)\n  Stack : 0000000000000000 0000000000000000 0000000000000000 0000004d0000004d\n          80684cc0806a2a40 80596dc80000004d 8061000000000000 bfc0850c80684c38\n          0000000000000000 000000000203bd00 0000000000000000 0000000000000000\n          0000000000000000 00000000bfc0f3b4 0000000000000000 0000000000000000\n          0000000000000000 0000000000000000 0000000000000000 0000000000000000\n          0000000000000000 0000000000000000 0000000000000000 0000000000000000\n          0000002500000000 0000000000000000 0000000000000000 802c1a7400000000\n          0203bd0080596dc8 0203bd4d69000000 6c61632000000018 5f746567646e6172\n          6c616320625f6d6f 5f736e5f6d6f7266 206361323778302b 303d74696e726320\n          806a0a38806b0000 806a0a38806b0000 00000000806b0000 80683c58806b0000\n          ...\n  Call Trace:\n\n  Code: a082ffff  03e00008  00601021 <80820000> 00001821  10400005  24840001  80820000  24630001\n\n  ---[ end trace 0000000000000000 ]---\n  Kernel panic - not syncing: Fatal exception in interrupt\n\n  KN04 V2.1k    (PC: 0xa0026768, SP: 0x806848e8)\n  >>\n\nIn this case the pointer in $4 was truncated from 0x980000000203bd00 to\n0x000000000203bd00.\n\nThis may happen when no final console driver has been enabled in the\nconfiguration and consequently the initial console continues being used\nlate into bootstrap or with an upcoming change that will switch the zs\ndriver to use a platform device, which in turn will make the console\nhandover happen only after other kernel threads have already been\nstarted.\n\nFix the issue by making the buffer static and initdata, and therefore\nplaced in the CKSEG0 32-bit compatibility segment, observing that the\nconsole output handler is called with the console lock held, implying\nno need for this code to be reentrant.  Add an assertion to verify the\nbuffer actually has been placed in a compatibility segment.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-24T16:16:54.833"
   },
   {
     "id": "CVE-2026-64253",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nkernel/fork: clear PF_BLOCK_TS in copy_process()\n\nPF_BLOCK_TS is only set in blk_time_get_ns() when current->plug is\nnon-NULL, and blk_finish_plug() clears it via __blk_flush_plug()\nbefore NULLing the plug pointer.  copy_process() breaks the\ninvariant by inheriting PF_BLOCK_TS from the parent while resetting\nthe child's plug to NULL.\n\nClear PF_BLOCK_TS alongside that assignment so callers can rely on\n\"PF_BLOCK_TS set implies current->plug != NULL\" and dereference\ncurrent->plug unguarded.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-24T16:16:55.017"
   },
   {
     "id": "CVE-2026-64254",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nNTB: epf: Avoid pci_iounmap() with offset when PEER_SPAD and CONFIG share BAR\n\nWhen BAR_PEER_SPAD and BAR_CONFIG share one PCI BAR, the module teardown\npath ends up calling pci_iounmap() on the same iomem with some offset,\nwhich is unnecessary and triggers a kernel warning like the following:\n\n  Trying to vunmap() nonexistent vm area (0000000069a5ffe8)\n  WARNING: mm/vmalloc.c:3470 at vunmap+0x58/0x68, CPU#5: modprobe/2937\n  [...]\n  Call trace:\n   vunmap+0x58/0x68 (P)\n   iounmap+0x34/0x48\n   pci_iounmap+0x2c/0x40\n   ntb_epf_pci_remove+0x44/0x80 [ntb_hw_epf]\n   pci_device_remove+0x48/0xf8\n   device_remove+0x50/0x88\n   device_release_driver_internal+0x1c8/0x228\n   driver_detach+0x50/0xb0\n   bus_remove_driver+0x74/0x100\n   driver_unregister+0x34/0x68\n   pci_unregister_driver+0x34/0xa0\n   ntb_epf_pci_driver_exit+0x14/0xfe0 [ntb_hw_epf]\n  [...]\n\nFix it by unmapping only when PEER_SPAD and CONFIG use difference bars.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-24T16:16:55.130"
   },
   {
     "id": "CVE-2026-64255",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nwifi: iwlwifi: mld: validate sta_mask before ffs() in BA session handlers\n\nThree BA session handlers use ffs(ba_data->sta_mask) - 1 to derive a\nstation ID without checking that sta_mask is non-zero. When sta_mask is\nzero, ffs() returns 0 and the subtraction wraps to 0xFFFFFFFF, causing\nan out-of-bounds access on fw_id_to_link_sta[].\n\nAdd WARN_ON_ONCE(!ba_data->sta_mask) guards before each ffs() call,\nconsistent with the existing check in iwl_mld_ampdu_rx_start().",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-24T16:16:55.257"
   },
   {
@@ -35009,92 +34988,92 @@
   {
     "id": "CVE-2026-64256",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nxfs: don't wrap around quota ids in dqiterate\n\nLOLLM noticed that q_id is an unsigned 32-bit variable.  If it happens\nto be set to XFS_DQ_ID_MAX due to a filesystem that actually has a dquot\nfor ID_MAX, then this addition will truncate to zero and the iteration\nstarts over.  Fix this by casting to u64.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:04.630"
   },
   {
     "id": "CVE-2026-64257",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nsmb: client: reject overlapping data areas in SMB2 responses\n\nCommit 53b7c271f06b (\"smb: client: restrict implied bcc[0] exemption to\nresponses without data area\") restricted the implied bcc[0] length\nexception to responses without a data area. However, the overlap\nhandling in __smb2_calc_size() clears data_length, which can make an\ninvalid response appear to have no data area and so qualify for the\nexception.\n\nTrack data area overlap separately and reject such responses before\napplying the length compatibility exceptions.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:05.817"
   },
   {
     "id": "CVE-2026-64258",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: remove request-less entries from ent_w_req_queue to fix NULL deref\n\nIf a copy into the userspace ring buffer fails, a request will be\nterminated and fuse_uring_req_end() will set ent->fuse_req to NULL but\nit will leave the entry on ent_w_req_queue in FRRS_FUSE_REQ state. This\ncan lead to a NULL deref if the request expiration logic scans\nent_w_req_queue in the window before the entry is moved off it.\n\nFix this by taking the entry off ent_w_req_queue and changing its state\nfrom FRRS_FUSE_REQ to FRRS_INVALID before terminating the request.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:05.930"
   },
   {
     "id": "CVE-2026-64259",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: make a fuse_req on SQE commit only findable after memcpy\n\nBad userspace might try to trick us and send commit SQEs request\nunique / commit-id of requests that are not even send to\nfuse-server (io_uring_cmd_done() not called) yet.\n\nfuse_uring_commit_fetch() ends the fuse request when the ring entry\nhas a wrong state, but that could have caused a use-after-free\nwith the memcpy operations in fuse_uring_send_in_task().\nIn order to avoid such races the call of fuse_uring_add_to_pq()\nis moved after the copy operations and just before completing\nthe io-uring request - malicious userspace cannot find the request\nanymore until all prepration work in fuse-client/kernel is completed.\n\nThis also moves fuse_uring_add_to_pq() a bit up in the code to\navoid a forward declaration. Also not with a preparation commit,\nto make it easier to back port to older kernels.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.033"
   },
   {
     "id": "CVE-2026-64260",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: Avoid queue->stopped races and set/read that value under lock\n\nThere are several readers of queue->stopped that check the value\nunder lock, but fuse_uring_commit_fetch() did not and actually\nthe value was not set under the lock in fuse_uring_abort_end_requests()\neither. Especially in fuse_uring_commit_fetch it is important\nto check under a lock, because due to races 'struct fuse_req'\nmight be freed with fuse_request_end, but another thread/cpu\nmight already do teardown work.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.137"
   },
   {
     "id": "CVE-2026-64261",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: Avoid use-after-free in fuse_uring_async_stop_queues\n\nfuse_uring_async_stop_queues() might run when the last reference\non ring->queue_refs was already dropped.\n\nIn order to avoid an early destruction a reference on struct fuse_conn\nis now taken before starting fuse_uring_async_stop_queues() and that\nreference is only released when that delayed work queue terminates.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.243"
   },
   {
     "id": "CVE-2026-64262",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: end fuse_req on io-uring cancel task work\n\nWhen io_uring delivers task work with tw.cancel set (PF_EXITING,\nPF_KTHREAD fallback, or percpu_ref_is_dying on the ring context),\nfuse_uring_send_in_task() takes the cancel branch, assigns\n-ECANCELED, and falls through to fuse_uring_send(). That path only\nflips the entry to FRRS_USERSPACE and completes the io_uring cmd;\nit never discharges the ring entry's owning reference to the\nfuse_req that fuse_uring_add_req_to_ring_ent() handed it at\ndispatch time.\n\n    fuse_uring_send_in_task()\n      tw.cancel == true\n        err = -ECANCELED\n      fuse_uring_send(ent, cmd, err, issue_flags)\n        ent->state = FRRS_USERSPACE\n        list_move(&ent->list, &queue->ent_in_userspace)\n        ent->cmd = NULL\n        io_uring_cmd_done(-ECANCELED)\n        /* ent->fuse_req still set, req still hashed */\n\nThe fuse_req stays linked on fpq->processing[hash] and\nfuse_request_end() is never invoked. The originating syscall\nthread blocks in D-state in request_wait_answer() until\nfuse_abort_conn() runs, which can be the entire connection\nlifetime. For FR_BACKGROUND requests fc->num_background is never\ndecremented either, so repeated cancels inflate the counter until\nmax_background is hit and all later background ops stall. tw.cancel does\nnot imply a connection abort (e.g. a single io_uring worker thread exits\nwhile the fuse connection stays up), so this cannot be left for\nfuse_abort_conn() to clean up.\n\nEnding the req but still routing the entry through fuse_uring_send()\nis not enough: that leaves a req-less entry on ent_in_userspace, and\nent_list_request_expired() dereferences ent->fuse_req unconditionally\non the head of that list, which would then NULL-deref.\n\nFix the cancel branch to release the entry directly. Remove it from the\nqueue, complete the io_uring cmd, end the fuse_req, free the entry, and\ndrop its queue_refs (waking the teardown waiter if it was the last).",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.350"
   },
   {
     "id": "CVE-2026-64263",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: fix moving cancelled entry to ent_in_userspace list\n\nfuse_uring_cancel() moves entries that are available (these have no reqs\nattached) to the ent_in_userspace list. ent_list_request_expired()\nchecks the first entry on ent_in_userspace and dereferences\nent->fuse_req unconditionally, which will crash on a cancelled entry\nthat was moved to this list.\n\nFix this by freeing the entry and dropping queue_refs directly in\nfuse_uring_cancel(). This is safe because cancel is the cancel handler\nitself - after io_uring_cmd_done(), no more cancels will be dispatched\nfor this command, and teardown serializes with cancel via queue->lock.\n\nSince cancel now decrements queue_refs, fuse_uring_abort() must no\nlonger gate fuse_uring_abort_end_requests() on queue_refs > 0, as\ncancelled entries may have already dropped queue_refs while requests are\nstill queued. Remove the gate so abort always flushes requests and stops\nqueues.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.460"
   },
   {
     "id": "CVE-2026-64264",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse-uring: fix EFAULT clobber in fuse_uring_commit\n\ncopy_from_user() returns the number of bytes not copied as an unsigned\nresidual on failure (1..sizeof(struct fuse_out_header)). fuse_uring_commit\nstores that residual in ssize_t err, sets req->out.h.error to -EFAULT,\nthen jumps to out: with err still holding the positive residual.\n\n    err = copy_from_user(&req->out.h, &ent->headers->in_out,\n                         sizeof(req->out.h));\n    if (err) {\n        req->out.h.error = -EFAULT;\n        goto out;          /* err is the positive residual */\n    }\n    ...\n    out:\n        fuse_uring_req_end(ent, req, err);\n\nfuse_uring_req_end() then runs\n\n    if (error)\n        req->out.h.error = error;\n\nwhich overwrites the just-assigned -EFAULT with the positive residual.\nFUSE callers such as fuse_simple_request() test err < 0 to detect\nfailure, so the positive value is interpreted as success and the\ncaller proceeds with an uninitialised or partial req->out.args.\n\nFix by assigning err = -EFAULT in the failure branch before jumping\nto out, so fuse_uring_req_end() receives a negative errno and sets\nreq->out.h.error to -EFAULT.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.563"
   },
   {
     "id": "CVE-2026-64265",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse: clear intr_entry in fuse_resend and fuse_remove_pending_req\n\nWhen fuse_resend() moves a request from fpq->processing back to\nfiq->pending, it sets FR_PENDING and clears FR_SENT but does not\nremove the requests intr_entry from fiq->interrupts.  If the\nrequest had FR_INTERRUPTED set from a prior signal, intr_entry\nremains dangling on fiq->interrupts.  When the requesting task\nthen receives a fatal signal, fuse_remove_pending_req() sees\nFR_PENDING=1, removes the request from fiq->pending and frees it\nvia the refcount path, also without cleaning intr_entry.  The\nstale intr_entry causes use-after-free when fuse_read_interrupt()\niterates fiq->interrupts:\n  - list_del_init(&req->intr_entry) -> UAF write on freed slab\n  - req->in.h.unique -> UAF read, data leaked to userspace\n\nRemove intr_entry from fiq->interrupts in fuse_resend() for\ninterrupted requests before they are placed back on fiq->pending.\n\nAdd a WARN_ON if the intr_entry is not empty on request destruction.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.667"
   },
   {
     "id": "CVE-2026-64266",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse: re-lock request before returning from fuse_ref_folio()\n\nfuse_ref_folio() unlocks the request but does not re-lock it before\nreturning. fuse_chan_abort() can end the request and the async end\ncallback (eg fuse_writepage_free()) can free the args while the\nsubsequent copy chain logic after fuse_ref_folio() accesses them,\nleading to use-after-free issues.\n\nFix this by locking the request in fuse_ref_folio() before returning.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.783"
   },
   {
     "id": "CVE-2026-64267",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nfuse: avoid 32-bit prune notification count wrap\n\nFUSE_NOTIFY_PRUNE validates the nodeid payload length with:\n\n    size - sizeof(outarg) != outarg.count * sizeof(u64)\n\nOn 32-bit kernels, size_t is also 32 bits, so the daemon-controlled\ncount multiplication can wrap.  A prune notification with count\n0x20000000 and no nodeid payload passes the check, enters the copy\nloop, and asks the device copy path to read nodeids that are not\npresent in the userspace write buffer.  In QEMU this reaches the\nfuse_copy_fill() BUG_ON(!err) path.\n\nValidate the payload length with array_size() instead.  That accepts\nexactly the same valid messages, but avoids wrapping arithmetic before\nthe copy loop consumes the count.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:06.910"
   },
   {
     "id": "CVE-2026-64268",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nRDMA/siw: bound Read Response placement to the RREAD length\n\nIn drivers/infiniband/sw/siw/siw_qp_rx.c, siw_proc_rresp() places each\ninbound Read Response DDP segment at sge->laddr + wqe->processed and then\naccumulates wqe->processed, but it never checks the running total against\nthe sink buffer length on continuation segments. siw_check_sge() resolves\nand validates the sink memory only on the first fragment (the if (!*mem)\nbranch), and siw_rresp_check_ntoh() compares the cumulative length against\nwqe->bytes only on the final segment (the !frx->more_ddp_segs guard).\n\nA connected siw peer that answers an outstanding RREAD with Read Response\nsegments that keep the DDP Last flag clear, carrying more total payload\nthan the RREAD requested, drives wqe->processed past the validated sink\nbuffer; the next siw_rx_data() call writes out of bounds at\nsge->laddr + wqe->processed. siw runs iWARP over ordinary routable TCP,\nso the peer is the remote end of an established RDMA connection and needs\nno local privilege.\n\nBound every segment before placement, exactly as siw_proc_send() and\nsiw_proc_write() already do for their tagged and untagged paths, and\nterminate the connection with a base-or-bounds DDP error when the\nRead Response would overrun the sink buffer.\n\nThis is the second receive-path length fix for this file. A separate\nchange rejects an MPA FPDU length that underflows the per-fragment\nremainder in the header decode; that guard does not cover this case,\nbecause here each individual segment length is self-consistent and only\nthe accumulated placement offset overruns the buffer.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:07.013"
   },
   {
@@ -35247,43 +35226,43 @@
   {
     "id": "CVE-2026-64290",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommufd: Break the loop on failure in iommufd_fault_fops_read()\n\nOn a copy_to_user() failure inside the inner list_for_each_entry, only the\ninner loop breaks; the outer while re-fetches the just-restored fault group\nand retries the failing copy_to_user() forever, spinning the reader at 100%\nCPU with fault->mutex held.\n\nCheck rc after the inner loop and break the outer while as well.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:09.730"
   },
   {
     "id": "CVE-2026-64291",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommufd: Set veventq_depth upper bound\n\niommufd_veventq_alloc() accepts any !0 veventq_depth from userspace, with\nan upper bound at U32_MAX.\n\nThis leaves a vulnerability where userspace can allocate excessively large\nqueues to exhaust kernel memory reserves.\n\nCap the veventq_depth (maximum number of entries) to 1 << 19, matching the\nmaximum number of entries in the SMMUv3 EVTQ (the largest use case today).",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:09.837"
   },
   {
     "id": "CVE-2026-64292",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommufd: Move vevent memory allocation outside spinlock\n\nThe veventq memory allocation happens inside the spinlock. Given its depth\nis decided by the user space, this leaves a vulnerability, where userspace\ncan allocate large queues to exhaust atomic memory reserves.\n\nMove the allocation outside the spinlock and use GFP_NOWAIT, which can fail\nfast under memory pressure without dipping into the GFP_ATOMIC reserves or\ndirect-reclaiming from the threaded IRQ handler. On allocation failure,\nqueue the lost_events_header (so userspace learns of the drop) and return\n-ENOMEM so the caller learns of the kernel-side memory pressure.\n\nThis is intentionally distinct from the queue-overflow path, which also\nqueues the lost_events_header but returns 0: a full queue is an expected\nuserspace-pacing condition rather than a kernel error.\n\nA subsequent change will cap the upper bound of the veventq_depth.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:09.937"
   },
   {
     "id": "CVE-2026-64293",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommufd: Use sizeof(*hdr) instead of sizeof(hdr) in veventq read\n\nThe bound-check in iommufd_veventq_fops_read() for the normal vEVENT\npath uses sizeof(hdr) where the surrounding code uses sizeof(*hdr):\n\n\tif (!vevent_for_lost_events_header(cur) &&\n\t    sizeof(hdr) + cur->data_len > count - done) {\n\nhdr is declared as struct iommufd_vevent_header *, so sizeof(hdr)\nevaluates to the size of the pointer.  Surrounding code uses\nsizeof(*hdr) consistently:\n\n\tif (done >= count || sizeof(*hdr) > count - done) {\n\t...\n\tif (copy_to_user(buf + done, hdr, sizeof(*hdr))) {\n\t...\n\tdone += sizeof(*hdr);\n\nstruct iommufd_vevent_header is currently 8 bytes (two __u32 fields,\nflags and sequence), so on 64-bit (sizeof(void *) == 8) the two\nexpressions happen to be equal and the check works as intended.\n\nOn 32-bit (sizeof(void *) == 4) the check under-counts the header by\n4 bytes: a vEVENT whose data_len causes 8 + cur->data_len to exceed\ncount - done while 4 + cur->data_len does not will pass the check,\nthen the loop will copy_to_user 8 bytes of header followed by data_len\nbytes of payload, writing past the user-supplied buffer.\n\nIt is also a latent bug for any future expansion of struct\niommufd_vevent_header beyond sizeof(void *) on 64-bit; the check\nshould not depend on the type happening to match the host pointer\nwidth.\n\nUse sizeof(*hdr) to match the rest of the function and the actual\namount that will be copied.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:10.047"
   },
   {
     "id": "CVE-2026-64294",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm: do file ownership checks with the proper mount idmap\n\nEver since idmapped mounts were introduced, inode ownership checks (for\nside-channel protection) in mincore() and madvise(MADV_PAGEOUT) were done\nagainst the nop_mnt_idmap, which completely ignores the file's mount's\nidmap.  This results in odd edgecases like:\n\n1) mount/bind-mount with an idmap userA:userB:1\n2) userB runs an owner_or_capable() check on file that is owned by userA\non-disk/in-memory, but owned by userB after idmap translation\n3) owner_or_capable() mysteriously fails as the correct idmap wasn't supplied\n\nIn the case of mincore/madvise MADV_PAGEOUT, this is usually benign,\nbecause file_permission(file, MAY_WRITE) will probably succeed, as it uses\nthe proper idmap internally, but it does not need to be the case on e.g a\n0444 file where even the owner itself doesn't have permissions to write to\nit.\n\nSince this is clearly not trivial to get right, introduce a\nfile_owner_or_capable() that can carry the correct semantics, and switch\nthe various users in mm to it.\n\nThe issue was found by manual code inspection & an off-list discussion\nwith Jan Kara.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:10.160"
   },
   {
     "id": "CVE-2026-64295",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nmm: page_ext: add count limit to page_ext_iter_next to prevent invalid PFN access\n\nThe page_ext iteration API does not validate if the PFN still belongs to a\nvalid section while advancing the iterator.  When dynamically adding\nmemory in the hotplug path, it can lead to a NULL pointer dereference\nduring page_ext_lookup at the boundary of the last valid section when\niterator count equals __pgcount.\n\nThe for_each_page_ext() macro calls page_ext_iter_next() as its loop\nincrement.  for_each_page_ext() does a \"__page_ext =\npage_ext_iter_next(&__iter)\" at the end.  This causes page_ext_iter_next()\nto increment iter->index past __pgcount and call page_ext_lookup(start_pfn\n+ __pgcount).  During memory hotplug (online), the PFN at start_pfn +\n__pgcount may belong to a section that has not yet been initialized,\ncausing page_ext_lookup() to trigger a NULL pointer dereference.\n\n[   14.555124][  T846] Call trace:\n[   14.555125][  T846]  lookup_page_ext+0x6c/0x108 (P)\n[   14.555127][  T846]  page_ext_lookup+0x30/0x3c\n[   14.555129][  T846]  __reset_page_owner+0x11c/0x260\n[   14.571201][  T846]  __free_pages_ok+0x5e8/0x8e0\n[   14.571204][  T846]  __free_pages_core+0x78/0xf0\n[   14.571206][  T846]  generic_online_page+0x14/0x24\n[   14.597782][  T846]  online_pages+0x178/0x30c\n[   14.597784][  T846]  memory_block_change_state+0x284/0x32c\n[   14.597787][  T846]  memory_subsys_online+0x4c/0x64\n[   14.597789][  T846]  device_online+0x88/0xb0\n[   14.597791][  T846]  online_memory_block+0x30/0x40\n[   14.597793][  T846]  walk_memory_blocks+0xac/0xe8\n[   14.597794][  T846]  add_memory_resource+0x280/0x298\n[   14.656161][  T846]  add_memory+0x60/0x98\n\nMove the iteration boundary enforcement inside the iterator functions, so\ncallers cannot inadvertently access beyond the requested range.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-25T10:17:10.277"
   },
   {
@@ -37612,7 +37591,7 @@
   },
   {
     "id": "CVE-2026-65876",
-    "description": "Joomla Extension - joomshaper.com - Unauthenticated SQL injection  in SP Page Builder < 6.7.1 - Improper validation of catid parameters in the loadMoreArticles endpoint leads to an SQL injection vector.",
+    "description": "Joomla Extension - joomshaper.com - Unauthenticated SQL injection  in SP Page Builder < 6.8.0 - Improper validation of catid parameters in the loadMoreArticles endpoint leads to an SQL injection vector.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-07-27T14:17:00.680"
@@ -65011,7 +64990,7 @@
   {
     "id": "CVE-2026-13170",
     "description": "The Eventin  WordPress plugin before 4.1.20 does not properly validate a template path setting before using it to include a local file, allowing users with editor-level access and above to include and execute arbitrary local PHP files.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:46.360"
   },
@@ -65088,7 +65067,7 @@
   {
     "id": "CVE-2026-15229",
     "description": "The Pinpoint Booking System  WordPress plugin through 2.9.9.7.1 does not validate the booking price on the server side, allowing unauthenticated users to create bookings at an arbitrary price (including zero) and, by selecting a specific payment method, obtain an instantly-approved reservation.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T07:16:47.607"
   },
@@ -65613,7 +65592,7 @@
   {
     "id": "CVE-2026-44630",
     "description": "Improper validation of length fields in the Apache IoTDB RPC service may allow a remote unauthenticated attacker to cause a denial of service. By sending a crafted malformed Thrift frame, an attacker can cause IoTDB to allocate an excessive amount of memory and crash with an OutOfMemoryError.\n\n\nThis issue affects Apache IoTDB: before 1.3.8, from 2.0.0 before 2.0.9.\n\nUsers are recommended to upgrade to version 2.0.10, which fixes the issue.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-10T10:17:32.483"
   },
@@ -65627,42 +65606,42 @@
   {
     "id": "CVE-2026-28672",
     "description": "Improper Neutralization of Special Elements used in a Command ('Command Injection') vulnerability in Apache Ranger.\n\nThis issue affects Apache Ranger: from 0.6 through 2.8.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T11:17:25.190"
   },
   {
     "id": "CVE-2026-32227",
     "description": "SQL Injection vulnerability vulnerability in Apache Ranger.\n\nThis issue affects .\n\nUsers are recommended to upgrade to version 2.9.0, which fixes the issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T11:17:26.160"
   },
   {
     "id": "CVE-2026-40920",
     "description": "Privilege Escalation via URL Parameter is reported in Apache Ranger versions <= 2.8.0.\n\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T11:17:26.287"
   },
   {
     "id": "CVE-2026-42537",
     "description": "Remote Code Execution via JDBC URL Injection in Apache Ranger <= 2.8.0\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T11:17:26.420"
   },
   {
     "id": "CVE-2026-44416",
     "description": "Remote Code Execution via Arbitrary Class Instantiation in plugin-schema-registry component in Apache Ranger <= 2.8.0.\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T11:17:26.547"
   },
   {
     "id": "CVE-2026-55799",
     "description": "Remote Code Execution Vulnerability in GraalScriptEngineCreator in Apache Ranger <= 2.8.0\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T11:17:26.670"
   },
@@ -68588,7 +68567,7 @@
   {
     "id": "CVE-2026-18412",
     "description": "OpenCart extensions are uploaded as zip files with .ocmod.zip extensions. Upon installation, the OpenCart v4.2.0.0 extension installer extracts these zip files, but does not validate that the extracted paths stay inside the intended extraction directory. An attacker can craft a malicious extension containing file path traversal sequences, such as ../. With this vulnerability, an attacker can write files, such as a PHP web shell, into the webroot directory.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-10T15:17:42.467"
   },
@@ -69246,14 +69225,14 @@
   {
     "id": "CVE-2026-68870",
     "description": "The Azure Key Vault secrets backend in Apache Airflow's Microsoft Azure provider resolved a team-scoped Connection or Variable id through the team-agnostic lookup when the team-scoped lookup missed. In a deployment running multi-team mode with this backend, a caller in one team could resolve a secret belonging to another team by supplying an id that spells out that team's namespace, obtaining its credentials in full. No unusual configuration is required beyond enabling multi-team mode and using this backend. Users are advised to upgrade to apache-airflow-providers-microsoft-azure 14.1.0 or later, which refuses the team-agnostic fall-through for an id that could name a team namespace.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T19:17:30.337"
   },
   {
     "id": "CVE-2026-68871",
     "description": "The Yandex Lockbox secrets backend in Apache Airflow's Yandex provider resolved a team-scoped Connection or Variable id through the team-agnostic lookup when the team-scoped lookup missed. In a deployment running multi-team mode with this backend, a caller in one team could resolve a secret belonging to another team by supplying an id that spells out that team's namespace, obtaining its credentials in full. No unusual configuration is required beyond enabling multi-team mode and using this backend. Users are advised to upgrade to apache-airflow-providers-yandex 4.5.1 or later, which refuses the team-agnostic fall-through for an id that could name a team namespace.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-10T19:17:30.463"
   },
@@ -72005,7 +71984,7 @@
     "id": "CVE-2026-20349",
     "description": "A vulnerability in the Remote Access SSL VPN service for Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to cause the device to reload unexpectedly, resulting in a denial of service (DoS) condition.&nbsp;\r\n\r\nThis vulnerability is due to insufficient error checking when processing HTTP requests. An attacker could exploit this vulnerability by sending a crafted HTTP request to the Remote Access SSL VPN service on an affected device. A successful exploit could allow the attacker to cause the affected device to reload, resulting in a DoS condition.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Adaptive security appliance software",
     "published": "2026-08-11T17:17:48.833"
   },
   {
@@ -74600,7 +74579,7 @@
   },
   {
     "id": "CVE-2026-65673",
-    "description": "Entra Connect Elevation of Privilege Vulnerability",
+    "description": "Improper neutralization of special elements used in an sql command ('sql injection') in Microsoft Entra Connect Sync allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-11T17:18:55.303"
@@ -74840,7 +74819,7 @@
     "id": "CVE-2026-65807",
     "description": "Access of resource using incompatible type ('type confusion') in Microsoft Office Excel allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:00.430"
   },
   {
@@ -74959,63 +74938,63 @@
     "id": "CVE-2026-68793",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:02.747"
   },
   {
     "id": "CVE-2026-68794",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:02.877"
   },
   {
     "id": "CVE-2026-68795",
     "description": "Stack-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.010"
   },
   {
     "id": "CVE-2026-68796",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.140"
   },
   {
     "id": "CVE-2026-68797",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.270"
   },
   {
     "id": "CVE-2026-68798",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.400"
   },
   {
     "id": "CVE-2026-68799",
     "description": "Use of uninitialized resource in Microsoft Office Excel allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.527"
   },
   {
     "id": "CVE-2026-68800",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.657"
   },
   {
     "id": "CVE-2026-68801",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:03.793"
   },
   {
@@ -75029,42 +75008,42 @@
     "id": "CVE-2026-68803",
     "description": "Access of resource using incompatible type ('type confusion') in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:04.130"
   },
   {
     "id": "CVE-2026-68804",
     "description": "Numeric truncation error in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:04.353"
   },
   {
     "id": "CVE-2026-68805",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:04.503"
   },
   {
     "id": "CVE-2026-68806",
     "description": "Out-of-bounds write in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:04.643"
   },
   {
     "id": "CVE-2026-68807",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:04.780"
   },
   {
     "id": "CVE-2026-68808",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:04.910"
   },
   {
@@ -75078,56 +75057,56 @@
     "id": "CVE-2026-68810",
     "description": "Untrusted pointer dereference in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:05.170"
   },
   {
     "id": "CVE-2026-68811",
     "description": "Access of resource using incompatible type ('type confusion') in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:05.303"
   },
   {
     "id": "CVE-2026-68812",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:05.430"
   },
   {
     "id": "CVE-2026-68813",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:05.563"
   },
   {
     "id": "CVE-2026-68814",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:05.687"
   },
   {
     "id": "CVE-2026-68815",
     "description": "Heap-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:05.820"
   },
   {
     "id": "CVE-2026-68816",
     "description": "Stack-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:05.953"
   },
   {
     "id": "CVE-2026-68817",
     "description": "Stack-based buffer overflow in Microsoft Office Excel allows an unauthorized attacker to execute code locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:06.080"
   },
   {
@@ -75267,7 +75246,7 @@
     "id": "CVE-2026-70318",
     "description": "Improper input validation in Microsoft Office Excel allows an unauthorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:09.320"
   },
   {
@@ -75330,14 +75309,14 @@
     "id": "CVE-2026-70327",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to disclose information over a network.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:10.513"
   },
   {
     "id": "CVE-2026-70328",
     "description": "Out-of-bounds read in Microsoft Office Excel allows an unauthorized attacker to disclose information over a network.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "365 apps",
     "published": "2026-08-11T17:19:10.643"
   },
   {
@@ -77586,5 +77565,649 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-12T14:18:33.423"
+  },
+  {
+    "id": "CVE-2025-59319",
+    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to certify the integrity of the intended boot partition and selects the first partition index matching a hardcoded type value. A crafted Linux partition could be inserted ahead of this intended target, allowing for code execution in the context of high privilege.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:28.963"
+  },
+  {
+    "id": "CVE-2025-59320",
+    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 stores TPM2.0 secrets in a serialized format within unused disk sectors. An unauthenticated attacker with physical access to the system disk can recover this information and craft an environment to unseal the TPM.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:29.787"
+  },
+  {
+    "id": "CVE-2025-59321",
+    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 contains a default TPM PCR policy that fails to consider the system boot state. This allows the TPM to be unsealed via an unintended execution path or from another hardware platform.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:29.947"
+  },
+  {
+    "id": "CVE-2025-59322",
+    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to properly handle decryption errors and allows encrypted volumes to be mounted as plaintext.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:30.353"
+  },
+  {
+    "id": "CVE-2025-59323",
+    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to validate the integrity of the DataStore, a non-partitioned filesystem, responsible for storing configuration and cryptographic details. Crafted DataStore contents can impact service availability and/or allow for code execution in the context of high privilege.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:30.880"
+  },
+  {
+    "id": "CVE-2025-59324",
+    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to properly validate LUKS encryption and, if encryption is present, all CryptoPro file integrity checks are skipped.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:31.030"
+  },
+  {
+    "id": "CVE-2026-14478",
+    "description": "A maliciously created executable, when executed on the victim's machine, may allow a local low-privileged attacker to inject unauthenticated IPC messages into named pipes, modify pipe permissions or ownership, and potentially impact confidentiality, integrity, and availability.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:31.687"
+  },
+  {
+    "id": "CVE-2026-14479",
+    "description": "A maliciously crafted input, when processed by the Autodesk Installer IPC frame parser, may trigger improper validation of an input-specified position or offset, resulting in an out-of-range substring operation. A malicious actor may leverage this vulnerability to cause the NT AUTHORITY\\SYSTEM service to terminate unexpectedly, resulting in a denial-of-service condition.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:31.830"
+  },
+  {
+    "id": "CVE-2026-18171",
+    "description": "Docker Sandboxes (sbx) applies the read-only intent of a runtime host mount to the in-guest container bind only: the underlying virtio-fs host-edge grant is added to the sandbox's policy-share allowlist with no access mode. The directory stays writable at its shared-export path, so unprivileged code inside the sandbox can derive that path and write to a host directory the operator attached read-only.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:32.477"
+  },
+  {
+    "id": "CVE-2026-47233",
+    "description": "Admidio is an open-source user management solution. Version 5.0.9 added a missing `isAdministratorInventory()` gate to `case 'item_delete':` in `modules/inventory.php`. The same fix was not applied to the sibling `case 'field_delete':` handler, which destroys an entire inventory field definition, cascading to every `adm_inventory_item_data` row that referenced that field and every `adm_inventory_field_options` entry. The handler validates only a session-bound CSRF token; there is no `isAdministratorInventory()` check at the controller level, and `Admidio\\Inventory\\Entity\\ItemField::delete()` does not enforce one at the entity level either (unlike its sibling `ItemField::save()`, which does check `$gCurrentUser->isAdministrator()`). Any user who can log in to the site can permanently destroy a non-system inventory field by sending one POST. Version 5.0.10 provides an updated fix.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:33.813"
+  },
+  {
+    "id": "CVE-2026-47234",
+    "description": "Admidio is an open-source user management solution. Prior to version 5.0.10, when debug logging is enabled, `Session::setCookie()` logs full cookie values and `Session::start()` logs the current session ID. In a real Admidio deployment this includes both the active session cookie and the persistent auto-login cookie. Anyone with access to the log sink can recover live bearer-style credentials from the logs. Version 5.0.10 contains a fix.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:33.957"
+  },
+  {
+    "id": "CVE-2026-49262",
+    "description": "In the Aimeos Pagible content management system prior to version 0.10.4, the administrative proxy route (`cmsproxy`) is vulnerable to a Server-Side Request Forgery (SSRF) attack via DNS Rebinding. A Time-of-Check to Time-of-Use (TOCTOU) race condition exists between the URL validation phase and the actual HTTP request phase, allowing attackers to access internal network resources and cloud metadata endpoints. Version 0.10.4 fixes the issue.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:35.867"
+  },
+  {
+    "id": "CVE-2026-49349",
+    "description": "regclient is a Docker and OCI Registry Client in Go. Prior to version 0.11.5, credentials for a registry may be inadvertently leaked to external servers. A prerequisite for this attack is a malicious registry server, a malicious blob store, or a registry that does not restrict the external URLs for foreign blobs. Version 0.11.5 fixes the issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:37.507"
+  },
+  {
+    "id": "CVE-2026-50561",
+    "description": "Yuxi is a large-model-based intelligent knowledge base and knowledge graph agent development platform. Prior to version 0.6.2, the project's authentication mechanism contains a flaw. In affected versions, the system does not sufficiently validate the identity token in the Authorization header — only performing a validity check. This allows an administrator token generated in another deployment instance or local testing environment to be used to access the backend management interfaces of a different affected instance. An attacker who obtains or constructs an acceptable administrator Authorization token may bypass normal login authentication and gain administrator privileges. This vulnerability could allow an attacker to access system configurations, invoke backend management APIs, create administrator accounts, and ultimately take over the system backend. This issue has been fixed in version 0.6.2. Before upgrading, users are advised to implement the following temporary measures: Set the environment variable `JWT_SECRET_KEY` to a non-default value, and configure a unique, sufficiently strong JWT/authentication key for each deployment instance; and/or avoid exposing backend management interfaces directly to the public network.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:17:38.307"
+  },
+  {
+    "id": "CVE-2026-66375",
+    "description": "A low-privilege authenticated user may permanently remove protected internal metadata across repositories under specific conditions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:19.343"
+  },
+  {
+    "id": "CVE-2026-66376",
+    "description": "Credentials for a deleted user may remain valid for a short period under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:19.477"
+  },
+  {
+    "id": "CVE-2026-66377",
+    "description": "An unauthenticated user may access restricted repository information under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:19.597"
+  },
+  {
+    "id": "CVE-2026-66378",
+    "description": "An authenticated user without repository read permission may access private NuGet metadata under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:19.723"
+  },
+  {
+    "id": "CVE-2026-66379",
+    "description": "An authenticated user may view private Puppet module metadata without repository read access.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:19.847"
+  },
+  {
+    "id": "CVE-2026-66380",
+    "description": "An authenticated user without repository read permission may access private OCI referrer metadata under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:19.967"
+  },
+  {
+    "id": "CVE-2026-66381",
+    "description": "A repository reader with cache-deploy permission may access content outside a configured upstream path under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:20.083"
+  },
+  {
+    "id": "CVE-2026-66382",
+    "description": "An authenticated user may write files outside the intended Artifactory work directory under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:20.203"
+  },
+  {
+    "id": "CVE-2026-67286",
+    "description": "Joomla Extension - joomshaper.com - Unauthenticated arbitrary directory creation and file write in SP Page Builder < 6.8.0 - An unauthenticated attacker can create arbitrary directories and files with a predefined name.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:21.613"
+  },
+  {
+    "id": "CVE-2026-67287",
+    "description": "Joomla Extension - joomshaper.com - Unauthenticated comment creation in SP Page Builder < 6.8.0 - An unauthenticated attacker can create comments on instances with disabled guest commenting by overriding the setting in question with user supplied input.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:21.750"
+  },
+  {
+    "id": "CVE-2026-68752",
+    "description": "A Project Resource Manager may gain broader administrative privileges under specific conditions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:21.880"
+  },
+  {
+    "id": "CVE-2026-68753",
+    "description": "An unauthenticated user may access restricted Artifactory content when a credentialed remote repository is configured in a specific way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:21.993"
+  },
+  {
+    "id": "CVE-2026-68754",
+    "description": "A repository publisher without delete permission may modify protected package content under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:22.117"
+  },
+  {
+    "id": "CVE-2026-68755",
+    "description": "A bundle writer may create misleading release promotion information under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:22.237"
+  },
+  {
+    "id": "CVE-2026-68756",
+    "description": "A party with write access to stored session data may affect JFrog Artifactory under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:22.360"
+  },
+  {
+    "id": "CVE-2026-68757",
+    "description": "A user with access to a valid SAML response may impersonate another user under specific conditions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:22.477"
+  },
+  {
+    "id": "CVE-2026-68760",
+    "description": "An unauthenticated user may bypass authentication under specific cache conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:22.603"
+  },
+  {
+    "id": "CVE-2026-73262",
+    "description": "Prowler is a cloud security platform. Prior to 5.37.0, Prowler's HTML output formatter in prowler/lib/outputs/html/html.py inserted finding.resource_tags, assembled by unroll_dict and parse_html_string, into generated reports without HTML escaping, allowing a cloud principal who can modify a scanned resource tag to store HTML or JavaScript that executes when another user opens the report. This issue is fixed in version 5.37.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:30.793"
+  },
+  {
+    "id": "CVE-2026-73263",
+    "description": "Prowler is a cloud security platform. Prior to 5.36.0, the Kubernetes provider connection test accepted kubeconfig_content containing a legacy gcp auth-provider with config.cmd-path and config.cmd-args because kubeconfig_contains_exec_auth in api/src/backend/api/v1/serializers.py checked only exec blocks, and POST /api/v1/providers/{id}/connection loaded it through config.load_kube_config_from_dict in prowler/providers/kubernetes/kubernetes_provider.py, causing kubernetes-python CommandTokenSource.token to run the attacker-supplied command through subprocess.Popen on the shared worker. This issue is fixed in version 5.36.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:30.943"
+  },
+  {
+    "id": "CVE-2026-73264",
+    "description": "Prowler is a cloud security platform. Prior to 5.33.1, an authenticated user with Lighthouse provider configuration access could supply an unvalidated base_url for the openai_compatible provider through POST /api/v1/lighthouse/providers and POST /api/v1/lighthouse/providers/{id}/connection, causing api/src/backend/tasks/jobs/lighthouse_providers.py to send outbound requests, including the API key in the Authorization header, to attacker-controlled or internal endpoints when client.models.list was called. This issue is fixed in version 5.33.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:31.087"
+  },
+  {
+    "id": "CVE-2026-73265",
+    "description": "RustFS is a distributed object storage system built in Rust. RustFS authorizes explicit versionId reads in GetObject, CopyObject sources, and UploadPartCopy sources with s3:GetObject instead of s3:GetObjectVersion, allowing principals without historical-version permission to disclose known historical object content. This issue is fixed in version 1.0.0-beta.11.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:31.250"
+  },
+  {
+    "id": "CVE-2026-73284",
+    "description": "RustFS is a distributed object storage system built in Rust. RustFS AddServiceAccount in rustfs/src/admin/handlers/service_account.rs accepts an attacker-controlled target_user after only checking CreateServiceAccountAdminAction, passes it to new_service_account, and prepare_service_account_auth sets is_owner for the resulting root-parent service account. This issue is fixed in version 1.0.0-beta.11.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:31.437"
+  },
+  {
+    "id": "CVE-2026-73285",
+    "description": "RustFS is a distributed object storage system built in Rust. From 1.0.0-alpha.64 until 1.0.0-rc.1, RustFS external OPA authorization enabled by RUSTFS_POLICY_PLUGIN_URL in crates/iam/src/sys.rs sets PreparedIamAuth.needs_existing_object_tag incorrectly for PreparedIamMode::Opa, causing maybe_merge_object_tag_conditions to omit s3:ExistingObjectTag/* values and allowing authenticated users to bypass tag-based policy restrictions. This issue is fixed in version 1.0.0-rc.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:31.840"
+  },
+  {
+    "id": "CVE-2026-73286",
+    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, RustFS get_condition_values folds attacker-controlled request headers from HeaderMap into server-derived userid, username, principaltype, groups, versionid, signatureversion, jwt:, and ldap: condition keys, allowing authenticated callers to satisfy identity-based policy conditions. This issue is fixed in version 1.0.0-beta.12.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:32.060"
+  },
+  {
+    "id": "CVE-2026-73287",
+    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, RustFS handles FTPS MKD in FtpsDriver::mkd in crates/protocols/src/ftps/driver.rs by calling storage.create_bucket without authorize_operation for S3Action::CreateBucket, allowing authenticated FTPS users denied s3:CreateBucket to create buckets. This issue is fixed in version 1.0.0-beta.12.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:32.237"
+  },
+  {
+    "id": "CVE-2026-73288",
+    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-rc.1, RustFS Object Lock enforcement in crates/ecstore/src/bucket/object_lock/objectlock_sys.rs lets check_object_lock_for_deletion, delete_prefix, and lifecycle and scanner sweeps treat ConfigNotFound, unreadable .metadata.bin data, or unparseable metadata as no lock configuration, allowing objects under COMPLIANCE retention to be deleted or expired. This issue is fixed in version 1.0.0-rc.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:32.447"
+  },
+  {
+    "id": "CVE-2026-73289",
+    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, RustFS evaluates the ForAllValues: and ForAnyValue: set qualifiers with the negated string operators StringNotEquals, StringNotEqualsIgnoreCase, StringNotLike, ArnNotEquals, and ArnNotLike using each other's semantics because crates/policy/src/policy/function/string.rs negates the aggregate result after eval or eval_like instead of negating each request-value predicate before quantification. Partially overlapping policy and request value sets can therefore make an Allow condition grant access to an excluded principal or make a Deny guardrail fail, including policies based on jwt:groups and jwt:roles; absent keys also receive the opposite ForAllValues: and ForAnyValue: behavior. This issue is fixed in version 1.0.0-beta.12.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:32.733"
+  },
+  {
+    "id": "CVE-2026-73290",
+    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, an anonymous ListObjectVersions request in rustfs/src/storage/access.rs that lacks a direct bucket-policy grant falls back to an s3:ListBucket check and returns before the policy_allowed path applies deny_anonymous_table_data_plane_if_needed and RestrictPublicBuckets, so a bucket that permits anonymous listing can continue exposing version listings after an operator enables the public-access control. The bypass affects GET /<bucket>?versions= and can disclose object version metadata even though equivalent GetObject requests are denied. This issue is fixed in version 1.0.0-beta.12.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:32.883"
+  },
+  {
+    "id": "CVE-2026-73291",
+    "description": "Seerr is an open-source media request and discovery manager for Jellyfin, Plex, and Emby. Prior to version 3.4.0, Seerr's ImageProxy in server/lib/imageproxy.ts uses the upstream ETag and Content-Type response headers to build a cache filename for the unauthenticated GET /avatarproxy/:jellyfinUserId route, allowing a malicious or compromised Jellyfin or Emby server, or a man-in-the-middle attacker on a plaintext media-server connection, to supply traversal sequences that path.join and fs.writeFile normalize outside the cache directory, overwrite /app/dist/index.js or other files, and execute code as the node user after a container restart. This issue is fixed in version 3.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:33.020"
+  },
+  {
+    "id": "CVE-2026-73374",
+    "description": "A stored cross-site scripting (XSS) vulnerability existed in Vulnerability-Lookup in the render_tag_badges Jinja filter used to display reference tags associated with vulnerability records.\n\nValues from containers.cna.references[].tags[] were directly interpolated into HTML badge elements and the resulting string was wrapped in markupsafe.Markup. Because Markup marks the generated content as safe, Jinja's automatic HTML escaping was bypassed.\n\nAn authenticated user with permissions to create or modify vulnerability records, such as a user holding the vulnerability:create or vulnerability:modify permission, could submit a crafted reference tag through the CNA API containing arbitrary HTML or JavaScript-capable markup.\n\nThe malicious value would subsequently be stored as part of the vulnerability record. When another user visited the corresponding public /cve/<id> or /vuln/<id> page, the crafted tag would be rendered as HTML in the viewer's browser. This could result in JavaScript execution in the security context of the Vulnerability-Lookup application.\n\nSuccessful exploitation could allow an attacker to perform actions in the context of a victim, access information available to the victim's browser session, or modify page content. As the affected vulnerability pages can be accessed publicly, exploitation may affect users who are not authenticated.\n\nThe issue was corrected by applying markupsafe.escape() to each reference tag before inserting it into the HTML badge markup, while retaining Markup only for the static HTML scaffolding.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:33.173"
+  },
+  {
+    "id": "CVE-2026-73405",
+    "description": "An authorization bypass vulnerability in Vulnerability-Lookup allowed inactive or unconfirmed accounts to subscribe to Server-Sent Events (SSE) streams through the /pubsub/subscribe/<topic> endpoint.\n\n\nThe token_required decorator used by the Pub/Sub interface authenticated requests solely by matching the X-API-KEY header against an existing user API key. Unlike the REST API authentication mechanism, it did not verify the account's is_active and is_confirmed state.\n\n\nBecause the self-registration process issues an API key before account confirmation is completed, an attacker could create an account and immediately use the resulting API key to access Pub/Sub topics that should only be available to active, confirmed users. This could expose stream events that would otherwise be inaccessible through the REST API, including newly submitted or not-yet-moderated data such as comments.\n\n\nThe vulnerability results from inconsistent authorization enforcement between the REST API and the SSE streaming interface.\n\n\nThe patch corrects the issue by requiring accounts to be both active and confirmed before permitting access to Pub/Sub streams, bringing the SSE authorization boundary in line with the REST API.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:33.343"
+  },
+  {
+    "id": "CVE-2026-73431",
+    "description": "Vulnerability-Lookup contains an \nauthentication weakness in its account activation and password-recovery \nmechanism. Activation and recovery links were generated using stateless \nsigned tokens containing only the user's login. Although the token \nsignature and age were validated, the application did not track whether a\n token had already been successfully used. As a result, a captured \nactivation or password-recovery link remained valid for the entire \nconfigured TOKEN_VALIDITY_PERIOD, even after the associated password had been changed. \n\n\nAn attacker who obtains a valid \nactivation or recovery token could therefore replay it multiple times \nduring its validity period to set a new password and repeatedly take \ncontrol of the affected account. In addition, tokens were not bound to a\n specific purpose, allowing the same token mechanism to be used across \nactivation and recovery workflows. The patch introduces purpose-bound \ntokens and a random nonce whose SHA-256 digest is stored with the user \naccount. The nonce is invalidated after a successful password change, \nmaking tokens single-use, while issuing a new token invalidates any \npreviously issued token.  The password-setting operation now explicitly consumes the token before committing the account change. \n\n\nSuccessful exploitation requires \nthe attacker to obtain a currently valid activation or recovery link, \nbut does not require knowledge of the victim's existing password or an \nauthenticated session.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:33.483"
+  },
+  {
+    "id": "CVE-2026-73432",
+    "description": "Vulnerability-Lookup contains a server-side request forgery (SSRF) vulnerability in the remote-instance synchronization functionality. Remote instance addresses were validated only for basic URL syntax before being stored, while the synchronization worker later dereferenced these addresses using requests.get() with automatic redirect handling and without enforcing network-boundary restrictions. \n\n\nAn authenticated administrator with the admin:access permission could configure a remote instance whose address points to an internal, loopback, link-local, or cloud metadata HTTP(S) service. When synchronization is performed, the Vulnerability-Lookup server would issue the request from its own network context. An attacker could also use a publicly accessible URL that redirects to an internal destination, because redirects were previously followed without revalidating the destination.\n\n\nSuccessful exploitation could allow a privileged attacker to probe or interact with services that are accessible from the Vulnerability-Lookup server but not directly reachable by the attacker, including private network services or cloud instance metadata endpoints. The exact confidentiality, integrity, or availability impact depends on the services reachable from the application server.\n\n\nThe patch introduces a shared outbound URL policy that restricts remote instances to HTTP(S), rejects non-public IP addresses, resolves hostnames at request time, and manually validates each redirect destination before following it.  The implementation explicitly blocks private, loopback, link-local, multicast, reserved, and unspecified addresses.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T15:18:33.617"
+  },
+  {
+    "id": "CVE-2025-20020",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:50.800"
+  },
+  {
+    "id": "CVE-2025-24488",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:50.900"
+  },
+  {
+    "id": "CVE-2025-24837",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:50.967"
+  },
+  {
+    "id": "CVE-2025-25275",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.023"
+  },
+  {
+    "id": "CVE-2025-27245",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.087"
+  },
+  {
+    "id": "CVE-2025-27570",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.147"
+  },
+  {
+    "id": "CVE-2025-30178",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.203"
+  },
+  {
+    "id": "CVE-2025-31943",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.270"
+  },
+  {
+    "id": "CVE-2025-32084",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.330"
+  },
+  {
+    "id": "CVE-2025-32087",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.390"
+  },
+  {
+    "id": "CVE-2025-32737",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.450"
+  },
+  {
+    "id": "CVE-2025-35977",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.513"
+  },
+  {
+    "id": "CVE-2025-35988",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:51.577"
+  },
+  {
+    "id": "CVE-2026-15803",
+    "description": "In Eclipse RDF4J, several XML parser entry points do not fully restrict XML External Entity (XXE) processing when parsing untrusted XML-based RDF data or query results, permitting DOCTYPE declarations, external entity references, and external DTD loading. This is due to an incomplete fix for CVE-2018-1000644: the earlier fix did not cover all parser entry points. The issue is resolved in RDF4J 5.3.2, which rejects or disables DOCTYPE declarations, external entities, and external DTD loading by default.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:54.877"
+  },
+  {
+    "id": "CVE-2026-19548",
+    "description": "Multiple Use-After-Free vulnerabilities were found in the add_archive_element function in ld/ldmain.c of the GNU linker (ld), a component of binutils. The root cause is that plugin_maybe_claim() in ld/plugin.c frees the original BFD object via bfd_close/_bfd_delete_bfd when entry->the_bfd->my_archive == NULL, but the caller retains both the original abfd parameter and a shallow copy (orig_input.the_bfd) as dangling pointers. These dangling pointers are subsequently dereferenced at three distinct locations in add_archive_element:\n\n1. Line ~1442: accessing abfd->my_archive via bfd_usrdata(abfd->my_archive)\n2. Line ~1493: multiple accesses to abfd and abfd->my_archive in a conditional check and bfd_get_filename call\n3. Line ~1525: dereferencing the shallow copy orig_input.the_bfd->my_archive in trace/verbose logging\n\nThe vulnerability is triggered when LTO plugins are active (link_info.lto_plugin_active is true) and the input object has abfd->my_archive == NULL, which is a valid state for standalone object files. Red Hat builds binutils with --enable-plugins and --enable-lto, confirming the vulnerable code path is compiled in and reachable.\n\nAn attacker who can supply a crafted object or archive file to a build process using LTO-enabled linking could exploit this flaw to cause a denial of service (linker crash via segmentation fault). Arbitrary code execution is theoretically possible through heap manipulation but is substantially mitigated by hardening measures including stack protector, FORTIFY_SOURCE, ASLR, and PIE.\n\nThe attack surface is limited to build-time environments — the linker is a development tool not exposed in production runtime. The most realistic exploitation scenario is a supply chain attack introducing a crafted object file as a build dependency in CI/CD pipelines or development environments.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:16:55.777"
+  },
+  {
+    "id": "CVE-2026-54183",
+    "description": "Apache Airflow's secrets masker hides values stored under sensitive key names when they are displayed in the UI. The masker's recursion-depth limit did not descend into values nested inside a list, tuple, or set beyond that limit, so an Airflow Variable holding such a deeply-nested value was shown unmasked in the Variables UI. The exposure is limited to the UI: any authenticated user who can see the Variable in the UI can already read its full value through the Variables REST API, so this does not disclose data the user could not otherwise obtain — the masking is a shoulder-surfing defense for the UI, not an access-control boundary.\n\nThis is an incomplete-fix follow-up to CVE-2026-42358, whose fix made only the dictionary walk unbounded; lists, tuples, and sets beyond the depth limit remained unmasked in the UI. Deployments that applied the CVE-2026-42358 fix should also upgrade to address this residual case. Upgrade to apache-airflow 3.3.1 or later.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:04.640"
+  },
+  {
+    "id": "CVE-2026-58076",
+    "description": "Apache Airflow's serialization layer reconstructed exception nodes by calling `import_string()` on a class name taken from the serialized blob and instantiating it with arguments from the same blob, with no restriction on what could be imported. An operator's `executor_config` reaches that branch, so a Dag author could place a value there that causes an arbitrary callable to be imported and invoked -- for example `subprocess.check_output`, or `builtins.eval` on the `builtins`-prefixed variant. The code runs in the **Scheduler**, which reconstructs serialized Dags in its normal loop with no request involved, and in the **API server**, on any authenticated read of the Dag such as `GET /api/v2/dags/{dag_id}/details`. Both are components the Airflow security model states must never execute Dag-author code, and both hold the metadata database credentials and the JWT signing secret. No non-default configuration is required. This is a **different sink from CVE-2026-33264**, which covered only the trigger branch of the same deserializer: deployments that upgraded in response to that advisory are still affected through the exception branch and must upgrade again. Users are advised to upgrade to apache-airflow 3.3.1 or later, which restricts the imported class to a subclass of `BaseException`.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:08.317"
+  },
+  {
+    "id": "CVE-2026-59242",
+    "description": "Apache Airflow's XCom `GET /api/v2/{...}/xcomEntries/{key}?deserialize=true` endpoint passed a string-literal payload through `BaseXCom.deserialize_value` without the `_check_forbidden_xcom_keys` guard, allowing an authenticated API user with XCom write-and-read access to instantiate arbitrary `airflow.*` classes on the API server (CWE-502). An authenticated user who can write an XCom value and then read it back with `deserialize=true` triggers the unsafe instantiation. Users are advised to upgrade to apache-airflow 3.3.1 or later, which rejects reserved XCom serialization keys submitted as JSON string literals.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:09.067"
+  },
+  {
+    "id": "CVE-2026-59244",
+    "description": "Apache Airflow's secrets masker did not mask `var.json` Variable values whose value is a dict in the Rendered Templates UI — the dict value failed an `isinstance(str)` guard — so a secret stored as a JSON Variable and referenced in a template via `var.json` was displayed in cleartext to any user with access to that task's Rendered Templates view. Users are advised to upgrade to apache-airflow 3.3.1 or later, which masks nested Variable values regardless of type.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:09.197"
+  },
+  {
+    "id": "CVE-2026-64639",
+    "description": "Incorrect database cloning process in Plesk from 18.0.52 before 18.0.79.6 and 18.0.80.2 allows a low-privileged user (customer, reseller) to execute arbitrary code on behalf of the database server administrator.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:12.280"
+  },
+  {
+    "id": "CVE-2026-65017",
+    "description": "Apache Airflow's Config API did not mask team-scoped sensitive configuration values in multi-team deployments. When an administrator has enabled multi-team mode and exposed the Config API, an authenticated Viewer holding only configuration-read access — with no prior access to the secret — could read a team-scoped Celery broker URL, including its embedded credentials, in cleartext, while the equivalent global option was correctly masked. The secrets masker matched only base section and option names and did not normalize team-prefixed sections before the sensitivity check (CWE-200). This is a distinct masker bypass from CVE-2026-48828 and CVE-2026-48892: deployments that upgraded to apache-airflow 3.3.0 to address those issues remain affected by this team-scoped variant. Users are advised to upgrade to apache-airflow 3.3.1 or later, which normalizes team-scoped sections before masking.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:12.577"
+  },
+  {
+    "id": "CVE-2026-65926",
+    "description": "An anonymous caller when anonymous access is enabled, or a low-privilege authenticated user, may learn private Release Bundle names and versions when the bundle name is known.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:13.393"
+  },
+  {
+    "id": "CVE-2026-65937",
+    "description": "In WhatsUp Gold versions released before 2026.0.2, an authenticated attacker can bypass frontend controls and inject persistent script content.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:13.527"
+  },
+  {
+    "id": "CVE-2026-65938",
+    "description": "In WhatsUp Gold versions released before 2026.0.2, an improper authorization vulnerability in the Scheduled Reports API allows any authenticated user to invoke restricted actions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:13.667"
+  },
+  {
+    "id": "CVE-2026-65939",
+    "description": "In WhatsUp Gold versions released before 2026.0.2, a privileged attacker can create a LogToFile action specifying an arbitrary file extension within the IIS web root.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:13.797"
+  },
+  {
+    "id": "CVE-2026-65940",
+    "description": "In WhatsUp Gold versions released before 2026.0.2, a privileged attacker can write arbitrary files to a web-accessible location on the host server.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:13.927"
+  },
+  {
+    "id": "CVE-2026-65941",
+    "description": "In WhatsUp Gold versions released before 2026.0.2, an unauthenticated remote attacker with network access to the affected service can execute arbitrary code in the context of the IIS application service account.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:14.050"
+  },
+  {
+    "id": "CVE-2026-66016",
+    "description": "Under specific self-hosted Helm configurations, generated TLS private keys may be retained in rendered manifests accessible to highly privileged local users.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:14.383"
+  },
+  {
+    "id": "CVE-2026-66384",
+    "description": "An authenticated user may write data outside the intended Docker cache path under specific remote-repository conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:14.520"
+  },
+  {
+    "id": "CVE-2026-67260",
+    "description": "Apache Airflow 3.3.0 moved human-in-the-loop tasks from the triggerer to a new `awaiting_input` task state swept by the scheduler. That sweep deserializes the task instance's `next_kwargs` without an allow-list, so a Dag author — who controls that value through the task execution API — can cause an arbitrary module import and object instantiation inside the scheduler process, or terminate the scheduler job. No non-default configuration is required: the sweep runs unconditionally every 15 seconds, and the default `allowed_deserialization_classes` setting does not cover this code path. Versions before 3.3.0 are not affected, because human-in-the-loop tasks deferred onto the triggerer instead. This is a different code path from CVE-2026-58076, which covers the same unguarded exception-node deserialization reached elsewhere — deployments that applied that fix must upgrade for this issue as well. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:14.813"
+  },
+  {
+    "id": "CVE-2026-67587",
+    "description": "Apache Airflow's Task SDK rebuilt a `Callback` object from serialized data by re-running its constructor, which imports the module named by the stored callback path. Because `SyncCallback` is itself an Airflow class it passes the default `allowed_deserialization_classes` allow-list, so tightening that setting does not help. A Dag author — who controls a task instance's `next_kwargs` through the task execution API — can therefore cause an arbitrary module to be imported inside the scheduler process, when the scheduler's `awaiting_input` timeout sweep deserializes that value. No non-default configuration is required; the sweep runs unconditionally. Versions before 3.3.0 are not affected: the class existed, but the scheduler sweep that reaches it did not. This is a separate code path from CVE-2026-58076 and CVE-2026-67260, which cover different gadgets reaching deserialization — applying either of those fixes does not address this one. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:15.090"
+  },
+  {
+    "id": "CVE-2026-68076",
+    "description": "Apache Airflow's environment-variable secrets backend resolved a team-scoped Connection or Variable from the wrong team's scope. The guard meant to prevent this only ran when no team scope was supplied, and its pattern could not match a team name containing an underscore, which team names are allowed to contain. When the guard did not apply, the lookup fell through to an unconditional global read that resolved the stored `AIRFLOW_CONN__<TEAM>___<ID>` variable regardless of which team asked. In multi-team mode an authenticated user of one team could therefore have `POST /api/v2/connections/test` resolve another team's Connection and authenticate outward with that team's credentials; the endpoint uses the credentials rather than returning them. Exploitation requires `[core] multi_team` enabled, `[core] test_connection` set to `Enabled` (it ships `Disabled`), team-scoped secrets provisioned as environment variables in the API-server process, and knowledge of the encoded identifier. Redirecting the test at an attacker-controlled host is separately blocked. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:15.223"
+  },
+  {
+    "id": "CVE-2026-68758",
+    "description": "A low-privileged authenticated user may access restricted support information under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:15.540"
+  },
+  {
+    "id": "CVE-2026-68759",
+    "description": "A holder of a valid integration credential may impersonate other users under specific conditions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:16.887"
+  },
+  {
+    "id": "CVE-2026-68968",
+    "description": "Apache Airflow's Backfill API authorized a request against a Dag id supplied by the caller whenever the `backfill_id` path segment failed to parse. The authorization dependency parsed it with `int()` while the route handler parsed it as pydantic's `NonNegativeInt`, which accepts values `int()` rejects (`1.0` coerces to `1`); FastAPI resolves dependencies before endpoint validation, so the two acted on different Dags. An authenticated user holding edit permission on any single Dag could therefore read, pause and cancel backfills belonging to any other Dag, including moving another Dag's queued runs to `failed`. No non-default configuration is required and backfill ids are sequential, so finding a target is trivial. Users are advised to upgrade to apache-airflow 3.3.1 or later, which parses the backfill id with the same type the routes declare.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:19.607"
+  },
+  {
+    "id": "CVE-2026-68969",
+    "description": "Apache Airflow wrote Variable values and Connection `extra` contents to the audit log in cleartext when they were submitted through the bulk endpoints (`PATCH /api/v2/variables` and `PATCH /api/v2/connections`). The audit-log masking recognised only top-level request fields, and a bulk request nests its entities two levels below, so no masking was applied to them. Any authenticated user with audit-log read access -- who need not hold Variables or Connections read at all -- could recover those secrets verbatim, and the Connection `extra` copy is stored unencrypted in the log while the connection table encrypts it. The Airflow UI's *Import Variables* action posts to this endpoint, so an ordinary operator import wrote every secret in the file to the log. This is a different code path from CVE-2026-50204: that fix shipped in 3.3.0 and covers the single-entity endpoints only, so deployments that upgraded in response to that advisory remain affected and must upgrade again. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:19.730"
+  },
+  {
+    "id": "CVE-2026-68970",
+    "description": "Apache Airflow's Task SDK did not mask the contents of a Variable whose JSON value is a list, so secrets stored in that shape appeared in cleartext in task logs and in the Rendered Templates UI. Masking was applied only when the deserialized value was a string or a dict; a list at the top level matched neither and was returned unmasked. Any authenticated user able to read the logs or rendered templates of a task that references such a Variable could recover the values, with no special configuration required. This is the list-shaped counterpart of CVE-2026-59244, whose fix covered the dict case only, so deployments that upgraded in response to that advisory remain affected and must upgrade again. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:19.853"
+  },
+  {
+    "id": "CVE-2026-68971",
+    "description": "Apache Airflow's asset materialization endpoint (`POST /api/v2/assets/{asset_id}/materialize`) and the XCom result check on `wait_dag_run_until_finished` authorized the target Dag without its team, unlike every other authorization site. A team-aware auth manager distinguishes a team-scoped Dag from a global one by that field -- the Keycloak auth manager, for example, checks the `DAG` resource instead of `DAG:<team>` -- so the team-scoped permission that should gate the request was never consulted. In a deployment running multi-team mode with a team-aware auth manager, an authenticated user in one team could trigger Dag runs belonging to another team, supplying their own `dag_run_id` and `conf`, and could read another team's XCom values. Deployments using the FAB auth manager are unaffected, as it has no multi-team support. Users are advised to upgrade to apache-airflow 3.3.1 or later, which resolves the Dag's team at both sites.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:19.970"
+  },
+  {
+    "id": "CVE-2026-69105",
+    "description": "An unauthenticated attacker may cause untrusted package content to be cached under specific conditions, potentially affecting artifact integrity and availability.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:20.093"
+  },
+  {
+    "id": "CVE-2026-69107",
+    "description": "An unauthenticated user may access restricted artifacts in JFrog Artifactory under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:20.220"
+  },
+  {
+    "id": "CVE-2026-70547",
+    "description": "An authenticated user without repository read permission may access package metadata under specific conditions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:21.440"
+  },
+  {
+    "id": "CVE-2026-73292",
+    "description": "Semaphore UI is a web interface for managing DevOps tools. Prior to 2.18.21, the /api/users/{id}/password endpoint accepts a cross-site request using the authenticated user's semaphore session cookie without CSRF protection or current-password confirmation, allowing an unauthenticated attacker to change an administrator's or another user's password after user interaction. This issue is fixed in version 2.18.21.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:22.343"
+  },
+  {
+    "id": "CVE-2026-73293",
+    "description": "Semaphore UI is a web interface for managing DevOps tools.  Prior to 2.18.19 and from 2.19.0-alpha3 until 2.19.5-beta5, ProjectMiddleware and GetProjectOrGlobalRoleBySlug allow a project manager to use POST /api/project/{id}/roles to create a custom manager role with permission bitmask 15, overriding the built-in manager permissions and granting CanUpdateProject and CanManageProjectUsers owner capabilities. This issue is fixed in versions 2.18.19 and 2.19.5-beta5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:22.493"
+  },
+  {
+    "id": "CVE-2026-73294",
+    "description": "Semaphore UI is a web interface for managing DevOps tools. Prior to 2.18.17 and 2.19.5-beta2, repository git_url handling passes an attacker-controlled --upload-pack option to CmdGitClient.GetLastRemoteCommitHash through POST /api/project/{id}/repositories and scheduled commit-hash polling, allowing a project Manager or Owner to execute arbitrary OS commands in the Semaphore server process. This issue is fixed in versions 2.18.17 and 2.19.5-beta2.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:22.640"
+  },
+  {
+    "id": "CVE-2026-73325",
+    "description": "Fujitsu Research's OneCompression library 1.2.0 contains an unsafe deserialization vulnerability that allows attackers to execute arbitrary code by supplying a crafted model.pt checkpoint file, as QuantizedModelLoader.load_quantized_model_pt() unconditionally calls torch.load with weights_only=False, invoking Python's pickle machinery during deserialization. Attackers can embed malicious __reduce__ methods in a crafted model checkpoint to execute arbitrary Python code, including system commands, when the library loads the file from a caller-selected model directory.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-12T16:17:23.000"
   }
 ]
