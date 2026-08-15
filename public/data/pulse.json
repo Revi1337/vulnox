@@ -1,5 +1,33 @@
 [
   {
+    "id": "CVE-2026-3883",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-13T23:17:14.787"
+  },
+  {
+    "id": "CVE-2026-19756",
+    "description": "A vulnerability has been found in Dromara lamp-cloud up to 5.10.0. This affects an unknown part of the file DefGenProjectController.java of the component Code Generator. Such manipulation of the argument outputDir/parent/projectPrefix leads to path traversal. It is possible to launch the attack remotely. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-13T23:17:14.617"
+  },
+  {
+    "id": "CVE-2026-19753",
+    "description": "A vulnerability was detected in Model Context Protocol mcp-rdf-explorer 1.0.0. Affected is the function explore_url of the file src/mcp-rdf-explorer/server.py of the component MCP Server. Performing a manipulation of the argument url results in server-side request forgery. The attack may be initiated remotely. The exploit is now public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-13T23:17:14.440"
+  },
+  {
+    "id": "CVE-2026-18532",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-13T23:17:14.360"
+  },
+  {
     "id": "CVE-2026-73843",
     "description": "OpenChoreo is a complete, open-source developer platform for Kubernetes. Prior to 1.0.2 and 1.1.2, internal/cluster-gateway/server.go served caller-facing management APIs on the externally reachable agent listener without authentication, allowing network-reachable attackers to invoke /api/proxy/ and /api/exec/ operations, proxy the data-plane Kubernetes API, and execute commands in workload pods in multi-cluster deployments. This issue is fixed in versions 1.0.2 and 1.1.2.",
     "severity": "Critical",
@@ -14096,68 +14124,5 @@
     "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-11T01:17:20.240"
-  },
-  {
-    "id": "CVE-2026-8718",
-    "description": "tls_opt_dtls_peer_connection_id_value_get() in subsys/net/lib/sockets/sockets_tls.c, which handles getsockopt(SOL_TLS, TLS_DTLS_PEER_CID_VALUE), passed the caller-supplied optval directly to mbedtls_ssl_get_peer_cid() without verifying the buffer was at least MBEDTLS_SSL_CID_OUT_LEN_MAX (default 32) bytes. mbedtls_ssl_get_peer_cid() copies the peer-negotiated DTLS Connection ID (length 1..MBEDTLS_SSL_CID_OUT_LEN_MAX) into that buffer without a destination-size parameter, so a caller-supplied optlen smaller than the CID causes a write of up to 31 bytes past the buffer end.\n\nIn CONFIG_USERSPACE builds the getsockopt syscall verifier (z_vrfy_zsock_getsockopt) bounce-buffers the user's optval into a kernel allocation of exactly optlen bytes (k_usermode_alloc_from_copy -> z_thread_malloc), so an unprivileged user thread that passes a small optlen on a connected DTLS socket with Connection ID enabled induces a kernel-heap buffer overflow, with the overflowing content being the remote peer's CID.\n\nThe defect requires CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID, an established DTLS session with a negotiated peer CID, and (for the kernel-crossing case) CONFIG_USERSPACE. Introduced when the TLS_DTLS_CID option was added (v3.5.0).\n\nThe fix rejects callers whose optlen is below MBEDTLS_SSL_CID_OUT_LEN_MAX with -EINVAL.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:51.587"
-  },
-  {
-    "id": "CVE-2026-48161",
-    "description": "react18-use is a React 19 use hook shim. Between 2026-05-19 01:07:01 and 2026-05-19 15:20:43, the default branch contained malicious commits 7b79148d1495a2505f9277da295a98cf176f4496 through 7b79148d1495a2505f9277da295a98cf176f4496 that executed remote attacker-controlled code on developer machines during `npm install`. The commits were removed by force-push, but local clones, forks, and direct-SHA URLs may still contain them, and `npm install` against an affected checkout will still execute the code today. The package was not published to npm. `src/install.js` was added and wired into the `postinstall` script. It fetched a JavaScript payload from an attacker-controlled HTTPS endpoint (configurable via an environment variable), disabled TLS verification, and evaluated the response as code with `require` available. Execution was deliberately skipped on CI and cloud/serverless environments, targeting developer workstations. The second-stage payload was attacker-hosted and cannot be reconstructed. Assume full compromise of anything reachable from a Node process with the user's permissions. Those who ran `npm install` against an affected checkout on a developer machine on or after 2026-05-19 01:07:01 should treat the machine as compromised, rotate every credential the machine could reach, audit account activity since 2026-05-19 01:07:01, and clean local clones.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:51.343"
-  },
-  {
-    "id": "CVE-2026-11812",
-    "description": "The UpdateHub management subsystem (subsys/mgmt/updatehub/updatehub.c) drives every update operation through a single file-scope ctx structure that holds the CoAP block context, payload buffer, status code, socket, and a one-element poll-fd array fds[1]. Access to ctx was not serialized, and prepare_fds() wrote ctx.fds[ctx.nfds] and incremented ctx.nfds with no bounds check.\n\nTwo independent paths mutate ctx concurrently: the background autohandler running on the system workqueue, and user-triggered operations reached through the updatehub run shell command, direct API calls, or — since the operations are exposed as syscalls — userspace threads. When a second flow enters prepare_fds() while ctx.nfds is already 1, the write lands one element past the array; by struct layout it overlaps the adjacent ctx.sock/ctx.nfds members. More broadly, the unsynchronized sharing lets two flows interleave connection setup and teardown, double-closing a socket descriptor or scribbling the shared buffers.\n\nThe result is corruption of the update subsystem's internal state and denial of service of the firmware-update path; the out-of-bounds write is contained within the ctx structure and there is no demonstrated path to memory outside it or to code execution. Triggering requires a local actor able to invoke update operations (or, with CONFIG_USERSPACE, an unprivileged userspace thread) and to win a timing race against the background handler; remote peers cannot control the race timing. The fix serializes the entry points with a mutex and adds a bounds check to prepare_fds().",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:51.020"
-  },
-  {
-    "id": "CVE-2026-11811",
-    "description": "The UpdateHub over-the-air update client's start_coap_client() in subsys/mgmt/updatehub/updatehub.c leaks the CoAP/DTLS socket descriptor on its connection-setup failure paths. The shared error: cleanup gated socket closing on a ret > 0 flag, but ret was set to -1 immediately after the socket was created, so when zsock_setsockopt() (DTLS) or zsock_connect() subsequently failed the gate was false and cleanup_connection() was never called. The open descriptor in the global ctx.sock was then overwritten by the next attempt, permanently leaking it from the socket / net_context pool until reboot.\n\nThe failing setup path is reached every time the OTA client tries to contact the UpdateHub server and the connection cannot be established — driven automatically by the periodic autohandler() poll (and on demand via the updatehub_probe()/updatehub_update() API or the updatehub run shell command). The DTLS handshake/connect outcome is influenceable by a network or on-path attacker who drops, resets, or otherwise disrupts traffic to the server, and also fails naturally whenever the server is unreachable.\n\nEach failed attempt permanently leaks one descriptor; once the shared socket pool is exhausted, networking degrades device-wide until the device is rebooted, a denial-of-service condition. Severity is low because the leak rate is bounded by the configured OTA poll interval (default once per 24 hours), the effect is gradual and recovered by reboot, and only builds with the UpdateHub client enabled are affected. There is no memory-corruption, information-disclosure, or authentication impact.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:50.893"
-  },
-  {
-    "id": "CVE-2025-30241",
-    "description": "Certain web\ninterface components in affected TP-Link Aginet devices do not validate and sanitize user-supplied input properly before\npassing it to system-level command execution functions.  An authenticated adjacent attacker may inject\nspecially crafted input to execute arbitrary operation system commands with\nelevated privileges.\n\n\n\n\n\n\n\n\n\nSuccessful\nexploitation may allow execution of arbitrary system commands, potentially\nleading to full device compromise.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:50.670"
-  },
-  {
-    "id": "CVE-2025-30240",
-    "description": "The affected TP-Link Aginet devices do not properly validate symbolic links created on external USB storage\ndevices. By placing a crafted symbolic link on supported storage media, an\nattacker may cause the system to resolve the link.\n\n\n\n\n\n\n\n\n\nSuccessful\nexploitation may allow unauthorized read access to sensitive files within the\ndevice filesystem.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:50.463"
-  },
-  {
-    "id": "CVE-2025-30239",
-    "description": "In affected TP-Link Aginet devices, use of\nhardcoded cryptographic keys embedded in the firmware to protect sensitive\nconfiguration data may allow an attacker who has access to device storage to\nrecover the keys and decrypt stored data.\n\n\n\n\n\nSuccessful\nexploitation may allow access to decrypted sensitive configuration data,\nincluding credentials and service-related information.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:50.173"
-  },
-  {
-    "id": "CVE-2025-30238",
-    "description": "In affected TP-Link Aginet devices, insufficient\nauthorization validation allows authenticated low-privileged users to execute higher-privileged\noperations.\n\n\n\n\n\nAn attacker\nmay perform administrative actions such as creating privileged accounts or\nmodifying critical configuration settings.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:49.900"
-  },
-  {
-    "id": "CVE-2025-30237",
-    "description": "The affected TP-Link Aginet devices contain a flaw in the web management interface where authentication\nchecks are not consistently enforced on certain endpoints. An attacker can send\nspecially crafted requests to bypass authentication and directly invoke\nprivileged functionality without valid credentials. This issue arises from\nimproper enforcement of access control mechanisms on sensitive operations.\n\n\n\n\n\nSuccessful\nexploitation may allow an unauthenticated attacker to execute privileged\noperations and gain full control of the device.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-10T23:16:48.640"
   }
 ]
