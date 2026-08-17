@@ -1,26 +1,5 @@
 [
   {
-    "id": "CVE-2026-16128",
-    "description": "A security flaw has been discovered in zevorn rt-claw up to 0.2.0. This impacts the function receiver_thread of the file claw/services/swarm/swarm.c of the component http_request. Performing a manipulation results in server-side request forgery. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-18T17:16:38.273"
-  },
-  {
-    "id": "CVE-2026-16129",
-    "description": "A vulnerability has been found in princezuda SafestClaw up to 4.2.4. This vulnerability affects the function ShellAction._validate_command of the file src/safestclaw/actions/shell.py of the component Built-in Web Interface. Such manipulation leads to incomplete blacklist. An attack has to be approached locally. The exploit has been disclosed to the public and may be used. The presence of this vulnerability remains uncertain at this time. The project maintainer explains: \"On paper you're correct, this is a vulnerability. In practice, nothing your AI generated shows how it makes users vulnerable. It's open source. Someone can mod the shell allow list or remove that system. Present an actual poc that shows a threat to users.\"",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-18T17:16:39.030"
-  },
-  {
-    "id": "CVE-2026-16130",
-    "description": "A vulnerability was identified in nearai ironclaw up to 0.29.1. The affected element is the function validate_path of the file src/tools/builtin/path_utils.rs of the component write_file. The manipulation leads to link following. Local access is required to approach this attack. The exploit is publicly available and might be used. The identifier of the patch is 369ff3d240cf3c0787b50e1e9f182e1a06c71255. It is recommended to apply a patch to fix this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-07-18T18:16:37.430"
-  },
-  {
     "id": "CVE-2026-16131",
     "description": "A weakness has been identified in itsourcecode Hospital Management System 1.0. This affects an unknown function of the file /prescriptionrecord.php. This manipulation of the argument delid causes sql injection. It is possible to initiate the attack remotely. The exploit has been made available to the public and could be used for attacks.",
     "severity": "Medium",
@@ -3111,42 +3090,42 @@
     "id": "CVE-2026-64148",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\npds_core: fix error handling in pdsc_devcmd_wait\n\nFix two cases where pdsc_devcmd_wait() returns stale success from\nthe completion register instead of an error:\n\n1. FW crash: If firmware stops running, the wait loop breaks early with\n   running=false. The condition \"if ((!done || timeout) && running)\" is\n   false, so error handling is bypassed and stale status is returned.\n   Check !running first and return -ENXIO.\n\n2. Timeout: If a command times out, err is set to -ETIMEDOUT but then\n   overwritten by pdsc_err_to_errno(status) which reads stale status.\n   Return -ETIMEDOUT immediately after cleaning up.\n\nBoth errors now propagate to pdsc_devcmd_locked() which queues\nhealth_work for recovery.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:56.753"
   },
   {
     "id": "CVE-2026-64149",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndma-mapping: move dma_map_resource() sanity check into debug code\n\ndma_map_resource() uses pfn_valid() to ensure the range is not RAM.\nHowever, pfn_valid() only checks for availability of the memory map for\na PFN but it does not ensure that the PFN is actually backed by RAM. On\nARM64 with SPARSEMEM (128MB section granularity), MMIO addresses that\nshare a section with RAM will falsely trigger the WARN_ON_ONCE and cause\ndma_map_resource() to return DMA_MAPPING_ERROR.\n\nThis causes a WARNING on Raspberry Pi 4 during spi_bcm2835 probe because\nthe SPI FIFO register (0xfe204004) falls in the same sparsemem section\nas the end of RAM (0xf8000000-0xfbffffff), both in section 31\n(0xf8000000-0xffffffff).\n\nMove the sanity check from dma_map_resource() into debug_dma_map_phys()\nand replace the unreliable pfn_valid() with pfn_valid() &&\n!PageReserved(), which correctly identifies actual usable RAM without\nfalse positives for MMIO regions that happen to have struct pages.\n\nSince dma_map_resource() is dma_map_phys(DMA_ATTR_MMIO), the check\napplies equally to both APIs. Any non-reserved page represents kernel\nmemory to a sufficient degree that using DMA_ATTR_MMIO on it is almost\ncertainly wrong and risks breaking coherency on non-coherent platforms.\nZONE_DEVICE pages used for PCI P2P DMA (MEMORY_DEVICE_PCI_P2PDMA) have\nPageReserved set, so they will not trigger a false positive.\n\nThe check no longer blocks the mapping and uses err_printk() to\nintegrate with dma-debug filtering.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:56.860"
   },
   {
     "id": "CVE-2026-64150",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnetfilter: nft_inner: release local_lock before re-enabling softirqs\n\nQuoting sashiko:\n In the error path, local_bh_enable() is called before\n local_unlock_nested_bh().",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:56.970"
   },
   {
     "id": "CVE-2026-64151",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommupt: Check for missing PAGE_SIZE in the pgsize_bitmap\n\nSashiko pointed out that the driver could drop PAGE_SIZE from the\npgsize_bitmap. That is technically allowed but nothing does it, and\nsuch an iommu_domain would not be used with the DMA API today.\n\nStill, it is against the design and it is trivial to fix up. Lift\nthe PT_WARN_ON to the if branch and just skip the fast path.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:57.070"
   },
   {
     "id": "CVE-2026-64152",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\niommu: Handle unmap error when iommu_debug is enabled\n\nSashiko noticed a latent bug where the map error flow called iommu_unmap()\nwhich calls iommu_debug_unmap_begin()/iommu_debug_unmap_end() however\nsince this is an error path the map flow never actually established the\noriginal iommu_debug_map() it will malfunction.\n\nLift the unmap error handling into iommu_map_nosync() and reorder it so\nthe trace_map()/iommu_debug_map() records the partial mapping and then\nimmediately unmaps it. This avoid creating the unbalanced tracking and\nprovides saner tracing instead of a unmap unmatched to any map.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:57.170"
   },
   {
     "id": "CVE-2026-64153",
     "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ndrm/msm: Fix iommu_map_sgtable() return value check and avoid WARN\n\nCommit \"iommu: return full error code from iommu_map_sg[_atomic]()\"\nchanged iommu_map_sgtable() to return an ssize_t and negative values\nin error cases, rather than a size_t and a zero.\n\nStore the return value in the appropriate type and in case of error,\nreturn it rather than WARNing.\n\nPatchwork: https://patchwork.freedesktop.org/patch/719685/",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Linux kernel",
     "published": "2026-07-19T16:17:57.270"
   },
   {
@@ -51705,21 +51684,21 @@
     "id": "CVE-2026-44416",
     "description": "Remote Code Execution via Arbitrary Class Instantiation in plugin-schema-registry component in Apache Ranger <= 2.8.0.\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Ranger",
     "published": "2026-08-10T11:17:26.547"
   },
   {
     "id": "CVE-2026-55799",
     "description": "Remote Code Execution Vulnerability in GraalScriptEngineCreator in Apache Ranger <= 2.8.0\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Ranger",
     "published": "2026-08-10T11:17:26.670"
   },
   {
     "id": "CVE-2026-55814",
     "description": "Missing Authentication in Apache Ranger Download APIs on versions <= 2.8.0.\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Ranger",
     "published": "2026-08-10T11:17:26.790"
   },
   {
@@ -51740,7 +51719,7 @@
     "id": "CVE-2026-65942",
     "description": "TLS hostname verification issue in Apache Ranger Client Code in versions <= 2.8.0.\nUsers are recommended to upgrade to version 2.9.0, which fixes this issue.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Ranger",
     "published": "2026-08-10T11:17:27.240"
   },
   {
@@ -61834,7 +61813,7 @@
     "id": "CVE-2026-65680",
     "description": "Improper link resolution before file access ('link following') in Microsoft OneDrive allows an authorized attacker to elevate privileges locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Onedrive",
     "published": "2026-08-11T18:18:08.277"
   },
   {
@@ -64333,7 +64312,7 @@
     "id": "CVE-2026-18499",
     "description": "IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.8 is vulnerable to a privilege escalation when using Liberty collectives.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Websphere application server",
     "published": "2026-08-12T17:17:25.650"
   },
   {
@@ -64760,49 +64739,49 @@
     "id": "CVE-2026-11923",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 Reverse Proxy in certain configurations may provide weaker than expected cryptographic validation of user supplied data.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T20:17:33.250"
   },
   {
     "id": "CVE-2026-11937",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 and IBM Security Verify Access Container 10.0 through 10.0.9.2 Reverse Proxy in certain configurations is vulnerable to a denial of service attack.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T20:17:33.390"
   },
   {
     "id": "CVE-2026-12004",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 contains a format string injection vulnerability in the management interface that allows attackers to cause denial of service and information disclosure by crafting a malicious HTTP request.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T20:17:33.530"
   },
   {
     "id": "CVE-2026-12005",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 contains a input validation vulnerability in the management interface that allows already privileged attackers to execute additional operations by crafting a malicious HTTP request.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T20:17:33.667"
   },
   {
     "id": "CVE-2026-12359",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 could allow a remote attacker to access sensitive information due to an inconsistent interpretation of an HTTP request by a reverse proxy.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T20:17:33.797"
   },
   {
     "id": "CVE-2026-12618",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 could allow an administrator to execute additional commands they are not entitled to due to improper validation of user supplied input.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T20:17:33.940"
   },
   {
     "id": "CVE-2026-13267",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 could allow an authenticated user to gain privileges of another user via a specially crafted request.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T20:17:34.690"
   },
   {
@@ -64851,49 +64830,49 @@
     "id": "CVE-2026-17111",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 s vulnerable to SQL injection. A remote attacker could send specially crafted SQL statements, which could allow the attacker to view, add, modify, or delete information in the back-end database.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-12T20:17:39.497"
   },
   {
     "id": "CVE-2026-17417",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary commands due to improper neutralization of shell metacharacters.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-12T20:17:40.170"
   },
   {
     "id": "CVE-2026-17445",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to improper validation of an attacker-supplied user profile name.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-12T20:17:40.410"
   },
   {
     "id": "CVE-2026-17642",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary commands due to improper neutralization of special elements used in an OS command.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-12T20:17:40.550"
   },
   {
     "id": "CVE-2026-18099",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary script code due to improper neutralization of user-controlled input.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-12T20:17:40.827"
   },
   {
     "id": "CVE-2026-18148",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to inject arbitrary content into Navigator log files due to improper output neutralization for logs.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-12T20:17:41.063"
   },
   {
     "id": "CVE-2026-18150",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to a race condition.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-12T20:17:41.190"
   },
   {
@@ -65474,14 +65453,14 @@
     "id": "CVE-2026-17616",
     "description": "IBM Security Verify Access 10.0 through 10.0.9.2 and IBM Verify Identity Access 11.0 through 11.0.3 and IBM Verify Identity Access Container 11.0 through 11.0.3 Reverse Proxy in certain configurations may provide weaker than expected cryptographic validation of user supplied data.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Security verify access",
     "published": "2026-08-12T21:17:36.663"
   },
   {
     "id": "CVE-2026-18096",
     "description": "IBM Db2 12.1.5 for Linux, UNIX and Windows (includes DB2 Connect Server) could allow a local attacker to cause a denial of service due to a memory leak.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Db2",
     "published": "2026-08-12T21:17:36.813"
   },
   {
@@ -65656,7 +65635,7 @@
     "id": "CVE-2026-10534",
     "description": "IBM Db2 11.5.0 through 11.5.9, and 12.1.0 through 12.1.5 is vulnerable to buffer overflow in the IXF IMPORT parser.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Db2",
     "published": "2026-08-12T22:17:14.203"
   },
   {
@@ -65796,7 +65775,7 @@
     "id": "CVE-2026-7366",
     "description": "IBM DataPower Gateway 11.0.0.0 through 11.0.0.1 and IBM DataPower Gateway 10.5.0.0 through 10.5.0.21 and IBM DataPower Gateway 10.6.0.0 through 10.6.0.9 allows a race condition that results in improper isolation of request state when handling the built‑in X‑Client‑IP header. Under concurrent request processing, X‑Client‑IP values may be contaminated across requests, enabling IP spoofing and disclosure of other clients’ IP addresses.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Datapower gateway",
     "published": "2026-08-12T22:17:17.780"
   },
   {
@@ -68743,7 +68722,7 @@
     "id": "CVE-2026-18071",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a local attacker to gain elevated privileges due to improper privilege management.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T19:17:18.970"
   },
   {
@@ -68813,56 +68792,56 @@
     "id": "CVE-2026-10571",
     "description": "IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.8 is affected by a denial of service caused by insecure deserialization. A low-privileged, administrative user could exploit this vulnerability to consume system resources when the restConnector-2.0 feature is enabled.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Websphere application server",
     "published": "2026-08-13T20:17:13.640"
   },
   {
     "id": "CVE-2026-13365",
     "description": "IBM Planning Analytics 2.0, and 2.1 Local is vulnerable to cross-site request forgery which could allow an attacker to execute malicious and unauthorized actions transmitted from a user that the website trusts.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Planning analytics local",
     "published": "2026-08-13T20:17:13.773"
   },
   {
     "id": "CVE-2026-13460",
     "description": "IBM Storage Scale 5.2.3.0 through 5.2.3.8, and 6.0.0.0 through 6.0.1.0 GUI contains a hardcoded token in the source code, which was used for inter-node cluster communication and REST API authentication between GUI.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Storage scale",
     "published": "2026-08-13T20:17:14.010"
   },
   {
     "id": "CVE-2026-14525",
     "description": "IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.8 IBM WebSphere Application Server Liberty is vulnerable to an authentication bypass when the rtcomm-1.0 or rtcommGateway-1.0 feature is enabled.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Websphere application server",
     "published": "2026-08-13T20:17:14.250"
   },
   {
     "id": "CVE-2026-14875",
     "description": "IBM i Access Client Solutions 1.1.2.0 through 1.1.9.13 is vulnerable to arbitrary code execution on Windows when installed for all users due to publicly writeable directory.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I access client solutions",
     "published": "2026-08-13T20:17:14.390"
   },
   {
     "id": "CVE-2026-16674",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary code due to an untrusted search path.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T20:17:14.527"
   },
   {
     "id": "CVE-2026-16692",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to cause a denial of service due to a stack-based buffer overflow.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T20:17:14.663"
   },
   {
     "id": "CVE-2026-16713",
     "description": "IBM Documentation Offline 1.0.0 through 1.4.1 IBM Documentation could allow a remote attacker to obtain sensitive information due to a security misconfiguration where the documentation server binds to an unrestricted IP address.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Documentation offline",
     "published": "2026-08-13T20:17:14.930"
   },
   {
@@ -68883,7 +68862,7 @@
     "id": "CVE-2026-16853",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to obtain sensitive information due to an out-of-bounds read.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T20:17:15.320"
   },
   {
@@ -68904,14 +68883,14 @@
     "id": "CVE-2026-16867",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to access server resources with the privileges of an authenticated user due to improper authentication during NTLM session negotiation.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T20:17:15.723"
   },
   {
     "id": "CVE-2026-16868",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to cause a denial of service due to the use of uninitialized memory during ASN.1 length processing.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T20:17:15.883"
   },
   {
@@ -68925,7 +68904,7 @@
     "id": "CVE-2026-16878",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to an out-of-bounds read.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T20:17:16.140"
   },
   {
@@ -68939,7 +68918,7 @@
     "id": "CVE-2026-16896",
     "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a local authenticated attacker to obtain unauthorized access to files due to a time-of-check time-of-use (TOCTOU) race condition.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "I",
     "published": "2026-08-13T20:17:16.400"
   },
   {
@@ -70892,14 +70871,14 @@
     "id": "CVE-2026-63700",
     "description": "Dell Wyse Management Suite (WMS), versions prior to 2605.0.2, contain an Incorrect Default Permission vulnerability. A low privileged attacker with local access could potentially exploit this vulnerability, leading to Privilege Escalation.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Wyse management suite",
     "published": "2026-08-14T16:16:58.553"
   },
   {
     "id": "CVE-2026-63701",
     "description": "Dell Wyse Management Suite (WMS), versions prior to 2605.0.2, contain an Improper Deserialization of Untrusted Data vulnerability. A low privileged attacker with local access could potentially exploit this vulnerability, leading to Privilege Escalation.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Wyse management suite",
     "published": "2026-08-14T16:16:58.683"
   },
   {
@@ -70913,7 +70892,7 @@
     "id": "CVE-2026-66270",
     "description": "Dell Wyse Management Suite (WMS), versions prior to 2605.0.2, contain an Unrestricted Upload of File with Dangerous Type vulnerability. A high privileged attacker with remote access could potentially exploit this vulnerability, leading to Remote Code Execution.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Wyse management suite",
     "published": "2026-08-14T16:16:58.913"
   },
   {
@@ -70927,7 +70906,7 @@
     "id": "CVE-2026-66272",
     "description": "Dell Wyse Management Suite (WMS), versions prior to 2605.0.2, contain a Missing Authentication for Critical Function vulnerability. An unauthenticated attacker with remote access could potentially exploit this vulnerability, leading to Information disclosure.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Wyse management suite",
     "published": "2026-08-14T16:16:59.143"
   },
   {
@@ -78647,21 +78626,21 @@
   {
     "id": "CVE-2026-19349",
     "description": "Lemonldap::NG::Portal versions from 2.0.0 before 2.16.9, from 2.17.0 before 2.21.5, from 2.22.0 before 2.23.3 for Perl allow authentication bypass via an OAuth2 state parameter stored as an SSO session in the GitHub and LinkedIn backends.\n\nBefore redirecting to the identity provider, extractFormInfo() creates the state session with the positional call `getApacheSession( undef, 1, 0, 'GitHubState' )`. getApacheSession() takes a session id followed by a named argument hash, so the trailing arguments become that hash, `kind` defaults to SSO, and the state is written to the global session storage as a regular SSO session. Its identifier is handed to the unauthenticated visitor as the state parameter of the redirection URL.\n\nAny visitor who reaches the GitHub or LinkedIn endpoint can replay that identifier as a session cookie and obtain a valid SSO session without authenticating. The session holds neither _user nor authenticationLevel, which the shipped bootstrap configuration accepts because it grants virtual hosts a \"default => accept\" access rule; deployments whose rules test the user or require an authentication level are less exposed. Only configurations with the GitHub or LinkedIn authentication module enabled are affected.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-16T14:16:54.720"
   },
   {
     "id": "CVE-2026-72887",
     "description": "Net::OAuth::Client versions before 0.32 for Perl allow the service provider to silently downgrade OAuth 1.0a to OAuth 1.0 in get_request_token.\n\nPassing a callback to the constructor selects OAuth 1.0a. get_request_token then revokes that choice when the request token response omits oauth_callback_confirmed, with no exception, no warning and no option to require 1.0a. The access token request is built from the OAuth 1.0 message class, which has no verifier parameter, so oauth_verifier is dropped from the request even when get_access_token was passed one.\n\noauth_verifier is the binding that OAuth 1.0a added between the authorization step and the token exchange. An application that asked for 1.0a and gets 1.0 is open to OAuth 1.0 session fixation, where an attacker obtains a request token, has the victim authorize it, and then completes the exchange themselves, linking the victim's provider account to a session the attacker controls. No attacker action sets up the downgrade: a provider that does not confirm the callback is enough.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-16T14:16:54.860"
   },
   {
     "id": "CVE-2026-72888",
     "description": "Net::OAuth versions before 0.32 for Perl allow memory exhaustion via unbounded caching of failed module loads in smart_require.\n\nsmart_require stores results in a process-global hash with no bound and no eviction, and keeps an entry for every class name it is asked about, including names that failed to load, because the return value of the failed eval is stored before the error is checked. The key comes off the wire on the server side: _signature_method_class builds the class name from the signature_method parameter of the incoming message, and verify resolves it before any signature is checked.\n\nA remote client chooses both how many entries are created and how long each key is. In a persistent server the hash grows for the life of the worker process until it exhausts memory. Header size limits bound the key length on the Authorization header path, but not on a POST body.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-16T14:16:54.970"
   },
@@ -80029,5 +80008,236 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-17T16:17:53.227"
+  },
+  {
+    "id": "CVE-2026-12519",
+    "description": "The WNC-M14A2A LTE-M modem driver mishandles unsolicited %NOTIFYEV: events in on_cmd_socknotifyev() (drivers/modem/vendor_standalone/wncm14a2a.c). The response line is linearized into a fixed 40-byte stack buffer via net_buf_linearize(), which caps the copy at 39 bytes and returns out_len <= 39. The two quote-delimiter scanning loops, however, were bounded by len — the full CR/LF-delimited frame length returned by net_buf_findcrlf() — rather than by out_len.\n\nWhen a %NOTIFYEV: line longer than 39 bytes contains no \" within the linearized region, the loop indices p1/p2 walk past value[39] and read adjacent stack memory until a stray quote byte is found or the index reaches len. The over-read string is then passed to strncmp()/atoi()/LOG_*, and if a quote byte is found out of bounds the subsequent value[p2] = '\\0' performs a single-NUL out-of-bounds stack write at an attacker-influenced offset.\n\nThe %NOTIFYEV: payload carries network-derived content (LTIME network time, SIB1 base-station system information, CSPS/RRCSTATE), so a rogue cellular base station, a malicious or compromised modem module, or RF manipulation that induces an over-long notify line reaches the defect without any application interaction; the handler runs automatically on the unsolicited event in the modem RX thread.\n\nThe impact is out-of-bounds stack disclosure (into logs and parsing) and stack corruption that can crash the modem RX thread (denial of service). The write offset is only weakly controlled, so memory-safe code execution is not demonstrated. The fix bounds both scanning loops by out_len, keeping all accesses within the linearized buffer.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:38.867"
+  },
+  {
+    "id": "CVE-2026-12629",
+    "description": "The ARM PL011 UART driver in drivers/serial/uart_pl011.c fails to acknowledge receive error interrupts. On the PL011, the framing, parity, break, and overrun error interrupts (PL011_IMSC_ERROR_MASK) are cleared only by writing the interrupt-clear register UARTICR; reading the data register clears the RX interrupt and the per-byte RSR status but not the error interrupt status in MIS. The interrupt service routine pl011_isr() acknowledged only the CTS modem-status interrupt and never wrote icr for the error bits, so an asserted error interrupt remains pending after the ISR returns.\n\nWhen an application enables error-interrupt reporting via the public uart_irq_err_enable() API, an attacker who controls the serial peer can deterministically assert these error bits by injecting line errors on the RX line — a baud/stop-bit mismatch or mid-character break (framing/break error), a flipped parity bit (parity error), or FIFO flooding (overrun error). Because the error interrupt is never cleared, the interrupt line stays asserted and the CPU re-enters pl011_isr() immediately and indefinitely, producing an interrupt-storm livelock from which the core makes no forward progress.\n\nThe impact is an availability-only denial of service (permanent hang), reachable from an external or removable UART peer. Exploitation is gated by configuration: the error interrupt is off by default and no in-tree subsystem enables it, so only applications that explicitly call uart_irq_err_enable() on a PL011-based, interrupt-driven port are affected. The fix makes pl011_isr() acknowledge the pending error bits via uart->icr, breaking the loop, and additionally clears the latched RSR status in pl011_err_check().",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:39.010"
+  },
+  {
+    "id": "CVE-2026-12630",
+    "description": "Zephyr's 6LoWPAN IP Header Compression (IPHC) uncompression code contains an out-of-bounds read in get_ihpc_inlined_size() (subsys/net/ip/6lo.c). The destination inline size is looked up in da_inline_size_table, which has 13 entries, using an index built from the M, DAC and DAM bits of the received IPHC dispatch word (iphc & NET_6LO_IPHC_DA_MASK, a 4-bit value of 0-15). The reserved combinations 13, 14 and 15 are not bounds-checked and read past the end of the table.\n\nThe iphc word is taken directly from the received frame, and get_ihpc_inlined_size() is reached on every inbound 6LoWPAN frame via net_6lo_uncompress() from the 802.15.4 receive path (subsys/net/l2/ieee802154/ieee802154_6lo.c and ieee802154_6lo_fragment.c). An unauthenticated attacker on the radio/adjacent link can therefore craft a frame whose destination addressing-mode nibble selects an out-of-range index, with no privileges or user interaction.\n\nThe out-of-bounds value becomes the computed inline_size, which then drives header reconstruction before the buffer-length check: it is used to dereference *(pkt->buffer->data + sizeof(iphc) + inline_size) and to compute a size_t diff that can underflow, leading to a further out-of-bounds read of the packet buffer and malformed uncompression. The practical impact is a radio-triggerable out-of-bounds read / denial-of-service on the receiver; the leaked byte is not returned to the attacker. The fix rejects any destination index beyond the table, aborting processing of the malformed frame.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:39.130"
+  },
+  {
+    "id": "CVE-2026-40145",
+    "description": "A vulnerability exists in the interaction between a Endpoint Privilege Management (Windows Deployment) support utility and the agent's tamper protection controls. Under certain conditions, the protections applied to the utility process may not be enforced as intended.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:39.787"
+  },
+  {
+    "id": "CVE-2026-61666",
+    "description": "websocket-driver is a WebSocket protocol handler with pluggable I/O. Prior to 0.8.2, WebSocket::Driver.server() passes a malformed Host header to URI.parse in lib/websocket/http/request.rb without catching URI::InvalidURIError, allowing a remote client to crash a TCP-backed WebSocket server when the application does not catch the error from parse(). This issue is fixed in version 0.8.2.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:39.917"
+  },
+  {
+    "id": "CVE-2026-68517",
+    "description": "Glances is an open-source system cross-platform monitoring tool. Prior to 4.5.6, the cors_origins guard in glances/outputs/glances_restful_api.py uses exact list equality instead of wildcard membership, allowing a multi-origin list containing the wildcard to retain cors_credentials and expose authenticated REST API data to an untrusted website visited by a previously authenticated user. This issue is fixed in 4.5.6.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:40.173"
+  },
+  {
+    "id": "CVE-2026-68518",
+    "description": "Glances is an open-source system cross-platform monitoring tool. Prior to 4.5.6, _sanitize_mustache_dict() in glances/actions.py sanitizes individual Mustache values before chevron.render(), allowing adjacent unescaped Mustache variables to reconstruct shell operators that secure_popen() executes when attacker-controlled process or container fields are rendered by an administrator-configured action template. This issue is fixed in 4.5.6.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:40.353"
+  },
+  {
+    "id": "CVE-2026-9771",
+    "description": "The flash_copy() system call is verified by z_vrfy_flash_copy() in drivers/flash/flash_util.c. On builds with CONFIG_USERSPACE enabled, this handler is the kernel-side trust boundary for a user-mode caller. Prior to the fix it validated only the output buffer (K_SYSCALL_MEMORY_WRITE) and passed the two struct device * arguments, src_dev and dst_dev, directly into the implementation without any object validation — unlike every sibling flash syscall, which guards its device pointer with K_SYSCALL_DRIVER_FLASH.\n\nA user-mode thread fully controls the values of src_dev/dst_dev and the contents of its own address space. The implementation z_impl_flash_copy() dereferences these pointers and calls through their driver-API function tables (e.g. api->get_parameters(dst_dev), flash_read(src_dev, ...), flash_write(dst_dev, ...)). By supplying a pointer to a forged struct device whose api table contains attacker-chosen function pointers, an unprivileged thread can cause the kernel to call arbitrary code in supervisor mode; passing any arbitrary or invalid address otherwise yields a kernel crash or out-of-bounds read.\n\nThe result is a local privilege escalation out of the userspace sandbox (with kernel denial-of-service and information disclosure as lesser outcomes). The fix adds K_SYSCALL_DRIVER_FLASH(src_dev, read) and K_SYSCALL_DRIVER_FLASH(dst_dev, write) to z_vrfy_flash_copy(), which verify each device is a registered flash-driver kernel object the calling thread is permitted to use before any dereference, closing the path completely.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T17:16:57.720"
+  },
+  {
+    "id": "CVE-2026-33437",
+    "description": "Stirling-PDF is a locally hosted web application that facilitates various operations on PDF files. Prior to 2.0.0, the Get Info workflow in app/core/src/main/resources/templates/security/get-info-on-pdf.html inserts untrusted PDF Title and Author metadata into the summary-text element with innerHTML, allowing a malicious PDF to execute stored cross-site scripting when a user clicks Get Info and to access browser-session data or modify page content. This issue is fixed in version 2.0.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:16:35.650"
+  },
+  {
+    "id": "CVE-2026-46345",
+    "description": "compliance-trestle is a tooling platform for managing compliance as code. Prior to versions 3.12.2 and 4.0.3, the `-o/--output` argument in `trestle author jinja` allows writing files outside the intended workspace. The application does not properly validate, `../`,  `..\\`, or absolute paths. This allows arbitrary file write to attacker-controlled locations. Versions 3.12.3 and 4.0.3 patch the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:16:38.393"
+  },
+  {
+    "id": "CVE-2026-48053",
+    "description": "Kolibri is an offline-first education platform. Prior to version 0.19.4, several Kolibri API endpoints accept an unvalidated `baseurl` parameter and fetch attacker-controlled URLs from the Kolibri server, reflecting the response body back to the caller. The original report identified two endpoints on the `RemoteFacilityUser*` viewsets; remediation review found two further reflection points on the same pattern. The GET endpoint was unauthenticated. Version 0.19.4 fixes the vulnerability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:16:39.660"
+  },
+  {
+    "id": "CVE-2026-50768",
+    "description": "File Upload vulnerability in T-Systems International GmbH ImageMaster Version: 9.14.2.8.1 allows a remote attacker to execute arbitrary code via the add attachments feature in the create new document function.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:08.760"
+  },
+  {
+    "id": "CVE-2026-50769",
+    "description": "The CRM+ application before and including version 2025.6 from Brainformatik is vulnerable to SQL Injection (time-based) vulnerability. The check conflict endpoint index.php?module=Appointments&action=CheckConflictOfDates&ajaxSkipHeader=true which is used to check any conflicts for user calendar is vulnerable to SQL injection allowing an attacker to execute arbitrary code.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:08.880"
+  },
+  {
+    "id": "CVE-2026-50770",
+    "description": "An issue in Squirro Cognitive Search before v.3.14.2 allows a remote attacker to escalate privileges via a crafted request.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:08.990"
+  },
+  {
+    "id": "CVE-2026-50771",
+    "description": "Cross Site Scripting vulnerability in Squirro Cognitive Search < 3.14.2 allows a remote attacker to execute arbtirary code via the Email Notification, Create Evaluation Sets and HTML Editor functions.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:09.100"
+  },
+  {
+    "id": "CVE-2026-50772",
+    "description": "An issue in Squirro Cognitive Search < 3.14.2 allows a remote attacker to execute arbitrary code via a crafted payload to the password reset function.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:09.207"
+  },
+  {
+    "id": "CVE-2026-51346",
+    "description": "SQL Injection vulnerability in StudIP 6.0.x before 6.0.3 and 5.4.x before 5.4.12 allows a remote attacker to execute arbitrary code and obtain sensitive information via the store() functions.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:09.320"
+  },
+  {
+    "id": "CVE-2026-54284",
+    "description": "sqlparse is a non-validating SQL parser module for Python. Prior to 0.6.0, TokenList construction and string conversion in sqlparse/sql.py repeatedly flatten nested token subtrees constructed by group_parenthesis and group_case, causing quadratic CPU consumption through sqlparse.parse(), sqlparse.format(), and sqlparse.split() before depth and token limits terminate processing. This issue is fixed in version 0.6.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:11.400"
+  },
+  {
+    "id": "CVE-2026-59893",
+    "description": "sqlparse is a non-validating SQL parser module for Python. Prior to 0.6.0, SQL_REGEX in sqlparse/keywords.py and the per-position loop in sqlparse/lexer.py repeatedly scan unmatched dollar-quoted literal and multiline-comment delimiters, causing quadratic CPU consumption through sqlparse.parse(), sqlparse.format(), and sqlparse.split(). This issue is fixed in version 0.6.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:35.730"
+  },
+  {
+    "id": "CVE-2026-59894",
+    "description": "sqlparse is a non-validating SQL parser module for Python. Prior to 0.6.0, sqlparse/filters/output.py fails to escape existing backslashes before quotes in sqlparse.format output_format='python' and output_format='php' and the corresponding sqlformat -l modes, allowing crafted SQL to terminate the generated string and inject Python or PHP code when a downstream consumer executes or imports the generated source. This issue is fixed in version 0.6.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:35.913"
+  },
+  {
+    "id": "CVE-2026-59902",
+    "description": "Netty is an asynchronous, event-driven network application framework. Prior to 4.1.137.Final and 4.2.17.Final, io.netty.handler.codec.sctp.SctpMessageCompletionHandler limits incomplete messages and fragment counts but not maxBufferedBytes, allowing unauthenticated peers to exhaust memory with large SCTP fragments. This issue is fixed in versions 4.1.137.Final and 4.2.17.Final.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:36.087"
+  },
+  {
+    "id": "CVE-2026-59903",
+    "description": "Netty is an asynchronous, event-driven network application framework. Prior to 4.1.137.Final and 4.2.17.Final, io.netty.handler.codec.http.cors.CorsHandler setVaryHeader replaces application Vary headers such as Authorization or Cookie with Origin, allowing a caching proxy or CDN to reuse authenticated responses across users and disclose sensitive information. This issue is fixed in versions 4.1.137.Final and 4.2.17.Final.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:36.250"
+  },
+  {
+    "id": "CVE-2026-62982",
+    "description": "Glances is an open-source system cross-platform monitoring tool. From 4.5.2 until 4.5.6, _sanitize_mustache_dict() in glances/actions.py skips nested list and dictionary strings such as process cmdline values, allowing pipe characters to survive chevron.render() and be executed by secure_popen() through administrator-configured action templates. This issue is fixed in 4.5.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:17:56.740"
+  },
+  {
+    "id": "CVE-2026-68519",
+    "description": "Glances is an open-source system cross-platform monitoring tool. Prior to 4.5.6, GlancesActions.run() in glances/actions.py ignores --disable-config-exec for on-alert action commands and invokes secure_popen() with shell operators enabled, allowing configured redirection, command chaining, or pipes to execute when an alert triggers. This issue is fixed in 4.5.6.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:06.610"
+  },
+  {
+    "id": "CVE-2026-68520",
+    "description": "Glances is an open-source system cross-platform monitoring tool. Prior to 4.5.6, as_dict_secure() in glances/config.py checks only option names and exposes public_username and credentials embedded in public_api values through unauthenticated GET /api/4/config and GET /api/4/config/ip requests. This issue is fixed in 4.5.6.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:06.753"
+  },
+  {
+    "id": "CVE-2026-71491",
+    "description": "sqlparse is a non-validating SQL parser module for Python. Prior to 0.6.0, group_comments in sqlparse/engine/grouping.py repeatedly rescans comment-only statements before the MAX_GROUPING_TOKENS guard, causing quadratic CPU consumption through sqlparse.parse() and sqlparse.format(sql, strip_comments=True). This issue is fixed in version 0.6.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:12.120"
+  },
+  {
+    "id": "CVE-2026-71979",
+    "description": "INDI (Instrument Neutral Distributed Interface) indiserver through 2.2.4.2, fixed in commit 96bbd7f, contains a stack buffer overflow vulnerability that allows unauthenticated remote attackers to crash the daemon by sending malformed XML with mismatched tags whose names exceed 1024 bytes. Attackers can send a single TCP packet on port 7624 with mismatched XML tags to trigger an unbounded sprintf() write into a fixed 1024-byte stack buffer in MsgQueue.cpp, terminating the daemon and disrupting all active client and driver sessions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:12.370"
+  },
+  {
+    "id": "CVE-2026-71980",
+    "description": "Belledonne Communications bcg729 through 1.1.2 contains an out-of-bounds read vulnerability in the decodeSIDframe() function in src/cng.c that allows unauthenticated network-adjacent attackers to trigger a heap read beyond buffer boundaries by sending a zero-length comfort-noise RTP payload. A zero-length payload causes an integer underflow in the uint8_t filter order calculation, which wraps to 255 and is clamped to 10, causing the function to unconditionally read 11 bytes from a zero-byte buffer, resulting in media process termination or silent consumption of adjacent heap memory as reflection coefficients.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:12.510"
+  },
+  {
+    "id": "CVE-2026-73424",
+    "description": "Astro is a web framework for content-driven websites. From 10.0.3 until 11.0.3, the Astro Vercel adapter in packages/integrations/vercel/src/serverless/entrypoint.ts accepts x_astro_path for the public /_isr function based only on the x-vercel-isr header, allowing unauthenticated GET requests to render routes protected only by Vercel edge path rules or split edge middleware. This issue is fixed in 11.0.3.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:13.873"
+  },
+  {
+    "id": "CVE-2026-73522",
+    "description": "COVESA Open1722 through 0.9.2 contains a stack buffer overflow vulnerability that allows unauthenticated remote attackers to write past the end of a fixed 15-slot stack array by sending a crafted UDP datagram containing more than 15 ACF-CAN messages. The avtp_to_can() function increments its write index without bounding it against the caller-supplied array size, and because the listener accepts datagrams from any sender matching a hardcoded unauthenticated stream ID transmitted in plaintext, attackers can corrupt adjacent stack memory to achieve arbitrary code execution or denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:14.030"
+  },
+  {
+    "id": "CVE-2026-73523",
+    "description": "COVESA Open1722 through 0.9.2 contains an integer truncation vulnerability in acf-can-listener.c that allows unauthenticated remote attackers to cause the CAN listener to transmit process stack memory onto the CAN bus by sending a rejected UDP datagram with a matching AVTP stream ID. The num_can_msgs variable declared as uint8_t truncates the -1 error return value from avtp_to_can() to 255, causing a write loop to iterate 255 times over a 15-slot stack array and leak approximately 18 KB of adjacent stack memory as roughly 240 CAN frames to any recipient on the CAN bus.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:14.170"
+  },
+  {
+    "id": "CVE-2026-74253",
+    "description": "Joomla Extension - regularlabs.com - Unauthenticated RCE through unverified reflected user input in Sourcerer < 14.0.0 - Regular Labs Sourcerer before 14.0.0 processes {source} blocks found in Joomla’s final rendered HTML without reliably determining where that code originated.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:14.780"
+  },
+  {
+    "id": "CVE-2026-74254",
+    "description": "Joomla Extension - joomlack.fr - SQL injection in Page Builder CK < 3.6.5 - The Joomla extension Page Builder CK is vulnerable to a SQL injection issue related to the styles model. Version 3.6.4 fixed the vector in the frontend, 3.6.5 in the backend.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-17T18:18:14.903"
   }
 ]
