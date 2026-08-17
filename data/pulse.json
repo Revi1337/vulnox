@@ -1,5 +1,19 @@
 [
   {
+    "id": "CVE-2026-74578",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\ncrypto: algif_skcipher - force synchronous processing on trees without ctx->state\n\nThe AIO/async path in skcipher_recvmsg() passes the socket-wide ctx->iv\ndirectly into the skcipher request. After io_submit() the socket lock is\ndropped and the request is processed asynchronously, so a concurrent\nsendmsg(ALG_SET_IV) can overwrite ctx->iv and make the in-flight request\nrun under an attacker-controlled IV. For CTR/stream modes this is\nIV/keystream reuse and lets an unprivileged user recover the plaintext of\na concurrent operation.\n\nSnapshotting ctx->iv into per-request storage for the async path is not\nsufficient. For ciphers with statesize == 0 - which includes cbc and ctr -\nthe MSG_MORE inter-chunk IV chaining is carried solely by the in-place\nreq->iv writeback, which a snapshot redirects into per-request memory that\naf_alg_free_resources() releases on completion, silently producing wrong\noutput. Writing the IV back from the completion callback instead is not\npossible either: that would require lock_sock() there, but the callback can\nrun in softirq/atomic context, so it must not sleep.\n\nMake the operation synchronous instead, which removes both the IV race and\nany writeback race. This is equivalent to the upstream resolution, commit\nfcc77d33a34c (\"net: Remove support for AIO on sockets\"), which removed the\nAIO socket path across net/ entirely and so produces the same end state for\nthis file. This patch deviates from that commit deliberately: rather than\nremoving AIO socket support tree-wide, which would be far too invasive for\nstable, it removes only the AIO branch in crypto/algif_skcipher.c.\nio_submit() now completes synchronously; AF_ALG async is rarely used in\npractice.\n\nThe -EIOCBQUEUED check in skcipher_recvmsg() is now dead but harmless,\nand is left alone to keep the fix minimal.\n\nTested on 6.6.y: attacker IV injection dropped from 2296/200000 to 0/200000\nafter the change; MSG_MORE chunked CTR output bit-identical to single-shot.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-16T09:16:21.653"
+  },
+  {
+    "id": "CVE-2024-13784",
+    "description": "The Contact Form, Survey, Quiz & Popup Form Builder – ARForms plugin for WordPress is vulnerable to PHP Object Injection in all versions up to, and including, 1.8.5 via deserialization of untrusted input from form submissions. This makes it possible for unauthenticated attackers to inject a PHP Object. No known POP chain is present in the vulnerable software, which means this vulnerability has no impact unless another plugin or theme containing a POP chain is installed on the site. If a POP chain is present via an additional plugin or theme installed on the target system, it may allow the attacker to perform actions like delete arbitrary files, retrieve sensitive data, or execute code depending on the POP chain present.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-16T09:16:19.900"
+  },
+  {
     "id": "CVE-2026-2497",
     "description": "The Gallery by BestWebSoft plugin for WordPress is vulnerable to SQL Injection via the '_gallery_order_{post_id}' parameter array keys in all versions up to, and including, 4.7.9. This is due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. The `gllr_save_postdata()` function stores unsanitized array keys from `$_POST` directly into post meta, which are later used in SQL queries without prepared statements. This makes it possible for authenticated attackers, with Editor-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
     "severity": "High",
@@ -12381,145 +12395,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-13T11:17:38.193"
-  },
-  {
-    "id": "CVE-2026-59507",
-    "description": "CWE-798: Use of Hard-coded Credentials CWE-200: Exposure of Sensitive Information to an Unauthorized Actor CWE-284: Improper Access Control",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.963"
-  },
-  {
-    "id": "CVE-2026-59506",
-    "description": "CWE-306: Missing Authentication for Critical Function",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.840"
-  },
-  {
-    "id": "CVE-2026-59505",
-    "description": "CWE-284: Improper Access Control",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.623"
-  },
-  {
-    "id": "CVE-2026-59504",
-    "description": "CWE-602: Client-Side Enforcement of Server-Side Security",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.500"
-  },
-  {
-    "id": "CVE-2026-59503",
-    "description": "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor CWE-359: Exposure of Private Personal Information to an Unauthorized Actor",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.380"
-  },
-  {
-    "id": "CVE-2026-59502",
-    "description": "CWE-203: Observable Discrepancy",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.257"
-  },
-  {
-    "id": "CVE-2026-59501",
-    "description": "CWE-284: Improper Access Control",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.140"
-  },
-  {
-    "id": "CVE-2026-59500",
-    "description": "CWE-287: Improper Authentication",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:15.017"
-  },
-  {
-    "id": "CVE-2026-59499",
-    "description": "CWE-200: Exposure of Sensitive\nInformation to an Unauthorized Actor",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:14.877"
-  },
-  {
-    "id": "CVE-2026-19484",
-    "description": "@fastify/busboy is a multipart form-data parser. In versions 3.1.0 through 3.2.0, a remote unauthenticated attacker can stall the Node.js event loop by sending a multipart request whose boundary is crafted to a specific length. The vendored streaming search stores its skip table in a fixed 256 entry byte array, and a boundary of exactly 252 bytes makes the search needle 256 bytes, which truncates the default skip distance to zero and turns the search into a CPU bound loop on a small body. A single small request can keep one core busy and deny service to other requests handled by the same process. The issue is fixed in @fastify/busboy 3.2.1, which widens the skip table so the skip distance is preserved. Users should upgrade to 3.2.1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:11.640"
-  },
-  {
-    "id": "CVE-2026-11970",
-    "description": "This vulnerability allows a normal (non-admin) user to disable the Forcepoint One Endpoint SafariExtension and bypass DLP protection in F1E Mac OS before v26.04.5758.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-13T10:17:10.060"
-  },
-  {
-    "id": "CVE-2026-19696",
-    "description": "Ixia IxVeriWave and Vector Informatik BLF file parser crashes in 4.6.0 to 4.6.7 allows denial of service on Windows",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.983"
-  },
-  {
-    "id": "CVE-2026-19695",
-    "description": "Gammu DCT3 trace file parser crash in 4.6.0 to 4.6.7 allows denial of service",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.857"
-  },
-  {
-    "id": "CVE-2026-19694",
-    "description": "TTX Logger file parser crash in 4.6.0 to 4.6.7 allows denial of service",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.713"
-  },
-  {
-    "id": "CVE-2026-19481",
-    "description": "@fastify/busboy is a multipart form-data parser. In versions 1.0.0 through 3.2.0, an attacker who can submit multipart form-data can crash the parser by sending a part header whose name is a prototype-inherited property such as __proto__ or constructor. The internal header parser stores headers in a plain JavaScript object and assumes each value is an array, so an inherited property name resolves to a truthy non-array value and triggers a TypeError. In the common pipe integration the failure surfaces as an error event, but in direct write or end usage the exception is thrown synchronously and can terminate the Node.js process, causing an unauthenticated denial of service. The issue is fixed in @fastify/busboy 3.2.1, which creates the header object with a null prototype. Users should upgrade to 3.2.1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.573"
-  },
-  {
-    "id": "CVE-2026-16459",
-    "description": "Padding oracle attack vulnerability in Oberon microsystem AG’s Oberon PSA Crypto library in all versions since 1.0.0 and prior to 2.1.1 allows an attacker to recover plaintexts via timing measurements of RSA PKCS#1 v1.5 decrypt operations.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.447"
-  },
-  {
-    "id": "CVE-2026-16458",
-    "description": "Padding oracle attack vulnerability in Oberon microsystem AG’s ocrypto library in all versions since 3.0.0 and prior to 4.0.1 allows an attacker to recover plaintexts via timing measurements of RSA PKCS#1 v1.5 decrypt operations.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.283"
-  },
-  {
-    "id": "CVE-2026-15413",
-    "description": "The Link Factory WordPress plugin is a backdoor. Distributed as a \"homepage sentence publisher\", it exposes an operator-controlled REST API under /wp-json/link-factory/v1/ - authenticated by a detached Ed25519 signature verified against a hardcoded operator public key (except for the health check).",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.153"
-  },
-  {
-    "id": "CVE-2026-14332",
-    "description": "The Ecwid by Lightspeed Ecommerce Shopping Cart WordPress plugin before 7.0.9 does not perform a capability check or nonce verification on one of its store-management actions, allowing any authenticated user, such as a subscriber, to disconnect the store and take the storefront offline until an administrator reconnects it.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:12.017"
-  },
-  {
-    "id": "CVE-2026-14298",
-    "description": "Mattermost versions 11.9.x <= 11.9.0, 11.8.x <= 11.8.4, 11.7.x <= 11.7.7, 10.11.x <= 10.11.22 fail to properly limit resource consumption when processing certain user-supplied input, which allows an authenticated user to cause a denial of service. Mattermost Advisory ID: MMSA-2026-00713",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-13T09:17:11.860"
   }
 ]
