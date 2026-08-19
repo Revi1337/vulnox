@@ -1,5 +1,306 @@
 [
   {
+    "id": "CVE-2026-75855",
+    "description": "ArcadeDB versions before 26.8.1 fail to sanitize database names in the POST /api/v1/server endpoint's create database and drop database commands, allowing authenticated root users to write and delete arbitrary files outside the configured database directory. Attackers can supply database names containing ../ sequences to create databases at arbitrary filesystem paths or recursively delete directories the server process can access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.997"
+  },
+  {
+    "id": "CVE-2026-75854",
+    "description": "ArcadeDB versions before 26.8.1 contain a missing authentication vulnerability in the Redis wire-protocol plugin that allows unauthenticated attackers to read, write, and delete data. Attackers can connect to the Redis port and execute arbitrary commands against any database on the server without providing credentials, bypassing all security gates.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.860"
+  },
+  {
+    "id": "CVE-2026-75853",
+    "description": "ArcadeDB's Gremlin wire-protocol plugin (com.arcadedb:arcadedb-gremlin) in versions <= 26.7.3 enforces authentication (SASL PLAIN) but performs no authorization: it never checks database access permissions (canAccessToDatabase) and never binds the authenticated principal into the engine. As a result, any valid server credential — even one provisioned for zero or one unrelated database — can read, write, and drop data in any database on the server by selecting a target database via a traversal-source alias, completely bypassing the engine's per-type/read-only/UPDATE_SCHEMA ACLs. The issue is fixed in version 26.8.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.727"
+  },
+  {
+    "id": "CVE-2026-75852",
+    "description": "ArcadeDB versions before 26.8.1 fail to enforce SASL authentication on data commands in the MongoDB wire-protocol plugin. Unauthenticated attackers can issue insert, find, update, delete, and create commands against any database by connecting to port 27017 without credentials.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.593"
+  },
+  {
+    "id": "CVE-2026-75851",
+    "description": "ArcadeDB server (com.arcadedb:arcadedb-server) in versions 26.7.3 and earlier fails to propagate the authenticated principal to asynchronous command worker threads. When an HTTP command is submitted with awaitResponse:false, it executes on an async worker whose DatabaseContext has no bound user, causing the scripting authorization gate to become a no-op. A user with only read access to a single database can submit an asynchronous JavaScript (language=js) command via the /api/v1/command endpoint to run code with unrestricted host access (e.g., database.getSecurity().createUser) and create a server-wide administrator, escalating to full administrative control. Fixed in 26.8.1.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.457"
+  },
+  {
+    "id": "CVE-2026-75850",
+    "description": "ArcadeDB before 26.8.1 fails to bind the authenticated principal (setCurrentUser) on its batch and time-series HTTP handlers. Because no principal is bound on the worker thread, the engine's fine-grained per-type ACL layer (LocalBucket.checkPermissionsOnFile) does not execute for these handlers. In deployments that use per-type or per-group ACLs, a user with database access but only limited per-type permissions can read from and write to types they are not authorized to access by submitting requests to the batch/time-series endpoints. Deployments that rely solely on database-level access control are not affected.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.310"
+  },
+  {
+    "id": "CVE-2026-75846",
+    "description": "ArcadeDB before 26.8.1 (affected versions <= 26.7.3) contains a missing authorization vulnerability in the DELETE FUNCTION SQL statement. DeleteFunctionStatement.executeSimple unregisters and persists deletion of a server-side function without any checkPermissionsOnDatabase (UPDATE_SCHEMA) check. Any user with database access can execute DELETE FUNCTION via the command API (POST /api/v1/command/{db}) to permanently remove any registered server-side function, including security-relevant logic, impacting integrity and availability.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.173"
+  },
+  {
+    "id": "CVE-2026-75845",
+    "description": "ArcadeDB versions 26.4.2 through 26.7.3 contain an authorization bypass vulnerability in the set_server_setting MCP server-level tool. SetServerSettingTool.execute() gates only on the global allowAdmin flag and never checks the caller's role, so in an MCP deployment with allowAdmin=true and a non-root allowedUsers set, any authenticated read-only user can invoke set_server_setting to modify server GlobalConfiguration, enabling configuration tampering or denial of service. The issue is fixed in 26.8.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:35.040"
+  },
+  {
+    "id": "CVE-2026-75844",
+    "description": "ArcadeDB versions before 26.8.1 contain a server-side request forgery vulnerability in the IMPORT DATABASE command where the security validator resolves and checks hostnames but the subsequent connection re-resolves the raw URL and follows redirects. Authenticated attackers can bypass the validator using DNS rebinding or HTTP redirects to access cloud metadata endpoints, internal services, or read arbitrary local files on default installations.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:34.890"
+  },
+  {
+    "id": "CVE-2026-75843",
+    "description": "ArcadeDB before 26.8.1 fails to bind the authenticated principal on the gRPC transaction executor thread in beginTransaction, allowing authenticated readers to execute JavaScript commands without scripting authorization checks. Attackers can execute executeCommand with a transaction ID to run unrestricted JavaScript that creates server-wide administrator accounts.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:34.740"
+  },
+  {
+    "id": "CVE-2026-75842",
+    "description": "ArcadeDB versions before 26.8.1 contain an arbitrary file read vulnerability in the OpenCypher LOAD CSV FROM clause that allows authenticated users to read local files. Attackers with read query privileges can use the file:// protocol in LOAD CSV statements to access arbitrary files with server process privileges, exfiltrating sensitive data directly in query responses.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:34.597"
+  },
+  {
+    "id": "CVE-2026-75841",
+    "description": "ArcadeDB before 26.8.1 contains a denial of service vulnerability in the Cypher range() function that allows authenticated users to exhaust server heap memory. Attackers can submit oversized range() expressions with large bounds to trigger OutOfMemoryError and cause temporary service degradation or unavailability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:34.463"
+  },
+  {
+    "id": "CVE-2026-75840",
+    "description": "ArcadeDB before 26.8.1 contains an arbitrary file read vulnerability in the GraalVM JavaScript sandbox allowlist enforcement, which uses unescaped regular expressions to validate package names. Attackers with trigger creation privileges can use Java.type() to access java.util.zip.ZipFile or java.util.jar.JarFile classes and read arbitrary files on the host system as the ArcadeDB server process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:34.320"
+  },
+  {
+    "id": "CVE-2026-75839",
+    "description": "ArcadeDB (com.arcadedb:arcadedb-server) versions <= 26.7.3 contain an insecure direct object reference (IDOR) vulnerability in the Raft cluster-info endpoints (GetClusterHandler and PostBootstrapStateHandler), which authenticate but do not authorize access. On an ArcadeDB HA cluster (only reachable when arcadedb.ha.enabled is set and the ha-raft module is loaded), any authenticated user — including one granted access to only one database or none — can enumerate the full server database registry and retrieve per-database metadata such as database names, last transaction IDs, bootstrap fingerprints, and peer/leader cluster topology, resulting in cross-database information disclosure. Fixed in 26.8.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:34.180"
+  },
+  {
+    "id": "CVE-2026-75838",
+    "description": "DOMPurify before 3.4.13 contains a cross-site scripting vulnerability in IN_PLACE sanitization where element-removal hooks fail to neutralize detached subtrees. Attackers can supply HTML with event handlers on descendant elements that execute after sanitization completes, even though the returned root appears clean.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:34.050"
+  },
+  {
+    "id": "CVE-2026-75837",
+    "description": "Grav before 2.0.14 fails to guard the access field in the core group blueprint with the required security@: admin.super restriction. A delegated admin.users operator can save a group with access[admin][super]=true to escalate to super-admin, gaining scheduler and Twig evaluation capabilities.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:33.913"
+  },
+  {
+    "id": "CVE-2026-75836",
+    "description": "The Grav API plugin (getgrav/grav-plugin-api, bundled with Grav's admin-next/API stack) before 1.0.14 fails to enforce the authorize requirement in MenubarController::executeAction(). While the GET /menubar/items listing endpoint correctly filters menubar items via userPassesAuthorize(), the POST /api/v1/menubar/actions/{plugin}/{action} endpoint only checks the baseline api.access permission and never evaluates the authorize field a plugin registered for that action. Any authenticated caller with api.access can therefore invoke a privileged menubar action directly, bypassing the intended authorization. No plugin bundled with core Grav currently registers a privileged authorize handler, so on a stock install the impact is latent; the flaw affects any first- or third-party plugin relying on the documented authorize semantics.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:33.780"
+  },
+  {
+    "id": "CVE-2026-75835",
+    "description": "Grav API plugin (getgrav/grav-plugin-api) before 1.0.14 contains a missing authorization vulnerability in userPassesAuthorize() (AbstractApiController.php). The function fails to consult the calling request's API key scopes, relying instead on the account's raw super-admin flag and ACL grants. As a result, an authenticated attacker holding a scoped API key minted on a privileged account can bypass their declared scope restrictions to access authorize-gated UI metadata and item definitions (sidebar/menubar/widget items and users-list columns/row-actions/filter-tabs) that their key scope should deny, resulting in information disclosure.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:33.647"
+  },
+  {
+    "id": "CVE-2026-75834",
+    "description": "Grav before 2.0.14 contains a stored cross-site scripting vulnerability in the Security::detectXss() function (system/src/Grav/Common/Security.php). All XSS detection patterns use the PCRE /u (UTF-8) modifier, so a single invalid UTF-8 byte anywhere in page content causes preg_match() to return false for every pattern, silently bypassing the save-time XSS safety gate (Validation::checkSafety()). An authenticated attacker with page-edit permissions (without the security.xss_whitelist privilege) can store malicious JavaScript that executes in the browser of a visitor who views the affected page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:33.513"
+  },
+  {
+    "id": "CVE-2026-75833",
+    "description": "The Grav API plugin (getgrav/grav-plugin-api, bundled with Grav 2.0's admin-next/API stack) before version 1.0.14 contains an open redirect weakness in SsoController::sanitizeReturnTo(). The function rejects a literal '//' prefix but does not account for browsers normalizing backslashes to slashes in special (http/https) schemes, so a returnTo value such as '/\\evil.com' passes the guard and is later resolved by the browser as the protocol-relative URL '//evil.com'. Following a legitimate OAuth login flow, an attacker-supplied returnTo parameter could redirect an authenticated victim to an attacker-controlled site for post-login phishing. Full browser-side exploitability depends on the admin-next SPA's client-side oauth-callback handler and was not independently verified by the reporter.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:33.370"
+  },
+  {
+    "id": "CVE-2026-75832",
+    "description": "The Grav API plugin (getgrav/grav-plugin-api, bundled with Grav 2.0) before version 1.0.14 (fixed in 1.0.15) contains a missing authorization vulnerability in BlueprintPathResolver::resolveUserScope(). The method gates the users/<name> scope on the account's raw super-admin ACL flag (access.api.super) instead of validating the presented API key's actual scope. An attacker holding an API key scoped only to api.media.write minted on a super-admin account can bypass the authorization check and, via POST /blueprint-upload or GET /blueprint-files, write a file into another user's scope (in the shared user/accounts/ directory, constrained to image extensions by assertSafeExtension()) and browse that scope's file listing, despite the key not being granted api.users.write.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:33.230"
+  },
+  {
+    "id": "CVE-2026-75831",
+    "description": "Grav before 2.0.15 contains a stored cross-site scripting vulnerability in the audio and video media rendering through the sourceParsedownElement method. The media URL fragment is concatenated unescaped into rawHtml source elements, allowing attackers to inject arbitrary HTML and JavaScript that executes in viewers' sessions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:33.100"
+  },
+  {
+    "id": "CVE-2026-75830",
+    "description": "grav-plugin-api (getgrav/grav-plugin-api) versions >= 1.0.0-beta.10 and <= 1.0.14 contain a path traversal vulnerability in the PagesController::batchCopy() method. An incomplete fix for GHSA-qjq4-jp55-4mx2 left the user-controlled 'suffix' parameter (via POST /api/v1/pages/batch) unvalidated. An authenticated user with the api.pages.write permission (editor-level, not super-admin) can supply path traversal sequences (e.g. /../../../) in the suffix parameter to escape the intended user/pages/ directory and write attacker-controlled page content and page media to arbitrary filesystem locations writable by the web server process. The vulnerability is fixed in 1.0.15.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:32.960"
+  },
+  {
+    "id": "CVE-2026-75829",
+    "description": "grav-plugin-api versions before 1.0.15 fail to validate Twig content in the translate() endpoint, allowing attackers with api.pages.write permission to persist pages with process.twig enabled. Attackers can submit crafted header and content parameters to execute server-side template injection payloads that are evaluated at render time.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:32.827"
+  },
+  {
+    "id": "CVE-2026-75828",
+    "description": "Grav before 2.0.15 contains a stored cross-site scripting vulnerability in the detectXss() function where unpaired quotes in unquoted attribute values bypass event-handler detection. Authenticated editors can inject event handlers like onerror= that pass validation and execute in visitor browsers when page content is rendered.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:32.690"
+  },
+  {
+    "id": "CVE-2026-75827",
+    "description": "Grav before 2.0.15 contains an arbitrary file write vulnerability in the Blueprint dynamic-data bare-function validation that uses an incomplete denylist instead of a positive allowlist. Attackers with page-edit or blueprint-config access can invoke the error_log function through a data directive to append PHP payloads to web-accessible files, achieving remote code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:32.553"
+  },
+  {
+    "id": "CVE-2026-75774",
+    "description": "A vulnerability was determined in karakeep-app karakeep up to 0.32.0. The impacted element is an unknown function of the file apps/web/server/auth.ts of the component OAuth Sign-In. This manipulation causes improper authentication. It is possible to initiate the attack remotely. The complexity of an attack is rather high. The exploitability is regarded as difficult. The exploit has been publicly disclosed and may be utilized. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:32.380"
+  },
+  {
+    "id": "CVE-2026-75107",
+    "description": "Grav Form Plugin before 9.1.19 fails to escape field-definition properties including prepend, append, spacer text, section text, and select option labels in form templates. Attackers with form authoring privileges can inject arbitrary HTML and JavaScript that executes for all form visitors through unescaped |raw filters and unquoted attributes.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:31.593"
+  },
+  {
+    "id": "CVE-2026-74908",
+    "description": "Grav plugin-api before 1.0.15 contains a script injection vulnerability where the SVG sanitizer only checks for the exact extension 'svg', allowing .svgz and .xhtml files to bypass sanitization and be stored unsanitized. Attackers with api.media.write permission can upload files containing executable script payloads that execute in the site origin when accessed by administrators or visitors.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:31.190"
+  },
+  {
+    "id": "CVE-2026-74907",
+    "description": "Grav before 2.0.15 contains a path traversal vulnerability in the static asset server within index.php that uses string prefix matching instead of directory-boundary validation. Unauthenticated attackers can access files in sibling directories by exploiting directory names that extend the base path string, such as requesting assets-secret when assets is the configured base.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:31.047"
+  },
+  {
+    "id": "CVE-2026-74906",
+    "description": "SiYuan before v3.7.4 contains an incorrect authorization vulnerability in eight publish-mode reader-facing endpoints that filter results using the visibility list instead of the disabled list. Anonymous visitors can discover and read content from documents explicitly marked as forbidden from publishing by accessing search, backlink, asset content, saved criteria, recent documents, graph, and tag endpoints.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:30.913"
+  },
+  {
+    "id": "CVE-2026-74905",
+    "description": "SiYuan before v3.7.4 contains a server-side request forgery (SSRF) vulnerability in the isPrivateIP function in kernel/util/net.go, used by SSRFSafeDialer to enforce SSRF protection in SafeMode. The function only checks for loopback, link-local unicast, private, and unspecified addresses and does not recognize IPv6 transition addresses (NAT64 64:ff9b::/96, 6to4 2002::/16, Teredo 2001::/32) that embed private IPv4 destinations. When SafeMode is enabled, an authenticated attacker can bypass the SSRF guard via the network forward proxy, WebSocket proxy, or SSE proxy endpoints by supplying a URL whose hostname resolves to such a transition address, reaching internal services and cloud metadata endpoints (e.g., 169.254.169.254). Because the forward proxy returns the full response body, this is a full-read SSRF that can be used to steal instance credentials, reach internal services, and port-scan internal infrastructure.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:30.780"
+  },
+  {
+    "id": "CVE-2026-74904",
+    "description": "SiYuan before v3.7.4 is missing authorization checks in 17 block metadata/content endpoints in kernel/api/block.go (including getRefText, checkBlockExist, and getBlockBreadcrumb). These handlers are gated only by basic authentication (model.CheckAuth) and lack publish-access filtering, allowing anonymous publish-mode readers to disclose private block content-derived text, structural metadata, and existence information for arbitrary block IDs across the workspace.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:30.643"
+  },
+  {
+    "id": "CVE-2026-74903",
+    "description": "SiYuan before v3.7.4 contains an insufficient access control vulnerability in the /api/lute/spinBlockDOM endpoint, which is guarded only by CheckAuth middleware instead of CheckAdminRole like its sibling endpoint. Authenticated users with RoleEditor or RoleReader roles can invoke the endpoint to transform arbitrary DOM input, and large payloads cause endpoint starvation through per-path mutex serialization.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:30.507"
+  },
+  {
+    "id": "CVE-2026-74902",
+    "description": "SiYuan before v3.7.4 contains a cross-site scripting vulnerability in the file upload validation flow that fails to escape filenames before inserting them into HTML via insertAdjacentHTML. Attackers can craft a malicious filename containing script payloads that execute with full OS command access when a user drags, drops, or pastes the file into the editor.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:30.370"
+  },
+  {
+    "id": "CVE-2026-5224",
+    "description": "Cleartext storage of sensitive information vulnerability in Kriptok Crypto and Information Technologies Industry Trade Inc. Cryptosim allows Retrieve Embedded Sensitive Data.\n\nThis issue affects Cryptosim: before 3.1.0.229.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:19:28.170"
+  },
+  {
+    "id": "CVE-2026-15585",
+    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in AKIN Software Computer Import Export Industry and Trade Ltd. AKINSOFT Wolvox9 ERP / KontrolPanel.exe allows Path Traversal.\n\nThis issue affects AKINSOFT Wolvox9 ERP / KontrolPanel.exe: from s26.02.17 before 26.02.22.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-18T12:17:23.110"
+  },
+  {
+    "id": "CVE-2026-75773",
+    "description": "A vulnerability was found in karakeep-app karakeep up to 0.32.0. The affected element is the function authorize of the file apps/web/server/auth.ts of the component Login Endpoint. The manipulation results in improper restriction of excessive authentication attempts. The attack may be performed from remote. This attack is characterized by high complexity. The exploitability is described as difficult. The exploit has been made public and could be used. Upgrading to version 0.33.0 is sufficient to fix this issue. The patch is identified as f7d042971d0d2bcc7119654830cf1eb93eabbf24. It is advisable to upgrade the affected component.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-18T11:16:52.200"
+  },
+  {
+    "id": "CVE-2026-75627",
+    "description": "Bastillion fails to properly validate request URI paths in its controller dispatcher, allowing unauthenticated attackers to bypass authentication filters by prefixing requests with arbitrary path segments. Attackers can access administrative controllers to read user listings, create manager accounts, and register managed systems, gaining control over SSH access to the managed fleet.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-18T11:16:52.060"
+  },
+  {
+    "id": "CVE-2026-75626",
+    "description": "SpiderFoot fails to HTML-escape correlation titles built from external scan data sources including server banners and metadata. Attackers can inject malicious HTML elements with event handlers into correlation results that execute scripts in the operator's browser when the correlations view is opened, potentially stealing API keys.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-18T11:16:51.920"
+  },
+  {
+    "id": "CVE-2026-19608",
+    "description": "A flaw was found in the group policy provider of Keycloak authorization services, which is used to manage fine-grained access control to resources. The issue occurs when the system evaluates group-based policies using tokens that only contain group names rather than full paths. If two groups in different parts of the organization share the same name, a user in the unauthorized group can be mistaken for a member of the authorized group. This can allow a user to gain unauthorized access to protected resources they should not be able to reach.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T11:16:50.403"
+  },
+  {
+    "id": "CVE-2026-19447",
+    "description": "Improper neutralization of input during web page generation ('cross-site scripting') vulnerability in Fileorbis Informatics Services Trade Inc. FileOrbis allows Stored XSS.\n\nThis issue affects FileOrbis: before 16.5.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T11:16:50.287"
+  },
+  {
+    "id": "CVE-2024-14046",
+    "description": "A security vulnerability has been detected in OpenBoxes up to 0.9.1. This issue affects the function DocumentController of the file grails-app/controllers/org/pih/warehouse/core/DocumentController.groovy of the component Document Upload Controller. The manipulation leads to unrestricted upload. It is possible to initiate the attack remotely. The exploit has been disclosed publicly and may be used. Upgrading to version 0.9.2 is capable of addressing this issue. The identifier of the patch is e945d6bfcec29642f514e7d298dfba2cc6cd7cd4. Upgrading the affected component is recommended.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-18T11:16:47.177"
+  },
+  {
     "id": "CVE-2026-18929",
     "description": "Carbone is vulnerable to Denial of Service due to lack of protection against zip bombs when processing .docx files. The library uses yazl for zip decompression without validating entry sizes, allowing an attacker to supply a malicious .docx file containing a zip bomb that decompresses to a significantly larger size, causing excessive memory consumption and crashing the application server.\n\n\n\n\nThe issue was fixed in versions: 3.8.2, 4.26.3 and 5.4.4.  The fix is available across all distribution types.",
     "severity": "Unknown",
@@ -4520,54 +4821,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-15T13:17:48.153"
-  },
-  {
-    "id": "CVE-2026-19893",
-    "description": "A vulnerability was identified in D-Link DIR-842 2.01.B04. This impacts an unknown function of the file /etc/vsftpd.conf of the component vsftpd. Such manipulation leads to incorrect default permissions. It is possible to launch the attack remotely. A high complexity level is associated with this attack. The exploitability is said to be difficult.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-15T12:16:32.543"
-  },
-  {
-    "id": "CVE-2026-12248",
-    "description": "The WPML Multilingual CMS plugin for WordPress is vulnerable to SQL Injection via the 'sorting' parameter in all versions up to, and including, 4.9.5 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with translator-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-15T12:16:31.713"
-  },
-  {
-    "id": "CVE-2026-73635",
-    "description": "Allocation of resources without limits or throttling vulnerability in Apache Struts. When no fixed locale is configured, the locale used for localized-text lookups is taken from the incoming request, allowing an unauthenticated remote client to cause the framework's internal localized-text caches to grow without bound and exhaust the Java heap, denying service to other users. Applications that configure a fixed locale are not affected.\n\nThis issue affects Apache Struts: from 2.0.0 through 2.3.37, from 2.5.0 through 2.5.33, from 6.0.0 through 6.10.0, from 7.0.0 through 7.2.1.\n\nUsers are recommended to upgrade to version 6.11.0 or 7.3.0, which fixes the issue.",
-    "severity": "High",
-    "tech": "Struts",
-    "published": "2026-08-15T11:16:27.540"
-  },
-  {
-    "id": "CVE-2026-73634",
-    "description": "Uncontrolled resource consumption vulnerability in Apache Struts. An application that exposes an endpoint collecting Content Security Policy violation reports reads the submitted report into memory without bounding how much it will accept, so a single request can exhaust the heap and deny service to other users. Such endpoints are ordinarily reachable without authentication. The core distribution maps no such endpoint by default; applications that do not collect violation reports are not affected.\n\nThis issue affects Apache Struts: from 6.0.0 through 6.10.0, from 7.0.0 through 7.2.1.\n\nUsers are recommended to upgrade to version 6.11.0 or 7.3.0, which fixes the issue.",
-    "severity": "High",
-    "tech": "Struts",
-    "published": "2026-08-15T11:16:27.427"
-  },
-  {
-    "id": "CVE-2026-73632",
-    "description": "Exposure of data element to wrong session vulnerability in the JSON plugin of Apache Struts. Per-response serialization state could be shared across concurrent requests, allowing response content associated with one request to become observable in another. Only the SMD / JSON-RPC handling of the JSON interceptor is affected, which is not enabled by default; applications using the json result type are not affected.\n\nThis issue affects Apache Struts: 7.2.1.\n\nUsers are recommended to upgrade to version 7.3.0, which fixes the issue.",
-    "severity": "Medium",
-    "tech": "Struts",
-    "published": "2026-08-15T11:16:27.330"
-  },
-  {
-    "id": "CVE-2026-73631",
-    "description": "Exposure of data element to wrong session vulnerability in the JSON plugin of Apache Struts. Per-request parsing state could be shared across concurrent requests, allowing data associated with one request to become observable in another, and configured parsing limits not to be enforced as intended. Populating actions from a JSON request body is not enabled by default; applications that do not use the JSON plugin are not affected.\n\nThis issue affects Apache Struts: 7.2.1.\n\nUsers are recommended to upgrade to version 7.3.0, which fixes the issue.",
-    "severity": "Medium",
-    "tech": "Struts",
-    "published": "2026-08-15T11:16:27.227"
-  },
-  {
-    "id": "CVE-2026-19891",
-    "description": "A vulnerability was determined in TRENDnet TEW-WLC100 2.05b02. This affects an unknown function of the file /etc/racoon.conf of the component IKE Phase 1 Aggressive Mode. This manipulation of the argument exchange_mode causes missing encryption of sensitive data. It is possible to initiate the attack remotely. The complexity of an attack is rather high. The exploitability is reported as difficult. The vendor was contacted early about this disclosure.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-15T11:16:26.340"
   }
 ]
