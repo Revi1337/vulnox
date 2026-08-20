@@ -1,5 +1,124 @@
 [
   {
+    "id": "CVE-2026-75900",
+    "description": "An out-of-bounds read vulnerability was found in swtpm's SWTPM_NVRAM_CheckHeader() function. The entry guard checks the buffer length against sizeof(bh), where bh is a pointer, instead of sizeof(*bh), the actual struct size. This allows an undersized buffer to pass validation, causing a 2-byte heap overread on 64-bit systems (6 bytes on 32-bit) when accessing the totlen field. This may cause daemon termination on some platforms and leaks heap data to the log.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:14.073"
+  },
+  {
+    "id": "CVE-2026-75589",
+    "description": "Net::OAuth versions before 0.33 for Perl check HMAC-SHA1, HMAC-SHA256 and PLAINTEXT signatures with a non-constant-time comparison in verify.\n\nEach of the three compares the signature carried in the message against the locally computed one with the eq operator, which returns as soon as the two strings differ. The time taken to reject a signature varies with the length of the matching prefix. RSA-SHA1 is not affected, as it verifies through the RSA key object rather than by comparing strings.\n\nA client that can submit messages and time the replies may recover a valid signature one byte at a time rather than searching the whole signature space. Under PLAINTEXT the value compared against is the signature key itself, so the search recovers consumer_secret and token_secret.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:13.970"
+  },
+  {
+    "id": "CVE-2026-72889",
+    "description": "Net::OAuth versions before 0.33 for Perl allow the sender to choose the signature algorithm in verify.\n\nverify resolves the signature method class from the signature_method parameter of the incoming message. signature_method is required on every request, so the algorithm used to check a signature is chosen by whoever sent it, and nothing lets the verifying party pin the method instead. When a message names HMAC-SHA1 or HMAC-SHA256, the key is derived from consumer_secret and token_secret rather than from the key the provider deployed.\n\nA provider deployed on RSA-SHA1 holds only the consumer public key, and RFC 5849 does not use consumer_secret for that method, so the required parameter is filled with a placeholder. A client that names HMAC-SHA1 instead has its signature checked against that placeholder, so a guessable one is enough to forge requests for any consumer key and token.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:13.833"
+  },
+  {
+    "id": "CVE-2026-58088",
+    "description": "The ELF core dump code counted the number of dumpable VM map entries, allocated a buffer for the corresponding program headers, then iterated over the map a second time to populate them.  A process sharing the address space via rfork(2) can mutate the map between the two passes, causing the second pass to write program headers past the end of the buffer.\n\nAn unprivileged local user sharing an address space with a process that dumps core can trigger an out-of-bounds write on the kernel heap, potentially leading to privilege escalation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.983"
+  },
+  {
+    "id": "CVE-2026-58087",
+    "description": "The GETALL and SETALL commands in semctl(2) recorded the number of semaphores in the target set, dropped the lock protecting the set, allocated a buffer sized for that count, and reacquired the lock.  A sequence-number check was used to verify that the set had not been replaced in the interim, but the sequence number wraps after 0x8000 create/destroy cycles.  By rapidly destroying and recreating semaphore sets at the same index, another process can cause the sequence number to wrap, allowing a set with a different number of semaphores to pass validation.  The subsequent copy then reads or writes past the end of the allocated buffer.\n\nAn unprivileged local user can trigger out-of-bounds reads and writes on kernel heap memory, potentially leading to privilege escalation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.877"
+  },
+  {
+    "id": "CVE-2026-58086",
+    "description": "As an inadvertent side effect of an unrelated code change, PRIV_KTRACE was always denied to a jailed root user.  Tracing configured by a jailed root user was therefore not flagged as privileged.\n\nAn unprivileged user in a jail that has permission to debug the target process can modify the jailed root user's ktrace(2) flags, or disable tracing outright.  A jailed root user therefore cannot reliably trace unprivileged processes.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.777"
+  },
+  {
+    "id": "CVE-2026-58085",
+    "description": "After dispatching a decrypt operation to OCF and receiving the result, the wg(4) driver failed to check whether the MAC verification step succeeded.  The driver thus silently accepted packets with an invalid Poly1305 authentication tag.\n\nA remote attacker who can send UDP packets to a WireGuard endpoint, and who can guess the bounds of the receiver's replay window, can inject forged or modified transport data packets into the tunnel.\n\nA remote attacker who can intercept WireGuard packets bound for a FreeBSD host can modify the ciphertext and authenticated data without detection by the receiver.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.673"
+  },
+  {
+    "id": "CVE-2026-58084",
+    "description": "To retrieve the previous timer value, the kernel calls realtimer_gettime(), which obtains the current time for the timer's clock.  For a timer using CLOCK_TAI this can fail when no TAI offset has been configured, but the error return was not checked, so the uninitialized output buffer was copied to userspace.\n\nAn unprivileged local user can obtain uninitialized kernel stack memory by creating a POSIX timer with CLOCK_TAI and calling timer_settime(2), potentially disclosing sensitive kernel data.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.570"
+  },
+  {
+    "id": "CVE-2026-58083",
+    "description": "While the kernel was copying knotes during fork, a knote with a timer-based filter could fire and be enqueued on the kqueue's active list before the copy was complete.  The copy routine did not account for this and could enqueue the new knote a second time, corrupting the active list.  In addition, the copy routine did not hold the appropriate locks while reading knote state, allowing further races.\n\nAn unprivileged local user can trigger a use-after-free in the kernel, potentially leading to privilege escalation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.470"
+  },
+  {
+    "id": "CVE-2026-58082",
+    "description": "The ISO-2022 encoding module used a stack buffer sized to MB_LEN_MAX (6 bytes) for intermediate character output.  Some ISO-2022 variants can require up to 10 bytes per character, in which case conversions can trigger a stack buffer overflow of up to four bytes.\n\nAn application that uses iconv(3) to convert untrusted input to or from one of the affected encodings may be vulnerable to buffer overflows if it uses one of the affected encoding modules.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.370"
+  },
+  {
+    "id": "CVE-2026-58081",
+    "description": "Several encoding modules, including HZ, UTF-7, VIQR, and ZW, did not properly check the size of the caller-supplied output buffer before writing converted characters.\n\nAn application that uses iconv(3) to convert untrusted input to or from one of the affected encodings may be vulnerable to buffer overflows if it uses one of the affected encoding modules.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.263"
+  },
+  {
+    "id": "CVE-2026-49425",
+    "description": "The compat32 kevent() handler translates a 64-bit kevent struct into a stack- declared 32-bit struct.  It did not first zero the stack struct.\n\nAn unprivileged user may observe a small amount of uninitialized kernel stack data, which may contain sensitive information.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.160"
+  },
+  {
+    "id": "CVE-2026-49424",
+    "description": "The Linux waitid() implementation translates a FreeBSD siginfo_t struct into a stack-declared Linux siginfo_t.  It did not first zero the stack struct.\n\nAn unprivileged user may observe 104 bytes of uninitialized kernel stack data, which may contain sensitive information.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T08:17:12.060"
+  },
+  {
+    "id": "CVE-2026-75981",
+    "description": "The TranslatePress – Translate Multilingual sites with AI Translation plugin for WordPress is vulnerable to unauthenticated Stored Cross-Site Scripting in versions up to and including 3.2.5. The special gettext markers '#!trpst#' and '#!trpen#' are unconditionally rewritten to '<' and '>' by translate_page() in includes/class-translation-render.php (lines 538-539). Because those markers are plain text with no HTML-special characters, an unauthenticated attacker can embed them in a comment; the markers survive wp_kses, and when the post is viewed in a secondary language the substitution turns the attacker's '#!trpst#img ... #!trpen#' into a real <img> tag. remove_tags_from_output() only strips <script>/<style>, so an <img onerror=...> executes in the visitor's browser.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-19T07:16:59.907"
+  },
+  {
+    "id": "CVE-2026-49423",
+    "description": "When building the iovec array for a received TLS 1.2 CBC record, ktls_ocf_tls_cbc_decrypt() incremented the iovec index for every mbuf in the chain, including mbufs that were skipped because they contained only TLS header bytes.  This left uninitialized entries in the iovec array.  The iovec array was allocated without zeroing.\n\nA remote TLS peer can cause the kernel to read from uninitialized iovec entries during HMAC computation, resulting in a kernel panic.  The peer must be able to control TCP segmentation such that the first mbuf of a CBC record contains only the 5-byte TLS record header.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-19T07:16:28.570"
+  },
+  {
+    "id": "CVE-2026-15780",
+    "description": "The WP Statistics – Simple, privacy-friendly Google Analytics alternative plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'utm_campaign' parameter in all versions up to, and including, 14.16.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The payload can be planted without authentication via the public /wp-statistics/v2/hit REST endpoint, because the required signature is exposed on the public homepage and a base64-encoded page_uri POST parameter overrides the previously sanitized REQUEST_URI, allowing the malicious utm_campaign value to bypass sanitization and be stored in the database.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-19T07:16:27.773"
+  },
+  {
+    "id": "CVE-2026-15446",
+    "description": "The EWWW Image Optimizer plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'data-script' Lazy Load Attribute in Post Content in all versions up to, and including, 8.7.3 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The exploit is achieved by embedding a crafted img element with class='lazyload' and a data-script attribute pointing to an attacker-controlled URL in post content, which the plugin's bundled lazysizes ls.unveilhooks addon then uses to dynamically create and insert a script element into the DOM at page view time.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-19T07:16:27.530"
+  },
+  {
     "id": "CVE-2026-8810",
     "description": "On ARM platforms, a vulnerability in the architecture design of HDD Password could allow an attacker to retrieve HDD Password from UEFI variables.",
     "severity": "Medium",
@@ -13109,68 +13228,5 @@
     "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-16T09:16:19.900"
-  },
-  {
-    "id": "CVE-2026-2497",
-    "description": "The Gallery by BestWebSoft plugin for WordPress is vulnerable to SQL Injection via the '_gallery_order_{post_id}' parameter array keys in all versions up to, and including, 4.7.9. This is due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. The `gllr_save_postdata()` function stores unsanitized array keys from `$_POST` directly into post meta, which are later used in SQL queries without prepared statements. This makes it possible for authenticated attackers, with Editor-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:31.030"
-  },
-  {
-    "id": "CVE-2026-2357",
-    "description": "The Bold Page Builder plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the plugin's 'bt_bb_shortcode' shortcode in all versions up to, and including, 5.6.8 due to insufficient input sanitization and output escaping on user supplied attributes. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.910"
-  },
-  {
-    "id": "CVE-2026-18347",
-    "description": "The Kirki – Freeform Page Builder, Website Builder & Customizer plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 6.1.1. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with custom-level access and above, to read arbitrary user metadata and sensitive user record fields — including email address, assigned roles, registration date, and any user_meta values — belonging to any WordPress user including administrators, by supplying a target user ID with a user-type context to the frontend collection endpoint.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.787"
-  },
-  {
-    "id": "CVE-2026-17608",
-    "description": "The WP Compress – Instant Performance & Speed Optimization plugin for WordPress is vulnerable to Cross-Site Request Forgery in all versions up to, and including, 7.10.09. This is due to missing or incorrect nonce validation on the (top-level template code) function. This makes it possible for unauthenticated attackers to delete arbitrary WordPress options, including critical ones such as siteurl, home, active_plugins, template, and stylesheet, causing site outage or a full plugin and theme reset via a forged request granted they can trick a site administrator into performing an action such as clicking on a link.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.663"
-  },
-  {
-    "id": "CVE-2026-17604",
-    "description": "The Kirki – Freeform Page Builder, Website Builder & Customizer plugin for WordPress is vulnerable to Directory Traversal in all versions up to, and including, 6.1.1 via the 'data' parameter parameter. This makes it possible for authenticated attackers, with editor-level access and above, to read the contents of arbitrary files on the server, which can contain sensitive information. The intended strpos()-based guard against leaving the uploads directory is bypassed by crafting a URL that includes the uploads base path as a substring while embedding directory traversal sequences, such as /wp-content/uploads/../../wp-config.php.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.547"
-  },
-  {
-    "id": "CVE-2026-17087",
-    "description": "The WP Travel Engine – Tour Booking Plugin – Tour Operator Software plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 6.8.4. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to view private booking billing details — including the victim customer's first name, last name, email address, street address, city, and phone number — rendered as default values in checkout form fields by binding an arbitrary booking ID to the attacker's session. The only access control on the endpoint is a frontend nonce that is publicly emitted to all visitors via the wteL10n global on trip pages, meaning it provides CSRF protection only and does not restrict unauthenticated access.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.423"
-  },
-  {
-    "id": "CVE-2026-13424",
-    "description": "The Online Scheduling and Appointment Booking System – Bookly plugin for WordPress is vulnerable to Stored Cross-Site Scripting via bookly_speed_up_update_addons AJAX action in all versions up to, and including, 27.7 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The injection point is the bookly_speed_up_update_addons AJAX action, which is registered as wp_ajax_nopriv_* and therefore reachable without authentication; the payload is stored verbatim in the bookly_log.details column when a request is submitted without a valid signature, and executes when an administrator later views the Diagnostics → Logs page.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.300"
-  },
-  {
-    "id": "CVE-2026-12998",
-    "description": "The Forminator Forms – Contact Form, Payment Form & Custom Form Builder plugin for WordPress is vulnerable to Insecure Direct Object Reference in all versions up to, and including, 1.55.0.2 via the 'draft' parameter due to missing validation on a user controlled key. This makes it possible for unauthenticated attackers to enumerate sequential integer entry IDs via the 'draft' parameter and read other users' saved draft form data, including names, email addresses, phone numbers, addresses, and free-form message content. This is only exploitable on forms that have the 'Save and Continue' feature enabled.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.173"
-  },
-  {
-    "id": "CVE-2026-10734",
-    "description": "The Infility Global plugin for WordPress is vulnerable to Stored Cross-Site Scripting via /cf7_record Log Endpoint in all versions up to, and including, 2.15.21 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The /cf7_records viewer is accessible to any authenticated user including those with Subscriber-level access, meaning the injected payload executes for any logged-in user who visits the records page.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-16T07:16:30.043"
   }
 ]
