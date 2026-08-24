@@ -1,26 +1,5 @@
 [
   {
-    "id": "CVE-2026-66011",
-    "description": "ImageMagick before 7.1.2-27 contains a memory leak vulnerability in the magick command-line interface when invalid options are provided. Attackers can trigger memory exhaustion by repeatedly supplying malformed command-line arguments to consume system resources.",
-    "severity": "Low",
-    "tech": "Imagemagick",
-    "published": "2026-07-25T11:17:18.347"
-  },
-  {
-    "id": "CVE-2026-66012",
-    "description": "SiYuan before v3.7.2 contains a missing authorization vulnerability in the POST /mcp kernel endpoint, which is gated only by a general auth check (model.CheckAuth) with no admin-role or read-only enforcement. This exposes 31 MCP tools, including a file tool with list/read/write/delete/rename/copy actions across the entire workspace. When the Publish server is enabled in anonymous mode (Conf.Publish.Enable=true and Conf.Publish.Auth.Enable=false), the Publish reverse proxy attaches an anonymous RoleReader JWT to proxied requests, allowing a remote unauthenticated attacker to reach /mcp. The attacker can read conf/conf.json to extract accessAuthCode, api.token, and cookieKey in plaintext, write arbitrary files in the workspace, and plant a plugin into data/plugins/ that executes with nodeIntegration:true and no contextIsolation on the next desktop launch, leading to administrator takeover.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-25T11:17:19.053"
-  },
-  {
-    "id": "CVE-2026-66013",
-    "description": "OpenRemote before 1.26.2 contains an authentication bypass vulnerability in the console registration API that allows unauthenticated attackers to update existing console assets by supplying a known asset identifier. Attackers can overwrite push notification tokens and console metadata without authentication or ownership validation, redirecting notifications or denying delivery to legitimate consoles.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-07-25T11:17:19.193"
-  },
-  {
     "id": "CVE-2026-10681",
     "description": "In Zephyr's userspace dynamic-objects subsystem, thread_idx_alloc() in kernel/userspace/userspace.c allocated a new thread permission index from the global _thread_idx_map[] bitmap without holding lists_lock.\n\nOn SMP systems, two user-mode threads invoking the k_object_alloc(K_OBJ_THREAD) syscall concurrently can both observe the same low free bit, perform the same non-atomic RMW to clear it, and return the identical tidx.\n\nThe two newly created K_OBJ_THREAD objects are then assigned the same thread_id, so the two user threads alias a single bit position in every kernel object's perms[] bitfield: any subsequent grant of access on a kernel object to one thread is implicitly a grant to the other, defeating userspace ACL isolation. A secondary lost-update window between the unlocked &=~BIT() in alloc and the locked |= BIT() in thread_idx_free() can also leak entries from the thread-index pool.\n\nThe defect is reachable from any user-mode thread via the unrestricted __syscall k_object_alloc and is gated on CONFIG_USERSPACE, CONFIG_DYNAMIC_OBJECTS, and CONFIG_SMP. The flaw was introduced when the per-thread permission index was added in 2018 and is present in every release up to and including v4.4.0. Fixed by holding lists_lock across the bitmap RMW and the permissions clear (and inlining the obj_list traversal that previously took the lock itself).",
     "severity": "Medium",
@@ -14317,7 +14296,7 @@
   {
     "id": "CVE-2026-67340",
     "description": "ArcadeDB before 26.7.2 (arcadedb-engine) allows trigger scripts to look up host classes in java.lang.* (via Java.type) because ScriptTriggerExecutor adds java.lang.* to the allowed packages. An authenticated user with UPDATE_SCHEMA permission can create a JavaScript trigger that invokes java.lang.Runtime.getRuntime().exec() (or ProcessBuilder), achieving OS command execution when the trigger fires.",
-    "severity": "Critical",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-01T13:17:05.127"
   },
@@ -47532,7 +47511,7 @@
   {
     "id": "CVE-2026-72822",
     "description": "The getgrav/grav-plugin-api Composer package before 1.0.13 (affected <= 1.0.12) fails to enforce API key scope caps on the disable2fa endpoint. Unlike the sibling generate2fa endpoint, disable2fa authorizes the admin (non-self) path solely via ACL reads (isSuperAdmin/hasPermission) and never invokes requirePermission(), so the api_key_scopes cap is never applied. As a result, a holder of a narrow-scope API key on a super account, or a non-super account whose ACL includes api.users.write, can force-disable two-factor authentication on any non-super target account via POST /api/v1/users/{user}/2fa/disable without providing a TOTP code, facilitating account takeover.",
-    "severity": "Critical",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-14T12:16:45.267"
   },
@@ -47546,7 +47525,7 @@
   {
     "id": "CVE-2026-72824",
     "description": "The Grav API plugin (getgrav/grav-plugin-api) before 1.0.13 contains an API key scope-cap bypass in PagesController::guardTwigContent(). The Twig-toggle check uses a bare isSuperAdmin() gate that does not consult api_key_scopes, so a least-privilege API key scoped only to api.pages.write and minted on a super account can enable process.twig on a page save even though admin.pages_twig is intentionally outside the api.pages scope. When security.twig_content.process_enabled=true and editor_enabled=false, this allows Twig-in-content to execute server-side, resulting in server-side template injection (SSTI) and remote code execution.",
-    "severity": "Critical",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-14T12:16:45.520"
   },
@@ -47560,7 +47539,7 @@
   {
     "id": "CVE-2026-72826",
     "description": "The getgrav/grav-plugin-api plugin before 1.0.13 fails to validate that the scopes of a newly created API key are a subset of the caller's scopes in createApiKey. The self-target path of requireApiKeyPermission() requires only the baseline api.access scope, and the new key's scopes are read directly from the request body with no subset check. An attacker holding a minimal-scope API key on a super account can submit an empty scopes array to mint an unscoped, full-access super key, bypassing scope restrictions (and enabling further chains such as configuration write to RCE).",
-    "severity": "Critical",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-14T12:16:45.780"
   },
@@ -47581,14 +47560,14 @@
   {
     "id": "CVE-2026-72829",
     "description": "The Grav API plugin (getgrav/grav-plugin-api) before 1.0.13 contains an API-key scope-cap bypass in UsersController's create() and update() methods. These methods enforce the scope cap only for api.users.write, but gate super-privilege grants on a bare isSuperAdmin() check that reads access.api.super directly without consulting the key's scopes. As a result, an api.users.write-scoped key minted on a super account can set access.api.super or assign a super-granting group to mint or promote a full super account, then authenticate as that account for uncapped administrative privileges.",
-    "severity": "Critical",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-14T12:16:46.157"
   },
   {
     "id": "CVE-2026-72830",
-    "description": "Grav API plugin versions before 1.0.13 fail to enforce API key scope caps in ConfigController super-scope gates, allowing scoped keys to write scheduler configuration. Attackers with a scoped api.config.write key can inject arbitrary commands into scheduler.custom_jobs that execute via Symfony Process for remote code execution.",
-    "severity": "Critical",
+    "description": "Grav API plugin versions before 1.0.13 fail to enforce API key scope caps in ConfigController super-scope gates, allowing scoped keys to write scheduler configuration. The scope cap is applied only inside requirePermission(), while the scheduler and backups gates use a bare isSuperAdmin() check that never consults api_key_scopes. An attacker holding an API key scoped to api.config.write that was minted on a super account can therefore inject arbitrary commands into scheduler.custom_jobs, which Job::run() passes to a Symfony Process, achieving operating system command execution as the web server user.",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-14T12:16:46.277"
   },
@@ -80890,5 +80869,327 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-24T10:16:40.810"
+  },
+  {
+    "id": "CVE-2026-10582",
+    "description": "Hugo's security.http.urls allowlist is the only control on outbound fetches made by resources.GetRemote, and it inspects the URL text alone. CheckAllowedHTTPURL in config/security/securityConfig.go applies the configured pattern list and then re-checks a canonicalised form of an integer, hex or octal IPv4 host, but it never resolves the hostname and never inspects the address the HTTP client actually connects to. The client constructed in resources/resource_factories/create/create.go installs no dial-time hook, so no check occurs at connection time either. A hostname that resolves to a loopback, private or cloud-metadata address therefore satisfies the policy, and the response body is embedded in the generated site. An attacker who can supply a URL through content, for example a front-matter field or a CMS field, can make the build fetch an internal endpoint and publish the response in the static output, so the build artifact itself carries the data out.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T11:16:38.233"
+  },
+  {
+    "id": "CVE-2026-10618",
+    "description": "Hugo's default fenced-code-block renderer writes attribute values taken from the code-fence info string into the rendered HTML without escaping them. New in markup/internal/attributes/attributes.go converts every attribute value from a byte slice to a string as it is stored, deliberately dropping the escaping that used to happen there, and RenderAttributes in the same file escapes only values that are still byte slices, so its escaping branch is never reached and every value is written verbatim. The function's documentation states that it performs HTML escaping of string attributes, which it does not. A quote inside an attribute value in the info string therefore terminates the attribute and allows a further attribute, including an event handler, to be placed on the wrapper element, and the script runs for every visitor who loads the page. This path is reached under the default configuration, with code fences enabled and without goldmark's unsafe setting or any custom render hook. Attribute names beginning with on are filtered when the attributes are parsed, so injection is achieved through the value rather than the name.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T11:16:38.403"
+  },
+  {
+    "id": "CVE-2026-59295",
+    "description": "Micrometer-instrumented Apache HttpAsyncClient (4.x or 5.x) usage via MicrometerHttpClientInterceptor can leak memory unboundedly when asynchronous requests fail before receiving a response (e.g. connection resets or timeouts). Tracking state for these requests remains in memory indefinitely, and sustained failures lead to heap exhaustion and OutOfMemoryError crashes.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T11:16:39.780"
+  },
+  {
+    "id": "CVE-2026-76172",
+    "description": "fast-uri is a URI parser for Node.js. During parsing it runs a legacy decoding pass over the scheme component and never re-escapes the result, and serialization writes the scheme back out verbatim, unlike the host component which is re-escaped. As a result an input whose scheme carries percent-encoded slashes parses as a scheme with no authority, so the parsed host and error are both undefined, yet resolving or normalizing that same input emits a network-path reference whose authority is attacker-chosen and re-parses to that host. An application that allowlists on the parsed host, or treats a reference with no authority as safe to resolve against its base, gets the opposite of what it checked, giving an off-site redirect, server-side request forgery, or address-policy bypass. The legacy decoder also expands non-standard escape forms, widening the issue past upstream filters, and control characters in the scheme can reach the output as raw carriage return and line feed. The affected versions are 2.3.1 up to but not including 2.4.5, 3.0.0 up to but not including 3.1.6, and 4.0.0 up to but not including 4.1.3. The issue is fixed in 2.4.5, 3.1.6, and 4.1.3, which reject a scheme that is not valid after decoding. Users should upgrade to a patched version.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T11:16:40.723"
+  },
+  {
+    "id": "CVE-2026-78244",
+    "description": "A vulnerability was detected in itsourcecode Real Estate Management System 1.0. Affected by this issue is some unknown functionality of the file search.php. Performing a manipulation of the argument search/delivery_type/search_price/property_type results in sql injection. The attack may be initiated remotely. The exploit is now public and may be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T11:16:40.850"
+  },
+  {
+    "id": "CVE-2026-78245",
+    "description": "A flaw has been found in itsourcecode Online Pharmacy System 1.0. This affects the function move_uploaded_file of the file all_users/register.php of the component User Registration. Executing a manipulation of the argument photo can lead to unrestricted upload. The attack may be launched remotely. The exploit has been published and may be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T11:16:41.040"
+  },
+  {
+    "id": "CVE-2026-78337",
+    "description": "Unrestricted Upload of File with Dangerous Type in the company logo upload in Roskus Prospero Flow CRM before 5.15.13 allows an authenticated user holding the create company and update company permissions to execute arbitrary JavaScript in the application origin via an SVG document containing an embedded script element.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T11:16:41.203"
+  },
+  {
+    "id": "CVE-2025-63080",
+    "description": "Firmware in KAON PG5298A and PG5298B routers allow an authenticated user to send crafted JSON-RPC requests and perform operations not possible via GUI, e.g. system file read or command execution.   \nThis vulnerability has been fixed in firmware version: 3.0.82 for PG5298A and 4.0.82 for PG5298B.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:47.937"
+  },
+  {
+    "id": "CVE-2026-28151",
+    "description": "Unauthenticated Local File Inclusion in Tonda < 2.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.083"
+  },
+  {
+    "id": "CVE-2026-28152",
+    "description": "Unauthenticated Local File Inclusion in Tonda Core < 2.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.220"
+  },
+  {
+    "id": "CVE-2026-28153",
+    "description": "Unauthenticated Broken Access Control in Notification Master &#8211; Real-Time WordPress Notifications With Email, SMS, Webhooks &amp; More <= 1.7.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.347"
+  },
+  {
+    "id": "CVE-2026-28162",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Events Made Easy <= 3.2.5 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.473"
+  },
+  {
+    "id": "CVE-2026-28165",
+    "description": "Unauthenticated Privilege Escalation in Digits <= 9.2 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.600"
+  },
+  {
+    "id": "CVE-2026-28166",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Tourmaster <= 5.4.9 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.723"
+  },
+  {
+    "id": "CVE-2026-28167",
+    "description": "Unauthenticated Arbitrary File Download in Super Forms <= 6.3.315 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.850"
+  },
+  {
+    "id": "CVE-2026-28171",
+    "description": "Unauthenticated Arbitrary File Deletion in WooCommerce File Approval <= 10.7 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:50.970"
+  },
+  {
+    "id": "CVE-2026-28190",
+    "description": "Subscriber Broken Access Control in ProLancer Element <= 1.4.8 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:51.093"
+  },
+  {
+    "id": "CVE-2026-32471",
+    "description": "Subscriber SQL Injection in ProLancer Element <= 1.4.8 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:51.210"
+  },
+  {
+    "id": "CVE-2026-32476",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Brave Conversion Engine (PRO) <= 0.8.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:51.340"
+  },
+  {
+    "id": "CVE-2026-32477",
+    "description": "Unauthenticated Arbitrary File Deletion in ShopBuilder Pro – Elementor WooCommerce Builder Addons <= 2.2.0 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:51.473"
+  },
+  {
+    "id": "CVE-2026-32478",
+    "description": "Subscriber SQL Injection in WP Project Manager Pro <= 4.0.1 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:51.607"
+  },
+  {
+    "id": "CVE-2026-32551",
+    "description": "Unauthenticated SQL Injection in Woo Essential <= 4.3.0 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:51.733"
+  },
+  {
+    "id": "CVE-2026-32558",
+    "description": "Unauthenticated Privilege Escalation in Affiliate Pro - Affiliate Program for WooCommerce & WordPress <= 8.9.1 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:51.877"
+  },
+  {
+    "id": "CVE-2026-66584",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in 12 Step Meeting List <= 3.19.16 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:52.543"
+  },
+  {
+    "id": "CVE-2026-66585",
+    "description": "Unauthenticated Sensitive Data Exposure in WP Cafe Pro < 3.0.15 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:52.693"
+  },
+  {
+    "id": "CVE-2026-66587",
+    "description": "Unauthenticated Local File Inclusion in WP Cafe Pro < 3.0.15 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:52.837"
+  },
+  {
+    "id": "CVE-2026-66599",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in WPComplete <= 2.9.5.6 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:52.980"
+  },
+  {
+    "id": "CVE-2026-66610",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Urna <= 2.6.2 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:53.127"
+  },
+  {
+    "id": "CVE-2026-66623",
+    "description": "Unauthenticated Cross Site Scripting (XSS) in Social Media & Share Icons <= 2.9.9 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:53.270"
+  },
+  {
+    "id": "CVE-2026-66648",
+    "description": "Unauthenticated Privilege Escalation in Jawn <= 1.4.2 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:53.433"
+  },
+  {
+    "id": "CVE-2026-66650",
+    "description": "Unauthenticated PHP Object Injection in FreightCo <= 1.1.15 versions.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:53.580"
+  },
+  {
+    "id": "CVE-2026-66670",
+    "description": "Unauthenticated Local File Inclusion in Måne <= 1.7 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:53.730"
+  },
+  {
+    "id": "CVE-2026-66671",
+    "description": "Unauthenticated Local File Inclusion in Verdure Core <= 1.2 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:53.880"
+  },
+  {
+    "id": "CVE-2026-6017",
+    "description": "Firmware in KAON PG5298A and PG5298B routers allow an unauthenticated user to query a specific endpoint and acquire sensitive information such as a password to the administrative portal.   \nThis vulnerability has been fixed in firmware version: 3.0.82 for PG5298A and 4.0.82 for PG5298B.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:54.030"
+  },
+  {
+    "id": "CVE-2026-78246",
+    "description": "A vulnerability has been found in itsourcecode Online Clinic Management System 1.0. This vulnerability affects unknown code of the file success/login.php of the component Admin Login. The manipulation of the argument Username leads to sql injection. Remote exploitation of the attack is possible. The exploit has been disclosed to the public and may be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:54.523"
+  },
+  {
+    "id": "CVE-2026-78258",
+    "description": "Unauthenticated Broken Access Control in Booking and Rental Manager <= 2.7.5 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:54.747"
+  },
+  {
+    "id": "CVE-2026-78269",
+    "description": "Contributor Server Side Request Forgery (SSRF) in Shared Files <= 1.7.69 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:54.893"
+  },
+  {
+    "id": "CVE-2026-78270",
+    "description": "Author SQL Injection in FluentCRM Pro <= 3.1.12 versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:55.043"
+  },
+  {
+    "id": "CVE-2026-78272",
+    "description": "Subscriber Broken Access Control in Fluent Support Pro <= 2.3.1 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:55.193"
+  },
+  {
+    "id": "CVE-2026-78277",
+    "description": "Subscriber Server Side Request Forgery (SSRF) in FluentCRM Pro <= 3.1.12 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:55.347"
+  },
+  {
+    "id": "CVE-2026-78278",
+    "description": "Subscriber Insecure Direct Object References (IDOR) in Fluent Boards Pro <= 2.0.11 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:55.507"
+  },
+  {
+    "id": "CVE-2026-78279",
+    "description": "Unauthenticated Cross Site Request Forgery (CSRF) in Fluent Support Pro <= 2.3.1 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:55.657"
+  },
+  {
+    "id": "CVE-2026-78280",
+    "description": "Unauthenticated Cross Site Request Forgery (CSRF) in Hash Form <= 1.4.0 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:55.813"
+  },
+  {
+    "id": "CVE-2026-78290",
+    "description": "Contributor Cross Site Scripting (XSS) in Magazine Blocks <= 1.8.6 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:55.960"
+  },
+  {
+    "id": "CVE-2026-78291",
+    "description": "Unauthenticated Broken Access Control in RepairBuddy <= 4.1223 versions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:56.110"
+  },
+  {
+    "id": "CVE-2026-78323",
+    "description": "A flaw was found in JSS (Java Security Services). The JSSTrustManager class does not verify NSS trust flags when validating CA certificates, allowing certificates present in the NSS database without TRUSTED_CA flags to be accepted as trust anchors for TLS connections. In non-default configurations where certificate revocation checking is disabled, this could allow a man-in-the-middle attacker to forge certificates accepted by PKI client connections.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T12:16:56.250"
   }
 ]
