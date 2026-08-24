@@ -1,5 +1,82 @@
 [
   {
+    "id": "CVE-2026-9769",
+    "description": "justhtml through 1.9.1 (fixed in 1.10.0) is vulnerable to uncontrolled recursion leading to denial of service. During JustHTML() construction, TreeBuilder.finish() unconditionally calls _populate_selectedcontent(), which recursively traverses the DOM tree via _find_elements()/_find_element() without a depth bound. An attacker who can supply HTML for parsing can provide deeply nested elements (e.g., ~1000 nested <div> tags, roughly 11 KB) to exceed CPython's default recursion limit and trigger an unhandled RecursionError, which may abort parsing, fail requests, or terminate a worker/process depending on the host application's exception handling.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:55.277"
+  },
+  {
+    "id": "CVE-2026-8630",
+    "description": "justhtml before 1.12.0 (versions <= 1.11.0) contains a mutation cross-site scripting (mXSS) vulnerability in the serialization of raw-text elements such as <style> and <script>. When a DOM tree is processed by sanitize_dom() using a custom policy that keeps these elements, text nodes inside them are serialized literally without escaping, allowing attacker-controlled text containing the matching closing tag sequence to break out of the raw-text context and inject arbitrary HTML into the serialized output. The default sanitization policy is not affected because it drops the contents of style and script.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:55.127"
+  },
+  {
+    "id": "CVE-2026-8445",
+    "description": "justhtml versions <= 1.11.0 (fixed in 1.12.0) do not sufficiently escape HTML-significant characters (angle brackets) in text nodes when converting a parsed document to Markdown via to_markdown(). While a small set of Markdown metacharacters are escaped, characters such as < and > are preserved, so untrusted input that is safe in to_html() — including entity-decoded text (e.g. &lt;script&gt;) or text from RCDATA/RAWTEXT-parsed elements like <title>, <textarea>, <noscript>, and <plaintext> — can be emitted as raw HTML in the Markdown output, enabling a sanitizer bypass and potential cross-site scripting when that output is rendered.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:54.957"
+  },
+  {
+    "id": "CVE-2026-7808",
+    "description": "justhtml before 1.16.0 contains multiple HTML sanitization bypass issues that can allow active/dangerous content (e.g., script or style) to survive sanitization, potentially leading to cross-site scripting. The issues primarily affect advanced usage rather than the default JustHTML(..., sanitize=True) path for ordinary parsed HTML: mutating or reusing sanitization policy objects (including exported defaults) could weaken later sanitization; programmatic DOM input to sanitize()/sanitize_dom() could miss mixed-case tag names (e.g., ScRiPt, StYlE); crafted programmatic doctype names could serialize into active markup; and custom policies preserving SVG or MathML could allow animation elements, presentation attributes with external url(...) references, or DOM trees mislabeled as namespace=\"html\" to bypass foreign-content checks. Fixed in 1.16.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:54.810"
+  },
+  {
+    "id": "CVE-2026-77088",
+    "description": "justhtml versions 0.9.0 through 1.21.0 contain a cross-site scripting vulnerability in to_markdown() where inline code spans fail to account for blank lines as block boundaries. Attackers can inject blank lines into code or pre element text to break the inline span, causing sanitized HTML to be emitted unescaped and re-parsed as live Markdown by compliant renderers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:54.433"
+  },
+  {
+    "id": "CVE-2026-74793",
+    "description": "justhtml before 3.11.0 contains a cross-site scripting vulnerability where the default sanitizer bypasses event handler removal in selectedcontent projections. Attackers can inject SVG or MathML elements with event handlers that are cloned and reinserted into output without sanitization, enabling stored or reflected XSS attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:54.127"
+  },
+  {
+    "id": "CVE-2026-6827",
+    "description": "justhtml before 1.17.0 contains multiple security issues in sanitization, serialization, and programmatic DOM handling. When custom policies preserve foreign namespaces (SVG/MathML), dangerous content such as HTML integration points (SVG <foreignObject>, MathML <annotation-xml encoding=\"text/html\">) and mutation-XSS parser-differential payloads could survive sanitization and become active HTML after reparse; SVG filter=\"url(...)\" and preserved <style> could leave resource-loading CSS (@import, background-image:url()). Programmatic script/style/Comment nodes could serialize into active markup. Additional hardening fixes address sanitize-pipeline cache mutation and DOM parent/child cycles that could cause infinite loops. Most issues affect advanced or custom configurations rather than the default JustHTML(..., sanitize=True) safe path.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:53.963"
+  },
+  {
+    "id": "CVE-2026-5751",
+    "description": "justhtml versions 1.13.0 and earlier contain a parser-differential / mutation cross-site scripting (mXSS) vulnerability when using a custom SanitizationPolicy that preserves foreign namespaces (e.g., drop_foreign_namespaces=False with allowlisted SVG/MathML elements or raw-text containers such as <style>). Specially crafted input can sanitize into markup that appears safe but becomes unsafe when re-parsed by a browser or another HTML parser, allowing markup injection. The default safe configuration (sanitize=True) is not affected. Fixed in 1.14.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:53.807"
+  },
+  {
+    "id": "CVE-2026-5389",
+    "description": "justhtml versions before 1.13.0 contain a cross-site scripting vulnerability in the to_markdown() function when serializing attacker-controlled pre content. Attackers can place backticks inside sanitized pre elements to break out of fixed-length code fences, allowing raw HTML to execute when the generated Markdown is rendered by CommonMark or GFM-style renderers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:53.647"
+  },
+  {
+    "id": "CVE-2026-5388",
+    "description": "justhtml before 1.15.0 contains multiple security issues in URL sanitization helpers (clean_url_value/clean_url_in_js_string), HTML serialization, Markdown passthrough (html_passthrough=True), and several custom sanitization-policy edge cases. Depending on configuration, an attacker can bypass sanitization to inject active HTML and JavaScript — for example via encoded javascript: URLs, backslash-based relative URLs resolved as remote hosts, markup-breaking programmatic element/attribute names or HTML comments, raw </textarea> reintroduction through Markdown passthrough, or preserved <style>/<meta http-equiv=refresh>/<base href> tags in custom policies. Most custom-policy issues do not affect the default sanitize=True configuration; they primarily affect helper APIs, programmatic DOM construction, html_passthrough=True, and custom policies/transform pipelines.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:53.470"
+  },
+  {
+    "id": "CVE-2026-4671",
+    "description": "justhtml before 1.18.0 contains multiple low-severity denial-of-service issues in CSS selector handling and linkification. Applications that evaluate attacker-controlled selector strings (via query(), matches(), or selector-based transforms), run selector matching over very large untrusted documents, construct DOM trees from untrusted structure, or enable linkification over attacker-controlled text may consume disproportionate CPU or memory. Triggers include oversized selectors, large selector lists, oversized compound selectors, long combinator chains, deeply nested functional pseudo-classes, repeated token/positional matching, cyclic DOM graphs causing non-terminating traversal, and punctuation-heavy or trailing-bracket linkification input. These are availability-only concerns and do not by themselves allow script execution, data disclosure, or sanitizer bypass. Default JustHTML(sanitize=True) usage is not expected to be exposed, since selectors are normally supplied by application code.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-23T14:16:53.293"
+  },
+  {
     "id": "CVE-2026-78155",
     "description": "privilege escalation in StackGres operator allows a low-privilege tenant who owns a database to gain administrator privileges",
     "severity": "Critical",
@@ -6242,243 +6319,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-20T15:17:28.263"
-  },
-  {
-    "id": "CVE-2026-76990",
-    "description": "A vulnerability has been found in code-projects Simple Inventory System 1.0. Affected by this issue is some unknown functionality of the file /delete.php. Such manipulation of the argument ID leads to sql injection. The attack may be launched remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:18:00.313"
-  },
-  {
-    "id": "CVE-2026-76833",
-    "description": "@cgauge/yaml npm package contains an arbitrary code execution vulnerability that allows attackers to execute arbitrary JavaScript by embedding a custom !js YAML tag whose construct callback unconditionally calls eval() on attacker-supplied string values during document parsing. Any application parsing untrusted YAML input with this library exposes full Node.js runtime authority, including environment variable access, filesystem read/write, network access, and subprocess execution, with no safe-mode alternative or opt-out mechanism available.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:18:00.137"
-  },
-  {
-    "id": "CVE-2026-76635",
-    "description": "baserCMS before 5.3.0 contains a SQL injection vulnerability in BcDatabaseService.php that allows authenticated administrators to inject attacker-controlled table names and configuration values directly into SQL statements across sequence update, CSV export, and table management operations. Attackers can chain a backup restore code injection flaw, where PHP code outside class definitions in schema files executes unconditionally upon loading, to plant malicious table names and trigger error-based SQL injection that retrieves database version, schema contents, and arbitrary data from the PostgreSQL backend.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:59.973"
-  },
-  {
-    "id": "CVE-2026-76634",
-    "description": "WeGIA before 3.9.2 contains an insecure direct object reference vulnerability in the employee profile page that allows authenticated attackers to access arbitrary employee records by injecting an id_pessoa parameter through a request extraction function that overwrites the session-derived identifier. Attackers can enumerate all user identifiers to retrieve full profile data for any employee account, including name, CPF, address, contact details, and administrative flags.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:59.837"
-  },
-  {
-    "id": "CVE-2026-76633",
-    "description": "WeGIA before 3.9.2 contains an authorization bypass vulnerability in the password change flow that allows any authenticated user to change their account password without providing existing credentials by exploiting the unconditional exclusion of the alterarSenha method from permission checks in controle/control.php. Attackers can manipulate the redir parameter to point to alterar_senha.php, routing through verificarSenhaConfig() instead of verificarSenha() to bypass current password verification and convert temporary session access into permanent account takeover.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:59.680"
-  },
-  {
-    "id": "CVE-2026-76632",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:59.603"
-  },
-  {
-    "id": "CVE-2026-70383",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Estonian Information System Authority (RIA) DigiDoc4 client.\n\nThis issue affects DigiDoc4: from 4.0.0 before 4.11.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:58.050"
-  },
-  {
-    "id": "CVE-2026-64972",
-    "description": "ATutor is vulnerable to Reflected XSS via popup parameter in preview.php. An authenticated attacker can inject a double quote into the popup parameter, break out of the attribute value, and append a new event handler such as onload. The related preview_top.php file sanitises these parameters, but that does not prevent XSS in the parent frameset rendered by preview.php itself.\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:46.077"
-  },
-  {
-    "id": "CVE-2026-64971",
-    "description": "ATutor is vulnerable to Reflected XSS in restore functionality. An attacker can provide a specially crafted URL that, when opened, results in arbitrary JavaScript execution in the victim's browser.\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:45.943"
-  },
-  {
-    "id": "CVE-2026-64970",
-    "description": "ATutor is vulnerable to Stored Cross Site Scripting in registration functionality.  An attacker can register a new account and enter a JavaScript payload in the phone field during registration. When any authenticated user visits the attacker's public profile, the profile template echoes the phone value without output encoding and the browser executes the payload leading to the theft of user's session cookie.\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:45.810"
-  },
-  {
-    "id": "CVE-2026-64969",
-    "description": "ATutor is vulnerable to Insecure Direct Object Reference (IDOR) attack in profile picture related endpoints. Any authenticated user, including a student, can supply another user's member_id in a POST request to the profile album endpoint and permanently delete that user's profile picture, including those of instructors and administrators.\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:45.680"
-  },
-  {
-    "id": "CVE-2026-64968",
-    "description": "ATutor is vulnerable to Server-Side request forgery in import functionalities. An authenticated administrator can make the server request arbitrary internal HTTP endpoints, cloud metadata services, or local files via file:// if the PHP\nenvironment permits URL wrappers.\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:45.543"
-  },
-  {
-    "id": "CVE-2026-64967",
-    "description": "A path traversal vulnerability in ATutor's error log viewer allows an attacker with administrative privileges to access arbitrary files outside the intended logs directory. This can lead to unauthorized access to sensitive files and other resources accessible to the web server process.\n\n\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:45.410"
-  },
-  {
-    "id": "CVE-2026-64966",
-    "description": "ATutor is vulnerable to a Path Traversal vulnerability in ZIP extraction functionality. An attacker with instructor privileges can upload and extract a specially crafted ZIP archive, causing files to be written outside the intended extraction directory. This allows an attacker to place a server-executable .phtml file in the web root and achieve remote code execution with web server privileges on the underlying server.\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:45.270"
-  },
-  {
-    "id": "CVE-2026-64965",
-    "description": "ATutor is vulnerable to Missing Authorization Check on Test and Question Import endpoints.  A low-privileged authenticated user (e.g. a student) enrolled in a course can bypass authorization checks by sending requests directly to the backend import endpoints, allowing the unauthorized import of tests and questions within a course.\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:45.133"
-  },
-  {
-    "id": "CVE-2026-64964",
-    "description": "ATutor generates predictable email confirmation tokens due to the use of insufficiently random values in the account confirmation functionality. Due to the use of predictable values related to user registration, an attacker who knows or can predict these values can guess valid account activation tokens. This allows an attacker to activate an unconfirmed account without access to the victim's email inbox.\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:44.990"
-  },
-  {
-    "id": "CVE-2026-64963",
-    "description": "A path traversal vulnerability in ATutor allows an authenticated user to access files from other course directories when the AT_FORCE_GET_FILE configuration option is enabled. This can lead to unauthorized access to files and disclosure of information about the filesystem structure.\n\n\n\n\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:44.850"
-  },
-  {
-    "id": "CVE-2026-64962",
-    "description": "ATutor is vulnerable to Cross-Site Request Forgery (CSRF) in profile update functionality. An attacker can craft a malicious website which, when visited by an authenticated victim, submits a forged request to the system. Due to the lack of proper CSRF token implementation, the forged request is processed successfully, allowing an attacker to modify profile fields of an existing user.\n\n\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:44.713"
-  },
-  {
-    "id": "CVE-2026-64961",
-    "description": "ATutor is vulnerable to authentication bypass . Although a token validation check is present in the auto-login functionality, the values required for token validation remain uninitialized in certain code paths. An unauthenticated attacker who can determine a user's identifier and registration timestamp can generate a valid token and authenticate as an existing user, including administrator, without knowing the password.\n\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:44.577"
-  },
-  {
-    "id": "CVE-2026-64960",
-    "description": "ATutor Gameme module allows users to upload files of any type and extension without restriction. Due to improper handling of file uploads, files are stored in a web-accessible location before their content is validated. An authenticated attacker who knows a valid course_id can upload a server-executable malicious script. The uploaded file can then be requested over HTTP, resulting in remote code execution as the web server process user. In most cases, course_id=0 can be used, as it commonly represents the global context.\n\n\n\n\nProduct is no longer actively supported and the vulnerabilities have not been fixed. Only version 2.2.4 was tested and confirmed as vulnerable, other versions were not tested but might also be vulnerable.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:44.400"
-  },
-  {
-    "id": "CVE-2026-15706",
-    "description": "Missing authentication for critical function vulnerability in Baylan Measuring Instruments Industry and Trade Inc. Baylan Smart Meter Management Application (BMS) allows Authentication Bypass.\n\nThis issue affects Baylan Smart Meter Management Application (BMS): before v1.1.10.142.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-20T14:17:09.617"
-  },
-  {
-    "id": "CVE-2026-7485",
-    "description": "Incorrect authorization in frozen BI aggregations in Checkmk <2.5.0p2, <2.4.0p29, <2.3.0p47, and all 2.2.0 versions allows an authenticated user with restricted host and service visibility to learn the names and the existence of hosts and services they are not authorized to see.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:19:07.817"
-  },
-  {
-    "id": "CVE-2026-77118",
-    "description": "A heap out-of-bounds write exists in the Photo CD (PCD) decoder of GraphicsMagick. In DecodeImage() (coders/pcd.c), the Huffman delta loop advances its output pointer with q++ after every decoded delta and never checks it against the end of the heap-allocated luma/chroma plane buffers. The pointer is repositioned only when a sync marker introduces a new plane/row; between sync markers the run length is bounded solely by the input.\n\n\n\nA crafted PCD file that positions the pointer near the end of a plane and then supplies a long run of deltas with no intervening sync therefore walks the pointer past the end of the allocation and writes through it. Processing an untrusted PCD file — for example with gm convert or gm identify, or through any application linked against libGraphicsMagick — can corrupt heap memory beyond the buffers.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:19:07.077"
-  },
-  {
-    "id": "CVE-2026-76989",
-    "description": "A security vulnerability has been detected in liftoff-sr CIPster 1802525be27d33e19a9a83c163e331a1d13b1892. This impacts an unknown function of the file source/src/enet_encap/encap.cc of the component TCP Encapsulation Receive Path. The manipulation leads to out-of-bounds read. The attack can be initiated remotely. The exploit has been disclosed publicly and may be used. The identifier of the patch is e8e9dba09bf56962807d3504b783ccdb6287f3e4. To fix this issue, it is recommended to deploy a patch.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:19:06.880"
-  },
-  {
-    "id": "CVE-2026-76988",
-    "description": "A weakness has been identified in liftoff-sr CIPster 1802525be27d33e19a9a83c163e331a1d13b1892. This affects the function CipConnMgrClass::forward_open of the file cipconnectionmanager.cc of the component ForwardOpen Handler. Executing a manipulation of the argument product_code_ can lead to out-of-bounds read. It is possible to launch the attack remotely. The exploit has been made available to the public and could be used for attacks. This patch is called ea870a274bf68dfaa3f511f20e2fff6778fb7b74. A patch should be applied to remediate this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:19:06.690"
-  },
-  {
-    "id": "CVE-2026-76987",
-    "description": "A security flaw has been discovered in liftoff-sr CIPster 1802525be27d33e19a9a83c163e331a1d13b1892. The impacted element is the function CipAttribute::GetAttrData/CipAttribute::SetAttrData of the file ciptypes.h of the component Generic Attribute Logic. Performing a manipulation results in memory corruption. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. The patch is named e745d9d4a8ca3a13689066983a1269fe1e567674. It is suggested to install a patch to address this issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:19:06.450"
-  },
-  {
-    "id": "CVE-2026-74011",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in revmakx InfiniteWP Client allows Blind SQL Injection.\n\nThis issue affects InfiniteWP Client: from n/a through 1.13.9.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:19:05.710"
-  },
-  {
-    "id": "CVE-2026-28164",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in HashThemes Easy Elementor Addons allows Cross Site Request Forgery.\n\nThis issue affects Easy Elementor Addons: from n/a through 2.3.7.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:17:27.250"
-  },
-  {
-    "id": "CVE-2026-28163",
-    "description": "Missing Authorization vulnerability in myCred New User Approve allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects New User Approve: from n/a through 3.2.8.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:17:27.100"
-  },
-  {
-    "id": "CVE-2026-21784",
-    "description": "HCL IntelliOps Event Management (IEM) is affected by missing or insecure Cross-Origin Security headers. This issue makes the application's environment and resources susceptible to unauthorized external interaction and potential exploitation.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:17:05.103"
-  },
-  {
-    "id": "CVE-2026-18482",
-    "description": "Neo.mjs contains a command injection vulnerability within the FileSystemService.mjs component of the ai/mcp/server/file-system MCP server, where the checkSyntax() and runPlaywrightTest() functions unsafely interpolate caller-controlled absolutePath values into shell commands, enabling arbitrary OS command execution when an AI agent is induced to invoke these tools. Commit 88c77fc fixes these vulnerabilities.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:16:58.560"
-  },
-  {
-    "id": "CVE-2025-62306",
-    "description": "HCL IntelliOps Event Management (IEM) is affected by information omission. The lack of information breaks auditability and observability of a workflow. if an attacker were to gain access to the application, the insufficient logging could hinder incident response.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:16:49.837"
-  },
-  {
-    "id": "CVE-2025-62300",
-    "description": "HCL IntelliOps Event Management (IEM) is affected by a race condition. A \"timing window\" can occur where an attacker can modify the resource causing unpredictable behavior.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:16:49.717"
-  },
-  {
-    "id": "CVE-2025-62299",
-    "description": "HCL IntelliOps Event Management (IEM) is affected by a least privileges violation which could allow an attacker to access the resource with the elevated privilege that could not be accessed with the attacker's original privileges.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-20T13:16:48.503"
   }
 ]
