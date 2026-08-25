@@ -1,5 +1,285 @@
 [
   {
+    "id": "CVE-2026-78555",
+    "description": "RansomLook exposed complete API keys in the HTML source of the authenticated /admin/apikeys administration page. Although the interface displayed only a shortened representation of each key, the full token was embedded in hidden form fields used by the enable/disable, private-access, and delete actions.\n\n\nAs a result, API credentials could be recovered by inspecting the page source or DOM. The credentials could also be unintentionally exposed through components that retain or inspect HTTP response bodies, such as debugging proxies, browser caches, monitoring systems, or other intermediaries. An attacker obtaining one of these tokens could subsequently authenticate using the privileges assigned to that key, including access to private data where the key was granted such permissions.\n\n\nThe patch removes API keys from subsequent page rendering and replaces them with SHA-256-derived opaque handles. Administrative actions submit only these handles, which are resolved back to the corresponding token on the server. The full API key is therefore disclosed only once, when it is initially created.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:24.850"
+  },
+  {
+    "id": "CVE-2026-78553",
+    "description": "RansomLook created its Flask session-signing key without explicitly restricting the file permissions. The secret_key file was created using the process's default permissions and umask, resulting in permissions such as 0644 under a common 022 umask. Consequently, other local users able to access the RansomLook home directory could read the application's cryptographic secret.\n\n\nThe exposed key is security-critical because it is used to sign Flask session cookies and is also involved in the legacy API-key key derivation. An attacker who obtains the key can generate valid session cookies and impersonate an authenticated user, including an administrator. In LDAP configurations, exploitation may be particularly straightforward because the session user loader does not require the supplied username to correspond to an existing local user.\n\n\nSuccessful exploitation requires local access sufficient to read the improperly protected file, but can result in complete compromise of RansomLook's authentication and authorization controls.\n\n\nThe patch creates new secret-key files atomically with permissions 0600 and also restricts permissions on existing key files during application startup.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:24.383"
+  },
+  {
+    "id": "CVE-2026-78551",
+    "description": "RansomLook contains multiple weaknesses in its authentication endpoint that allow an unauthenticated remote attacker to enumerate valid usernames, perform unrestricted password-guessing attacks, and potentially exhaust application worker resources.\n\nFor local authentication, the login implementation previously checked whether a submitted username existed before invoking the password hash verification function. Requests containing a nonexistent username therefore returned significantly faster than requests for valid accounts, for which the computationally expensive password verification routine was executed. A remote attacker could measure these response-time differences to determine which usernames correspond to valid RansomLook accounts.\n\nIn addition, the /login endpoint did not restrict the number or frequency of failed authentication attempts. An attacker could consequently perform password brute-force, dictionary, password-spraying, or credential-stuffing attacks against known accounts without server-side throttling. For valid usernames, each authentication attempt also invokes the password key-derivation function, which consumes a significant amount of CPU time. A sufficiently high rate of login attempts could therefore occupy the application's synchronous Gunicorn workers and cause a denial of service affecting the entire application.\n\nThe issue has been addressed by always performing password verification using a randomly generated dummy password hash when the supplied username does not exist, eliminating the username-dependent timing discrepancy. Failed authentication attempts are additionally rate-limited per client IP address using Valkey/Redis, with five failed attempts within five minutes resulting in a one-hour block. The reverse-proxy configuration was also updated so that the application derives the client address from a trusted X-Forwarded-For value that cannot be overridden by a client-supplied header.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:23.927"
+  },
+  {
+    "id": "CVE-2026-78430",
+    "description": "A vulnerability was detected in sworddut mcp-ffmpeg-helper 0.1.0/0.1.1/0.2.1. This affects the function handleToolCall of the file src/tools/handlers.ts of the component Tool Handler. The manipulation of the argument format results in os command injection. Attacking locally is a requirement. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:22.560"
+  },
+  {
+    "id": "CVE-2026-77923",
+    "description": "Dolibarr 21.0.0 before 24.0.0 contains an authorization bypass vulnerability caused by an inverted boolean condition in the private-project membership check within the clonetasks mass action handler in htdocs/core/actions_massactions.inc.php. Authenticated users with project creation permission but without access to a target private project can exploit the flawed !in_array() check to clone tasks into unauthorized private projects.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:21.560"
+  },
+  {
+    "id": "CVE-2026-77310",
+    "description": "jackson-databind contains the general-purpose data-binding functionality and tree-model for Jackson Data Processor. Prior to versions 2.18.9, 2.21.5, 2.22.1, 3.1.5, and 3.2.1 on their respective release lines, the java.net.InetAddress branch of FromStringDeserializer.Std._deserialize() calls InetAddress.getByName() on attacker-controlled input, causing eager DNS resolution during deserialization and enabling DNS-based server-side request forgery and internal-host enumeration. This issue is fixed in versions 2.18.9, 2.21.5, 2.22.1, 3.1.5, and 3.2.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:20.977"
+  },
+  {
+    "id": "CVE-2026-76816",
+    "description": "Netty is an asynchronous, event-driven network application framework. Prior to versions 4.1.137.Final and 4.2.17.Final, MqttEncoder does not validate client identifiers, will topics, usernames, and PUBLISH topic names before encoding, allowing prohibited null bytes in MQTT UTF-8 string fields and potentially causing routing, access-control, or identity mismatches in downstream brokers. The vulnerability is exploitable when an application uses Netty's MQTT encoder to construct messages from user-controlled input. This issue is fixed in versions 4.1.137.Final and 4.2.17.Final.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:19.477"
+  },
+  {
+    "id": "CVE-2026-76098",
+    "description": "Mistune is a Python Markdown parser with renderers and plugins. Versions 3.3.0 through 3.3.2 are vulnerable to DoS through deeply nested tokens. HTML rendering creates deeply nested emphasis tokens from consecutive asterisk characters, and recursive rendering in HTMLRenderer.render_token() can exceed Python's recursion limit and raise RecursionError, allowing crafted Markdown to crash a parsing process. This issue is fixed in version 3.3.3",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:19.330"
+  },
+  {
+    "id": "CVE-2026-75509",
+    "description": "joserfc is a Python library that provides an implementation of several JSON Object Signing and Encryption (JOSE) standards. Prior to version 1.7.3, JWTClaimsRegistry applies membership matching to list-valued iss and sub claims, allowing an array-valued iss that contains the expected issuer to pass an intended equality check and enabling issuer-validation bypass. This issue is fixed in version 1.7.3.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:19.183"
+  },
+  {
+    "id": "CVE-2026-75369",
+    "description": "An out-of-bounds read vulnerability in the CAN::Application::parsePerformFunctionMessage component of SpaceDot AcubeSAT OBC software commit eaf90ec allows attackers to cause a Denial of Service (DoS) via supplying a crafted CAN message.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:19.073"
+  },
+  {
+    "id": "CVE-2026-75368",
+    "description": "A stack overflow in the loadRawData function of SpaceDot AcubeSAT OBC software commit eaf90ec allows attackers to cause a Denial of Service (DoS) via supplying a crafted ECSS TC message.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:18.963"
+  },
+  {
+    "id": "CVE-2026-72714",
+    "description": "Rocq Prover does not restore the universe graph's copy of the universe checking flag when a module that locally disabled the check is closed. Local Unset Universe Checking inside a module is expected to last only until the module ends, and the global flag is restored, but the universe graph keeps its own copy which is left disabled. The two views then disagree: Test Universe Checking reports the check as enabled while the kernel continues to accept universe-inconsistent terms. With the constraint between two universes no longer enforced, Hurkens' paradox applies and yields a proof of False, from which any proposition follows. The proof uses no axioms, plugins or unsafe features once the module has closed, and Print Assumptions reports it as closed under the global context, so neither the assumption audit nor the flag query reflects the actual kernel state. No fix is available.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:18.810"
+  },
+  {
+    "id": "CVE-2026-72711",
+    "description": "The Lean 4 kernel does not check that the body of an opaque declaration is closed. environment::add_opaque omits the check_no_metavar_no_fvar call that the definition and theorem paths perform, so a value containing a free variable that is absent from the local context is not rejected outright. A metaprogram can first cause the kernel to create a temporary local of type False and record its type in the type checker's inference cache, then restore the local context while that cache entry persists on the same type checker instance, and finally submit an opaque declaration whose value is the now-unbound variable. The cache lookup answers before the branch that would test membership of the local context, so the kernel infers the cached type and admits an opaque constant of type False, from which any proposition follows. The declaration is accepted through the ordinary checked path at maximum kernel checking, without sorry, unsafeCast, debug.skipKernelTC, addDeclWithoutChecking, foreign code or a modified .olean file, and the result carries no axioms. Fixed in 4.32.2 by adding the missing closure check.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:18.657"
+  },
+  {
+    "id": "CVE-2026-72705",
+    "description": "The guard checker in Rocq Prover does not follow recursive calls made through a fixpoint's own arguments. A fixpoint may pass itself as a higher-order argument to a second fixpoint, which then applies it to a value that is not a subterm of the structural argument. Passing the recursive function to a plain definition is rejected because the checker unfolds the definition and observes the call, but passing it to a fixpoint is accepted because higher-order recursive calls through fixpoint arguments are not tracked. This admits a type that is definitionally equal to its own negation, so self-application produces False in purely definitional code, without tactics, axioms, plugins or unsafe flags, and Print Assumptions reports the result as closed under the global context. Fixed in Rocq 9.2.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:18.520"
+  },
+  {
+    "id": "CVE-2026-72704",
+    "description": "The guard checker in Rocq Prover does not recheck the recursive tree representation of an inductive type parameter after that parameter has been changed by transport. A fixpoint may apply a rewrite along an equality between types to its recursive argument, which the guard checker accepts because the inductive type is preserved, while the recursive tree recorded for the parameter is altered. A second fixpoint that calls the first inherits the altered recursive tree without verification, so a call that is not structurally decreasing is accepted as terminating. The resulting non-terminating definition proves that a natural number equals its own successor and therefore False, from which any proposition follows. The demonstration uses two axioms that follow from univalence and are consistent with the calculus of inductive constructions, so the contradiction comes from the guard check rather than from the assumptions. A fix is proposed but not merged.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:18.390"
+  },
+  {
+    "id": "CVE-2026-72703",
+    "description": "The guard checker in Rocq Prover treats a parameter of a nested mutual fixpoint as uniform without examining calls between the different bodies of that fixpoint. find_uniform_parameters in kernel/inductive.ml inspects only self-recursive calls, so when no body calls itself the function concludes that every parameter is uniform. A parameter that grows through a cross-call from one body to another therefore keeps the subterm specification it inherited from the enclosing fixpoint, and a recursive call guarded by that specification is accepted although the argument is not structurally smaller. A non-terminating definition is admitted as structurally decreasing, which yields a term whose value equals its own successor and so a proof of False, from which any proposition follows. The proof requires no axioms, plugins or unsafe flags and Print Assumptions reports it as closed under the global context. Introduced in Coq 8.20 and fixed in Rocq 9.2.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:18.240"
+  },
+  {
+    "id": "CVE-2026-71511",
+    "description": "Dolibarr before 24.0.0 contains a sensitive data exposure vulnerability in the Members REST API that allows authenticated attackers with member-read rights to retrieve bcrypt password verifiers by querying member endpoints. Attackers can call the individual member or member list endpoints to obtain crypted password verifier fields that are not filtered by the base API serializer or the Members API class, potentially enabling offline password cracking attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:13.420"
+  },
+  {
+    "id": "CVE-2026-71510",
+    "description": "Dolibarr before 24.0.0 contains a SQL injection vulnerability in the users REST API that allows authenticated attackers with user-read rights to extract sensitive data by splicing unsanitized filter parameters into SQL WHERE clauses without column restrictions. Attackers can perform binary search on numeric fields and LIKE prefix iteration on string fields to recover salary figures and password verifiers omitted from normal API responses, while raw database error messages in the same endpoint enable column name enumeration.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:17:12.957"
+  },
+  {
+    "id": "CVE-2026-63693",
+    "description": "Dell Client BIOS contains an Improper Link Resolution Before File Access ('Link Following') vulnerability. A low privileged attacker with local access could potentially exploit this vulnerability, leading to Arbitrary Write",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:16:55.677"
+  },
+  {
+    "id": "CVE-2026-61419",
+    "description": "Dell ThinOS 10, versions prior to 2605_10.2518, contain an Improper Access Control vulnerability. A low privileged attacker with local access could potentially exploit this vulnerability, leading to Unauthorized access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:16:51.990"
+  },
+  {
+    "id": "CVE-2020-37268",
+    "description": "Print Assumptions does not report that a definition was produced while universe checking was disabled when that definition reaches the caller through Parameter Inline in a module type. Applying a functor inlines the body of the parameter, and the inlining drops the record that the term was built under Unset Universe Checking, so the resulting constant carries no trace of the unsafe operation. A module implementation can therefore prove False using a universe inconsistency, expose it through an inlined parameter, and have Print Assumptions report the dependent proof as closed under the global context. Because Print Assumptions is the in-process audit used to confirm that a development rests on no unexpected assumptions, a dependency built this way passes that audit while proving arbitrary propositions. The standalone checker coqchk does reject the resulting compiled file. The project records this in dev/doc/critical-bugs.md under non-fixed bugs and rates the risk as moderate when coqchk is not used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T20:16:40.560"
+  },
+  {
+    "id": "CVE-2026-78541",
+    "description": "A stored OS\ncommand injection vulnerability exists in the parent-control module of TP-Link\nArcher BE3600 V1. An authenticated adjacent attacker with administrative access\nmay store a crafted profile name containing shell metacharacters, which is\nlater processed unsafely during daily cloud report generation and may result in\narbitrary command execution.\n\n\n\n\n\nSuccessful\nexploitation may allow command execution on the affected device with potential\nimpact to device confidentiality, integrity, and availability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:17:04.553"
+  },
+  {
+    "id": "CVE-2026-78417",
+    "description": "Insufficient verification of data authenticity in the IronVNC client in Devolutions Remote Desktop Manager 2026.2.17.0 and earlier, 2026.1.24.0 and earlier, allows an on-path attacker to intercept and tamper with VNC sessions via automatic acceptance of the server's RSA key during RSA-AES authentication.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:17:04.420"
+  },
+  {
+    "id": "CVE-2026-75371",
+    "description": "An integer handling flaw in the cobs_decode function of SpaceDot AcubeSAT OBC software commit eaf90ec allows physically-proximate attackers with UART access to cause a Denial of Service (DoS) via a crafted input.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:58.310"
+  },
+  {
+    "id": "CVE-2026-75370",
+    "description": "An out-of-bounds read/write vulnerability in the MessageParser::parseECSSTCHeader component of SpaceDot AcubeSAT OBC software commit eaf90ec allows attackers to cause a Denial of Service (DoS) via supplying a crafted CAN message.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:58.183"
+  },
+  {
+    "id": "CVE-2026-71832",
+    "description": "Aria2 version 1.37.0 and below is affected by a Divide By Zero issue in src/bittorrent_helper.cc, which allows a remote malicious user to cause a Denial of Service",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:50.543"
+  },
+  {
+    "id": "CVE-2026-71509",
+    "description": "Dolibarr before 24.0.0 contains an improper authorization vulnerability in the expense report REST API update endpoint that allows authenticated attackers with expense-creation rights to bypass the approval workflow by directly setting approval status and approver identity fields. Attackers can manipulate workflow state fields through the REST API to advance expense reports to approved or closed status without possessing the dedicated approval right, while also creating forensic inconsistencies in audit records due to missing approval timestamps.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:50.403"
+  },
+  {
+    "id": "CVE-2026-71508",
+    "description": "Dolibarr before 24.0.0 contains an improper authorization vulnerability in the user REST API update endpoint that allows attackers with user-write rights to modify payroll fields by exploiting an incomplete credential denylist that omits payroll columns. Attackers can rewrite salary, bonus, hourly rate, daily rate, and weekly hours for any user without holding payroll rights, with the modified values appearing in payroll export reports.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:50.253"
+  },
+  {
+    "id": "CVE-2026-71507",
+    "description": "Dolibarr before 24.0.0 contains a broken object-level authorization vulnerability in the REST API company bank account write routes that allows authenticated attackers with third-party creation rights to create, replace, or delete bank account details of any company without requiring read access to that company. Attackers can inject attacker-controlled IBANs as creditor accounts, which are then written into regenerated SEPA credit-transfer files, redirecting outgoing payments to attacker-controlled accounts.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:50.110"
+  },
+  {
+    "id": "CVE-2026-71506",
+    "description": "Dolibarr before 24.0.0 contains an improper authorization vulnerability in the payments REST API delete endpoint that allows authenticated attackers with invoice-deletion rights to permanently delete any payment record by bypassing the intended payment-issuance rights check. Attackers can exploit this misconfigured permission check to zero paid amounts on invoices and remove entries from accounting exports, causing financial data integrity loss.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:49.960"
+  },
+  {
+    "id": "CVE-2026-71505",
+    "description": "Dolibarr before 24.0.0 contains a broken object-level authorization vulnerability in the REST API third-party site account write routes that allows authenticated attackers with third-party creation rights to overwrite the WebPortal password of any company by bypassing per-object access checks that are only enforced on read routes. Attackers can replace the victim company's WebPortal password through the write endpoint, authenticate as that company to access its invoice data, and also obtain the victim's previous password verifier from the API response.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:49.817"
+  },
+  {
+    "id": "CVE-2026-71504",
+    "description": "Dolibarr before 24.0.0 contains an improper authorization vulnerability in the Members REST API that allows attackers with only member-creation rights to reset the password of any user account, including the system administrator, without verifying password-change permissions. Attackers can supply an arbitrary user account identifier and new password in the request body to overwrite credentials and immediately lock out the legitimate account holder.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:49.670"
+  },
+  {
+    "id": "CVE-2026-71503",
+    "description": "Dolibarr before 24.0.0 contains a reflected cross-site scripting vulnerability in the extra fields administration template where the type request parameter is echoed without JavaScript-context encoding into an inline script block and no Content-Security-Policy header is emitted. An unauthenticated attacker can cause an authenticated administrator to open a crafted URL to execute arbitrary JavaScript in that session and create a persistent administrator account.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:49.520"
+  },
+  {
+    "id": "CVE-2026-40877",
+    "description": "Combodo iTop is a web-based IT service management tool. Prior to 3.2.3, iTop is vulnerable to PHP object injection in the user preference functionality, which can lead to remote code execution. This issue has been fixed in version 3.2.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:38.647"
+  },
+  {
+    "id": "CVE-2026-39975",
+    "description": "Combodo iTop is a web-based IT service management tool. Prior to 3.2.3, unauthenticated users could delete the .readonly file on iTop instances, leading to code execution. This file, created during the setup process, prevents users from performing write actions. This issue has been fixed in version 3.2.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:38.470"
+  },
+  {
+    "id": "CVE-2026-30864",
+    "description": "Combodo iTop is a web-based IT service management tool. Prior to 3.2.3, iTop is vulnerable to Reflected Cross-Site Scripting (XSS) in the dashboard revert functionality. This issue has been fixed in version 3.2.3.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:37.140"
+  },
+  {
+    "id": "CVE-2026-13081",
+    "description": "Rejected reason: Red Hat is not the CNA for PHP. CVE was reserved in error; the appropriate CNA should assign CVE IDs for these vulnerabilities.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:36.077"
+  },
+  {
+    "id": "CVE-2026-13047",
+    "description": "Rejected reason: Red Hat is not the CNA for PHP. CVE was reserved in error; the appropriate CNA should assign CVE IDs for these vulnerabilities.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:35.990"
+  },
+  {
+    "id": "CVE-2025-26238",
+    "description": "In D-Link DI-8100G 17.12.20A1, the flag parameter in msp_info can be exploited to execute arbitrary code.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:35.290"
+  },
+  {
+    "id": "CVE-2025-26237",
+    "description": "D-Link DI-7001 MINI_5G 19.10.31A1 contains a code execution vulnerability in the flag parameter of msp_info, which can be exploited to run arbitrary commands.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-24T19:16:34.307"
+  },
+  {
     "id": "CVE-2026-9254",
     "description": "An unauthenticated OS command injection vulnerability exists in the parental control functionality of Archer BE800 V1, BE3600 V1, and AX75 V1 due to improper filtering and neutralization of special characters in certain parameters. A LAN-based attacker can inject arbitrary commands and execute them with root privileges.\n\n\n\n\n\n\nSuccessful exploitation may result in complete device compromise and impact the confidentiality, integrity, and availability of the affected device and network traffic.",
     "severity": "Unknown",
@@ -422,49 +702,49 @@
   {
     "id": "CVE-2026-71300",
     "description": "Improper input validation vulnerability in Apache Camel Atmosphere Websocket component.\n\n\n\nThis issue affects Apache Camel: from 4.0.0 before 4.14.9, from 4.15.0 before 4.18.4, from 4.19.0 before 4.22.0.\n\n\n\nThe camel-atmosphere-websocket producer selects which connected WebSocket peers a message is delivered to through Exchange headers, and the string values of those headers sat outside the Camel namespace: websocket.connectionKey and websocket.connectionKey.list, along with websocket.sendToAll, websocket.eventType and websocket.errorType. WebsocketEndpoint extends ServletEndpoint and so inherits HttpHeaderFilterStrategy, which filters only the Camel and camel prefixes; the dotted names therefore fell outside the filtered namespace and were admitted in both directions by every HTTP-family consumer. In a route bridging an HTTP consumer into an atmosphere-websocket producer, an external sender could supply the list header and take over the producer's dispatch decision. WebsocketProducer.process tests the list header before the single-key header, so an injected value discarded the recipient the route had selected: a notification intended for one connected client could be suppressed, or delivered instead to a different client whose connection key the sender knows. The header need not be a query parameter and need not be supplied as a list literally - Camel's HTTP binding promotes a repeated header name, and a bracketed value, to a List when mapping onto the Exchange - so an ordinary inbound HTTP header is sufficient to reach the list-valued branch. This is distinct from CVE-2026-55993, which concerns the consumer-side query-parameter path in the same component. The behaviour dates back to the introduction of these constants, first released in 2.17.0, and was unchanged until this fix.\n\n\n\nUsers are recommended to upgrade to version 4.22.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.9. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.4. For deployments that cannot upgrade immediately, strip the dispatch headers at the trust boundary before the producer, for example with removeHeaders(“websocket.*”) placed between the HTTP consumer and the atmosphere-websocket producer. Note that the fix renames the header string values into the Camel namespace, which is a breaking change for routes that set them by literal string: routes referencing the WebsocketConstants fields symbolically are unaffected, and the change is documented in the upgrade guides. As defence in depth, do not bridge an untrusted HTTP consumer directly into a WebSocket producer whose dispatch is header-driven without stripping the dispatch namespace first.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-24T17:18:16.997"
   },
   {
     "id": "CVE-2026-66908",
     "description": "Improper Authentication vulnerability in Apache Camel Platform HTTP Main component.\n\n\n\nThis issue affects Apache Camel: from 4.8.0 before 4.22.0.\n\n\n\nThe camel-main embedded HTTP server can protect its endpoints with JWT authentication, configured through authenticationEnabled together with the JWT keystore properties. JWTAuthenticationConfigurer.buildJwtOptions returned null when neither jwtIssuer nor jwtAudience was configured, and the caller then skipped the JWTAuthOptions.setJWTOptions call entirely, so the Vert.x JWTAuth instance was built from the keystore alone. The result was that inbound tokens were checked only for signature and expiry: the iss and aud claims were not validated at all. Nothing signalled this - the server started normally and reported no warning - so a deployment configured the documented way silently enforced less than the operator believed it had enabled, and the component documentation itself presented signature and expiry checking as the default with issuer and audience as an optional extra. Both the application server and the management server were affected, because the omission was in each of the two configureAuthentication paths. Any unexpired token signed by any key the configured keystore trusts was therefore accepted, regardless of which issuer minted it or which audience it was intended for. How far that reaches depends on the trust set of the keystore: where the signing key belongs to a shared or multi-tenant identity provider, a token legitimately issued for an entirely different audience is accepted, while a keystore holding a dedicated signer narrows it to reuse of tokens minted for other services within the same trust domain. The jwtIssuer and jwtAudience options did not exist before 4.21.0, so on earlier releases there was no supported way to have these claims enforced at all.\n\n\n\nUsers are recommended to upgrade to version 4.22.0, which fixes the issue. From 4.22.0 the server refuses to start when a JWT keystore is configured but neither jwtIssuer nor jwtAudience is set, naming the properties involved, and a deployment that genuinely wants signature and expiry validation only must say so explicitly with the new jwtAllowMissingIssuerAndAudience option, which defaults to false. This behaviour is fixed only on 4.22.0. The 4.14.9 and 4.18.4 releases do not change the default: they add the jwtIssuer and jwtAudience options so that operators on those maintenance lines can enforce the claims by configuration, and an installation that upgrades to 4.14.9 or 4.18.4 without also setting at least one of those two properties is still accepting any unexpired token signed by a trusted key. Users on 4.14.x or 4.18.x should therefore upgrade to 4.14.9 or 4.18.4 and then set jwtIssuer, jwtAudience, or both. Releases from 4.8.0 up to and including 4.21.x offer no way to enforce these claims and should be moved to a version that does. Independently of version, restrict the JWT keystore to the smallest possible trust set - ideally a signer dedicated to this service rather than a shared identity-provider key - and where a gateway already validates issuer and audience in front of the server, ensure it cannot be bypassed.\n\n\n\nNotes:\n\n\n\nThe JIRA ticket:  https://issues.apache.org/jira/browse/CAMEL-24281  refers to the various commits that resolved the issue, and has more details.\n\n\n\nThe fail-closed guard could not be backported. The jwtIssuer and jwtAudience options were themselves only introduced in 4.21.0 by CAMEL-23525, so on camel-4.18.x and camel-4.14.x there was nothing an operator could set to satisfy the requirement and the guard would have broken every JWT deployment on those branches with no remedy available.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-24T17:18:06.530"
   },
   {
     "id": "CVE-2026-66907",
     "description": "Relative path traversal vulnerability in Apache Camel Google Storage component.\n\n\n\nThis issue affects Apache Camel: from 4.0.0 before 4.14.9, from 4.15.0 before 4.18.4, from 4.19.0 before 4.22.0.\n\n\n\nThe camel-google-storage consumer downloads Google Cloud Storage objects to the local filesystem when the downloadFileName option is set. That option is documented as a folder or a filename, and when its value contains no expression token the consumer builds the local destination by appending the object name to it: evaluateFileExpression sets the Exchange file-name header to the remote object name and evaluates downloadFileName + \"/${file:name}\". The ${file:name} token returns the file-name header verbatim, unlike ${file:onlyname}, which applies FileUtil.stripPath to it. The resulting string was passed directly to new File(result) and blob.downloadTo(file.toPath()) with no lexical normalization and no check that the destination stayed inside the configured directory. The object name is not route-controlled data: the consumer lists the bucket, iterates every returned blob and creates one exchange per object from blob.getBlobId().getName() verbatim, and the filter option that could restrict those names is not applied at all unless it has been explicitly set. Google Cloud Storage object names are opaque UTF-8 keys that the service stores and lists exactly as written, with no server-side canonicalization, and a forward slash is only a display convention for pseudo-directories, so a key containing parent-directory segments survives round-tripping intact. An object name containing such segments therefore resolved to a location outside the configured downloadFileName directory, letting anyone able to influence the names present in the consumed bucket cause Camel to create or overwrite a file at a location of their choosing, with the privileges of the Camel process. Depending on what the process can write to, overwriting a file outside the download directory can escalate beyond the loss of integrity of that file. The downloadFileName option is an ordinary consumer parameter and carries no security marker, so nothing signalled to users that its value was not being enforced as a containment boundary. The defect is consumer-only; the producer has no download-to-file sink. Camel's other file-download consumers - camel-file, camel-ftp, camel-smb, camel-mina-sftp, camel-azure-files and the Azure Storage download paths - already constrained their local downloads to the configured directory using a path-segment boundary check; camel-google-storage was the remaining object-store download sink not covered by that work.\n\n\n\nUsers are recommended to upgrade to version 4.22.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.9. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.4. For deployments that cannot upgrade immediately, set the filter option to a regular expression that accepts only simple single-segment object names, so that any name carrying a path separator or a parent-directory segment is excluded before an exchange is created; note that no filtering whatsoever is applied when the option is left unset, and that the expression is matched against the whole object name. Alternatively, give downloadFileName an explicit expression that does not carry the remote path through, for example one built on ${file:onlyname} rather than the implicit ${file:name}, keeping in mind that a downloadFileName containing an expression is treated as route-author-controlled and is not covered by the containment check added in the fix. As defence in depth, treat the object names in any externally writable bucket as untrusted input and do not derive local filesystem paths from them.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-24T17:18:06.330"
   },
   {
     "id": "CVE-2026-66906",
     "description": "Relative path traversal vulnerability in Apache Camel Azure Storage Blob component.\n\n\n\nThis issue affects Apache Camel: from 4.0.0 before 4.14.9, from 4.15.0 before 4.18.4, from 4.19.0 before 4.22.0.\n\n\n\nThe camel-azure-storage-blob component can download an Azure Storage blob to the local filesystem through its downloadBlobToFile operation, writing into the directory named by the fileDir endpoint option, which is documented as usable from both the producer and the consumer. BlobOperations.downloadBlobToFile built the local target by joining fileDir with the remote blob name exactly as the Azure SDK reported it (new File(fileDir, client.getBlobName())) and passed the result straight to the SDK download call, with no lexical normalization and no check that the resolved location stayed inside fileDir. The blob name is not route-controlled data: the consumer enumerates the container in BlobConsumer.createBatchExchangesFromContainer, which lists blobs and creates one exchange per entry from BlobItem.getName() verbatim, applying no name filtering by default. A blob name containing parent-directory segments therefore resolved to a location outside the configured fileDir, letting anyone able to influence the names present in the consumed container cause Camel to create or overwrite a file at a location of their choosing, with the privileges of the Camel process. Depending on what the process can write to, overwriting a file outside the download directory can escalate beyond the loss of integrity of that file. Azure Storage blob containers use a flat namespace in which the blob name is an opaque key, so a name carrying such segments is stored and listed as given. The fileDir option is an ordinary common-group configuration parameter and carries no security marker, so nothing signalled to users that its value was not being enforced as a containment boundary. Camel's other file-download consumers - camel-file, camel-ftp, camel-smb, camel-mina-sftp and camel-azure-files - already constrained their local downloads to the configured directory using a path-segment boundary check; the camel-azure-storage-blob download path was not covered by that work.\n\n\n\nUsers are recommended to upgrade to version 4.22.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.9. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.4. For deployments that cannot upgrade immediately, constrain the names the consumer will act on using the regex endpoint option, which is applied to each listed blob name as a full-string match, so that only simple single-segment names are accepted and any name carrying a path separator or a parent-directory segment is filtered out before an exchange is created; the prefix option can additionally narrow the listing server-side, noting that when both are set regex takes priority and prefix is ignored. Alternatively, avoid the downloadBlobToFile operation on untrusted containers and write the payload from the route under a file name the route itself controls, rather than one taken from the remote listing. As defence in depth, treat the blob names in any externally writable container as untrusted input and do not derive local filesystem paths from them.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-24T17:18:06.147"
   },
   {
     "id": "CVE-2026-63621",
     "description": "Improper Input Validation, Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection') vulnerability in Apache Camel Knative component\n\nThe Knative consumer in camel-knative maps inbound CloudEvent attributes onto Camel message headers. In binary content mode the HTTP-header path filters Camel-internal headers through KnativeHttpHeaderFilterStrategy, but in structured content mode (Content-Type application/cloudevents+json) the CloudEvent extension fields are read directly from the JSON body and every extension key is copied into the Exchange headers without applying any HeaderFilterStrategy (CloudEventProcessors, spec versions 1.0, 1.0.1 and 1.0.2). As a result, an unauthenticated attacker can inject Camel-internal headers (e.g. CamelHttpUri, CamelHttpPath, CamelFileName) via a structured-mode CloudEvent request, matched case-insensitively against Camel's header map. When a route forwards messages from a Knative consumer to a header-driven component such as camel-http or camel-file, the injected headers override configured values, enabling server-side request forgery (SSRF), path traversal or message-dispatch redirection depending on the route. This is an incomplete fix of the inbound header filtering previously added for the binary content-mode path, and is the same pattern addressed in camel-cxf/camel-knative (CVE-2026-47323), camel-undertow (CVE-2025-30177), the broader incoming-header filter (CVE-2025-27636 and CVE-2025-29891), and the non-HTTP strategies (CVE-2026-40453).\n\n\nThis issue affects Apache Camel: from 3.15.0 before 4.14.9, from 4.15.0 before 4.18.4, from 4.19.0 before 4.21.0.\n\nUsers are recommended to upgrade to version 4.22.0, which fixes the issue. If users are on the 4.18.x LTS releases stream, then they are suggested to upgrade to 4.18.4. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.9. The non-LTS releases 4.15.0 through 4.17.0 and 4.19.0 through 4.21.0 are affected but do not receive a maintenance fix; users on those versions should upgrade to 4.18.4 or 4.22.0.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-24T17:17:58.410"
   },
   {
     "id": "CVE-2026-60093",
     "description": "Relative path traversal vulnerability in Apache Camel Azure-Storage Datalake component\n\n\n\nThis issue affects Apache Camel: from 4.0.0 before 4.14.9, from 4.15.0 before 4.18.4, from 4.19.0 before 4.22.0.\n\n\n\nThe camel-azure-storage-datalake component can download an Azure Data Lake Storage Gen2 file to the local filesystem through its downloadToFile operation, writing into the directory named by the fileDir endpoint option. DataLakeFileOperations.downloadToFile built the local target by joining fileDir with the remote path name exactly as the Azure SDK reported it (new File(fileDir, fileClientWrapper.getFileName())) and passed the result straight to the SDK download call, with no lexical normalization and no check that the resolved location stayed inside fileDir. The remote name is not route-controlled data: the consumer enumerates the filesystem in DataLakeConsumer.createBatchExchangesFromPath, which lists paths and creates one exchange per entry from PathItem.getName() verbatim, applying no name filtering by default. A path name containing parent-directory segments therefore resolved to a location outside the configured fileDir, letting anyone able to influence the names present in the consumed Data Lake filesystem cause Camel to create or overwrite a file at a location of their choosing, with the privileges of the Camel process. Depending on what the process can write to, overwriting a file outside the download directory can escalate beyond the loss of integrity of that file. The fileDir option is an ordinary common-group configuration parameter and carries no security marker, so nothing signalled to users that its value was not being enforced as a containment boundary. Camel's other file-download consumers - camel-file, camel-ftp, camel-smb, camel-mina-sftp and camel-azure-files - already constrained their local downloads to the configured directory using a path-segment boundary check; the camel-azure-storage-datalake download path was not covered by that work.\n\n\n\nUsers are recommended to upgrade to version 4.22.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.9. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.4. For deployments that cannot upgrade immediately, constrain the names the consumer will act on using the regex endpoint option, which is applied to each listed path name as a full-string match, so that only simple single-segment names are accepted and any name carrying a path separator or a parent-directory segment is filtered out before an exchange is created. Alternatively, avoid the downloadToFile operation on untrusted filesystems and write the payload from the route under a file name the route itself controls, rather than one taken from the remote listing. As defence in depth, treat the object names in any externally writable Data Lake filesystem as untrusted input and do not derive local filesystem paths from them.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-24T17:17:29.783"
   },
   {
     "id": "CVE-2026-59230",
     "description": "Improper input validation vulnerability in Apache Camel.\n\n\n\nThis issue affects Apache Camel: from 2.17.0 before 4.14.9, from 4.15.0 before 4.18.4, from 4.19.0 before 4.22.0.\n\n\n\nThe camel-mail component ships a MimeMultipart data format that can unmarshal a MIME multipart message. When it is configured with headersInline set to true, the unmarshal path copies the MIME headers of the incoming message onto the Camel message: it enumerates every header that is not one of the three standard ones it generates itself - Message-ID, MIME-Version and Content-Type - and calls setHeader for each, applying no HeaderFilterStrategy. The names of those MIME headers come from the message being unmarshalled, so a sender able to influence the message could place a header whose name falls in the Camel-internal namespace and have it set on the Exchange. Camel components read control headers from that namespace to override their configured behaviour - the camel-sql producer, for instance, takes the statement to execute from a Camel header when one is present - so an injected header could redirect what a downstream step in the route does with data the route author never intended it to take from the message. Which sinks are reachable, and what the consequences are, depends entirely on what the route does after the unmarshal step. The camel-mail consumer already applied a header filter strategy on its own inbound path, so this was the parallel inbound path into the same component that the earlier hardening did not cover. The affected copy is reached only when headersInline is enabled, which is not the default: with the default setting the MIME headers are surfaced as attachments rather than as message headers, and are not affected. The behaviour dates back to the introduction of the data format in 2.17.0 and was present on every release line until this fix.\n\n\n\nUsers are recommended to upgrade to version 4.22.0, which fixes the issue. If users are on the 4.14.x LTS releases stream, then they are suggested to upgrade to 4.14.9. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.4. For deployments that cannot upgrade immediately, leave headersInline at its default of false where the inline headers are not needed, since the copy is only reached when it is enabled. Where it must stay enabled, strip Camel-internal headers immediately after the unmarshal step, for example with removeHeaders(“Camel*”) placed before any processor or producer that reads control headers, and do not unmarshal MIME content from an untrusted sender into a route that dispatches on header values. As defence in depth, treat the header names of any MIME message arriving from outside the trust boundary as untrusted input.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-24T17:17:28.383"
   },
@@ -863,7 +1143,7 @@
   {
     "id": "CVE-2026-30512",
     "description": "A local privilege escalation vulnerability exists in the Restricted Access (Kiosk) Mode implementation of Scheidt & Bachmann entervo HMI prior to V2 R5 P0 M5. The vulnerability affects the external PDF viewer functionality used to display the application manual and its interaction with the underlying Windows operating system. An authenticated low-privileged user can escape the kiosk environment by opening the application manual in the external PDF viewer and abusing the print functionality. Successful exploitation allows execution of arbitrary commands outside the kiosk environment with local administrator privileges.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-24T14:16:53.453"
   },
@@ -1689,7 +1969,7 @@
   {
     "id": "CVE-2026-78183",
     "description": "DBD::Pg version 3.21.0 for Perl has a heap out-of-bounds write in quote_float.\n\nquote_float() allocates the length of the string + 1, which is the size of the bare numeric symbol plus NULL.  But for special literals NaN, Inf, +Inf, -Inf, Infinity, +Infinity, -Infinity it emits the literal surrounded by quotes plus NULL, which is length + 3 bytes. Every recognised literal (case-insensitive) overflows by 2 bytes, a single quote and a NULL.\n\nThis can be reached by the $dbh->quote method, for example\n\n    $dbh->quote( \"Infinity\", DBI::SQL_NUMERIC ).\n\nThis regression was introduced in 3.21.0 by the quote.c rewrite.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-23T20:16:50.550"
   },
@@ -1703,14 +1983,14 @@
   {
     "id": "CVE-2026-19565",
     "description": "Apache::AppSamurai::Util versions through 1.01 for Perl generate predictable session authentication keys from the clock and process id in CreateSessionAuthKey.\n\nCreateSessionAuthKey runs five rounds of SHA-256, each over a fresh Time::HiRes reading formatted to six decimal places, the running digest, and the process id. CreateSession calls it with an empty key source on every login, and the optional Keysource directive is the only route to the other branch. The result is 64 hex characters. The microsecond field of the first reading takes one of a million values, the later readings follow it within microseconds, and the process id is drawn from a small range.\n\nThe key is returned to the browser as the session cookie, and is combined with the configured server key to compute the session id and to encrypt the stored session data. An attacker who knows the second in which a session was created and the process id of the worker that created it can enumerate candidate keys and recover the victim's cookie, bypassing authentication for the protected resources. Each candidate has to be tried against the server, which validates the cookie with a key the attacker does not hold.",
-    "severity": "Unknown",
+    "severity": "Low",
     "tech": "Unknown",
     "published": "2026-08-23T20:16:50.053"
   },
   {
     "id": "CVE-2026-75922",
     "description": "Reverse::Proxy versions before 0.04 for Perl allow HTTP request smuggling via a percent-decoded PATH_INFO written unencoded to the upstream request line.\n\nPSGI hands PATH_INFO to an application percent-decoded, so a %XX sequence in the client URL has become a raw byte by the time the proxy sees it. The proxy appends that byte string to the upstream base URL, and for an Upgrade tunnel writes it into a request line it serializes itself, re-encoding nothing in either path. The HTTP client that sends the resulting URL does not validate the target either. A path containing %0d%0a therefore arrives at the upstream as a CRLF that ends the request line, and a decoded space, '?' or '#' truncates it the same way.\n\nEverything the client writes after the CRLF is read by the upstream as a second request. On the buffered path it arrives on a keep-alive connection the proxy pools and reuses for other clients. Its method, path and headers are all chosen by the client, and the upstream attributes it to the proxy, so it reaches upstream paths that the proxy's own routing does not expose.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-23T19:16:28.930"
   },
@@ -3278,14 +3558,14 @@
   {
     "id": "CVE-2026-75870",
     "description": "Punk versions before 0.18 for Perl allow session cookie forgery via an empty default HMAC key when a session is declared without a secret.\n\nThe session keyword freezes its options onto the application as given: it does not require a secret, warn, or refuse to start when one is absent. The cookie read and the write-back both default that key to the empty string, so a declaration with no secret option, or with an undefined or empty one, signs and verifies with a zero-length HMAC-SHA256 key.\n\nAn attacker who knows the cookie format can then mint one offline carrying any contents the session holds, such as a user identifier or a role. Nothing marks the misconfiguration at runtime: cookies are well formed and sessions round-trip as expected.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-22T14:16:33.813"
   },
   {
     "id": "CVE-2026-75866",
     "description": "Punk::OAuth2::Server versions through 0.03 for Perl issue access tokens outside a client's registered scopes and grant types because no authorization path reads them.\n\nPunk::OAuth2::Server::Store registers scopes and grant_types per client and documents both as client registration. token dispatches on the grant_type in the request body, so a client registered for authorization_code alone can ask for client_credentials, and that arm passes the requested scope straight to the minter, which signs it into the at+jwt access token. authorize copies the query scope into the authorization code record without comparing it against the registration, leaving the optional consent hook as the only check between an arbitrary scope and the issued code. redirect_uris on the same client row is read and enforced.\n\nA registered client can obtain a correctly signed token carrying any scope it names, and a resource server running Punk::OAuth2::Checker accepts that token and honours the scope. A client registered without a secret authenticates on its client_id alone, so anyone who knows that identifier can request one.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-22T14:16:33.700"
   },
@@ -4226,208 +4506,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-21T21:16:56.830"
-  },
-  {
-    "id": "CVE-2026-77810",
-    "description": "In the Neptune connector, a user with access to Neptune through Athena Federated Query could gain access to properties in the Lambda supplying the compute for the connector. To remediate this issue, users should upgrade to aws-athena-query-federation v2026.30.1 or later.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:45.530"
-  },
-  {
-    "id": "CVE-2026-76876",
-    "description": "Craftplan before 0.5.1 contains a broken access control vulnerability that allows unauthenticated attackers to read sensitive credentials by exploiting an unconditional authorization policy on the Settings resource. Attackers can send a GET request to the settings API endpoint with a valid record ID to retrieve decrypted SMTP passwords, email API keys, and email API secrets due to the read policy using an always-allow authorization check that bypasses all identity verification.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:44.680"
-  },
-  {
-    "id": "CVE-2026-74252",
-    "description": "Joomla Extension - j2commerce.com - Stored XSS in Guest checkout in J2Store 1.0.0-3.3.20, 4.0.0-4.0.20, 4.1.0-4.1.5 - J2Commerce 4.1.5 is vulnerable to Stored Cross-Site Scripting (XSS) through the guest checkout billing address fields. An unauthenticated attacker exploits a filter bypass in Joomla's Input::getArray() combined with PHP's variables_order=EGPCS (Cookie overrides POST in $_REQUEST ) to store unsanitized HTML in fields such as billing_first_name.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:41.000"
-  },
-  {
-    "id": "CVE-2026-67362",
-    "description": "Joomla Extension - j2commerce.com - Open redirect in cart controller in J2Store 1.0.0-3.3.20, 4.0.0-4.0.20, 4.1.0-4.1.5 - Four task handlers accepted a base64-encoded URL from user input and redirected to it without validating the destination host, enabling phishing using the shop's trusted domain. No authentication required.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:39.960"
-  },
-  {
-    "id": "CVE-2026-67361",
-    "description": "Joomla Extension - j2commerce.com - Unauthenticated file upload with missing directory protection in J2Store 1.0.0-3.3.20, 4.0.0-4.0.20, 4.1.0-4.1.5 - The file upload endpoint accepted POST requests from unauthenticated visitors with no CSRF token. Compounding this, the installer manifest omitted the upload and invoices directories, causing fresh installs to deploy those directories without .htaccess/web.config protection, making uploaded files directly web-accessible.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:39.827"
-  },
-  {
-    "id": "CVE-2026-67360",
-    "description": "Joomla Extension - j2commerce.com - Cross-customer order replication in J2Store 1.0.0-3.3.20, 4.0.0-4.0.20, 4.1.0-4.1.5 - An authenticated user could supply another customer's order_id to copy their cart contents and address data into the attacker's session. The CSRF token was validated but ownership was not checked.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:39.700"
-  },
-  {
-    "id": "CVE-2026-67359",
-    "description": "Joomla Extension - j2commerce.com - Order content disclosure J2Store 1.0.0-3.3.20, 4.0.0-4.0.20, 4.1.0-4.1.5 - An unauthenticated visitor could supply any order_id as a query parameter to render the full checkout confirmation page for that order, including line items, prices, and totals.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:39.583"
-  },
-  {
-    "id": "CVE-2026-67358",
-    "description": "Joomla Extension - j2commerce.com - Download quota manipulation in J2Store 1.0.0-3.3.20, 4.0.0-4.0.20, 4.1.0-4.1.5 - An authenticated user with a valid order token could increment the download limit counter on a download record belonging to a different order. The endpoint also lacked a CSRF token.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:39.450"
-  },
-  {
-    "id": "CVE-2026-62960",
-    "description": "Git for Windows is the Windows port of Git. Prior to 2.55.0.windows.4, a malicious remote Git server can advertise a bundle URI that reaches transport_get_remote_bundle_uri(), fetch_bundle_uri_internal(), and copy_uri_to_file() in bundle-uri.c during clone or fetch when transfer.bundleuri=true. Non-HTTP(S) values are treated as local filesystem paths, and file URI prefixes are removed, so a bare UNC path or file URI targeting an attacker-controlled share causes Windows to initiate an outbound SMB connection. This can expose NTLM authentication material to the attacker-selected host. This issue is fixed in version 2.55.0.windows.4.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:38.700"
-  },
-  {
-    "id": "CVE-2026-50290",
-    "description": "SpecifyJS is a declarative TypeScript user interface framework. Prior to version 0.2.136, CSS value sanitization stripped `expression(` and `url(javascript:` using simple regex, but could be bypassed with CSS unicode escapes (`\\65xpression(`), null bytes, or CSS comments (`exp/**/ression(`). These CSS injection vectors only work in legacy browsers (IE6-IE10). SpecifyJS targets modern browsers. Starting in version 0.2.136, CSS sanitization now normalizes unicode escapes and strips CSS comments before pattern matching. Also checks for `behavior:`, `-moz-binding`, and `-o-link` patterns.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:36.220"
-  },
-  {
-    "id": "CVE-2026-50288",
-    "description": "SpecifyJS is a declarative TypeScript user interface framework. Prior to version 0.2.136, when `new URL()` throws a parse error, the `assertSecureUrl` function returned without throwing, silently allowing the request to proceed without HTTPS validation. Starting in version 0.2.136, the catch block now throws an error instead of silently returning.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:36.067"
-  },
-  {
-    "id": "CVE-2026-30866",
-    "description": "Combodo iTop is a web based IT service management tool. Prior to 3.2.3, unauthenticated users can access uploaded sensitive via sniffed url. This issue has been fixed in version 3.2.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:34.453"
-  },
-  {
-    "id": "CVE-2026-30819",
-    "description": "Combodo iTop is a web based IT service management tool. Prior to 3.2.3, iTop has a reflected Cross-Site Scripting (XSS) vulnerability in its dashboard revert functionality with the parameter dashboard_id in /pages/ajax.render.php. This issue has been fixed in version 3.2.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:34.313"
-  },
-  {
-    "id": "CVE-2026-27490",
-    "description": "Combodo iTop is a web based IT service management tool. Prior to 3.2.3, inline images that are accessible without being authenticated are protected by a weak 24-bit pseudo-random secret. This issue has been fixed in version 3.2.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:34.157"
-  },
-  {
-    "id": "CVE-2026-27463",
-    "description": "Combodo iTop is a web based IT service management tool. Prior to 3.2.3, the HTML title attribute of the logo in the login page contains the complete iTop version. This issue has been fixed in version 3.2.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:34.017"
-  },
-  {
-    "id": "CVE-2026-27462",
-    "description": "Combodo iTop is a web based IT service management tool. Prior to 3.2.3, iTop returns different responses for valid/invalid usernames depending on multiple factors in the reset password mechanism, leading to user enumeration. This issue has been fixed in version 3.2.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T20:16:33.870"
-  },
-  {
-    "id": "CVE-2026-77795",
-    "description": "A vulnerability was identified in Dromara RuoYi-Vue-Plus up to 5.6.2. This issue affects the function FlwInstanceController/FlwDefinitionController/FlwCategoryController/FlwSpelController/TestLeaveController of the component Workflow Endpoint. Such manipulation leads to improper authorization. The attack can be launched remotely.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:51.393"
-  },
-  {
-    "id": "CVE-2026-63466",
-    "description": "Unleash is an open-source feature management platform. Prior to 8.0.3, FeatureEventFormatterMd.format in src/lib/addons/feature-event-formatter-md.ts assigns Mustache.escape to an identity function before rendering action and path templates. Because Mustache.escape is process-wide, the assignment disables escaping for subsequent Mustache.render calls in email-service.ts, webhook.ts, datadog.ts, and new-relic.ts. An editor-level user can place Slack or Microsoft Teams link syntax in an unrestricted username, trigger a feature event, and inject an attacker-labeled link into a trusted outbound notification channel, while other Mustache sinks remain unescaped until restart. This issue is fixed in version 8.0.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:32.117"
-  },
-  {
-    "id": "CVE-2026-63462",
-    "description": "Unleash is an open-source feature management platform. Prior to 7.5.2, 7.6.5, and 8.0.2, the shared OpenAPI validation error path in src/lib/error/bad-data-error.ts passes a raw request value from lodash.get to JSON.stringify in genericErrorMessage and fromOpenApiValidationErrors without guarding stack exhaustion. An unauthenticated attacker can send a roughly 10 KB JSON value nested thousands of levels deep to POST /edge/validate, POST /edge/issue-token, or another OpenAPI-validated endpoint, causing RangeError: Maximum call stack size exceeded in openAPIValidationMiddleware and terminating the Node process because no uncaughtException handler recovers it. Replaying the request can sustain a complete service outage. This issue is fixed in versions 7.5.2, 7.6.5, and 8.0.2.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:31.927"
-  },
-  {
-    "id": "CVE-2026-63004",
-    "description": "Unleash is an open-source feature management platform. Prior to 7.5.2, 7.6.5, and 8.0.2, the addon and integration subsystem passes the operator-controlled parameters.url value from src/lib/addons/webhook.ts and the Slack, Microsoft Teams, Datadog, and New Relic integrations to Addon.fetchRetry in src/lib/addons/addon.ts without restricting loopback, link-local, private, or cloud metadata addresses. An authenticated actor with the root CREATE_ADDON or UPDATE_ADDON permission can cause the server to send requests from inside its network boundary, use integration event status as a blind probing oracle, forward Authorization, customHeaders, or DD-API-KEY values to an attacker-observed host, and deliver the feature-event JSON body to internal services. This issue is fixed in versions 7.5.2, 7.6.5, and 8.0.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:30.550"
-  },
-  {
-    "id": "CVE-2026-56875",
-    "description": "Rejected reason: reserved but not needed",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:04.723"
-  },
-  {
-    "id": "CVE-2026-55850",
-    "description": "Element Web is a Matrix web client built using the Matrix React SDK. Prior to 1.12.22, EmbeddedPage in apps/web/src/components/structures/EmbeddedPage.tsx renders homeserver-supplied homepage content through dangerouslySetInnerHTML without passing it through sanitizedHtmlNode. A malicious homeserver can provide crafted HTML that Element Web renders on the homepage; the content security policy prevents JavaScript but not phishing HTML. This issue is fixed in version 1.12.22.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:04.230"
-  },
-  {
-    "id": "CVE-2026-54682",
-    "description": "DiscordChatExporter saves Discord chat logs to a file. Prior to 2.47.2, HTML exports generated with markdown formatting disabled pass attacker-controlled content through FormatMarkdownAsync and FormatEmbedMarkdownAsync in DiscordChatExporter.Core/Exporting/MessageGroupTemplate.cshtml and render it without HTML entity encoding. The affected fields include message.Content, message.ForwardedMessage.Content, message.ReferencedMessage.Content, embed.Title, embed.Description, field.Name, and field.Value. A Discord webhook or bot can store a script payload in these fields, and the payload executes when a user exports the channel with markdown formatting disabled and opens the resulting HTML, allowing the script to read the export or alter its displayed content. This issue is fixed in version 2.47.2.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:03.610"
-  },
-  {
-    "id": "CVE-2026-54681",
-    "description": "DiscordChatExporter saves Discord chat logs to a file. Prior to 2.47.2, the VisitEmojiAsync method in DiscordChatExporter.Core/Exporting/HtmlMarkdownVisitor.cs interpolates emoji.Name into the alt attribute and emoji.Code into the title attribute without HTML entity encoding. This affects HTML exports regardless of the markdown setting. Discord's current custom emoji name validation normally excludes attribute-breaking characters, but tampered offline input, a relaxed upstream validation rule, or another future metadata source can inject an HTML attribute and execute script when a user opens the export. This issue is fixed in version 2.47.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:03.457"
-  },
-  {
-    "id": "CVE-2026-54134",
-    "description": "OctoPrint provides a web interface for controlling consumer 3D printers. Prior to 1.11.8 and 2.0.0rc3, OctoPrint's custom Tornado upload handler and Flask with Werkzeug parse request parameters differently, allowing an attacker with FILE_UPLOAD permission to inject reserved internal upload fields through query parameters or parser differentials despite the earlier GHSA-m9jh-jf9h-x3h2 fix. The affected endpoints are /api/files/{local|sdcard}, /api/languages, /plugin/backup/restore, and /plugin/pluginmanager/upload_file. An attacker can make OctoPrint treat an arbitrary host file as a temporary upload, move it into a downloadable upload directory, disclose configuration secrets or other readable files, and remove runtime files in a way that can affect a later restart. This issue is fixed in versions 1.11.8 and 2.0.0rc3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:03.197"
-  },
-  {
-    "id": "CVE-2026-54073",
-    "description": "VeraCrypt provides disk encryption with strong security based on TrueCrypt. From 1.26.6 until 1.26.29, file-hosted hidden volume creation forces quick format and the FormatNoFs function in src/Common/Format.c and FormatFat function in src/Common/Fat.c use WriteFile to place raw zeroed sectors at predictable 128 MiB intervals. These writes bypass the normal EncryptDataUnits formatting path, leaving deterministic plaintext markers in an area expected to resemble random ciphertext. The markers can weaken plausible deniability during forensic inspection, although they do not disclose hidden-volume content or reduce the strength of VeraCrypt encryption. This issue is fixed in version 1.26.29.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:02.870"
-  },
-  {
-    "id": "CVE-2026-54071",
-    "description": "BabelDOC is a document translation tool. Prior to 0.6.3, BabelDOC's vendored PDF parser in babeldoc/pdfminer/cmapdb.py deserializes untrusted pickle data when CMapDB._load_data() loads CMap files. PDF-controlled Encoding or CMapName values and embedded PostScript usecmap operators can reach this sink after path separators are decoded, while _normalize_cmap_name() removes only a leading slash. Absolute paths or traversal sequences can escape the trusted CMap directories through os.path.join(), select an attacker-writable .pickle.gz file, and cause pickle.loads() to execute arbitrary Python code with the privileges of the BabelDOC process. This issue is fixed in version 0.6.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:02.720"
-  },
-  {
-    "id": "CVE-2026-53762",
-    "description": "VeraCrypt provides disk encryption with strong security based on TrueCrypt. Prior to 1.26.29, non-default builds created with WOLFCRYPT=1 and WOLFCRYPT_BACKEND route SHA-256 and SHA-512 volume-header key derivation through derive_key_sha256 and derive_key_sha512 in src/Crypto/wolfCrypt.c, where the configured iterations value is discarded and wc_HKDF is used instead of PBKDF2-HMAC. Changing the PIM or iteration count therefore does not increase derivation cost, allowing an attacker with an affected container, disk image, or volume header to perform substantially cheaper offline password guesses. Official precompiled VeraCrypt binaries and normal distribution packages use the standard PBKDF2 backend and are not affected. Volumes created by an affected WOLFCRYPT=1 build require backup and recreation because corrected builds derive different keys. This issue is fixed in version 1.26.29.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:02.570"
-  },
-  {
-    "id": "CVE-2026-35163",
-    "description": "OctoPrint provides a web interface for controlling consumer 3D printers. Prior to 1.11.8 and 2.0.0rc3, Suppressed Command notification popups use PNotify rendering for printer-controlled payload.command and payload.message values in src/octoprint/static/js/app/viewmodels/terminal.js without HTML escaping. An attacker who convinces a victim to print a crafted file can inject HTML and JavaScript into the notification, disrupt prints, read information available to the victim including sensitive settings when permitted, or perform actions in the victim's OctoPrint session. This issue is fixed in versions 1.11.8 and 2.0.0rc3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-21T19:17:01.170"
   }
 ]
