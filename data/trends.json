@@ -1,19 +1,5 @@
 [
   {
-    "id": "CVE-2024-14040",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: nexthop: Increase weight to u16\n\nIn CLOS networks, as link failures occur at various points in the network,\nECMP weights of the involved nodes are adjusted to compensate. With high\nfan-out of the involved nodes, and overall high number of nodes,\na (non-)ECMP weight ratio that we would like to configure does not fit into\n8 bits. Instead of, say, 255:254, we might like to configure something like\n1000:999. For these deployments, the 8-bit weight may not be enough.\n\nTo that end, in this patch increase the next hop weight from u8 to u16.\n\nIncreasing the width of an integral type can be tricky, because while the\ncode still compiles, the types may not check out anymore, and numerical\nerrors come up. To prevent this, the conversion was done in two steps.\nFirst the type was changed from u8 to a single-member structure, which\ninvalidated all uses of the field. This allowed going through them one by\none and audit for type correctness. Then the structure was replaced with a\nvanilla u16 again. This should ensure that no place was missed.\n\nThe UAPI for configuring nexthop group members is that an attribute\nNHA_GROUP carries an array of struct nexthop_grp entries:\n\n\tstruct nexthop_grp {\n\t\t__u32\tid;\t  /* nexthop id - must exist */\n\t\t__u8\tweight;   /* weight of this nexthop */\n\t\t__u8\tresvd1;\n\t\t__u16\tresvd2;\n\t};\n\nThe field resvd1 is currently validated and required to be zero. We can\nlift this requirement and carry high-order bits of the weight in the\nreserved field:\n\n\tstruct nexthop_grp {\n\t\t__u32\tid;\t  /* nexthop id - must exist */\n\t\t__u8\tweight;   /* weight of this nexthop */\n\t\t__u8\tweight_high;\n\t\t__u16\tresvd2;\n\t};\n\nKeeping the fields split this way was chosen in case an existing userspace\nmakes assumptions about the width of the weight field, and to sidestep any\nendianness issues.\n\nThe weight field is currently encoded as the weight value minus one,\nbecause weight of 0 is invalid. This same trick is impossible for the new\nweight_high field, because zero must mean actual zero. With this in place:\n\n- Old userspace is guaranteed to carry weight_high of 0, therefore\n  configuring 8-bit weights as appropriate. When dumping nexthops with\n  16-bit weight, it would only show the lower 8 bits. But configuring such\n  nexthops implies existence of userspace aware of the extension in the\n  first place.\n\n- New userspace talking to an old kernel will work as long as it only\n  attempts to configure 8-bit weights, where the high-order bits are zero.\n  Old kernel will bounce attempts at configuring >8-bit weights.\n\nRenaming reserved fields as they are allocated for some purpose is commonly\ndone in Linux. Whoever touches a reserved field is doing so at their own\nrisk. nexthop_grp::resvd1 in particular is currently used by at least\nstrace, however they carry an own copy of UAPI headers, and the conversion\nshould be trivial. A helper is provided for decoding the weight out of the\ntwo fields. Forcing a conversion seems preferable to bending backwards and\nintroducing anonymous unions or whatever.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-07-26T07:16:39.583"
-  },
-  {
-    "id": "CVE-2026-64530",
-    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet/sched: cls_api: Handle TC_ACT_CONSUMED in tcf_qevent_handle\n\ntcf_classify() can return TC_ACT_CONSUMED while the skb is held by the\ndefragmentation engine (e.g. act_ct on out-of-order fragments). When\nthat happens the skb is no longer owned by the caller and must not be\ntouched again.\n\ntcf_qevent_handle() did not handle TC_ACT_CONSUMED: it fell through the\nswitch and returned the skb to the caller as if classification had\npassed. The only qdisc that wires up qevents today is RED, via three call sites\n(qe_mark on RED_PROB_MARK/HARD_MARK, qe_early_drop on congestion_drop)\nred_enqueue() was continuing to operate on an skb it no longer owns  in this\ncase -- enqueueing it, dropping it, or updating statistics. Resulting in a UAF.\n\n  tc qdisc add dev eth0 root handle 1: red ... qevent early_drop block 10\n  tc filter add block 10 ... action ct\n\n  (with ct defrag enabled and traffic that produces out-of-order\n  fragments, e.g. a fragmented UDP stream)\n\nHandle TC_ACT_CONSUMED in tcf_qevent_handle() the same way the ingress\nand egress fast paths do: treat it as stolen and return NULL without\ntouching the skb. Unlike the TC_ACT_STOLEN case, the skb must not be\ndropped/freed here, as it is no longer owned by us.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-07-26T07:16:41.680"
-  },
-  {
     "id": "CVE-2026-17457",
     "description": "A vulnerability has been found in mf-yang openclaw-cn up to 0.2.1. Affected by this issue is the function assertBrowserNavigationAllowed of the file src/browser/navigation-guard.ts of the component Scheme Handler. Such manipulation of the argument url leads to information disclosure. The attack may be performed from remote. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
     "severity": "Medium",
@@ -83123,5 +83109,131 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-25T06:19:01.940"
+  },
+  {
+    "id": "CVE-2026-66109",
+    "description": "A missing authorization vulnerability exists in SKYSEA Client View and SKYMEC IT Manager. If this vulnerability is exploited, an attacker who can log in to the Windows system on which the affected product is installed may execute arbitrary code with SYSTEM privilege.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T07:17:10.310"
+  },
+  {
+    "id": "CVE-2026-68062",
+    "description": "SKYSEA Client View and SKYMEC IT Manager contain a path traversal vulnerability. If this vulnerability is exploited, an attacker who can log in to a Windows system on which the affected product is installed may be able to execute arbitrary code on another Windows system that has the affected products installed and can receive UDP packets from that system. Note that this vulnerability is due to an incomplete fix for CVE-2024-41726.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T07:17:10.467"
+  },
+  {
+    "id": "CVE-2026-68959",
+    "description": "SKYSEA Client View and SKYMEC IT Manager contain a path traversal vulnerability. If this vulnerability is exploited, an attacker who can log in to a Windows system on which the affected product is installed may be able to execute arbitrary code on another Windows system that has the affected products installed and can receive UDP packets from that system. Note that this vulnerability is due to an incomplete fix for CVE-2024-41726.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T07:17:10.600"
+  },
+  {
+    "id": "CVE-2026-68960",
+    "description": "A stack-based buffer overflow vulnerability exists in SKYSEA Client View and SKYMEC IT Manager. If this vulnerability is exploited, an attacker who can log in to a Windows system on which the affected product is installed may be able to execute arbitrary code on another Windows system that has the affected product installed and can receive UDP packets from that system.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T07:17:10.730"
+  },
+  {
+    "id": "CVE-2026-69665",
+    "description": "SKYSEA Client View and SKYMEC IT Manager contain an issue with incorrect default permissions. If this vulnerability is exploited, an attacker who can log in to a Windows system on which the affected product is installed may execute arbitrary code with SYSTEM privilege.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T07:17:10.860"
+  },
+  {
+    "id": "CVE-2026-78656",
+    "description": "A vulnerability was found in itsourcecode Sales and Inventory System 1.0. Affected is an unknown function of the file /pages/cust_del.php. The manipulation of the argument ID results in sql injection. The attack can be executed remotely. The exploit has been made public and could be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-25T07:17:10.990"
+  },
+  {
+    "id": "CVE-2026-16601",
+    "description": "The CM Map Locations – Visualize and share your locations in a few clicks plugin for WordPress is vulnerable to Limited Arbitrary File Upload in all versions up to, and including, 2.1.8 via the uploadMedia function. This is due to insufficient file type validation in the upload handler, which performs incomplete extension filtering without MIME-type checks or upload capability verification before passing attacker-supplied files to move_uploaded_file(). This makes it possible for authenticated attackers, with subscriber-level access and above, to upload files that may be executable, which makes remote code execution possible. The required nonce is exposed to any logged-in Subscriber via the CMLOC_Editor_Images JavaScript object on the front-end location editor page.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:08.220"
+  },
+  {
+    "id": "CVE-2026-18100",
+    "description": "The MetForm – Contact Form, Survey, Quiz, & Custom Form Builder for Elementor plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'mf_form_id' Widget Setting in all versions up to, and including, 4.1.8 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The payload bypasses Elementor's save-time wp_kses_post filter because it contains no HTML tags, and MetForm's own str_replace transformation of script tags into JavaScript template literal expressions provides an additional delivery path.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:08.360"
+  },
+  {
+    "id": "CVE-2026-18323",
+    "description": "The Forminator Forms – Contact Form, Payment Form & Custom Form Builder plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Radio Field (Save and Continue Draft) in all versions up to, and including, 1.57.0.2 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This is exploitable because the Save-and-Continue draft submission AJAX endpoint is registered as nopriv, allowing unauthenticated attackers to bypass radio field option-membership validation and persist a crafted payload that, when rendered on the Submissions admin page, is auto-executed via the bundled Inputmask library's data-attribute callback binding.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:08.497"
+  },
+  {
+    "id": "CVE-2026-18328",
+    "description": "The Forminator Forms – Contact Form, Payment Form & Custom Form Builder plugin for WordPress is vulnerable to DOM-Based Reflected Cross-Site Scripting via the 'error_description' parameter in all versions up to, and including, 1.57.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The vulnerability is only triggerable on pages hosting a Forminator form configured to use the Stripe Checkout Sessions payment API, which became the default in 1.56.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:08.627"
+  },
+  {
+    "id": "CVE-2026-18512",
+    "description": "The TranslatePress – Translate Multilingual sites with AI Translation plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Approved Comment Body Rendered in Translation Editor Strings Dropdown in all versions up to, and including, 3.2.6 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with subscriber-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:08.750"
+  },
+  {
+    "id": "CVE-2026-19851",
+    "description": "A Use of Default Password vulnerability affecting Tuleap Enterprise Edition from 17.0 through 17.5 could allow an attacker to gain access to user accounts created during XML import.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:08.880"
+  },
+  {
+    "id": "CVE-2026-59769",
+    "description": "FA-50 all versions contain hard-coded credentials.\r\nAn attacker, who knows the credentials and has access to the vessel's internal network, can operate the settings screen using that credentials to alter the identification number.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:09.717"
+  },
+  {
+    "id": "CVE-2026-65633",
+    "description": "Improper Authentication vulnerability in team-alembic AshAuthentication allows purpose-limited JWTs to be replayed as full bearer API credentials when a resource uses stateless bearer-token verification.\n\nThe bearer-token authentication helper AshAuthentication.Plug.Helpers.retrieve_from_bearer/3 verifies an Authorization: Bearer JWT's signature and rejects tokens containing an act claim, but performs no check that the token's purpose claim equals user at the bearer boundary. When the resource is configured with require_token_presence_for_authentication?: false (the DSL default), the follow-on validate_token/3 helper returns {:ok, nil} without consulting the token resource, so no downstream check on purpose takes place either. As a result, any valid, non-expired JWT the library itself issued for a narrow, single-purpose flow (most notably the purpose: sign_in token that WebAuthn always emits during sign-in, and that the Password strategy emits when sign-in tokens are enabled) is accepted directly as a general-purpose bearer credential and resolves to a full current_user assignment.\n\nThis bypasses the library's intended token-exchange contract, in which the sign_in token is meant to be presented exactly once to a preparation that validates the purpose claim and immediately revokes the token. The first use of a still-valid sign-in token presented directly in the Authorization header succeeds because the stateless bearer path never scopes it to purpose == \"user\".\n\nAn attacker who obtains a not-yet-exchanged sign-in token for a target subject (for example via log or referrer leakage, an intercepted magic-link delivery channel, or a partially compromised intermediary) can present it as a bearer token and be authenticated as that subject, fully bypassing the intended one-time-use and revocation semantics. Exploitation additionally requires that the host application wire up retrieve_from_bearer/3 on a reachable route and uses either WebAuthn (sign-in tokens are always issued) or the Password strategy with sign_in_tokens_enabled?: true. Resources configured with require_token_presence_for_authentication?: true (including applications scaffolded by the Igniter installer since v4.5.0) and the session-based path (authenticate_resource_from_session/4) enforce purpose == \"user\" against the stored token record and are not affected.\n\nThis issue affects ash_authentication: from 3.10.5 before 4.14.2 and from 5.0.0-rc.0 before 5.0.0-rc.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:09.857"
+  },
+  {
+    "id": "CVE-2026-66882",
+    "description": "Improper Neutralization of Input During Web Page Generation (XSS) vulnerability in team-alembic AshAuthentication allows reflected cross-site scripting via the confirmation and magic link interaction forms.\n\nWhen a strategy is configured with require_interaction? set to true, AshAuthentication serves an intermediate HTML page asking the user to confirm the action by submitting a form. Both such pages embed a request parameter directly into a hidden input's value attribute without HTML escaping: lib/ash_authentication/add_ons/confirmation/confirmation_form.html.eex interpolates the confirm parameter, and lib/ash_authentication/strategies/magic_link/sign_in_form.html.eex interpolates the magic link token parameter. These templates are compiled with EEx.function_from_file/3 using plain <%= %> expressions, which perform no escaping, so the parameter is reflected verbatim.\n\nNeither accept handler validates the value before rendering it. AshAuthentication.AddOn.Confirmation.Plug.accept/2 only checks that a confirm key is present, and AshAuthentication.Strategy.MagicLink.Plug.accept/2 reads the parameter directly, so no token signature is verified at this stage and arbitrary attacker-supplied text reaches the template. An unauthenticated attacker can therefore craft a URL whose parameter terminates the attribute and injects markup, for example a quote followed by a <script> element. Because the accept phase is served over GET, loading the crafted link is sufficient; no form submission or prior authentication is required.\n\nThe injected script executes in the origin of the application embedding AshAuthentication, giving it access to that origin's cookies, session, and same-origin responses. Since these pages are part of the authentication flow, a victim following what appears to be a legitimate confirmation or sign-in link is a plausible target.\n\nThis issue affects ash_authentication: from 4.8.0 before 4.14.2 and from 5.0.0-rc.0 before 5.0.0-rc.13.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:10.143"
+  },
+  {
+    "id": "CVE-2026-67578",
+    "description": "FA-50 all versions miss authentication for some configuration.\r\nAn attacker with access to the vessel's internal network can manipulate the product's settings screen to alter some configuration parameters.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:10.360"
+  },
+  {
+    "id": "CVE-2026-78322",
+    "description": "A flaw was found in file-roller. When opening or extracting a malicious 7z or RAR archive containing a file entry with an excessively long path, file-roller's progress-line parsing copies the path into a fixed-size stack buffer using an unbounded string copy. This can trigger a stack buffer overflow and cause file-roller to terminate, resulting in a denial of service. To exploit this flaw, a victim must open or extract the crafted archive using file-roller.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:10.583"
+  },
+  {
+    "id": "CVE-2026-78701",
+    "description": "A flaw was found in 389-ds-base. A remote, authenticated attacker could exploit a vulnerability in the Simple Authentication and Security Layer (SASL) UNBIND process. By sending a specially crafted request, the attacker can cause a connection to stall, leading to resource exhaustion and a Denial of Service (DoS) for the server.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-25T08:18:10.713"
   }
 ]
