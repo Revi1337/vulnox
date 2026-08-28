@@ -5,17 +5,17 @@
     "description": "Gitea before 1.27.1 allows remote code execution via the diffpatch API through Git hook installation.",
     "severity": "Critical",
     "cvssScore": 9.8,
-    "tech": "Unknown",
+    "tech": "Gitea",
     "threatType": "Code Injection",
     "published": "2026-08-26T20:17:56.010",
-    "lastModified": "2026-08-26T21:16:38.890",
+    "lastModified": "2026-08-27T11:41:19.230",
     "articles": [
       "https://blog.gitea.com/release-of-1.27.1/",
-      "https://github.com/0xBlackash/CVE-2026-60004",
-      "https://github.com/go-gitea/gitea/security/advisories/GHSA-rcr6-4jqh-j84m",
       "https://www.runzero.com/blog/gitea/"
     ],
     "pocs": [
+      "https://github.com/0xBlackash/CVE-2026-60004",
+      "https://github.com/go-gitea/gitea/security/advisories/GHSA-rcr6-4jqh-j84m",
       "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-60004"
     ],
     "isRansomware": false,
@@ -105,6 +105,29 @@
     ],
     "pocs": [
       "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-73570"
+    ],
+    "isRansomware": false,
+    "requiredAction": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+    "isAllStar": true
+  },
+  {
+    "id": "CVE-2026-66384",
+    "title": "JFrog Artifactory Improper Limitation of a Pathname to a Restricted Directory Vulnerability",
+    "description": "An authenticated user may write data outside the intended Docker cache path under specific remote-repository conditions.",
+    "severity": "Medium",
+    "cvssScore": 5.3,
+    "tech": "Artifactory",
+    "threatType": "Path Traversal",
+    "published": "2026-08-12T16:17:14.520",
+    "lastModified": "2026-08-28T05:16:43.183",
+    "articles": [
+      "https://docs.jfrog.com/releases/docs/artifactory-self-managed-releases",
+      "https://docs.jfrog.com/releases/docs/jfrog-security-advisories",
+      "https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf",
+      "https://openai.com/index/hugging-face-incident-and-the-road-ahead/"
+    ],
+    "pocs": [
+      "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-66384"
     ],
     "isRansomware": false,
     "requiredAction": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
@@ -595,6 +618,31 @@
     "isAllStar": true
   },
   {
+    "id": "CVE-2026-53362",
+    "title": "Linux Kernel Unspecified Vulnerability",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nipv6: account for fraggap on the paged allocation path\n\nIn __ip6_append_data(), when the paged-allocation branch is taken\n(MSG_MORE / NETIF_F_SG / large fraglen), alloclen and pagedlen are\ncomputed as\n\n\talloclen = fragheaderlen + transhdrlen;\n\tpagedlen = datalen - transhdrlen;\n\ndatalen already includes fraggap (datalen = length + fraggap). When\nfraggap is non-zero, this is not the first skb and transhdrlen is zero.\nThe fraggap bytes carried over from the previous skb are copied just past\nthe fragment headers in the new skb's linear area. The linear area is\ntherefore undersized by fraggap bytes while pagedlen is overstated by the\nsame amount, and the copy writes past skb->end into the trailing\nskb_shared_info.\n\nAn unprivileged user can trigger this via a UDPv6 socket using\nMSG_MORE together with MSG_SPLICE_PAGES.\n\nThe bad accounting was introduced by commit 773ba4fe9104 (\"ipv6:\navoid partial copy for zc\"). Before commit ce650a166335 (\"udp6: Fix\n__ip6_append_data()'s handling of MSG_SPLICE_PAGES\"), the negative\ncopy value caused -EINVAL to be returned. That later commit allowed\nMSG_SPLICE_PAGES to proceed in this case, making the corruption\ntriggerable.\n\nThe non-paged branch sets alloclen to fraglen, which already accounts\nfor fraggap because datalen does. Bring the paged branch in line by\nadding fraggap to alloclen and subtracting it from pagedlen.\n\nAfter this adjustment, copy no longer collapses to -fraggap on the\npaged path, so remove the stale comment describing that old arithmetic.\nSince a negative copy is no longer expected for a valid MSG_SPLICE_PAGES\ncase, remove the MSG_SPLICE_PAGES exception from the negative copy check.",
+    "severity": "High",
+    "cvssScore": 7.8,
+    "tech": "Linux kernel",
+    "threatType": "Out-of-bounds Write",
+    "published": "2026-07-04T12:17:02.113",
+    "lastModified": "2026-08-28T05:16:42.563",
+    "articles": [
+      "https://git.kernel.org/stable/c/14200d435af9a9eeb444f529fc2f689a236b7962",
+      "https://git.kernel.org/stable/c/46f201f8b4c39633a1fa3dc12459f506d470993d",
+      "https://git.kernel.org/stable/c/6374fb9edf72c67a118a2c214a0dddd04c921e0a",
+      "https://git.kernel.org/stable/c/65fb14cbebb0cd0eff903a22d33537ddc8b95769",
+      "https://git.kernel.org/stable/c/736b380e28d0480c7bc3e022f1950f31fe53a7c5",
+      "https://git.kernel.org/stable/c/e9eacf19281ea2498b36291b56c9606118c2d74e"
+    ],
+    "pocs": [
+      "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2026-53362"
+    ],
+    "isRansomware": false,
+    "requiredAction": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+    "isAllStar": true
+  },
+  {
     "id": "CVE-2026-48282",
     "title": "Adobe ColdFusion Path Traversal Vulnerability",
     "description": "ColdFusion versions 2025.9, 2023.20 and earlier are affected by an Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability that could lead to arbitrary code execution in the context of the current user. Exploitation of this issue does not require user interaction. Scope is changed.",
@@ -603,7 +651,7 @@
     "tech": "Coldfusion",
     "threatType": "Path Traversal",
     "published": "2026-06-30T16:16:54.533",
-    "lastModified": "2026-08-24T22:16:54.700",
+    "lastModified": "2026-08-28T00:17:43.490",
     "articles": [
       "https://helpx.adobe.com/security/products/coldfusion/apsb26-68.html"
     ],
@@ -1819,7 +1867,7 @@
     "tech": "Acrobat dc",
     "threatType": "Prototype Pollution",
     "published": "2026-04-11T07:16:03.633",
-    "lastModified": "2026-06-17T10:39:20.060",
+    "lastModified": "2026-08-28T00:17:16.097",
     "articles": [
       "https://helpx.adobe.com/security/products/acrobat/apsb26-43.html"
     ],
@@ -11567,6 +11615,30 @@
     ],
     "isRansomware": false,
     "requiredAction": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
+    "isAllStar": true
+  },
+  {
+    "id": "CVE-2023-49105",
+    "title": "ownCloud Improper Authentication Vulnerability",
+    "description": "An issue was discovered in ownCloud owncloud/core before 10.13.1. An attacker can access, modify, or delete any file without authentication if the username of a victim is known, and the victim has no signing-key configured. This occurs because pre-signed URLs can be accepted even when no signing-key is configured for the owner of the files. The earliest affected version is 10.6.0.",
+    "severity": "Critical",
+    "cvssScore": 9.8,
+    "tech": "Owncloud server",
+    "threatType": "Improper Authentication",
+    "published": "2023-11-21T22:15:08.613",
+    "lastModified": "2026-08-28T05:16:40.110",
+    "articles": [
+      "https://owncloud.com/security-advisories/webdav-api-authentication-bypass-using-pre-signed-urls/",
+      "https://owncloud.org/security",
+      "https://owncloud.com/security-advisories/webdav-api-authentication-bypass-using-pre-signed-urls/",
+      "https://owncloud.org/security",
+      "https://hunt.io/blog/chinese-speaking-operator-philippine-nuclear-naval-contractor"
+    ],
+    "pocs": [
+      "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?field_cve=CVE-2023-49105"
+    ],
+    "isRansomware": false,
+    "requiredAction": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
     "isAllStar": true
   },
   {
