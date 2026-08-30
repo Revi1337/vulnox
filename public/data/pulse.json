@@ -1,5 +1,194 @@
 [
   {
+    "id": "CVE-2026-80725",
+    "description": "In the Linux kernel, the following vulnerability has been resolved:\n\nnet: gro: properly validate BIG TCP aggregation criteria\n\nWhen GRO attempts to aggregate packets beyond GRO_LEGACY_MAX_SIZE (64KB),\nBIG TCP should only be permitted for plain IPv4 TCP and plain IPv6 TCP\n(with sufficient MAC header room to insert the temporary HBH jumbo header).\n\nHowever, commit b1a78b9b9886 (\"net: add support for ipv4 big tcp\")\nloosened the check in skb_gro_receive(), leading to several issues:\n\n1. skb_gro_receive() checked skb_headroom(p) instead of the actual space\n   before the MAC header (p->mac_header). Because skb_headroom(p) includes\n   mac_len, crafted frames (e.g. injected via AF_PACKET) can pass the check\n   with p->mac_header < 8 bytes. When ipv6_gro_complete() inserts the\n   temporary HBH jumbo header, the memmove() starts before skb->head,\n   causing an out-of-bounds write and wrapping skb->mac_header.\n2. It allowed non-IP protocols such as software VLAN (ETH_P_8021Q /\n   ETH_P_8021AD) to aggregate beyond 64KB because\n   p->protocol != ETH_P_IPV6 was true.\n3. It checked p->encapsulation instead of NAPI_GRO_CB(skb)->encap_mark,\n   allowing encapsulated flows (e.g. SIT / IPv6-in-IPv4) to aggregate\n   beyond 64KB.\n\nFix skb_gro_receive() to strictly enforce:\n- NAPI_GRO_CB(skb)->proto == IPPROTO_TCP\n- Not encapsulated (!NAPI_GRO_CB(skb)->encap_mark && !p->encapsulation)\n- Protocol must be either ETH_P_IP or ETH_P_IPV6\n- If ETH_P_IPV6, p->mac_header must be at least\n  sizeof(struct hop_jumbo_hdr)\n\nReturning -E2BIG from skb_gro_receive() ensures that packets which cannot\nbecome BIG TCP are cleanly flushed at <= 64KB and delivered intact without\ndropping.\n\nThis issue does not exist in mainline (7.0+) because the subsystem was\nrewritten in commit 81be30c1f5f2 (\"net/ipv6: Drop HBH for BIG TCP on RX\nside\"), making this fix relevant only for older stable branches like\n6.18.y.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-29T07:16:54.573"
+  },
+  {
+    "id": "CVE-2026-81346",
+    "description": "The Frontend Admin by DynamiApps WordPress plugin before 3.29.11 does not perform a capability check on one of its AJAX actions, allowing any authenticated user, such as a subscriber, to delete arbitrary membership plans.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:18:02.633"
+  },
+  {
+    "id": "CVE-2026-81342",
+    "description": "The MasterStudy LMS WordPress Plugin  WordPress plugin before 3.7.43 does not validate a redirect parameter supplied during user registration before using it, allowing unauthenticated attackers to redirect users to arbitrary external URLs.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:58.700"
+  },
+  {
+    "id": "CVE-2026-81200",
+    "description": "The MasterStudy LMS WordPress Plugin  WordPress plugin before 3.7.42 does not correctly restrict access to order information, allowing any user with the instructor role to read other users' order billing details, including name, email address, phone number and postal address, by enumerating order IDs.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:58.587"
+  },
+  {
+    "id": "CVE-2026-81026",
+    "description": "The MasterStudy LMS WordPress Plugin  WordPress plugin before 3.7.40 does not verify the amount, receiver, currency or status of a payment notification before marking the corresponding order completed, allowing unauthenticated users to complete full-price orders and gain access to paid content by paying only a token amount.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:55.990"
+  },
+  {
+    "id": "CVE-2026-80488",
+    "description": "The WP Ultimate CSV Importer  WordPress plugin before 9.0 does not properly sanitise and escape imported field values before using them in a SQL statement, which could allow high privilege users such as admin to perform SQL injection attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:49.663"
+  },
+  {
+    "id": "CVE-2026-80311",
+    "description": "The Stripe Payment Forms by WP Full Pay  WordPress plugin before 8.5.5 does not verify that a subscription belongs to the customer bound to the requesting customer-portal session before cancelling it, allowing a user with a confirmed portal session to cancel subscriptions belonging to other customers.\n\nExploitation requires the attacker to know the target subscription's identifier, which is high-entropy and not enumerable through the Stripe Payment Forms by WP Full Pay  WordPress plugin before 8.5.5.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:49.560"
+  },
+  {
+    "id": "CVE-2026-77786",
+    "description": "The Rank Math SEO  WordPress plugin before 1.0.277 does not check that the user requesting an automated SEO fix holds the capability WordPress itself requires for the settings being changed, allowing users with the Editor role to modify site-wide core WordPress settings that are reserved to administrators.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:44.250"
+  },
+  {
+    "id": "CVE-2026-77704",
+    "description": "The Booking for Appointments and Events Calendar  WordPress plugin before 2.4.9 does not check that a user holds the required capability before letting them change an appointment's status, allowing customers to set arbitrary statuses on appointments they are booked on, including approving their own bookings that were left awaiting approval and overwriting another customer's booking status on a shared appointment.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:44.150"
+  },
+  {
+    "id": "CVE-2026-77012",
+    "description": "The 爱采集数据采集和发布插件 WordPress plugin through 1.0.0 does not require a per-install secret for one of its unauthenticated endpoints, relying on a hardcoded default, and does not validate the URLs or destination paths it is given, allowing unauthenticated attackers to read arbitrary files from the server, force it to issue arbitrary requests and retrieve the responses, and write attacker-supplied content outside the uploads directory.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:44.040"
+  },
+  {
+    "id": "CVE-2026-77010",
+    "description": "The HEL Online Classroom: AI-powered Online Classrooms WordPress plugin through 1.0.3 does not perform authorisation checks on its REST API routes and does not consistently enforce the per-class access code, allowing unauthenticated users to obtain a signed meeting join link for any classroom, including one protected by an access code, and to join it with moderator privileges.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:39.037"
+  },
+  {
+    "id": "CVE-2026-77008",
+    "description": "The HEL Online Classroom: AI-powered Online Classrooms WordPress plugin through 1.0.3 does not have any authorisation or authentication check when saving its settings, allowing unauthenticated users to overwrite them and repoint every online classroom, along with the shared secret those sessions are signed with, at infrastructure of their choosing.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:38.927"
+  },
+  {
+    "id": "CVE-2026-77007",
+    "description": "The HEL Online Classroom: AI-powered Online Classrooms WordPress plugin through 1.0.3 does not perform any authorisation check on one of its REST API routes, allowing unauthenticated users to retrieve its stored settings, including the shared secret used to sign API requests to the connected BigBlueButton server.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:34.453"
+  },
+  {
+    "id": "CVE-2026-76586",
+    "description": "The Appointment Booking Calendar Plugin and Scheduling Plugin  WordPress plugin before 1.6.3 does not verify the amount actually paid against the server-side price staged for a booking when confirming an online payment, allowing unauthenticated users to have a paid appointment approved for a fraction of its price.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:34.353"
+  },
+  {
+    "id": "CVE-2026-76548",
+    "description": "The User Profile Builder  WordPress plugin before 4.0.1 does not properly restrict its front-end file upload feature, granting unauthenticated visitors capabilities reserved to privileged roles. This allows them to list the site's media library and to modify unpublished posts, pages and media items belonging to other users.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:29.450"
+  },
+  {
+    "id": "CVE-2026-76547",
+    "description": "The User Profile Builder  WordPress plugin before 4.0.1 does not validate the type of data being deserialized when importing a configuration file, allowing high privilege users such as administrators to conduct PHP Object Injection. The affected feature is a free add-on which is disabled by default, and no POP chain is present in the User Profile Builder  WordPress plugin before 4.0.1 itself, so further impact requires a suitable gadget from another installed User Profile Builder  WordPress plugin before 4.0.1 or .",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:29.343"
+  },
+  {
+    "id": "CVE-2026-76546",
+    "description": "The User Profile Builder  WordPress plugin before 4.0.1 does not escape the output of one of its optional shortcodes, allowing users with a role as low as contributor to perform Stored Cross-Site Scripting attacks against any user viewing the affected content, including administrators. The shortcode is not enabled by default.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:24.977"
+  },
+  {
+    "id": "CVE-2026-19430",
+    "description": "The Catfolders Document Gallery Pro WordPress plugin before 2.0.7 does not authorise some of its REST API routes, and the token identifying the requested content is forgeable client side, allowing unauthenticated users to list and download the contents of folders that were never published on the site.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:24.857"
+  },
+  {
+    "id": "CVE-2026-18234",
+    "description": "The MStore API  WordPress plugin before 4.21.1 does not verify that the order targeted by its wallet payment handling belongs to the requester, and does not deduct the wallet balance for most payment methods, allowing any authenticated user, including Subscribers, to mark arbitrary orders as paid without any payment being taken.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:20.960"
+  },
+  {
+    "id": "CVE-2026-18233",
+    "description": "The MStore API  WordPress plugin before 4.21.1 does not verify that the order targeted by one of its delivery endpoints belongs to the requester, allowing any authenticated user, including Subscribers, to mark arbitrary orders as completed and paid without any payment being made.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:16.007"
+  },
+  {
+    "id": "CVE-2026-17522",
+    "description": "The Newsletters WordPress plugin before 4.17 does not perform any nonce or capability check when saving one of its settings screens, and writes every submitted parameter into its own options, allowing attackers to make a logged in administrator overwrite arbitrary Newsletters WordPress plugin before 4.17 settings, including the credential protecting its API, via a Cross-Site Request Forgery attack.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:12.290"
+  },
+  {
+    "id": "CVE-2026-17520",
+    "description": "The Newsletters WordPress plugin before 4.17 does not generate its API key using a sufficiently random source, deriving it from a publicly known value, allowing unauthenticated attackers to compute the key and perform privileged actions such as adding and deleting subscribers and sending emails, when the optional API has been enabled.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:12.177"
+  },
+  {
+    "id": "CVE-2026-16947",
+    "description": "The Total processing card payments for WooCommerce WordPress plugin through 7.3 does not validate a user-supplied path before using it to build a server-side verification request, and does not verify the authenticity of the response, allowing unauthenticated attackers to redirect that request to an arbitrary host (disclosing the merchant's payment-gateway credentials) and to forge a success response that marks arbitrary WooCommerce orders as paid.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:05.583"
+  },
+  {
+    "id": "CVE-2026-16600",
+    "description": "The SmartAIPress WordPress plugin through 1.2.0 does not perform a capability check on one of its AJAX actions and does not validate a user-supplied URL before fetching it server-side, allowing users with subscriber-level access and above to make the site retrieve arbitrary internal or external URLs and read the response, resulting in a full-read Server-Side Request Forgery.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:05.443"
+  },
+  {
+    "id": "CVE-2026-16259",
+    "description": "The Uix UserCenter WordPress plugin through 1.0.3 does not verify that the account being modified through an unauthenticated profile-update action belongs to the requester, and it authenticates that action with a token whose signing key is hardcoded and identical across every install, allowing unauthenticated attackers to forge a token for any user, overwrite an administrator's email and password, and take over the account.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:00.360"
+  },
+  {
+    "id": "CVE-2026-16061",
+    "description": "The Rest Routes  WordPress plugin through 5.5.5 does not sanitize and validate a value taken from the URL of one of its public REST routes before using it in a SQL query, allowing unauthenticated attackers to perform SQL injection attacks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:17:00.247"
+  },
+  {
+    "id": "CVE-2026-10522",
+    "description": "The MemberHero  WordPress plugin through 6.9 does not restrict which account fields can be supplied during its frontend registration process, allowing unauthenticated attackers to register a new user with an arbitrary role, including Administrator, leading to a full site takeover.\n\nVersion 6.9 is advertised as resolving this issue, but the fix is incomplete and the current version remains exploitable by unauthenticated attackers to obtain administrator access and to take over existing accounts. No version that fully addresses the issue is available at the time of this advisory.\n\nMitigation: deactivate and remove the MemberHero  WordPress plugin through 6.9 until a version that fully resolves this issue is released. If the MemberHero  WordPress plugin through 6.9 must stay active, disable public registration, restrict access to the registration functionality, and monitor the site for unexpected administrator accounts.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-29T06:16:57.717"
+  },
+  {
     "id": "CVE-2026-41012",
     "description": "Traffic interception vulnerability in BOSH Director vCenter CPI allows attackers positioned between BOSH Director and vCenter to impersonate vCenter REST API and capture administrator credentials via HTTP Basic auth, leading to complete virtualization infrastructure takeover.\n\n\n\nAn attacker who can intercept traffic between the BOSH Director and vCenter can establish a malicious server impersonating the vCenter REST API. When the BOSH Director makes CPI calls to perform routine cloud infrastructure operations, the attacker captures the vCenter administrator username and password transmitted via HTTP Basic authentication.\n\n\n\nThe vulnerability stems from insufficient authentication security in the communication protocol between BOSH Director and vCenter. While HTTPS may be used, the lack of proper certificate validation and pinning allows attackers to successfully impersonate vCenter endpoints. Because vCenter credentials typically grant full administrative control over the entire virtualization estate, successful credential capture yields complete takeover of every VM, datastore, and network the CPI manages.\n\n\n\nThis exposure exists on every CPI call (including routine deployment operations, not just when tags are configured) and cannot be mitigated by supplying a CA certificate alone. The attack impacts all infrastructure managed by the compromised vCenter instance, potentially affecting hundreds or thousands of VMs across multiple deployments and environments.",
     "severity": "High",
@@ -9973,635 +10162,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-08-26T10:16:39.940"
-  },
-  {
-    "id": "CVE-2026-80237",
-    "description": "EFence developed by Thinking Software Technology has an Arbitrary File Upload vulnerability. Authenticated remote attackers can upload and execute web shell backdoors, thereby enabling arbitrary code execution on the server.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:49.327"
-  },
-  {
-    "id": "CVE-2026-80236",
-    "description": "Efence developed by Thinking Software Technology has a SQL Injection vulnerability. Unauthenticated remote attackers can access file upload functionality and read database contents.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:49.180"
-  },
-  {
-    "id": "CVE-2026-80235",
-    "description": "EFence developed by Thinking Software Technology has an Arbitrary File Upload vulnerability. Unauthenticated remote attackers can upload and execute web shell backdoors, thereby enabling arbitrary code execution on the server.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:49.027"
-  },
-  {
-    "id": "CVE-2026-80234",
-    "description": "CAYIN CMS-WS and CMS-SE developed by CAYIN Technology have a Missing Authentication vulnerability. Unauthenticated remote attackers can obtain media file lists via specific functionality, resulting in partial information disclosure.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:48.880"
-  },
-  {
-    "id": "CVE-2026-80233",
-    "description": "CAYIN CMS-WS, CMS-SE, and SMP series products developed by CAYIN Technology have an Arbitrary File Upload vulnerability. Privileged remote attackers can upload and execute web shells backdoors, thereby enabling arbitrary code execution on the server.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:48.717"
-  },
-  {
-    "id": "CVE-2026-77533",
-    "description": "A malicious actor with access to the network and low privileges could exploit an Improper Input Validation vulnerability found in UniFi Protect Application to execute a Command Injection on the host device.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:48.563"
-  },
-  {
-    "id": "CVE-2026-19538",
-    "description": "The BLOCKED access control list items that are evaluated to deny access on the the proxy protocol port can be bypassed completely when connecting over TCP or TLS and sending the query twice on connection that is kept open.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:46.057"
-  },
-  {
-    "id": "CVE-2026-19401",
-    "description": "Any remote client can crash a (debugging/non-release build type) NSD serve child by sending it a special crafted message with a specially tuned number of DNS Cookie options (17 when UDP payload size is 512). By continuously crashing the serve childs, the remote client can severely hamper or, when positioned sufficiently close, deny all DNS service.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:45.857"
-  },
-  {
-    "id": "CVE-2026-19197",
-    "description": "A user with organization administrator permissions can delete dashboard snapshots belonging to other organizations on the same Grafana instance, and can recover a snapshot's secret delete key using only its public share key (broken access control).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:45.727"
-  },
-  {
-    "id": "CVE-2026-18916",
-    "description": "Any remote client can crash a NSD serve child, by throttling the TCP receive window after a TCP query. By continuously crashing the serve childs, the remote client can denial all TCP service to this NSD instance.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:45.597"
-  },
-  {
-    "id": "CVE-2026-18664",
-    "description": "When ranges are used for access control (i.e. of the form 1.2.3.4-1.2.3.25), because NSD wrongly compares the IP address with the range on little endian systems, IPs that were meant to be allowed may be denied, and, IPs that were meant to be denied access could be allowed. An IPv4 address is compared with IPv4 ranges as unsigned 32 bit numbers directly with the endianness of the host, but the values to compare are in network byte order (big-endian).  With IPv6 addresses the comparison is done in 4 times a unsigned 32 bit number comparison, again with the endianness of the host where all values are actually in network bye order.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T09:16:45.437"
-  },
-  {
-    "id": "CVE-2026-9668",
-    "description": "With legitimate user credentials in hand, attackers can construct malicious SQL statements to bypass authentication logic and execute arbitrary database queries directly. This will consequently lead to slow database queries and expanded query coverage. This vulnerability features a low exploitation threshold, wide scope of impact, requires no external privilege escalation, and is classified as a high-priority fix.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T08:16:46.830"
-  },
-  {
-    "id": "CVE-2026-78237",
-    "description": "Insufficient input validation in ABR allows a low-privileged user to inject malicious entries into the sudoers file, resulting in persistent root access that remained effective after the ABR session ended.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T08:16:46.720"
-  },
-  {
-    "id": "CVE-2026-78236",
-    "description": "An insecure PIN derivation mechanism in ABR allows a low-privileged user to escalate privileges to administrator by communicating over Cross-Process Communication (XPC) while masquerading as an Apple-signed process.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T08:16:46.600"
-  },
-  {
-    "id": "CVE-2026-75977",
-    "description": "The Mang Board WP plugin for WordPress is vulnerable to Missing Authorization via Authentication Cookie Forgery in all versions up to, and including, 2.3.7. This is due to flawed HMAC generation in the mbw_get_hash_key() function that uses the current user's identity instead of the cookie username parameter when a WordPress user is logged in, combined with insufficient validation in mbw_validate_auth_cookie(). This makes it possible for authenticated attackers, with subscriber-level access and above, to forge administrator authentication cookies and change administrator passwords to achieve complete site takeover.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T08:16:46.383"
-  },
-  {
-    "id": "CVE-2026-6178",
-    "description": "The Betheme theme for WordPress is vulnerable to Stored Cross-Site Scripting via the theme's 'icon_box_2' shortcode in all versions up to, and including, 28.4 due to insufficient input sanitization and output escaping on user supplied attributes. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T08:16:45.783"
-  },
-  {
-    "id": "CVE-2026-18884",
-    "description": "The WooCommerce Lottery plugin for WordPress is vulnerable to Time-Based SQL Injection via 'orderby' and 'order' GET Parameters in all versions up to, and including, 2.2.9 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T08:16:44.660"
-  },
-  {
-    "id": "CVE-2026-58108",
-    "description": "The personal access token removal query selects from PersonalAccessTokenDB but filters on columns of Session, with no join between them. SQLAlchemy resolves that as an implicit cross join, so the filter does not constrain the delete to the calling user's own token in the way the code reads as intending. This way a user can delete all personal access tokens in the system.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T07:16:45.780"
-  },
-  {
-    "id": "CVE-2026-3002",
-    "description": "The Gutenverse – Ultimate WordPress FSE Blocks Addons & Ecosystem plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the multiple blocks in all versions up to, and including, 4.0.2 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with Contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T07:16:45.633"
-  },
-  {
-    "id": "CVE-2026-18431",
-    "description": "The Avada theme for WordPress is vulnerable to Arbitrary File Write in all versions up to, and including, 7.16 when the Fusion Builder plugin is installed and active in versions up to, and including, 3.16. This is due to a chain of authorization and input validation weaknesses across the two components that makes it possible for unauthenticated attackers to write attacker-controlled files to the server. This can be used to create and execute arbitrary PHP files, resulting in remote code execution and complete site compromise. Successful exploitation requires both Avada and Fusion Builder to be installed and active, as well as certain administrator-authored content to be present.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T07:16:45.500"
-  },
-  {
-    "id": "CVE-2026-18331",
-    "description": "The Formidable Forms – WordPress Form Builder for Contact Forms, Calculators, Quizzes & More plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'frm_user_id' parameter in all versions up to, and including, 6.33.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. By forging frm_user_id to match an administrator's user ID — discoverable via the public WordPress REST API — an unauthenticated attacker causes wp_kses_post() to serve as the only output filter, which preserves the injected payload structurally intact; the plugin's admin JavaScript then decodes and executes it automatically on page load.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T07:16:45.360"
-  },
-  {
-    "id": "CVE-2026-15366",
-    "description": "A control logic defect in a specific built-in webpage of Kids Mode allows users to view local gallery photos directly within the page",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T07:16:45.210"
-  },
-  {
-    "id": "CVE-2026-15365",
-    "description": "A pop-up logic flaw in a certain feature of Kids Mode allows users to bypass password verification and use Quick Apps outside the app.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T07:16:45.070"
-  },
-  {
-    "id": "CVE-2026-79654",
-    "description": "A flaw was found in Katello where the Content View History API does not properly enforce authorization when accessing a Content View specified by the user. An authenticated user with permission to view Content Views in one organization may be able to access the lifecycle history of a Content View belonging to another organization by supplying its identifier to the affected API endpoint. This can result in unauthorized disclosure of Content View lifecycle information, including publication and promotion events, associated users, and timestamps.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:30.110"
-  },
-  {
-    "id": "CVE-2026-78146",
-    "description": "The Simple Newsletter Plugin  WordPress plugin before 4.3.3 does not verify that the requester is the subscriber named in a public request before rendering that subscriber's stored details, allowing unauthenticated users to disclose a subscriber's personal data along with the key that authorises changes to their record.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:30.007"
-  },
-  {
-    "id": "CVE-2026-77790",
-    "description": "The RegistrationMagic  WordPress plugin before 6.0.9.4 does not sanitise and escape a parameter before using it in a SQL statement, which could allow high privilege users such as admin to perform SQL injection attacks.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.910"
-  },
-  {
-    "id": "CVE-2026-77789",
-    "description": "The Stripe Payment Forms by WP Full Pay  WordPress plugin before 8.5.1 does not verify that a subscription belongs to the customer bound to the requesting customer-portal session before acting on it, allowing a user with a confirmed portal session to cancel, reactivate or modify subscriptions belonging to other customers.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.810"
-  },
-  {
-    "id": "CVE-2026-77758",
-    "description": "The Stripe Payment Forms by WP Full Pay  WordPress plugin before 8.5.1 does not properly verify that a customer portal session has completed its confirmation step before returning data, allowing unauthenticated users to read another customer's subscription and billing information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.710"
-  },
-  {
-    "id": "CVE-2026-77757",
-    "description": "The Directorist: AI-Powered Business Directory, Listings & Classified Ads WordPress plugin before 8.9.3 does not sanitize a user-supplied image reference before using it as the source of a file move, allowing users with a subscriber-level account to relocate arbitrary server-readable image files into a publicly accessible directory, and to delete them from their original location.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.610"
-  },
-  {
-    "id": "CVE-2026-77754",
-    "description": "The Kirki  WordPress plugin before 6.0.14 does not perform a capability check on some endpoints of one of its public AJAX actions, allowing unauthenticated users to retrieve the email addresses of registered users and comment authors, as well as non-public page content and settings.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.510"
-  },
-  {
-    "id": "CVE-2026-77695",
-    "description": "The Return Refund and Exchange For WooCommerce WordPress plugin before 4.6.4 does not correctly verify the ownership of guest orders in some of the AJAX actions it exposes to unauthenticated users, allowing them to read private order messages, post messages and attachments in the customer's name, and cancel return requests on any guest order.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.410"
-  },
-  {
-    "id": "CVE-2026-77694",
-    "description": "The Eventin  WordPress plugin before 4.1.19 does not properly restrict which changes a guest checkout token is allowed to authorise on an order, allowing unauthenticated users to mark their own unpaid order as completed and be issued a valid paid ticket with no payment taken.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.313"
-  },
-  {
-    "id": "CVE-2026-77693",
-    "description": "The Order Tip for WooCommerce WordPress plugin before 1.6.0 does not check the capability of the user requesting a file deletion, nor does it restrict which path may be deleted, allowing users with the Shop Manager role and above to delete arbitrary files on the server, which could lead to the site being taken over.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:29.210"
-  },
-  {
-    "id": "CVE-2026-75798",
-    "description": "The AI Engine  WordPress plugin before 3.7.2 does not perform an authorisation check on one of its administration-only features, relying instead on a token it hands out to anonymous visitors, allowing unauthenticated attackers to run AI queries of their own choosing against the site owner's configured provider account.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:27.333"
-  },
-  {
-    "id": "CVE-2026-75797",
-    "description": "The AI Engine  WordPress plugin before 3.7.2 does not confine a caller-supplied URL when mapping it to a local filesystem path before reading the file and forwarding its contents to an external service, allowing users with a subscriber-level account to read arbitrary files from the server and exfiltrate them off-host. Reaching the issue at subscriber level requires a non-default public API feature to be enabled; otherwise the same issue is reachable by an administrator, which on multisite allows a non-super subsite administrator to read the network-shared configuration and its secrets.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:27.230"
-  },
-  {
-    "id": "CVE-2026-74930",
-    "description": "The Project Manager  WordPress plugin before 4.0.7 does not check that the user whose activity is being requested is the one making the request in one of its REST API routes, allowing any authenticated user, such as a subscriber, to read any other user's activity history along with their email address and the details of projects they have no access to.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:27.133"
-  },
-  {
-    "id": "CVE-2026-74929",
-    "description": "The Project Manager  WordPress plugin before 4.0.7 does not restrict several of its REST API routes to the projects a user belongs to, allowing any authenticated user, such as a subscriber, to read other projects' task content and user email addresses and to modify other projects' task boards.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:27.037"
-  },
-  {
-    "id": "CVE-2026-74928",
-    "description": "The Project Manager  WordPress plugin before 4.0.7 does not have any authorisation check on its import routes, allowing unauthenticated users to create WordPress accounts with a password the attacker already knows, bypassing the site's own registration setting.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.930"
-  },
-  {
-    "id": "CVE-2026-74851",
-    "description": "The Pods  WordPress plugin before 3.3.9.1 does not correctly compare a display callback against its list of blocked functions, allowing users with the author role and above to execute arbitrary code on the server. Only sites using the restricted display-callback mode are affected, which is the automatic default on installations whose first Pods version predates 3.1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.830"
-  },
-  {
-    "id": "CVE-2026-58097",
-    "description": "mp_SetEnddisc() copied a user-supplied PSN endpoint value without length validation, allowing a buffer overflow via the ppp(8) command interface.\n\nA local user with access to the ppp(8) command interface can crash ppp(8) or potentially execute arbitrary code as root.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.700"
-  },
-  {
-    "id": "CVE-2026-58096",
-    "description": "LcpDecodeConfig() did not validate the length of received endpoint discriminator options against the minimum required by RFC 1717.  Undersized options would trigger an out-of-bounds write.\n\nA malicious PPP peer can exploit CVE-2026-58095 and CVE-2026-58096 to crash ppp(8) or potentially execute arbitrary code as root.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.577"
-  },
-  {
-    "id": "CVE-2026-58095",
-    "description": "mp_Enddisc() used incorrect length calculations when formatting endpoint discriminator addresses for display, allowing a received endpoint option to overflow a global result buffer.\n\nA malicious PPP peer can crash ppp(8) or potentially execute arbitrary code as root.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.460"
-  },
-  {
-    "id": "CVE-2026-58094",
-    "description": "The FIOSSHMLPGCNF ioctl(2) operation configures the page size for a largepage shared memory object.  This is intended to be used immediately after creating the object, before any memory is allocated for the object.  The handler checked whether a page size had already been configured without holding the rangelock.  Two concurrent callers could both observe an unconfigured object and set conflicting page sizes, leaving the object in an inconsistent state.\n\nAn unprivileged local user can exploit this race to escalate privileges.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.350"
-  },
-  {
-    "id": "CVE-2026-58093",
-    "description": "The TIOCSCTTY ioctl handler drops the tty lock in order to acquire the process tree lock.  After reacquiring the tty lock, the handler did not revalidate the state of the terminal, and could proceed to link a terminal that was concurrently being destroyed to the calling process' session.\n\nAn unprivileged local user can exploit this race condition to escalate privileges.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.227"
-  },
-  {
-    "id": "CVE-2026-19760",
-    "description": "The WP Fastest Cache – WordPress Cache Plugin plugin for WordPress is vulnerable to Stored Cross-Site Scripting via HTTP Host Header in all versions up to, and including, 1.5.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This requires the Polylang or Polylang Pro plugin to be active and the Combine JS option to be enabled, as these conditions trigger the vulnerable Host-header-to-URL code path that writes attacker-controlled script src values into the shared page-cache file served to all subsequent visitors.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:26.007"
-  },
-  {
-    "id": "CVE-2026-19718",
-    "description": "The BlogVault Backup & Staging WordPress plugin before 6.65, MalCare WordPress Security Plugin  WordPress plugin before 6.65, The WP Remote WordPress Plugin WordPress plugin before 6.65 do not prevent unauthenticated users from obtaining data derived from the secret that binds a site to its remote management service, and generate that secret with a weak pseudo-random number generator, allowing attackers to recover it and gain administrative access to the site.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.900"
-  },
-  {
-    "id": "CVE-2026-19226",
-    "description": "The Royal Addons for Elementor  WordPress plugin before 1.7.1066 does not validate some widget settings before outputting them inside an HTML attribute, which could allow users with the Contributor role and above to perform Stored Cross-Site Scripting attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.803"
-  },
-  {
-    "id": "CVE-2026-19220",
-    "description": "The Forminator Forms  WordPress plugin before 1.57.1 does not verify that site registration is enabled on the network before creating a site signup, allowing unauthenticated visitors to create a new site on a WordPress multisite network and gain administrator privileges on it.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.703"
-  },
-  {
-    "id": "CVE-2026-19094",
-    "description": "The Tutor LMS  WordPress plugin before 4.0.6 does not validate values used to build a database query, and does not restrict which template file a request may load, allowing unauthenticated users to inject SQL and to read question and answer content belonging to courses that are not publicly available.\n\nThe injected text reaches the query as grammar rather than as data, and on the database engines tested it does not yield extraction of arbitrary data, so the confidentiality impact is the disclosed course content rather than the database at large.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.600"
-  },
-  {
-    "id": "CVE-2026-16986",
-    "description": "The Booking Package WordPress plugin before 1.7.25 does not validate the payment amount server-side against the stored service price, deriving the expected charge from attacker-supplied request values instead, so an unauthenticated attacker can pay an arbitrary fraction of a service's real price.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.500"
-  },
-  {
-    "id": "CVE-2026-16984",
-    "description": "The Privacy Policy Generator, Terms & Conditions, GDPR, CCPA, Cookie Policy & Disclaimer Templates  WordPress plugin before 3.7.1 does not include an authorization check on a REST route that returns stored account data, allowing unauthenticated visitors to retrieve the connected service's API secret and account details, which can then be used to disconnect the Privacy Policy Generator, Terms & Conditions, GDPR, CCPA, Cookie Policy & Disclaimer Templates  WordPress plugin before 3.7.1's integration.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.393"
-  },
-  {
-    "id": "CVE-2026-15203",
-    "description": "Improper access control in debug and engineering interfaces in Danfoss iC7-Automation SP, iC7-Marine, and iC7-Hybrid GR3 allows attackers to gain read/write access to internal values, upload and execute unsigned applications, and upload unsigned EEPROM data and firmware via exposed service interfaces and software update mechanisms",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.130"
-  },
-  {
-    "id": "CVE-2026-14550",
-    "description": "The WPCafe  WordPress plugin before 3.0.18 does not perform an authorization check when creating a reservation through its REST API, verifying only a publicly available nonce, allowing unauthenticated users to submit reservations with an arbitrary approval status and bypass the administrator moderation workflow.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:25.007"
-  },
-  {
-    "id": "CVE-2026-14216",
-    "description": "The Booking for Appointments and Events Calendar  WordPress plugin before 2.4.7 does not require authentication before processing its pending notification queue, allowing an unauthenticated user to force the dispatch of queued notifications and integration callbacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:24.910"
-  },
-  {
-    "id": "CVE-2026-14212",
-    "description": "The Booking for Appointments and Events Calendar  WordPress plugin before 9.8 does not verify that an authenticated employee (provider) owns the provider account being updated, allowing any employee with an Employee Panel login to overwrite another employee's cabinet password and take over their account.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:24.800"
-  },
-  {
-    "id": "CVE-2026-13406",
-    "description": "The Royal Addons for Elementor  WordPress plugin before 1.7.1066 does not perform any capability or nonce check before returning taxonomy term data for an arbitrary, caller-supplied taxonomy, allowing unauthenticated users to disclose the names and IDs of terms belonging to non-public taxonomies.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:24.700"
-  },
-  {
-    "id": "CVE-2026-13404",
-    "description": "The Royal Addons for Elementor  WordPress plugin before 1.7.1066 does not perform any capability or ownership check (relying only on a publicly-scrapeable nonce) before writing like-count and visitor-tracking post meta keyed on an arbitrary post ID, allowing unauthenticated users to modify that metadata on any post, including private and draft posts.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:24.593"
-  },
-  {
-    "id": "CVE-2026-13172",
-    "description": "The Eventin  WordPress plugin before 4.1.22 does not restrict access to non-published content by status or ownership in one of its REST API namespaces, allowing unauthenticated users to retrieve draft, pending and private posts belonging to other users, along with the passwords and contents of password-protected ones.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T06:16:23.350"
-  },
-  {
-    "id": "CVE-2026-9805",
-    "description": "SMM IHISI command handler, FMTSWriteUseIntelLib, for FMTS command 0x32, read and write data without checking buffer size and could cause buffer overflow.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:28.547"
-  },
-  {
-    "id": "CVE-2026-9252",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:28.483"
-  },
-  {
-    "id": "CVE-2026-9250",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:28.420"
-  },
-  {
-    "id": "CVE-2026-9146",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:28.353"
-  },
-  {
-    "id": "CVE-2026-80216",
-    "description": "Rejected reason: duplicate record",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:28.273"
-  },
-  {
-    "id": "CVE-2026-80214",
-    "description": "LibreNMS’s Virtualization Discovery module is vulnerable to command line injection. An authenticated admin user can execute arbitrary code on the host server.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:28.127"
-  },
-  {
-    "id": "CVE-2026-80202",
-    "description": "Kimai before 2.56.0 does not enforce team-membership checks in TimesheetVoter::voteOnAttribute(), which maps permissions only to own_timesheet or other_timesheet. As a result, any authenticated user with ROLE_TEAMLEAD (or a role holding edit_other_timesheet/delete_other_timesheet) can read, modify, and permanently delete timesheets belonging to any user system-wide via the API, regardless of team membership. Timesheet IDs are sequential integers and trivially enumerable. ROLE_USER accounts are correctly restricted. (Note: the maintainers characterize this behavior as matching the documented permission model.)",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:27.980"
-  },
-  {
-    "id": "CVE-2026-80201",
-    "description": "Kimai before 2.53.0 fails to block sensitive User methods in the Twig invoice template sandbox, allowing admins to call getApiToken() and getPlainApiToken() methods. Attackers with template creation permissions can embed these method calls in invoice templates to leak hashed API tokens in rendered invoice output.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:27.830"
-  },
-  {
-    "id": "CVE-2026-80200",
-    "description": "Kimai before 2.53.0 contains an open redirect vulnerability in the SAML authentication success handler that accepts unvalidated RelayState POST parameters as redirect destinations. Attackers with IdP access can supply malicious RelayState values to redirect authenticated users to attacker-controlled URLs for credential theft or phishing attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:27.680"
-  },
-  {
-    "id": "CVE-2026-80199",
-    "description": "Kimai before 2.54.0 contains a timing oracle vulnerability in TokenAuthenticator that allows unauthenticated attackers to enumerate valid usernames via X-AUTH-USER header. Attackers can measure response time differences when the password hasher runs only for existing users, enabling username enumeration with no login throttling protection.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:27.530"
-  },
-  {
-    "id": "CVE-2026-80198",
-    "description": "Kimai versions before 2.56.0 fail to restrict the config() Twig function in sandboxed invoice and export templates, allowing administrators to access arbitrary configuration keys. Attackers with admin privileges can upload malicious templates to exfiltrate server-wide secrets including LDAP bind passwords and SAML private keys into invoice or export documents accessible to lower-privileged users.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:27.380"
-  },
-  {
-    "id": "CVE-2026-80197",
-    "description": "Kimai before 2.57.0 contains an improper authorization vulnerability in the favorite timesheet add and remove endpoints that allows authenticated users to manipulate other users' bookmarks. Attackers can add or remove timesheet entries from another user's favorite list by referencing their timesheet identifier, enabling cross-user business-state tampering without administrative privileges.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:27.230"
-  },
-  {
-    "id": "CVE-2026-80196",
-    "description": "Kimai before 2.58.0 contains an authentication bypass vulnerability where password reset links remain valid after password changes because the LoginLink signature covers only the user id, not the password hash. Attackers who intercept or cache a password reset link can use it up to 2 additional times within a 1-hour window to log in as the user even after the legitimate user has changed their password.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:27.083"
-  },
-  {
-    "id": "CVE-2026-80195",
-    "description": "Kimai before 2.63.0 contains a business logic / improper authorization vulnerability in the team update API endpoint (PATCH /api/teams/{id}), which removes all existing team members before validating the submitted replacement member list. An authenticated teamlead (or other user) with permission to edit a team can submit a malformed members payload; although Kimai returns a validation error, the existing membership rows have already been deleted. This bypasses the dedicated member-removal endpoint's protection against removing teamleaders and can leave a team with no members or teamleaders, disrupting team-based access control.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:26.937"
-  },
-  {
-    "id": "CVE-2026-80194",
-    "description": "Kimai before 2.64.0 contains a missing authorization vulnerability in the ProjectViewController export route (report_project_view_export). The authorization guards are attached to the sibling __invoke method rather than at the class level, so the export route inherits no authorization checks. Any authenticated user, including a plain ROLE_USER without the project_reporting permission, can download the project overview export - which returns the same dataset as the protected report - disclosing customer names, project names, currency, budget type, and aggregate totals across all customers. Actual financial figures remain protected in the export template.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:26.780"
-  },
-  {
-    "id": "CVE-2026-80193",
-    "description": "Kimai before 2.62.0 fails to validate create_other_timesheet permission in the QuickEntry controller when creating new timesheets. Authenticated users with view_other_timesheet and edit_other_timesheet permissions can create timesheet records for team members by submitting the QuickEntry form, bypassing authorization checks enforced elsewhere.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:26.617"
-  },
-  {
-    "id": "CVE-2026-80192",
-    "description": "@better-auth/sso before 1.6.27 (and before 1.4.8 in the 1.4.x line and before 1.7.0-rc.5 in the 1.7 prerelease line) contains two domain-ownership flaws. When domain verification is disabled, automatic organization assignment accepts unverified provider domains, allowing an authenticated organization owner/administrator to register an SSO provider for an arbitrary domain and have users with matching email domains added to the attacker's organization with default member permissions. When domain verification is enabled, a race condition between the verify-domain and update-provider endpoints can apply completed DNS proof to a different domain; combined with implicit account linking, this can link an attacker-controlled identity provider to an existing user account. Exploitation requires the SSO plugin (and, for the org-assignment path, the organization plugin) with the relevant configuration enabled.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:26.460"
-  },
-  {
-    "id": "CVE-2026-80191",
-    "description": "GROWI applies its page-viewer permission check to attachment requests only when the request carries an authenticated user. retrieveAttachmentFromIdParam in apps/app/src/server/routes/attachment/get.ts guards the check with a condition requiring the user to be non-null, so a request that carries no session skips the check entirely and the handler returns the file. The routes reached this way, /attachment/:id and /download/:id, take the attachment identifier from the path, so an unauthenticated caller who has an attachment identifier receives the file regardless of whether the page owning it is private and regardless of whether that caller would be permitted to view the page. Identifiers can be retained by a user whose access was later removed, or recovered from anywhere the identifier was previously exposed. Version 8.0.2 runs the check for authenticated and unauthenticated requests alike, skipping it only where a valid share link has already bound the requested file to that link's page.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:26.283"
-  },
-  {
-    "id": "CVE-2026-80189",
-    "description": "LeafWiki extracts an uploaded ZIP archive without limiting how much data it will write. ZipExtractor.ExtractToDir in internal/importer/zip_extractor.go opens each entry and copies it to the destination with io.Copy, which runs to the end of the decompressed stream, so only the size of the uploaded archive is bounded and the size it expands to is not. The import route that reaches this code requires the Editor or Admin role, and the upload itself is capped at 500 MiB compressed. Because a ZIP entry can compress at a very high ratio, an archive well inside that cap can expand to hundreds of gigabytes as it is written out. The extraction directory defaults to a location under the operating system temporary directory, so the written data consumes the disk backing that path, which on a tmpfs-backed temporary directory is memory. A user holding the Editor role can therefore exhaust the storage the service depends on and keep it from serving, using far more resource than the upload limit alone would permit.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:26.117"
-  },
-  {
-    "id": "CVE-2026-76149",
-    "description": "CorvusSKK contains an integer overflow vulnerability, which may allow malicious data to be written to a dictionary file.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:19.103"
-  },
-  {
-    "id": "CVE-2026-76148",
-    "description": "CorvusSKK contains a code injection vulnerability, which may lead to arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:18.953"
-  },
-  {
-    "id": "CVE-2026-73335",
-    "description": "Android application \"Myna Point\" is vulnerable to Improper Authorization in Handler for Custom URL Scheme (CWE-939). A malicious application installed on the user's Android device may exploit the affected application's functionality through an Intent, potentially allowing arbitrary JavaScript to be executed within the affected application.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:17.790"
-  },
-  {
-    "id": "CVE-2026-58092",
-    "description": "In FreeBSD 15.0, the kernel structure used to represent user credentials changed: previously the primary group ID was stored in the first element of the array containing the list of supplementary group IDs, whereas now the primary group ID is stored in a dedicated field.  This change was largely internal to the kernel and not user-visible.\n\nOne function, group_is_primary(), was not properly updated as a part of this transition.  This function is used by mac_do to determine the primary group ID of the credential after applying a transition rule, used when the rule target does not explicitly specify a group.\n\nAs a result, with certain mac_do rules, it is possible for a credential switch to incorrectly set the primary group ID to the ID stored in the first element of the original credential's supplementary group array.\n\nIf the list of supplementary groups is empty, this value will be 0, corresponding to the \"wheel\" group.  For example, a rule such as \"uid=1001>uid=1002\" can be abused to set the primary group ID to 0 even if the process did not originally belong to group 0.\n\n\n\nCertain mac_do rules can be abused to set a process' group ID to 0.  Note however, that the rule must apply to the caller in order for the bug to be triggered, e.g., given the ruleset \"uid=1001>uid=1002\", the user must have user ID 1001 in order to trigger the bug.\n\nFurther, logged-in users will in general have a non-empty supplementary group list, in which case the bug can at worst be used to set the credential's first supplementary group ID as its primary group ID.  Processes must explicitly remove themselves from all supplementary groups, using the privileged setgroups(2) system call, in order to exploit the bug to set 0 as the primary group ID.\n\nSince membership in group 0 is often used to enable controlled privilege escalation, the bug might be further exploitable to obtain root privileges, depending on the system configuration.  For instance, a ruleset such as the following could be exploited by a process running as user 1001 and with an empty supplementary group list: \"uid=1001>uid=1002;gid=0>uid=0\".",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:12.453"
-  },
-  {
-    "id": "CVE-2026-58091",
-    "description": "The implementation of this ioctl attempts to acquire locks on all channels in a sync group.  If locking a channel would block, it releases the sync group list lock and sleeps.  Upon reawakening, it is possible that the sync group structure is freed, but the implementation did not handle this possibility.\n\n On a system with a multiple audio devices, an unprivileged local user can exploit this use-after-free to escalate privileges.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:12.337"
-  },
-  {
-    "id": "CVE-2026-58090",
-    "description": "The SOCK_STREAM receive path in the unix socket implementation failed to fully detach control messages from the socket buffer before processing them.  Some error paths would free those messages, leaving freed data mbufs in the receive socket buffer.\n\nAn unprivileged local user can exploit this use-after-free to escalate privileges.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:12.217"
-  },
-  {
-    "id": "CVE-2026-58089",
-    "description": "When a process calls execve(2) to execute a setuid or setgid image, hwpmc(4) is supposed to detach PMCs owned by unprivileged processes.  An inverted check meant that this scenario was not handled properly.\n\nAn unprivileged local user who has attached PMCs to a process can continue monitoring it after the process executes a setuid or setgid binary, contrary to the intended policy.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:12.080"
-  },
-  {
-    "id": "CVE-2026-57171",
-    "description": "Compliance-trestle (Trestle) is a Python SDK and command-line tool for managing OSCAL compliance documents. In versions before 3.12.4 and versions 4.0.0 through 4.0.3, the catalog-generate, profile-generate, and ssp-generate author commands write generated Markdown to an attacker-influenced output path without path-traversal validation, allowing arbitrary file write outside the Trestle workspace. These commands join the user-supplied output argument onto the Trestle root and write to the result, but guard it only with an is_directory_name_allowed() task-name-collision check rather than the PathSecurityValidator.validate_local_path() guard used by the jinja command, so an absolute path or one containing traversal sequences escapes the workspace and writes files under an attacker-chosen location as the invoking process owner. The security boundary is crossed when a trusted CI job, shared service, or wrapper derives the output argument from repository-controlled, tenant-controlled, or otherwise untrusted data while expecting output to stay inside the workspace. When --force-overwrite is used, the selected output directory is first recursively deleted, extending the primitive to destruction of an attacker-chosen directory tree and enabling indirect code execution by overwriting files a pipeline later runs. This issue is fixed in versions 3.12.4 and 4.1.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:11.923"
-  },
-  {
-    "id": "CVE-2026-57170",
-    "description": "Compliance-trestle (Trestle) is a Python SDK and command-line tool for managing OSCAL compliance documents. In versions prior to 3.12.4 and 4.0.0 through 4.0.3, the custom Jinja2 include tags mdsection_include and md_clean_include re-parse the content of an included Markdown file as Jinja2 template code in a non-sandboxed environment, allowing server-side template injection that can lead to arbitrary code execution. The MDSectionInclude and MDCleanInclude tags in Trestle/core/jinja/tags.py pass included file content to Parser(self.environment, ...).parse(), splicing it into the host template's compilation, and the environment is a plain jinja2.Environment rather than a SandboxedEnvironment, so any expressions in the file are evaluated with full access to the usual SSTI gadget chain. Because Trestle's Markdown writers emit OSCAL prose and component-description fields verbatim, applying delimiter neutralization only to parameter tables, attacker-controlled OSCAL data such as a control statement, part prose, or component description containing Jinja2 syntax flows into an included Markdown file and is executed when the include tag re-parses it. This issue is fixed in version 4.1.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:11.763"
-  },
-  {
-    "id": "CVE-2026-54467",
-    "description": "On the Trusted Firmware-M (TF-M) 2 through 2.3.0 platform before 00d1b3e, mailbox initialization on PSOC64 and RP2350 accepts a non-secure, unvalidated, supplied pointer.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:11.053"
-  },
-  {
-    "id": "CVE-2026-52776",
-    "description": "Compliance-trestle (Trestle) is a tooling platform for managing compliance as code. In versions before 3.12.4 and versions 4.0.0 through 4.0.3, the URLSecurityValidator that guards trestle's remote-fetch paths against server-side request forgery can be bypassed to reach loopback, link-local, cloud-metadata, and internal network endpoints it was designed to block. The blocklist does not canonicalize IPv4-mapped IPv6 literals such as [::ffff:169.254.169.254], which resolve to IPv6Address objects that never match the blocked IPv4 ranges, and it does not block the unspecified address 0.0.0.0, which routes to local services on Linux and inside containers. An attacker who can supply or influence an OSCAL artifact that trestle fetches, such as a malicious profile whose imports reference one of these bypass URLs, can cause the HTTPSFetcher and SFTPFetcher paths to contact cloud instance-metadata services, loopback interfaces, or internal hosts. This issue is fixed in versions 3.12.4 and 4.1.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:10.880"
-  },
-  {
-    "id": "CVE-2026-29988",
-    "description": "A cleartext transmission of sensitive information vulnerability in the NFC interface of multiple Milesight IoT device models running affected firmware versions allows an unauthenticated attacker with physical proximity to retrieve LoRaWAN ABP NwkSKey and AppSKey values and D2D keys via an NFC read operation. The exposed keys can be used to decrypt LoRaWAN traffic, forge uplink and downlink frames, submit falsified sensor data, issue supported device commands, and cause subsequent legitimate frames to be rejected.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:07.543"
-  },
-  {
-    "id": "CVE-2026-19632",
-    "description": "The TranslatePress – Translate Multilingual sites with AI Translation plugin for WordPress is vulnerable to Sensitive Information Exposure in all versions up to, and including, 3.3.1 via the 'trp_get_translations_regular' AJAX action. This makes it possible for unauthenticated attackers to extract the raw administrator password-reset URL — including the plaintext reset key and login parameters stored in the translation dictionary table — enabling full administrator account takeover. This vulnerability is only exploitable when automatic string saving is enabled (the default setting) and the target administrator's profile locale is set to a published secondary language, as these conditions cause the password-reset URL to be persisted as a translatable string in the secondary-language dictionary table.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T05:18:06.810"
   }
 ]
