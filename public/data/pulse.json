@@ -1,5 +1,68 @@
 [
   {
+    "id": "CVE-2026-77846",
+    "description": "Improper Neutralization of Special Elements in Data Query Logic vulnerability in ash-project ash_sqlite allows an attacker who controls a get_path/2 segment to traverse into nested JSON the application never exposed, disclosing private or sensitive? embedded fields.\n\nAshSqlite.SqlImplementation builds the SQLite json_extract path with \"$.\" <> Enum.join(right, \".\"), so a single segment containing ., [, ], or $ re-interprets the JSON path (for example \"private.secret\" descends two levels instead of naming one key). The path is bound as a parameter, so this is confined to the JSON-path grammar rather than SQL. Any endpoint that lets user input reach a get_path segment (a common pick-a-field pattern) can read nested values it never meant to expose.\n\nThis issue affects ash_sqlite: from 0.1.2-rc.0 before 0.2.18.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-30T03:16:32.530"
+  },
+  {
+    "id": "CVE-2026-75759",
+    "description": "Improper Verification of Cryptographic Signature vulnerability in erlef oidcc allows an unauthenticated attacker to impersonate an arbitrary user via an encrypted ID token or JARM response carrying no nested signature. OpenID Connect Core 1.0 section 2 requires that an encrypted ID token be signed then encrypted, with the result being a Nested JWT, and JARM processing rule 5 requires the client to check the signature unconditionally. oidcc instead accepted a JWE wrapping unsigned claims as fully validated, so anyone holding the relying party's public encryption key could mint a token with an arbitrary sub, iss, and aud without possessing the provider's signing key.\n\nIn oidcc_jwt_util:verify_decrypted_token/4, a decrypted payload that is not a signed JWS fell back to parsing the plaintext claims and returning them with no verifying key. oidcc_token:int_validate_jwt/4 then matched on the JOSE structure type rather than on whether a signature had been verified, and returned success. The JARM path in oidcc_token:validate_jarm/3 is reachable through the browser front channel. UserInfo responses are not affected, because OpenID Connect Core 1.0 section 5.3.2 permits them to be encrypted without also being signed.\n\nThis issue affects oidcc: from 3.2.0-beta.1 before 3.9.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-30T02:18:30.110"
+  },
+  {
+    "id": "CVE-2026-82562",
+    "description": "### Summary\n\n\n\nWhen `qs.parse` is called with `comma: true` and `throwOnLimitExceeded: true`, a comma-separated value under a bracket-push key (`a[]=1,2,3,4`) is split into an array without being compared against `arrayLimit`, while the same value under a flat key (`a=1,2,3,4`), an indexed key (`a[0]=`), a nested key (`a[b]=`), or a dotted key (`a.b=` with `allowDots`) throws the documented `RangeError`. A single parameter such as `a[]=1,2,2,...` therefore produces an inner array of arbitrary length even though the caller opted into the hard limit. This is the `[]=` key form that the fix for CVE-2026-2391 (qs 6.14.2) did not cover.\n\n\n\n### Details\n\n\n\nIn `lib/parse.js`, a comma-separated value under a `[]=` key is split and then wrapped as a single nested element (`val = [val]`, so that each `a[]=x,y` group counts as one element of the outer array). The `arrayLimit` check that 6.14.2 added for comma values runs after that wrap, so for `[]=` parts it only ever saw the wrapper of length 1. 6.15.3 added a pre-split comma count so that an oversized value throws before it is allocated, but gated it on an `isFlatArrayValue` flag that `parseValues` set to `false` for any part containing `[]=`, and did not pass it for object-valued input, so the gap remained.\n\n\n\n#### PoC\n\n\n\n```js\n\n\n\nvar qs = require('qs');\n\n\n\nvar options = { comma: true, arrayLimit: 3, throwOnLimitExceeded: true };\n\n\n\nqs.parse('a=1,2,3,4', options);   // RangeError: Array limit exceeded. Only 3 elements allowed in an array.\n\n\n\nqs.parse('a[]=1,2,3,4', options); // { a: [ [ '1', '2', '3', '4' ] ] }  (no throw)\n\n\n\nqs.parse('a[]=' + '1,'.repeat(1000000) + '1', { comma: true, arrayLimit: 20, throwOnLimitExceeded: true });\n\n\n\n// no throw; a 1,000,001-element inner array is allocated\n\n\n\n```\n\n\n\n#### Fix\n\n\n\n`lib/parse.js`, applied in 8859c37 on `main` and released as v6.16.0: the `isFlatArrayValue` gate is removed, so every comma-split value is counted against `arrayLimit` before splitting regardless of key form. An in-limit group under `a[]=` still counts as one element of the outer array, and the default (`throwOnLimitExceeded: false`) path is unchanged.\n\n\n\n### Affected versions\n\n\n\n`>=6.14.2 <6.16.0`, fixed in v6.16.0.\n\n\n\nv6.14.2 introduced `arrayLimit` enforcement for comma values (the fix for CVE-2026-2391) but only for values not under a `[]=` key, and every release from v6.14.2 through v6.15.3 has the same gap. v6.14.0 and v6.14.1, where `throwOnLimitExceeded` exists but does not apply to any comma form, are covered by CVE-2026-2391 rather than this record. Earlier lines (6.7.x through 6.13.x) have `comma` but no `throwOnLimitExceeded`, so there is no hard cap on any comma path to bypass; releases before 6.7.0 have no `comma` option.\n\n\n\n### Impact\n\n\n\nAn unauthenticated attacker who can reach an application that parses untrusted query strings or urlencoded bodies with both `comma: true` and `throwOnLimitExceeded: true` (both non-default) can bypass the configured limit with a single `a[]=` parameter and force the parser to allocate an array proportional to the request size. The cost is strictly linear in the attacker-supplied bytes (about 0.1 microseconds and 6 to 7 retained bytes per input byte; the same out-of-memory threshold as the documented default `throwOnLimitExceeded: false` path), so a transport-layer request or body size limit bounds it completely (and node's default maximum HTTP header size of 16 KB already bounds the request line, so multi-megabyte payloads need a body parser). The impact is that an opt-in hard limit fails open on one key spelling, not unbounded allocation from a small input.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-30T01:20:32.820"
+  },
+  {
+    "id": "CVE-2026-77970",
+    "description": "Cleartext Storage of Sensitive Information vulnerability in ash-project ash_paper_trail allows an attacker with read access to the generated version resource to recover sensitive values nested inside embedded resources, unions, or lists.\n\nsensitive_attributes :redact and :ignore only act on the tracked resource's top-level attributes. maybe_redact_changes/3 and the stored-action-input path in AshPaperTrail.Resource.Changes.CreateNewVersion derive the sensitive set from the resource's own attributes and never descend into embedded, union, or list values, so a non-sensitive attribute or action argument that holds an embed with a sensitive? field (for example an accepted credentials embed carrying a token) is written to the version table in cleartext.\n\nThis issue affects ash_paper_trail: from 0.3.0 before 0.7.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-30T01:20:29.773"
+  },
+  {
+    "id": "CVE-2026-77831",
+    "description": "Inefficient Algorithmic Complexity vulnerability in ash-project ash_paper_trail allows a user who can submit a large array attribute to a paper-trailed create or update action to cause a denial of service through excessive CPU and memory use.\n\nWith full-diff change tracking, AshPaperTrail.ChangeBuilders.FullDiff.ListChange pairs each prior array element against the new list by rebuilding the remaining-elements accumulator with acc ++ [tuple] on every step, copying the growing list each time, so the pairing scales cubically in the array length. Nothing bounds the length and the value comes straight from action input, so one request carrying a large accepted {:array, _} attribute forces tens of seconds of CPU and multi-gigabyte allocations.\n\nThis issue affects ash_paper_trail: from 0.1.1 before 0.7.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-30T01:20:29.597"
+  },
+  {
+    "id": "CVE-2026-75847",
+    "description": "Cleartext Storage of Sensitive Information vulnerability in ash-project ash_paper_trail allows an attacker with read access to the generated version resource to recover the plaintext of sensitive? attributes.\n\nAshPaperTrail stores the values of tracked sensitive? attributes in the generated version resource's changes map, which is declared public? true and sensitive? false, so the values are returned by the version resource's default read action and printed in logs, inspect output, and error messages instead of being redacted. AshPaperTrail.Resource.Transformers.CreateVersionResource derives the changes map's sensitivity from the ignore_attributes list (the attributes excluded from changes) rather than from the tracked attributes actually stored in it, and ignore_attributes defaults to empty, so the flag is effectively always false.\n\nThis issue affects ash_paper_trail: from 0.1.1 before 0.7.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-30T01:20:24.617"
+  },
+  {
+    "id": "CVE-2026-82417",
+    "description": "### Summary\n\n\n\n`qs.stringify` throws a `TypeError` when it serializes an object whose own `constructor` property has a truthy, non-callable `isBuffer` member. `utils.isBuffer` duck-types buffers by calling `obj.constructor.isBuffer(obj)` after checking only that the property is truthy, so a value such as `{ constructor: { isBuffer: \"x\" } }` makes the call throw `TypeError: obj.constructor.isBuffer is not a function`.\n\n\n\n### Details\n\n\n\n`lib/stringify.js:127` calls `utils.isBuffer` on every non-primitive value it serializes. `utils.isBuffer` (`lib/utils.js:332`) reads `obj.constructor.isBuffer` and invokes it without verifying that it is a function. `constructor` and `isBuffer` are ordinary property names, so any object carrying them as own properties reaches the unchecked call.\n\n\n\nSuch an object can be built from untrusted input. `qs.parse(\"x[constructor][isBuffer]=y\", { plainObjects: true })` or `{ allowPrototypes: true }` keeps the `constructor` key as an own property (the default parse options drop it), and `JSON.parse(\"{\\\"a\\\":{\\\"constructor\\\":{\\\"isBuffer\\\":\\\"x\\\"}}}\")` produces the same shape with no qs option involved. Express 4 with its default `query parser` setting and body-parser with `extended: true` both call `qs.parse` with `allowPrototypes: true`, so on those stacks `req.query` and `req.body` can carry the shape directly.\n\n\n\n#### PoC\n\n\n\n```js\n\n\n\nvar qs = require(\"qs\");\n\n\n\nqs.stringify(qs.parse(\"x[constructor][isBuffer]=y\", { plainObjects: true }));\n\n\n\nqs.stringify(JSON.parse(\"{\\\"a\\\":{\\\"constructor\\\":{\\\"isBuffer\\\":\\\"x\\\"}}}\"));\n\n\n\n// TypeError: obj.constructor.isBuffer is not a function\n\n\n\n//     at Object.isBuffer (lib/utils.js:332:78)\n\n\n\n//     at stringify (lib/stringify.js:127:45)\n\n\n\n```\n\n\n\n#### Fix\n\n\n\n`lib/utils.js`, applied in e83d321 on `main` and released as v6.16.0:\n\n\n\n```diff\n\n\n\n- return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));\n\n\n\n+ return !!(obj.constructor && typeof obj.constructor.isBuffer === \"function\" && obj.constructor.isBuffer(obj));\n\n\n\n```\n\n\n\nReal `Buffer`, `safer-buffer`, and browserify `buffer` polyfill instances serialize exactly as before; only the throw is removed.\n\n\n\n### Affected versions\n\n\n\n`>=2.2.5 <6.16.0`, fixed in v6.16.0.\n\n\n\nThe unguarded duck-type was introduced in 3768a75 and first shipped in v2.2.5 (September 2014). v2.2.4 and earlier used `Buffer.isBuffer` and are not affected. Every release from v2.2.5 through v6.15.3 contains the unguarded call.\n\n\n\n### Impact\n\n\n\nAn unauthenticated request can make any code path that re-serializes attacker-influenced data with `qs.stringify` (for example, rebuilding a query string from `req.query` for a redirect or an upstream request, or serializing a parsed JSON body) throw synchronously. In a typical Node.js HTTP framework the throw is caught by the framework error boundary and the affected request returns a 500; the process survives and other requests are unaffected. Where the call runs outside an error boundary, such as an `async` Express 4 handler (where the throw becomes an unhandled promise rejection) or a background job, the process exits, so the impact in that case depends on the application error handling rather than on qs.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-30T00:16:34.657"
+  },
+  {
+    "id": "CVE-2026-82424",
+    "description": "A weakness has been identified in PHPGurukul Student Information System 1.0. Affected by this vulnerability is an unknown functionality of the file /student_edit1.php. Executing a manipulation of the argument ID can lead to sql injection. The attack can be launched remotely. The exploit has been made available to the public and could be used for attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T23:17:24.080"
+  },
+  {
+    "id": "CVE-2026-82423",
+    "description": "A vulnerability has been found in macrozheng mall up to 1.0.3. The affected element is an unknown function of the file /order/paySuccess of the component Payment Status Endpoint. The manipulation of the argument orderId leads to enforcement of behavioral workflow. The attack is possible to be carried out remotely. The vendor deleted the GitHub issue for this vulnerability without any explanation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-29T23:17:23.900"
+  },
+  {
     "id": "CVE-2026-82422",
     "description": "A security flaw has been discovered in itsourcecode Sales and Inventory System 1.0. Impacted is an unknown function of the file /pages/emp_del.php. The manipulation of the argument ID results in sql injection. The attack may be launched remotely. The exploit has been released to the public and may be used for attacks.",
     "severity": "Medium",
@@ -8104,229 +8167,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-08-27T04:16:41.530"
-  },
-  {
-    "id": "CVE-2026-81486",
-    "description": "A vulnerability was detected in bsmi021 mcp-file-context-server 1.0.0. Affected by this issue is the function read_context of the file src/index.ts of the component Path Resolution. Performing a manipulation of the argument path results in path traversal. It is possible to initiate the attack remotely. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T02:16:28.747"
-  },
-  {
-    "id": "CVE-2026-81485",
-    "description": "A security vulnerability has been detected in danielpopamd linkedin-ads-mcp 1.0.0. Affected by this vulnerability is the function fs.readFileSync of the file src/tools/campaign-management.ts of the component Media Upload. Such manipulation of the argument filePath leads to path traversal. The attack may be performed from remote. The exploit has been disclosed publicly and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T02:16:28.553"
-  },
-  {
-    "id": "CVE-2026-19398",
-    "description": "“unsupported-when-assigned.” An out-of-bounds write in the SmiFlash SMM module of ASUS FA507NU and FA507NV BIOS allows a local  administrator to cause a system crash (BSOD) or BIOS corruption via a crafted software SMI (SW SMI) request with an oversized length value.Refer to the ' \nSecurity Update for ASUS FA507NV / FA507NU BIOS   ' section on the ASUS Security Advisory for more information.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-27T02:16:27.460"
-  },
-  {
-    "id": "CVE-2026-81421",
-    "description": "A security flaw has been discovered in ddfourtwo sentry-selfhosted-mcp 0.4.0. The affected element is an unknown function of the component raw_sentry_api. The manipulation of the argument endpoint results in server-side request forgery. It is possible to launch the attack remotely. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:18:16.227"
-  },
-  {
-    "id": "CVE-2026-80183",
-    "description": "In OpenStack Keystone before 29.0.3, any authenticated user holding role:reader on any project can list every project-scoped role assignment under any domain by passing a domain ID as scope.project.id with include_subtree to the GET /v3/role_assignments endpoint. The domain's project record has domain_id=null, causing the policy domain_id check to pass for any caller. With include_names, the response discloses the names and home-domain IDs of every user, group, project, and role involved. The literal \"default\" domain ID works against any deployment created with keystone-manage bootstrap. An attacker can harvest domain IDs from the response and repeat the query to map role assignments across the entire cloud. This is caused by misuse of \"None\" in \n\nlist_role_assignments_for_tree.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:18:16.050"
-  },
-  {
-    "id": "CVE-2026-47874",
-    "description": "The vulnerability occurs when a client sends HTTP/1.1 pipelined requests over a single connection, causing the Reactor Netty HTTP server to consume an excessive amount of memory.\nReactor Netty 1.3.0 - 1.3.6\nReactor Netty 1.1.0 - 1.2.18\nReactor Netty 1.0.52 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:33.620"
-  },
-  {
-    "id": "CVE-2026-47863",
-    "description": "In Reactor Core, applications that use the Flux.bufferTimeout operator with fairBackpressure enabled are vulnerable to a Denial of Service (DoS) condition.\nReactor Core 3.8.0 - 3.8.6\nReactor Core 3.7.19 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:33.467"
-  },
-  {
-    "id": "CVE-2026-47862",
-    "description": "An attacker who can set the file_name header on a message reaching a ZipTransformer with ZipResultType.FILE (the default) can cause the resulting .zip archive to be written to an arbitrary filesystem path outside the configured workDirectory.\nSpring Integration 7.1.0\nSpring Integration 7.0.0 - 7.0.5\nSpring Integration 6.5.0 - 6.5.10\nSpring Integration 6.4.0 - 6.4.12",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:33.313"
-  },
-  {
-    "id": "CVE-2026-47861",
-    "description": "An unauthenticated remote attacker who can send a single UDP packet to a Spring Integration UDP inbound adapter can cause the server to emit an outbound UDP datagram to an arbitrary internal or external host and port of the attacker's choosing.\nSpring Integration 7.1.0\nSpring Integration 7.0.0 - 7.0.5\nSpring Integration 6.5.0 - 6.5.10\nSpring Integration 6.4.0 - 6.4.12\nSpring Integration 5.5.21 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:33.157"
-  },
-  {
-    "id": "CVE-2026-47860",
-    "description": "An attacker who can publish to a queue consumed by an application that has enabled message decompression can crash the consumer JVM with a single ~1 MB message.\nSpring AMQP 4.1.0\nSpring AMQP 4.0.0 - 4.0.4\nSpring AMQP 3.2.0 - 3.2.12\nSpring AMQP 2.4.18 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:33.000"
-  },
-  {
-    "id": "CVE-2026-47859",
-    "description": "RFC6587SyslogDeserializer, used by the Spring Integration syslog TCP inbound adapter to decode RFC 6587 / RFC 5424 frames, trusts the sender-supplied octet count of an octet-counted frame and allocates a byte array of exactly that size with no upper bound.\nSpring Integration 7.1.0\nSpring Integration 7.0.0 - 7.0.5\nSpring Integration 6.5.0 - 6.5.10\nSpring Integration 6.4.0 - 6.4.12\nSpring Integration 5.5.21 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:32.850"
-  },
-  {
-    "id": "CVE-2026-47857",
-    "description": "In Reactor Core, applications that use the Flux.windowTimeout operator with fairBackpressure enabled are vulnerable to a Denial of Service (DoS) condition.\nReactor Core 3.8.0 - 3.8.6\nReactor Core 3.5.0 - 3.7.19\nReactor Core 3.4.41 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:32.687"
-  },
-  {
-    "id": "CVE-2026-47856",
-    "description": "Spring Integration's JSON to object conversion uses the json__TypeId__ header to choose the deserialization target type, and resolves that header value to a class with ClassUtils.forName and no type/package allow-list.\nSpring Integration 7.1.0\nSpring Integration 7.0.0 - 7.0.5\nSpring Integration 6.5.0 - 6.5.10\nSpring Integration 6.4.0 - 6.4.12\nSpring Integration 5.5.21 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:32.487"
-  },
-  {
-    "id": "CVE-2026-47852",
-    "description": "A local attacker on a multi-user host can pre-create the deterministic cache path and plant a malicious ONNX model file.\nSpring AI 2.0.0\nSpring AI 1.1.0 - 1.1.8\nSpring AI 1.0.0 - 1.0.9",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:32.320"
-  },
-  {
-    "id": "CVE-2026-47851",
-    "description": "Analyzing a PDF with a deeply nested or cyclic table of contents can cause a StackOverflowError in the ingestion thread.\nSpring AI 2.0.0\nSpring AI 1.1.0 - 1.1.8\nSpring AI 1.0.0 - 1.0.9",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:32.150"
-  },
-  {
-    "id": "CVE-2026-47850",
-    "description": "Spring Data REST does not preserve the persisted version (@Version) property of an aggregate root when handling an HTTP PUT against an immutable target type.\nSpring Data REST 5.1.0\nSpring Data REST 5.0.0 - 5.0.6\nSpring Data REST 4.5.0 - 4.5.12\nSpring Data REST 4.0.0 - 4.4.15\nSpring Data REST 3.7.20 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:31.997"
-  },
-  {
-    "id": "CVE-2026-47845",
-    "description": "In specific scenarios, Reactor Netty HTTP Server may incorrectly evaluate the remote IP address when HAProxy Protocol is enabled. In order for this to happen, the application must be configured to use HAProxy Protocol.\nReactor Netty 1.3.0 - 1.3.6\nReactor Netty 1.1.0 - 1.2.18\nReactor Netty 1.0.52 and earlier",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-27T01:17:31.827"
-  },
-  {
-    "id": "CVE-2026-81203",
-    "description": "A vulnerability has been found in SourceCodester Simple Online Food Ordering System 1.0. This affects an unknown function of the file /admin/ajax.php?action=login2. The manipulation of the argument email leads to sql injection. It is possible to initiate the attack remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:20.797"
-  },
-  {
-    "id": "CVE-2026-80158",
-    "description": "A flaw was found in the ipa_getkeytab module of the community.general\nAnsible collection. The module's bind_pw parameter, used to supply the LDAP simple-bind password when retrieving a Kerberos keytab, is not declared with no_log, unlike the sibling password parameter in the same module. As a consequence, the supplied IPA/LDAP bind password is recorded in cleartext in the managed host's system journal/syslog (the module's \"Invoked with\" record), is included in the module's return values and verbose (-v) output, and is displayed in Automation Controller / AWX job output. The password is additionally passed on the command line to the ipa-getkeytab helper (as --bindpw <value>), exposing it in the process list to local users while the command runs. An attacker able to read these logs, job output, or the process table can obtain the directory bind credential, potentially compromising the accounts and objects that credential can access.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:20.657"
-  },
-  {
-    "id": "CVE-2026-75340",
-    "description": "The device metadata import interface /device/instance/{productId}/property-metadata/import of jetlinks community 2.11 is vulnerable to Server-side request forgery (SSRF).",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:19.033"
-  },
-  {
-    "id": "CVE-2026-75338",
-    "description": "disconf (Distributed Configuration Management Platform) 2.6.36 is vulnerable to Incorrect Access Control. The config-fetching APIs /api/config/item, /api/config/file, /api/config/list and /api/config/simple/list are exposed without authentication. The LoginInterceptor explicitly whitelists these four paths, so any anonymous attacker can read every configuration item and configuration file managed by the config center.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:18.903"
-  },
-  {
-    "id": "CVE-2026-75336",
-    "description": "Funiture 1.0.0 is vulnerable to SQL Injection in the backend tool interfaces /sys/tool/select.json and /sys/tool/update.json.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:18.787"
-  },
-  {
-    "id": "CVE-2026-75332",
-    "description": "Zyplayer-Doc <=1.0.0 is vulnerable to Server-Side Request Forgery (SSRF) via WikiPageWebService.download().",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:18.657"
-  },
-  {
-    "id": "CVE-2026-75330",
-    "description": "The front-end interface /superdiamond/preview/{projectCode}/{module}/{type} of super-diamond-server <= 1.3.3 is vulnerable to SQL injection. The module parameter is directly concatenated into the SQL IN clause through StringUtils.split() and string concatenation without being parameterized and bound.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:18.533"
-  },
-  {
-    "id": "CVE-2026-69129",
-    "description": "KubePi is a Kubernetes multi-cluster management panel. In versions up to and including 2.0.0, cluster-scoped APIs do not consistently validate per-cluster access, allowing an authenticated user with cluster management permissions to operate on clusters outside the scope they were granted. Because the affected endpoints act on cluster-specific data without confirming that the requesting user is authorized for that particular cluster, a user assigned management rights over one cluster can, under certain role and cluster configurations, read or modify data in clusters they should not manage. This issue is fixed in version 2.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:15.707"
-  },
-  {
-    "id": "CVE-2026-65956",
-    "description": "KubePi is a Kubernetes multi-cluster management panel. In versions up to and including 1.6.15, the SSO configuration API endpoints are exposed on the same public routing boundary as the SSO login and callback endpoints, so SSO, OIDC, and SAML management operations can be reached without administrator authorization. Because reading, creating, and updating the global SSO configuration is not restricted to administrators, an unauthorized or low-privileged user can inspect or alter the authentication configuration, which under certain conditions can lead to account takeover or privilege escalation. The SSO connectivity-test function can additionally be abused as a server-side request forgery primitive, and the user list API returns user objects without consistently clearing authentication-related fields. This issue is fixed in version 2.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:15.550"
-  },
-  {
-    "id": "CVE-2026-47666",
-    "description": "Penpot is an open-source design and prototyping platform. In versions up to and including 2.14.3, Penpot is vulnerable to stored cross-site scripting through custom font family names, which are interpolated into a @font-face CSS rule and injected into the page as HTML without sanitization. Because the backend accepts an arbitrary font-family string and the frontend writes the resulting style through innerHTML, a name containing markup such as a closing style tag followed by a script can break out of the style element and execute JavaScript on the Penpot origin. The attack is passive: any team member who opens a file referencing the malicious font triggers script execution simply by rendering the page, allowing theft of session cookies, actions performed as the victim, and access to their files and projects. This issue is fixed in version 2.15.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:13.843"
-  },
-  {
-    "id": "CVE-2026-47665",
-    "description": "Penpot is an open-source design and prototyping platform. In versions up to and including 2.14.3, Penpot is vulnerable to stored cross-site scripting through file comments, whose content is stored as raw text and rendered into the page with innerHTML without any sanitization. Because the backend applies only a length check and the frontend writes comment content directly through innerHTML, any team member who can comment on a shared file can embed HTML such as an image error handler or script that executes in the browser of every other collaborator. The attack is passive: any user who opens the comments panel on the affected file triggers script execution on the Penpot origin, allowing theft of session cookies, actions performed as the victim, and access to their files and projects. This issue is fixed in version 2.15.3.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:13.693"
-  },
-  {
-    "id": "CVE-2026-21808",
-    "description": "HCL BigFix Quantum Risk Analyzer generates highly detailed logging information by default which increases the risk of sensitive data leakage and can provide an attacker with internal application logic and architectural details.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:12.833"
-  },
-  {
-    "id": "CVE-2026-21807",
-    "description": "HCL BigFix Quantum Risk Analyzer binary lacks several critical, industry-standard hardening protections that could allow an attacker to cause a stack-based buffer overflow.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:12.713"
-  },
-  {
-    "id": "CVE-2026-18823",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:12.183"
-  },
-  {
-    "id": "CVE-2025-62341",
-    "description": "HCL Connections is vulnerable to server-side request forgery (SSRF) when an internal server is compromised possibly allowing an attacker to send unauthorized requests in certain scenarios leading to information disclosure or security bypass.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-26T23:17:10.317"
   }
 ]
