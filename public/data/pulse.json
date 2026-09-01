@@ -1,5 +1,201 @@
 [
   {
+    "id": "CVE-2026-82722",
+    "description": "Allocation of Resources Without Limits or Throttling vulnerability in ash-project ash_admin lets any client that can reach the admin LiveView exhaust the BEAM atom table and crash the entire node.\n\nTwo LiveView event handlers interned atoms from unvalidated client input: AshAdmin.PageLive's set_actor built modules from the resource/domain payload with Module.concat/1, and AshAdmin.Components.Resource.Show's calculate converted every submitted form key with String.to_atom/1. Atoms are never garbage collected and the table is capped, so flooding either event with random names mints a new atom per request until the VM aborts, taking down every application on the node. The fix resolves the submitted resource/domain against the known shown resources and maps calculation keys to declared arguments, so no client-supplied string is interned.\n\nThis issue affects ash_admin: from 0.1.0 before 1.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:43.817"
+  },
+  {
+    "id": "CVE-2026-82681",
+    "description": "Improper Encoding or Escaping of Output vulnerability in ash-project ash_admin lets an attacker who controls a record's string primary key rewrite the target of AshAdmin's row-action links.\n\nThe Table, DataTable, and Show components built row-action URLs by raw string interpolation, splicing the primary key (and table, domain, and resource names) into the query string without URL-encoding. Ash resources routinely use user-settable string primary keys (slugs, emails). Because Plug.Conn.Query resolves duplicate parameters last-wins and primary_key is interpolated last, a stored key such as foo&action_type=destroy injects parameters that override the link, so an admin clicking edit is sent to a destroy form or an arbitrary resource; a # truncates the query into a fragment. The fix builds every link with URI.encode_query/1, encoding all interpolated values.\n\nThis issue affects ash_admin: from 0.3.0-rc.0 before 1.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:43.643"
+  },
+  {
+    "id": "CVE-2026-82673",
+    "description": "Improper Limitation of a Pathname to a Restricted Directory (Path Traversal) vulnerability in ash-project ash_admin allows writing attacker-controlled bytes to arbitrary paths on the server.\n\nAshAdmin.Components.Resource.Form.consume_file_uploads/1 builds the destination as Path.join([tmp_dir, entry.client_name]) and writes it with File.cp!/2. entry.client_name is the browser-supplied filename and is not sanitized, and Path.join/1 does not normalize ... An upload named ../../../../var/www/app/priv/static/x.png therefore escapes the random temp directory and lands anywhere the BEAM user can write, enabling arbitrary file write and potentially remote code execution by overwriting application assets, configuration, or cron/ssh files. The only guard is an extension allowlist defaulting to :any that checks only the extension. The fix strips path components with Path.basename/1 before joining.\n\nThis issue affects ash_admin: from 0.13.7 before 1.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:43.473"
+  },
+  {
+    "id": "CVE-2026-82608",
+    "description": "A vulnerability was determined in Kamailio up to 5.5.0/6.0.7. This affects the function get_4bytes of the file src/modules/ims_registrar_scscf/cxdx_avp.c of the component AVP Handler. Executing a manipulation can lead to out-of-bounds read. The attack may be performed from remote. The exploit has been publicly disclosed and may be utilized. This patch is called abb5d60af6eefbd367bf6588c5589566b090e272. It is advisable to implement a patch to correct this issue. The vendor points out, that \"[v]ersion 5.5.0 is old and not maintained anymore.\"",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:43.293"
+  },
+  {
+    "id": "CVE-2026-82607",
+    "description": "A vulnerability was found in Cozmoslabs Profile Builder Plugin up to 3.16.1 on WordPress. The impacted element is the function wppb_ajax_simple_avatar of the file /wp-admin/admin-ajax.php of the component Avatar Simple Upload AJAX Handler. Performing a manipulation results in unrestricted upload. The attack is possible to be carried out remotely. The exploit has been made public and could be used. Upgrading to version 3.16.2 is sufficient to resolve this issue. It is suggested to upgrade the affected component.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:43.103"
+  },
+  {
+    "id": "CVE-2026-82605",
+    "description": "A vulnerability has been found in BareBones BBEdit up to 15.5.5. The affected element is an unknown function of the component Lasso Language Tokenizer. Such manipulation leads to infinite loop. The attack can be executed remotely. Upgrading to version 16.0 is sufficient to fix this issue. The affected component should be upgraded.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:42.850"
+  },
+  {
+    "id": "CVE-2026-81853",
+    "description": "Authorization Bypass Through User-Controlled Key vulnerability in ash-project ash_admin turns a record-lookup URL into an equality oracle over sensitive attributes.\n\nAshAdmin.Helpers.decode_primary_key/2 decodes the composite-primary-key form (Base64 plus ETF) and returns the decoded map verbatim as the lookup filter, without checking that its keys are the resource's primary-key fields. The deserialization guards bound size, block new atoms and funs, and reject nested expressions, but none restricts which fields come back, and :safe still allows any already-interned attribute name. An attacker can therefore encode %{api_token: \"guess\"} and have it spliced into the lookup filter, brute-forcing a sensitive attribute value (API token, reset token) one equality guess at a time; Map.to_list/1 also accepts structs, yielding a bogus __struct__ key. The fix rejects any decoded key that is not a real primary-key field.\n\nThis issue affects ash_admin: from 0.1.0 before 1.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:42.670"
+  },
+  {
+    "id": "CVE-2026-81852",
+    "description": "Use of Insufficiently Random Values vulnerability in ash-project ash_admin ships a hardcoded, publicly known CSP nonce, defeating nonce-based Content-Security-Policy protection.\n\nWhen mounted without :csp_nonce_assign_key, AshAdmin.Router.ash_admin/2 defaulted the img, style, and script nonces to the literal constant ash_admin-Ed55GFnX, which AshAdmin.Layouts wrote verbatim into the nonce attribute of its inline <style> and <script> tags on every response. The value is a compile-time constant published in the repository and is never rotated per request. If an application's CSP script-src allow-lists that documented default, any HTML-injection sink on an admin page can reuse the known nonce to run inline scripts the policy was meant to block. The fix generates a fresh random nonce per request.\n\nThis issue affects ash_admin: from 0.10.8 before 1.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:42.500"
+  },
+  {
+    "id": "CVE-2026-77850",
+    "description": "Stored Cross-site Scripting vulnerability in ash-project ash_admin executes attacker-supplied record content as script in an administrator's browser.\n\nThe relationship typeahead components AshAdmin.Components.Resource.RelationshipField and AshAdmin.Components.Resource.ManagedRelationshipSelectField highlight the matched search term by wrapping it in <b> tags and rendering the whole string with Phoenix.HTML.raw/1. The highlighted value is the destination record's label_field, ordinary database content that is often written by lower-privileged users. Because raw/1 disables output escaping for the entire string, a stored label such as <img src=x onerror=...> runs as JavaScript in the admin's session as soon as a matching record appears in the dropdown, giving the attacker the admin's privileges over everything AshAdmin exposes. The fix HTML-escapes the label before inserting the highlight markup.\n\nThis issue affects ash_admin: from 0.13.0 before 1.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:42.307"
+  },
+  {
+    "id": "CVE-2026-75757",
+    "description": "Reliance on Cookies without Validation and Integrity Checking vulnerability in ash-project ash_admin lets an attacker who controls a sibling subdomain rebind an admin's session to a different actor, tenant, or authorization mode.\n\nAshAdmin's client JavaScript read its state cookies (tenant, actor_resource, actor_primary_key, actor_action, actor_domain, actor_authorizing, actor_paused) by matching the cookie name with an unanchored regular expression (new RegExp(name + \"=([^;]+)\")) against the whole document.cookie. Any cookie whose name merely ends with the requested name therefore matches, and whichever is serialized first wins. Because cookies are shared across a registrable domain, a compromised sibling subdomain can set a shadowing cookie (for example xactor_authorizing) with Domain=.example.com that flows unvalidated into the admin's LiveSocket connect params. The fix matches cookie names by exact equality.\n\nThis issue affects ash_admin: from 0.9.1 before 1.3.1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T03:16:42.133"
+  },
+  {
+    "id": "CVE-2026-82604",
+    "description": "A flaw has been found in BareBones BBEdit up to 15.5.5. Impacted is an unknown function of the component Java Language Module. This manipulation causes uncontrolled recursion. Remote exploitation of the attack is possible. Upgrading to version 16.0 is recommended to address this issue. You should upgrade the affected component.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:03.370"
+  },
+  {
+    "id": "CVE-2026-82603",
+    "description": "A vulnerability was detected in SeaCMS up to 13.6. This issue affects some unknown processing of the file /member.php?action=del_pl of the component Comment Cache. The manipulation of the argument itype/vid results in path traversal. The attack may be launched remotely. The exploit is now public and may be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:03.190"
+  },
+  {
+    "id": "CVE-2026-82602",
+    "description": "A security vulnerability has been detected in SeaCMS up to 13.6. This vulnerability affects unknown code of the file /ass.php. The manipulation leads to authorization bypass. The attack may be initiated remotely. The exploit has been disclosed publicly and may be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:03.003"
+  },
+  {
+    "id": "CVE-2026-82601",
+    "description": "A weakness has been identified in SeaCMS up to 13.6. This affects an unknown part of the file /err.php. Executing a manipulation of the argument errtxt can lead to cross site scripting. The attack can be launched remotely. The exploit has been made available to the public and could be used for attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:02.817"
+  },
+  {
+    "id": "CVE-2026-82600",
+    "description": "A security flaw has been discovered in SeaCMS up to 13.6. Affected by this issue is some unknown functionality of the file /zyapi.php?ac=videolist. Performing a manipulation of the argument ids results in sql injection. The attack can be initiated remotely. The exploit has been released to the public and may be used for attacks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:02.603"
+  },
+  {
+    "id": "CVE-2026-82580",
+    "description": "Generation of Error Message Containing Sensitive Information vulnerability in ash-project ash_ai discloses internal error text to chat users.\n\nIn AshAi.ToolLoop and AshAi.Tools, an exception raised while executing a tool was serialized verbatim with Exception.message/1 into the tool-result content. That content is appended to the conversation, emitted as a {:tool_result, ...} stream event, and sent back to the model, which typically relays it to the user. No filtering happened first, so anything raised inside a tool callback or lifecycle hook (database constraint messages, adapter errors, query fragments, policy or validation internals) was echoed as-is. A chat user who can steer tool arguments into a raising code path receives the raw internal text. The fix routes raised tool errors through the same safe formatter used for other tool errors.\n\nThis issue affects ash_ai: from 0.6.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:02.440"
+  },
+  {
+    "id": "CVE-2026-82579",
+    "description": "Loop with Unreachable Exit Condition (Infinite Loop) vulnerability in ash-project ash_ai allows an attacker who can influence a model's output to hang the tool loop and drive unbounded, repeated model requests.\n\nAshAi.ToolLoop classifies a model response of :tool_calls, then filters the calls through normalize_tool_calls/2 and unprocessed_tool_calls/2. Both can empty the list: a call missing a valid name, or one reusing a tool_call_id that already has a result in history, is dropped. With an empty list the loop appended nothing and recursed with a byte-identical message list, so the conversation never advanced and the same request was re-sent every iteration. Under the supported max_iterations: :infinity this never terminated; otherwise it exhausted the full budget. Prompt-injected content can make the model re-emit a spent tool_call_id. The fix treats an empty post-filter list as terminal.\n\nThis issue affects ash_ai: from 0.6.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:02.270"
+  },
+  {
+    "id": "CVE-2026-82564",
+    "description": "Authorization Bypass Through User-Controlled Key vulnerability in ash-project ash_ai allows a caller of an identity-configured tool to update or destroy records it never identified, including every row in the table.\n\nIn AshAi.Tool.Execution, identity_filter/3 built the update/destroy filter directly from the raw tool arguments as [{key, Map.get(arguments, to_string(key))}] and passed it to Ash.Query.do_filter/2. A map value is parsed as a predicate expression rather than a literal, so a caller can send {\"public_ref\": {\"not_eq\": \"<own-ref>\"}} and, combined with Ash.Query.limit(1) and Ash.bulk_update!/Ash.bulk_destroy!, retarget the write at a record it never identified; an omitted key yields an IS NULL filter that matches an arbitrary row. The fix casts each identity value to the field type, rejecting non-scalar inputs.\n\nThis issue affects ash_ai: from 0.6.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:02.103"
+  },
+  {
+    "id": "CVE-2026-75760",
+    "description": "Generation of Error Message Containing Sensitive Information vulnerability in ash-project ash_ai discloses provider request state and credentials in a user-facing validation error.\n\nIn AshAi.Changes.Vectorize, when the embedding provider call fails the change added a changeset error whose message inspected the raw error term (An error occurred while generating embeddings: #{inspect(error)}). A plain-string add_error produces an Ash.Error.Changes.InvalidChanges in the :invalid class, which AshJsonApi and AshGraphql render back to the caller. The embedding client's error term is not sanitized, so it can carry the request URL, the provider response body, and, for HTTP clients that keep the request in the error struct, the outbound Authorization header with the provider API key. Failures are attacker-reachable via oversized or malformed vectorized content. The fix logs the raw error and returns a generic message.\n\nThis issue affects ash_ai: from 0.1.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T02:17:01.313"
+  },
+  {
+    "id": "CVE-2026-82599",
+    "description": "A vulnerability was identified in SeaCMS up to 13.6. Affected by this vulnerability is the function unlink of the file /member.php?action=chgpwdsubmit of the component Avatar Upload. Such manipulation of the argument oldpic leads to path traversal. It is possible to launch the attack remotely. The exploit is publicly available and might be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-31T01:16:50.630"
+  },
+  {
+    "id": "CVE-2026-82598",
+    "description": "A vulnerability was determined in SeaCMS up to 13.6. Affected is the function parseIf of the file search.php of the component Template Engine. This manipulation of the argument searchtype causes code injection. It is possible to initiate the attack remotely. The exploit has been publicly disclosed and may be utilized.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-31T01:16:50.417"
+  },
+  {
+    "id": "CVE-2026-82597",
+    "description": "A vulnerability was identified in TOTOLINK NR1800X 9.1.0u.6681_B20230703. This affects the function setUssd of the file /cgi-bin/cstecgi.cgi. The manipulation of the argument ussd leads to command injection. The attack can be initiated remotely. The exploit is publicly available and might be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-31T01:16:50.190"
+  },
+  {
+    "id": "CVE-2026-81315",
+    "description": "Origin Validation Error vulnerability in ash-project ash_ai allows a malicious web page to bypass the MCP server's DNS-rebinding protection and issue cross-site requests to a user's local MCP server with that user's actor.\n\nIn AshAi.Mcp.Server, with the default allowed_origins: nil, origin_allowed?/3 accepts an origin when uri.host == conn.host and the forwarded scheme is https. Both values are attacker-controlled: conn.host comes from the Host header and the scheme is read from the raw x-forwarded-proto header with no trusted-proxy check. Under DNS rebinding the browser sends the attacker's origin and a matching host, and page JavaScript may set X-Forwarded-Proto: https, so the check passes with no TLS or proxy involved. The fix trusts only localhost origins by default; other origins require an explicit allowed_origins allowlist.\n\nThis issue affects ash_ai: from 0.8.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T01:16:49.977"
+  },
+  {
+    "id": "CVE-2026-77956",
+    "description": "Improper Control of Generation of Code (Code Injection) vulnerability in ash-project ash_ai allows a remote, unauthenticated client to execute arbitrary Elixir code.\n\nAshAi.Actions.Prompt evaluates prompt content through EEx.eval_string/2. The documented prompt: fn input, context -> ... end form lets the prompt content be built from action arguments, so when a prompt action's text incorporates request data, that attacker-controlled text is compiled and run as an EEx template (Elixir source). Content such as <%= System.cmd(...) %> therefore executes on the server before any model request is made, requiring no authentication beyond reaching a prompt action. The fix stops evaluating function-supplied prompt content as EEx; only statically configured templates are evaluated.\n\nThis issue affects ash_ai: from 0.1.0 before 1.0.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-08-31T01:16:49.563"
+  },
+  {
+    "id": "CVE-2026-82596",
+    "description": "A vulnerability was determined in LatencyUtils up to 2.0.3. Affected by this issue is the function LatencyStats.recordDetectedPause of the file src/main/java/org/LatencyUtils/LatencyStats.java of the component PauseDetector. Executing a manipulation can lead to memory corruption. The attack needs to be launched locally. The exploit has been publicly disclosed and may be utilized. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-08-31T00:16:42.150"
+  },
+  {
+    "id": "CVE-2026-82595",
+    "description": "A vulnerability was found in D-Link DIR-825M 1.1.8. Affected by this vulnerability is the function sub_456CF4 of the file /boafrm/formSysCmd of the component System Command Execution. Performing a manipulation of the argument sysCmd results in command injection. It is possible to initiate the attack remotely. The exploit has been made public and could be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-08-31T00:16:41.980"
+  },
+  {
+    "id": "CVE-2026-82594",
+    "description": "A vulnerability has been found in LogNet grpc-spring-boot-starter up to 5.2.0. Affected is an unknown function of the component Annotation Processing. Such manipulation leads to improper authorization. The attack may be performed from remote. A high complexity level is associated with this attack. The exploitability is told to be difficult. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-08-31T00:16:41.800"
+  },
+  {
+    "id": "CVE-2026-82593",
+    "description": "A flaw has been found in D-Link DIR-825M 1.1.8. This impacts the function sub_41802C of the file /boafrm/formLtefotaUpgradeFibocom of the component LTE Module Firmware Upgrade. This manipulation of the argument fota_url causes stack-based buffer overflow. The attack is possible to be carried out remotely. The exploit has been published and may be used.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-08-31T00:16:41.630"
+  },
+  {
     "id": "CVE-2026-82592",
     "description": "A vulnerability was detected in D-Link DIR-825M 1.1.8. This affects the function sub_46725C of the file /boafrm/formDiskFormat of the component Disk Formatting Handler Endpoint. The manipulation of the argument partition results in stack-based buffer overflow. The attack can be executed remotely. The exploit is now public and may be used.",
     "severity": "Critical",
@@ -4604,642 +4800,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-08-28T05:16:41.367"
-  },
-  {
-    "id": "CVE-2026-78618",
-    "description": "A business logic flaw in WatchGuard Dimension allows an authenticated administrator to trigger multiple backend operations within a single logical flow by sending a specially crafted request.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:24.580"
-  },
-  {
-    "id": "CVE-2026-78617",
-    "description": "WatchGuard Dimension's web login endpoint does not enforce effective rate-limiting or account lockout by default allowing a remote attacker to perform automated password guessing against user accounts. If the account lockout setting is enabled, brute-force attempts are blocked after a defined number of failed attempts, but this setting is not enabled by default.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:24.450"
-  },
-  {
-    "id": "CVE-2026-78616",
-    "description": "A Stored Cross-Site Scripting (XSS) vulnerability in WatchGuard Dimension's Trusted CA certificate configuration allows an authenticated administrator to execute arbitrary JavaScript in another authenticated administrator's web browser by saving a carefully crafted certificate.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:24.317"
-  },
-  {
-    "id": "CVE-2026-78615",
-    "description": "A Reflected Cross-Site Scripting (XSS) vulnerability in WatchGuard Dimension's report detail page allows an attacker to execute arbitrary JavaScript in a authenticated user's browser with a specially crafted URL.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:24.190"
-  },
-  {
-    "id": "CVE-2026-78614",
-    "description": "WatchGuard Dimension contains an authenticated SQL injection vulnerability in the audit report feature which allows an authenticated user with report administration permissions gain arbitrary command execution as the Dimension WebUI process user by sending specially crafted requests.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:24.070"
-  },
-  {
-    "id": "CVE-2026-78613",
-    "description": "WatchGuard Dimension contains an authenticated SQL injection vulnerability in the log viewer feature which allows an authenticated user with report administration permissions gain arbitrary command execution as the Dimension WebUI process user by sending specially crafted requests.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.943"
-  },
-  {
-    "id": "CVE-2026-78612",
-    "description": "WatchGuard Dimension contains an authenticated SQL injection vulnerability in the scheduled report feature which allows an authenticated user with report administration permissions gain arbitrary command execution as the Dimension WebUI process user by sending specially crafted requests.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.807"
-  },
-  {
-    "id": "CVE-2026-78610",
-    "description": "WatchGuard Dimension's Web UI exposes an administrator passphrase change action that lacks CSRF protection. An attacker who can induce an authenticated global administrator's browser to visit a crafted link or page can change that administrator's passphrase to an attacker-chosen value without the administrator's consent.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.687"
-  },
-  {
-    "id": "CVE-2026-78500",
-    "description": "A blind server-side request forgery (SSRF) vulnerability WatchGuard Dimension Database Server Test configuration allows an authenticated privileged attacker to enumerate exposed network services on adjacent network systems.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.560"
-  },
-  {
-    "id": "CVE-2026-78499",
-    "description": "A server-side request forgery (SSRF) vulnerability WatchGuard Dimension FTP Server Test configuration allows an authenticated privileged attacker to enumerate exposed network services on adjacent network systems.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.443"
-  },
-  {
-    "id": "CVE-2026-78498",
-    "description": "A server-side request forgery (SSRF) vulnerability WatchGuard Dimension Email Server Test configuration allows an authenticated privileged attacker to enumerate exposed network services on adjacent network systems.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.317"
-  },
-  {
-    "id": "CVE-2026-78495",
-    "description": "A server-side request forgery (SSRF) vulnerability WatchGuard Dimension Remote Backup Connection Test configuration allows an authenticated privileged attacker to enumerate exposed network services on adjacent network systems.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.197"
-  },
-  {
-    "id": "CVE-2026-78195",
-    "description": "A Cross-Site Scripting (XSS) vulnerability in the WatchGuard Dimension Backup Historical Data feature allows an authenticated administrator user to execute arbitrary JavaScript in another user's browser.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:23.080"
-  },
-  {
-    "id": "CVE-2026-78174",
-    "description": "WatchGuard Dimension records unredacted session identifiers for logged-in users in its web UI diagnostic log. A low-privileged Dimension Administrator can retrieve this log and extract a Super Administrator's session token while that administrator is logged in, enabling account takeover.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:22.950"
-  },
-  {
-    "id": "CVE-2026-78103",
-    "description": "WatchGuard Dimension provides a client-side lock/unlock UI control for management changes. The server-side configuration endpoint does not enforce this lock/unlock workflow state, allowing an authenticated administrator to submit configuration changes directly to the endpoint without first completing the UI unlock step. This allows an authenticated read-write administrator session to bypass the intended editing workflow and overwrite configuration changes being made by another concurrent administrator session.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:22.830"
-  },
-  {
-    "id": "CVE-2026-78047",
-    "description": "A stored cross-site scripting (XSS) vulnerability in WatchGuard Dimension's task scheduling feature allows a low-privileged authenticated administrator to inject arbitrary HTML/JavaScript into these fields, which then executes in the browser session of any other user.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:22.697"
-  },
-  {
-    "id": "CVE-2026-78011",
-    "description": "An integer underflow vulnerability in the WatchGuard Fireware OS iked process allows a remote unauthenticated attacker to create a Denial of Service (DoS) condition in VPN processing by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:22.563"
-  },
-  {
-    "id": "CVE-2026-78010",
-    "description": "A stack-based buffer overflow vulnerability in the WatchGuard Fireware OS iked process iallows a remote unauthenticated attacker to create a Denial of Service (DoS) condition in VPN processing by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:22.417"
-  },
-  {
-    "id": "CVE-2026-78009",
-    "description": "An out-of-bounds read vulnerability in the WatchGuard Fireware OS iked process allows a remote unauthenticated attacker to create a Denial of Service (DoS) condition in VPN processing by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:22.293"
-  },
-  {
-    "id": "CVE-2026-78008",
-    "description": "A buffer overflow vulnerability in the WatchGuard Fireware OS Management Web UI allows an authenticated administrator with network access to cause a denial of service (DoS) condition or potentially execute arbitrary code by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:22.167"
-  },
-  {
-    "id": "CVE-2026-61802",
-    "description": "Wazuh is an open-source security platform providing unified XDR and SIEM protection for endpoints and cloud workloads. In versions 4.14.0 through 4.14.6, a low-privilege API user can read the cleartext cluster key from a configuration endpoint that fails to redact it. The REST API provides a masking control, mask_sensitive_config, that redacts sensitive fields such as authd.pass and cluster.key from configuration responses for users who lack update-config permission, and every config-read endpoint carries this decorator except GET /cluster/local/config. That endpoint, backed by read_config_wrapper, is gated only by cluster:read and returns the local node's cluster configuration including the cleartext key, whereas its siblings return the same value masked. As a result, any account with the default readonly or cluster_readonly role, which is explicitly denied update-config precisely so it cannot view secrets, receives the real cluster key. Because the cluster key authenticates and encrypts traffic between cluster nodes, disclosing it to an unprivileged account provides the authentication precondition for the cluster-peer remote code execution chains established by prior advisories. This issue is fixed in version 4.14.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:21.907"
-  },
-  {
-    "id": "CVE-2026-61800",
-    "description": "Wazuh is an open-source security platform providing unified XDR and SIEM protection for endpoints and cloud workloads. In versions 4.4.0 through 4.14.6, a party holding the cluster key can write, overwrite, or delete arbitrary files under /var/ossec on worker nodes, leading to remote code execution as root. During cluster file synchronization, the non-merged branch of update_master_files_in_worker() moves each staged file to a destination derived only from safe_join(), which confines the path to /var/ossec but never verifies that the file lands in the directory declared by its cluster_item_key. Because the destination check present on the primary node and on the worker's merged branch was not applied, a peer can place files at attacker-chosen locations under /var/ossec, including paths that are executed as root, and the delete branch has the same gap. This is an incomplete fix for CVE-2026-30893, which addressed traversal outside /var/ossec but left this path able to redirect files anywhere within it. This issue is fixed in version 4.14.7.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:21.767"
-  },
-  {
-    "id": "CVE-2026-38822",
-    "description": "In openNDS before 11.0.0, the client_params.sh script, invoked by the openNDS daemon to serve the authenticated client status page, is vulnerable to OS command injection through crafted HTTP GET query parameter keys. An authenticated captive portal user can inject arbitrary shell commands by embedding semicolons in a URL query parameter name.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:21.620"
-  },
-  {
-    "id": "CVE-2026-38821",
-    "description": "A heap-based buffer overflow vulnerability exists in openNDS before 11.0.0 that allows an unauthenticated attacker on the captive portal network to crash the openNDS daemon (denial of service) and potentially achieve remote code execution. This is in http_microhttpd.c.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:21.490"
-  },
-  {
-    "id": "CVE-2026-38820",
-    "description": "openNDS before 11.0.0 is susceptible to unauthenticated OS command execution via shell command injection through the fas query parameter on the /opennds_preauth/ endpoint because of libopennds.sh.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:21.350"
-  },
-  {
-    "id": "CVE-2026-38819",
-    "description": "Multiple memory leaks in openNDS before 11.0.0 allow an unauthenticated attacker on the captive portal network to exhaust all available memory on the device within minutes.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:21.200"
-  },
-  {
-    "id": "CVE-2026-19318",
-    "description": "A stack-based buffer overflow vulnerability in the WatchGuard Fireware OS iked process allows a remote unauthenticated attacker to execute arbitrary code by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:21.070"
-  },
-  {
-    "id": "CVE-2026-19317",
-    "description": "An out-of-bounds read vulnerability in the WatchGuard Fireware OS iked process allows a remote unauthenticated attacker to create a Denial of Service (DoS) condition in VPN processing by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:20.947"
-  },
-  {
-    "id": "CVE-2026-19316",
-    "description": "A double-free vulnerability in the WatchGuard Fireware OS iked process allows a remote unauthenticated attacker to create a Denial of Service (DoS) condition in VPN processing by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:20.827"
-  },
-  {
-    "id": "CVE-2026-19315",
-    "description": "A type confusion vulnerability in the iked process of WatchGuard Fireware OS allows a remote unauthenticated attacker to execute arbitrary code by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:20.703"
-  },
-  {
-    "id": "CVE-2026-19314",
-    "description": "An integer underflow vulnerability in the WatchGuard Fireware OS iked process allows a remote unauthenticated attacker to create a Denial of Service (DoS) condition in VPN processing by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:20.580"
-  },
-  {
-    "id": "CVE-2026-19313",
-    "description": "An heap overflow vulnerability in the WatchGuard Fireware OS iked process allows a remote unauthenticated attacker to execute arbitrary code by sending specially crafted network traffic.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:20.450"
-  },
-  {
-    "id": "CVE-2026-13108",
-    "description": "WatchGuard Dimension is susceptible to a denial-of-service condition when an attacker sends a high volume of TCP SYN packets to the log listening service.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:20.323"
-  },
-  {
-    "id": "CVE-2026-13086",
-    "description": "A stack-based buffer overflow in the epm (Endpoint Protection Manager) service used by the deprecated Mobile Security feature in WatchGuard Fireware OS allows an unauthenticated remote attacker to execute arbitrary code.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T02:16:20.197"
-  },
-  {
-    "id": "CVE-2026-82072",
-    "description": "Out of bounds read in V8 in Google Chrome prior to 151.0.7922.72 allowed a remote attacker to execute arbitrary code inside the sandbox via a crafted HTML page. (Chromium security severity: Medium)",
-    "severity": "High",
-    "tech": "Chrome",
-    "published": "2026-08-28T00:18:22.803"
-  },
-  {
-    "id": "CVE-2026-81851",
-    "description": "A heap-based buffer overflow vulnerability in Fireware OS's iked process allows an authenticated administrator to crash the IKE daemon (iked), resulting in a denial of service, by saving a specially crafted configuration.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:22.687"
-  },
-  {
-    "id": "CVE-2026-81848",
-    "description": "A vulnerability was determined in cyberchitta scrapling-fetch-mcp up to 0.2.2. The impacted element is the function s_fetch_page/s_fetch_pattern of the file src/scrapling_fetch_mcp/_fetcher.py. Executing a manipulation can lead to server-side request forgery. The attack can be launched remotely. Upgrading to version 0.2.3 is sufficient to resolve this issue. This patch is called 9f6f34e92c55c3d95566ad9c62aca7327d24533a. Upgrading the affected component is advised.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:22.513"
-  },
-  {
-    "id": "CVE-2026-81847",
-    "description": "A vulnerability was found in MAA-AI MaaMCP up to 1.1.1.dev6+g2e4a41287. The affected element is the function save_pipeline/load_pipeline of the file pipeline_tools.py. Performing a manipulation results in path traversal. The attack can be initiated remotely. The exploit has been made public and could be used. The patch is named c93ef45cba75295eba26d9ff1ffb9202a91c6150. To fix this issue, it is recommended to deploy a patch.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:22.333"
-  },
-  {
-    "id": "CVE-2026-81845",
-    "description": "A vulnerability has been found in arben-adm mcp-sequential-thinking up to 0.5.0. Impacted is the function import_session/export_session of the file mcp_sequential_thinking/server.py of the component Import Session/Export Session. Such manipulation of the argument file_path leads to path traversal. It is possible to launch the attack remotely. The exploit has been disclosed to the public and may be used. Upgrading to version 0.6.0 is recommended to address this issue. The name of the patch is 2fad3ee8ab1d0868b6c1afb5895bc336a10e5267. Upgrading the affected component is recommended.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:22.133"
-  },
-  {
-    "id": "CVE-2026-81837",
-    "description": "A flaw has been found in RooCodeInc Roo-Code up to 3.51.1. This issue affects the function path.resolve of the file src/core/tools/ApplyPatchTool.ts of the component ApplyPatchTool. This manipulation causes path traversal. It is possible to initiate the attack remotely. The exploit has been published and may be used. Multiple isses were reported to the vendor beforehand. They explain, that \"they all apply to Roo Code, a project we no longer support - the repository was archived a while ago, and we don't encourage anyone to use it.\" This vulnerability only affects products that are no longer supported by the maintainer.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:21.963"
-  },
-  {
-    "id": "CVE-2026-81836",
-    "description": "A vulnerability was detected in RooCodeInc Roo-Code up to 3.51.1. This vulnerability affects unknown code of the file src/integrations/claude-code/oauth.ts of the component OAuth Callback. The manipulation results in cleartext transmission of sensitive information. The attack may be performed from remote. A high complexity level is associated with this attack. It is stated that the exploitability is difficult. The exploit is now public and may be used. Multiple isses were reported to the vendor beforehand. They explain, that \"they all apply to Roo Code, a project we no longer support - the repository was archived a while ago, and we don't encourage anyone to use it.\" This vulnerability only affects products that are no longer supported by the maintainer.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:21.783"
-  },
-  {
-    "id": "CVE-2026-81835",
-    "description": "A security vulnerability has been detected in RooCodeInc Roo-Code up to 3.51.1. This affects the function fetch_instructions of the file malicious_mcp_server.py of the component MCP Integration Trust Model. The manipulation leads to code injection. The attack is possible to be carried out remotely. The exploit has been disclosed publicly and may be used. Multiple isses were reported to the vendor beforehand. They explain, that \"they all apply to Roo Code, a project we no longer support - the repository was archived a while ago, and we don't encourage anyone to use it.\" This vulnerability only affects products that are no longer supported by the maintainer.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:21.593"
-  },
-  {
-    "id": "CVE-2026-80179",
-    "description": "A flaw was found in jwcrypto. A remote attacker can send a specially crafted JSON Web Encryption (JWE) token containing numerous period delimiters. This malformed token can force the JWE.deserialize() function to allocate excessive memory, leading to a MemoryError. This issue results in a denial of service (DoS) for services that process untrusted JWE values.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:20.337"
-  },
-  {
-    "id": "CVE-2026-78239",
-    "description": "Xiiaozet LK100W exposes a critical management function that can be \ninvoked without authentication, allowing a remote attacker to enable \nadministrative services that should be restricted. Successful \nexploitation may permit unauthorized access to the device.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:16.197"
-  },
-  {
-    "id": "CVE-2026-78037",
-    "description": "Xiiaozet LK100W is vulnerable to OS command injection through its \nweb-based management interface. An authenticated attacker may be able to\n execute arbitrary operating system commands with elevated privileges, \npotentially resulting in unauthorized access to sensitive information or\n complete device compromise.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:16.063"
-  },
-  {
-    "id": "CVE-2026-77977",
-    "description": "Ebyte gateway product's vendor configuration utility does not require authentication before \nallowing certain disruptive administrative actions when default \ncredentials remain configured. An unauthenticated attacker on the \nadjacent network could reboot the device or restore factory settings, \nresulting in a loss of configuration and service availability.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:15.927"
-  },
-  {
-    "id": "CVE-2026-77358",
-    "description": "cpp-httplib is a C++ header-only HTTP/HTTPS library. In versions 0.33.0 through 0.50.0, the TLS-enabled WebSocket client frees the TLS session before closing the WebSocket that still uses it, producing a use-after-free. In WebSocketClient::shutdown_and_close the SSL object is freed and the pointer cleared, but the subsequent WebSocket close still sends a close frame through the SSL socket stream, which holds a raw copy of the now-dangling session pointer and reads from and writes to the freed memory. The same freed-then-used ordering is reachable through the client's destructor and its connect path, so ordinary teardown of a secure WebSocket connection triggers the defect. This issue is fixed in version 0.50.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:15.790"
-  },
-  {
-    "id": "CVE-2026-77341",
-    "description": "cpp-httplib is a C++ header-only HTTP/HTTPS library. In version 0.49.0, the chunked-response trailer output path writes trailer header names and values directly to the socket without validating them, allowing CRLF sequences in a trailer field to inject additional headers or split the HTTP response. Unlike every other header-writing path in the library, the trailer-writing code applies none of the field-name and field-value checks that reject carriage return and line feed, so an application that places attacker-influenced data into a chunked response trailer emits attacker-controlled CRLF onto the wire. This enables HTTP response splitting, letting an attacker forge response headers or inject a second response. This issue is fixed in version 0.50.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:15.620"
-  },
-  {
-    "id": "CVE-2026-76945",
-    "description": "The affected Ebyte device relies on client-managed authentication tokens\n without sufficient server-side validation. An attacker may replay or \nmanipulate authentication tokens to gain unauthorized access to \nadministrative functionality.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:15.487"
-  },
-  {
-    "id": "CVE-2026-76943",
-    "description": "Xiiaozet LK100Wt contains an authentication weakness within an \nadministrative service that may allow an attacker to bypass intended \naccess controls and obtain command execution capabilities. Successful \nexploitation could allow unauthorized interaction with privileged \nfunctionality and may lead to complete device compromise.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:15.343"
-  },
-  {
-    "id": "CVE-2026-76940",
-    "description": "The affected Ebyte device does not restrict repeated authentication \nattempts through rate limiting or account lockout mechanisms. This could\n allow an attacker to perform automated authentication attacks against \ndeployments that rely on password based authentication.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:15.190"
-  },
-  {
-    "id": "CVE-2026-76179",
-    "description": "An improper protection of authentication tokens vulnerability exists in \ncertain Ebyte gateway products. Authentication tokens used by the web \nmanagement interface are insufficiently protected during client-side \nsession handling, which may allow an attacker with access to exposed \nsession information to obtain and reuse a valid token. Successful \nexploitation could allow an attacker to impersonate an authenticated \nuser and gain unauthorized access to device management functionality.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:14.430"
-  },
-  {
-    "id": "CVE-2026-76060",
-    "description": "An authenticated OS command injection vulnerability exists in ZoneMinder's event export functionality. The exportFile HTTP request parameter is passed unsanitized into a shell command executed via PHP's exec(), allowing any authenticated user with View Events permission to execute arbitrary operating system commands on the server.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:14.273"
-  },
-  {
-    "id": "CVE-2026-75814",
-    "description": "The Ebyte device does not adequately verify the origin or authenticity of \nrequests submitted to the web management interface. An unauthenticated \nremote attacker could persuade an authenticated administrator to visit a\n crafted page, causing unauthorized configuration changes or a \ndisruption of device availability.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:14.147"
-  },
-  {
-    "id": "CVE-2026-75813",
-    "description": "Certain configuration endpoints may lack proper server-side \nauthorization checks, allowing unauthorized users to access or modify \nsensitive device settings. This could result in full compromise of \ndevice functionality.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:14.007"
-  },
-  {
-    "id": "CVE-2026-75548",
-    "description": "The affected Ebyte device web management interface does not restrict the\n interface from being rendered within an external frame. An \nunauthenticated remote attacker could use a crafted webpage to mislead \nan authenticated administrator into initiating unintended configuration \nchanges or disruptive actions.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:12.830"
-  },
-  {
-    "id": "CVE-2026-75419",
-    "description": "go-wind-cms (GoWind) before 1.0.0 has a missing authorization vulnerability. The NewAuthorizer() function in app/admin/service/internal/data/data.go and app/app/service/internal/data/data.go returns a no-op authorization engine (noop.State{}), so the authz middleware always allows requests. Any authenticated user (regardless of role or tenant) can invoke administrative APIs such as deleting users, resetting passwords, and creating tenants.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:12.677"
-  },
-  {
-    "id": "CVE-2026-75418",
-    "description": "A path traversal vulnerability exists in the built-in preview/development web server of Lektor <3.3.14 on Windows. An attacker with network access to the server can send a crafted HTTP request containing path traversal sequences to read arbitrary files accessible to the process, disclosing sensitive information such as system files and deployment configuration files containing credentials.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:12.530"
-  },
-  {
-    "id": "CVE-2026-75417",
-    "description": "A SQL injection vulnerability was found in YzmCMS 7.5. The issue occurs in the get_arrchildid() function within application/admin/controller/category.class.php, where the user-controlled parentid parameter is concatenated directly into a FIND_IN_SET() SQL clause without proper sanitization. This allows an authenticated administrator to execute arbitrary SQL queries via boolean-based blind injection, potentially leading to full database compromise.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:12.403"
-  },
-  {
-    "id": "CVE-2026-75339",
-    "description": "The storage endpoint /storage/upload of cjbi admin3 v3.0.0 are missing permission checks. /Any logged-in user can upload arbitrary files, and any anonymous attacker can download them.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:12.277"
-  },
-  {
-    "id": "CVE-2026-75337",
-    "description": "The static resource interface /api/static/{deployKey}/ of Yu AI Code Mother v4.3 is vulnerable to path traversal. The user-controlled path is concatenated to the preview root directory without any normalization, allowing anonymous attackers to read files outside the preview root.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:12.150"
-  },
-  {
-    "id": "CVE-2026-73839",
-    "description": "Administrative credentials may be exposed in plaintext within the Ebyte \ndevice's management interface, increasing the risk of credential \ncompromise through visual or remote observation. This undermines the \nconfidentiality of device access.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:11.553"
-  },
-  {
-    "id": "CVE-2026-73809",
-    "description": "A cleartext transmission of sensitive information vulnerability exists \nin certain Ebyte gateway products. The web management interface does not\n adequately protect sensitive communications using transport-layer \nencryption. An attacker with access to network traffic could intercept \nauthentication or session-related information transmitted between a user\n and the affected device. Successful exploitation could result in \ndisclosure of sensitive information and unauthorized access to device \nmanagement functionality.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:11.410"
-  },
-  {
-    "id": "CVE-2026-73125",
-    "description": "Ebyte device web management interface does not consistently enforce \nauthentication before granting access to administrative functionality. \nAn unauthenticated remote attacker could access sensitive configuration \ninformation, modify device settings, or disrupt availability.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:11.273"
-  },
-  {
-    "id": "CVE-2026-71396",
-    "description": "Bendix EC80 Brake ECU uses hard-coded credentials, which could allow an attacker to disable automatic traction control.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:10.313"
-  },
-  {
-    "id": "CVE-2026-71187",
-    "description": "The Ebyte device relies on client side authentication logic that can be \nreproduced by unauthenticated users. An attacker may generate valid \nauthentication requests and bypass authentication to obtain \nadministrative access to the device.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:09.150"
-  },
-  {
-    "id": "CVE-2026-69658",
-    "description": "MQTT credentials and control traffic are transmitted in cleartext, \nexposing sensitive information to network-level attackers. This may \nenable unauthorized device impersonation and disruption of messaging \nfunctions.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:08.650"
-  },
-  {
-    "id": "CVE-2026-68967",
-    "description": "Bendix EC80 Brake ECU is vulnerable to an out-of-bounds write, which could allow an attacker \nto deliver a payload that could establish an arbitrary write primitive, \nwhich could crash the ECU.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:08.480"
-  },
-  {
-    "id": "CVE-2026-68929",
-    "description": "FastGPT is an open-source LLM platform for building AI applications on a knowledge base. In versions prior to 4.15.2, the WeChat (iLink) share-channel endpoints authorize requests using only the public shareId, with no authenticated identity or team-ownership check. As a result, an unauthenticated attacker who knows a victim team's shareId can take that team's WeChat bot offline or hijack the channel to their own bot: the logout endpoint is gated only by an existence check yet wipes the outLink's stored WeChat token, and the QR-code status endpoint performs no authorization at all and writes attacker-supplied bot credentials into the outLink identified by shareId. By generating a QR for a victim shareId, scanning it with their own WeChat, and calling the status endpoint, an attacker binds the victim team's app to the attacker's bot, exposing the app's private responses, displacing the legitimate binding, and consuming the victim's resources. The shareId is exposed in every shared chat URL, iframe, and embed, so it is not a secret. This issue is fixed in version 4.15.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:08.337"
-  },
-  {
-    "id": "CVE-2026-67560",
-    "description": "Bendix EC80 Brake ECU\n is vulnerable to a stack-based buffer overflow, which may allow an \nattacker to crash the ECU. A crafted payload can then be used to \nremotely execute arbitrary code or inject arbitrary CAN bus traffic. \nThis could cause the loss of the ABS function, steering assist, \nspeedometer, and shifting.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:08.150"
-  },
-  {
-    "id": "CVE-2026-61783",
-    "description": "Wazuh is an open-source security platform providing unified XDR and SIEM protection for endpoints and cloud workloads. In versions 4.14.0 through 4.14.6, an authenticated low-privilege user can read the cluster secret from the manager configuration because the logic that masks sensitive values is disabled by any update-config RBAC rule, including an explicit deny. The mask_sensitive_config() decorator applies masking only when _has_update_permissions() returns false, but that gate treats a user as able to update the config whenever a  manager:update_config  or  cluster:update_config  rule exists, without ever checking whether the rule's effect is allow or deny. Because a deny rule is stored as a real entry, a read-only account that is hardened by explicitly denying config edits is counted as having update permission, which turns masking off. A single authenticated GET request to the configuration endpoint with  raw=true  then returns the verbatim ossec.conf XML with  cluster.key  in clear, whereas an otherwise identical account without the deny rule sees the value masked. This issue is fixed in version 4.14.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:07.997"
-  },
-  {
-    "id": "CVE-2026-5706",
-    "description": "In Bluetooth Mesh SDK 6.1.4 and earlier, malformed extended advertisements can trigger out-of-bounds writes leading to stack corruption and remote code execution. These messages must come from a device that has already joined the network. Only provisioners supporting extended advertisements may be impacted.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:07.853"
-  },
-  {
-    "id": "CVE-2026-54330",
-    "description": "Ceph is an open-source distributed storage platform providing object, block, and file storage. In versions prior to 20.2.4 and 19.2.6, the Ceph Object Gateway (RGW) SigV4 handler does not reject requests that carry x-amz-* headers absent from the signed header set, allowing anyone holding a presigned URL to attach arbitrary unsigned x-amz-* headers that RGW will honor. AWS S3 requires every x-amz-* header on a SigV4 request to be signed and rejects requests bearing additional unsigned headers, but RGW validates only the headers listed in X-Amz-SignedHeaders and ignores any extra ones, so they take effect without being covered by the signature. By adding such headers to a presigned PUT URL, an attacker can grant themselves more capabilities than the URL's signer intended and escalate their privileges. This issue is fixed in versions 20.2.4 and 19.2.6.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:07.683"
-  },
-  {
-    "id": "CVE-2026-54085",
-    "description": "Wazuh is an open-source security platform providing unified XDR and SIEM protection for endpoints and cloud workloads. In versions 4.2.0 through 4.14.6, multiple active response scripts pass attacker-influenced alert fields to privileged system commands without validating their format, allowing argument injection into tools that run as root. Five of the eight scripts that handle the srcip field, route-null.c, netsh.c, pf.c, npf.c, and ipfw.c, omit the get_ip_version() check that rejects non-IP input, and disable-account.c passes the dstuser field to passwd/chuser with only a comparison against \"root\". An attacker who can inject crafted log events, for example via syslog, can supply srcip or dstuser values that, when an active response rule triggers, are passed unvalidated to firewall and account-management commands such as pfctl, npfctl, ipfw, route, netsh, and passwd. This enables injecting additional command arguments, and on Windows the unquoted CreateProcess command-line concatenation in wpopenv() lets a srcip containing spaces add further arguments, while disable-account.c can be abused to lock arbitrary system accounts. This issue is fixed in version 4.14.7.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:07.520"
-  },
-  {
-    "id": "CVE-2026-54084",
-    "description": "Wazuh is an open-source security platform providing unified XDR and SIEM protection for endpoints and cloud workloads. In versions 4.0.0 through 4.14.6, a malicious or man-in-the-middle enrollment manager can crash a Wazuh agent during enrollment by returning a malformed key response with fewer than four fields, causing a NULL pointer dereference. The  w_enrollment_process_agent_key()  routine splits the manager-provided key into four space-separated fields but does not verify that all fields are present before passing them to validators. Because OS_StrBreak() leaves missing trailing entries as NULL and OS_IsValidName() calls strlen() on its argument without a NULL check, a response such as  OSSEC K:'1'  reaches OS_IsValidName(NULL) and terminates the agent process. Since Wazuh permits enrollment against an unverified manager when no CA certificate is configured, an attacker operating a rogue manager or intercepting the enrollment flow can deterministically crash agents, resulting in denial of service. This issue is fixed in version 4.14.7.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:07.370"
-  },
-  {
-    "id": "CVE-2026-54083",
-    "description": "Wazuh is an open-source security platform providing unified XDR and SIEM protection for endpoints and cloud workloads. The  ip-customblock  active response script contains a path traversal vulnerability that lets an attacker create or delete arbitrary files on the filesystem as root. The script builds a file path by concatenating the  srcip  field taken from alert JSON directly onto the fixed  /ipblock/  base directory, without validating that the value is a well-formed IP address. Because the extraction routine returns the raw string unchecked, an attacker who can trigger alert-matching log events with a crafted  srcip  containing  ../  sequences can escape the base directory. The block action opens the resulting path in append mode, creating an empty file at an arbitrary location, while the unblock action passes it to remove(), deleting an arbitrary file; since the active response daemon runs as root, this includes sensitive files such as system credentials and Wazuh configuration. Unlike the sibling scripts host-deny.c, default-firewall-drop.c, and firewalld-drop.c, which reject non-IP input via get_ip_version(), ip-customblock.c omits this validation. This issue is fixed in version 4.14.7.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:07.233"
-  },
-  {
-    "id": "CVE-2026-50152",
-    "description": "Ceph is an open-source distributed storage platform providing object, block, and file storage. In versions prior to 20.2.4 and 19.2.6, the Monitor subscription handler fails to properly authorize access to the configuration-key store, allowing any CephX user with only  `mon allow r` capabilities to read the entire store by sending a single crafted MMonSubscribe message. The config-key store holds sensitive secrets including OSD LUKS disk-encryption passphrases and, on cephadm-managed clusters, the SSH private key that cephadm uses to reach every host in the cluster. Because that key grants root on every node under the default cephadm configuration, a low-privileged read-only account can escalate to full cluster and host compromise. This issue is fixed in versions 20.2.4 and 19.2.6",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:18:07.073"
-  },
-  {
-    "id": "CVE-2026-44629",
-    "description": "Improper access control to the Synergis Softwire installation folder. This vulnerability affects Streamvault all-in-one appliances (SV-100E and SV-300E series) and Synergis Softwire installed on Windows servers.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:28.117"
-  },
-  {
-    "id": "CVE-2026-39944",
-    "description": "Ceph is an open-source distributed storage platform providing object, block, and file storage. In versions prior to 20.2.4 and 19.2.6, the RADOS Gateway (RGW) protects STS session tokens with an AES-128-CBC handler that provides no message authentication, allowing an attacker who holds any valid STS token to tamper with it undetected and escalate to full RGW administrative access. Because the ciphertext is unauthenticated, the attacker can perform a CBC bit-flip on the acct_type, perm_type, and is_admin fields of their own token, and a forged is_admin value triggers a global administrative override that bypasses all capability checks. The attack is reachable remotely over the RGW S3 endpoint and is a self-contained modification of a token the attacker already possesses, requiring no encryption oracle and no network observation. It requires only a single valid STS token, which need not carry any elevated privileges, with STS enabled. This issue is fixed in versions 20.2.4 and 19.2.6.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.860"
-  },
-  {
-    "id": "CVE-2026-38350",
-    "description": "An integer overflow in the target_sws_fuzzer() function (libswscale/output.c) of FFmpeg N-122528-gdd2976b9e1 allows attackers to cause a Denial of Service (DoS) via supplying a crafted input.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.743"
-  },
-  {
-    "id": "CVE-2026-38349",
-    "description": "An integer overflow in the hScale16To19_c() function (libswscale/output.c) of FFmpeg N-122528-gdd2976b9e1 allows attackers to cause a Denial of Service (DoS) via supplying a crafted image file.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.630"
-  },
-  {
-    "id": "CVE-2026-38348",
-    "description": "An integer overflow in the libswscale/utils.c component of FFmpeg N-122528-gdd2976b9e1 allows attackers to cause a Denial of Service (DoS) via supplying a crafted image file.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.530"
-  },
-  {
-    "id": "CVE-2026-38347",
-    "description": "A heap overflow in the ff_sws_alphablendaway function (libswscale/alphablend.c) of FFmpeg git-master commit 722a217 allows attackers to cause a Denial of Service (DoS) via a crafted input.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.420"
-  },
-  {
-    "id": "CVE-2026-38346",
-    "description": "An integer overflow in the yuv2planeX_8_c() function (libswscale/output.c) of FFmpeg N-122528-gdd2976b9e1 allows attackers to cause a Denial of Service (DoS) via supplying a crafted video file.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.317"
-  },
-  {
-    "id": "CVE-2026-38345",
-    "description": "A Division-by-Zero vulnerability in the ff_sws_init_single_context function (/libswscale/utils.c) of FFmpeg N-122528-gdd2976b9e1 allows attackers to cause a Denial of Service (DoS) via a crafted input.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.197"
-  },
-  {
-    "id": "CVE-2026-38344",
-    "description": "A NULL pointer dereference in the get_min_buffer_size function (/libswscale/slice.c) of FFmpeg N-122528-gdd2976b9e1 allows attackers to cause a Denial of Service (DoS) via supplying a crafted video file.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:27.087"
-  },
-  {
-    "id": "CVE-2026-38343",
-    "description": "An integer overflow in the libavfilter/vf_scale.c component of FFmpeg N-122528-gdd2976b9e1 allows attackers to cause a Denial of Service (DoS) via supplying a crafted video file.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:17:26.980"
-  },
-  {
-    "id": "CVE-2026-18965",
-    "description": "PayRange API is missing proper authorization on management endpoints, which allows verbose details of every device on the PayRange network to be publicly accessible, with or without an account.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:16:48.933"
-  },
-  {
-    "id": "CVE-2026-18717",
-    "description": "ASE2000 2.35 through 2.37 is vulnerable to an improper certificate validation vulnerability, which may allow an attacker to impersonate the trusted peer, complete the TLS handshake, and read or modify protected communications.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:16:48.740"
-  },
-  {
-    "id": "CVE-2026-17610",
-    "description": "In SiSDK v2026.6.0 and earlier, high network traffic loads can cause a dropped ACK leading to a denial of service. This is only present for EFR32MG24 and EFR32MG26 devices running concurrent multiprotocol Zigbee and Thread.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:16:48.470"
-  },
-  {
-    "id": "CVE-2025-30156",
-    "description": "Ceph is an open-source distributed storage platform providing object, block, and file storage. In versions prior to 20.2.4 and 19.2.6, the CephX authentication protocol encrypts tickets with AES-128-CBC in an unauthenticated mode that uses a hard-coded initialization vector and no message authentication, allowing an attacker to forge credentials and gain cluster-wide access. Because the ciphertext is malleable and the monitor will encrypt attacker-chosen entity names, an attacker holding one low-privilege key and able to observe CephX traffic can use the monitor as an encryption oracle and splice ciphertext blocks into valid tickets for privileged entities such as Manager, MDS, and OSD. The same lack of authentication also lets an attacker with CephX permissions escalate privileges by flipping a single bit in a service ticket to set its allow_all field to true. This issue is fixed in versions 20.2.4 and 19.2.6.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-28T00:16:45.557"
   }
 ]
