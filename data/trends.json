@@ -1,1139 +1,5 @@
 [
   {
-    "id": "CVE-2025-59325",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to encrypt the initramfs contents, allowing for the offline recovery of secrets and cryptographic details.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:46.587"
-  },
-  {
-    "id": "CVE-2025-59326",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to enforce IMA policy protections across temporary file systems, allowing for unsigned code to be executed from these locations.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:46.713"
-  },
-  {
-    "id": "CVE-2025-59327",
-    "description": "In CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4, bootxsa.efi fails to properly validate LUKS encryption and, if encryption is present, all CryptoPro file integrity checks are skipped.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:46.833"
-  },
-  {
-    "id": "CVE-2026-16999",
-    "description": "Improper restriction of XML external entity reference vulnerability in Ministry of Justice UYAP Document Editor allows Serialized Data External Linking.\n\nThis issue affects UYAP Document Editor: from 4.5.17 before 5.4.17.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:47.890"
-  },
-  {
-    "id": "CVE-2026-47227",
-    "description": "Admidio is an open-source user management solution. `modules/categories.php` checks that the supplied `type` parameter (`ANN`, `EVT`, `ROL`, `USF`, …) corresponds to a module the actor administers. The follow-up \"is this specific category editable by me\" check at lines 56-61 is dead code because it compares `$getType` (a category-type code) against mode names (`edit`/`save`/`delete`); the condition is permanently false, so `$category->isEditable()` is never invoked. Prior to version 5.0.10, the `delete`, `sequence`, and `save` switch cases load the category by the supplied UUID and act on it without re-checking that the category belongs to a module the actor administers. A user holding only one module-administrator right can therefore destroy or reorder empty categories belonging to *other* modules — for example, an announcements administrator can delete role categories, profile-field categories, or weblink categories that they have no right to touch. Version 5.0.10 fixes the issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:53.600"
-  },
-  {
-    "id": "CVE-2026-47228",
-    "description": "Admidio is an open-source user management solution. `modules/registration.php` mode `send_login` regenerates a random password for `user_uuid_assigned`, stores its bcrypt hash in `adm_users.usr_password`, and emails the cleartext to that user. Every other state-changing mode in the same file (`assign_member`, `assign_user`, `delete_user`, `create_user`) calls `SecurityUtils::validateCsrfToken($_POST['adm_csrf_token'])` first; the `send_login` branch does not. Prior to version 5.0.10, page visited by a registration-administrator can issue the request as a top-level navigation, the browser sends the admin's `SameSite=Lax` cookies, and the server resets the chosen user's password without any further interaction from the admin. Version 5.0.10 fixes the issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:53.750"
-  },
-  {
-    "id": "CVE-2026-47229",
-    "description": "Admidio is an open-source user management solution. Prior to version 5.0.10, `modules/sso/clients.php` validates an `adm_csrf_token` on every state-changing branch except `enable`. The `enable` case loads the SAML or OIDC client by UUID, calls `$client->enable($enabled)`, and persists the new state with no token check. Because the action is reachable via plain GET parameters, a third-party page can trick an authenticated administrator into disabling (or silently re-enabling) any configured SAML or OIDC client. Disabling an SSO client breaks every downstream relying-party application that authenticates through it. Version 5.0.10 contains a fix.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:53.910"
-  },
-  {
-    "id": "CVE-2026-47230",
-    "description": "Admidio is an open-source user management solution. Prior to version 5.0.10, `modules/documents-files.php` mode `file_rename_save` shares the same root-cause shape as the cross-folder move bug (`05-documents-cross-folder-move-idor.md`): the top-level rights check at lines 79-89 validates `hasUploadRight()` on the URL parameter `folder_uuid`, but the rename operation acts on `file_uuid` — a separate URL parameter — without re-checking the folder that actually contains the file. `DocumentsService::renameFile()` resolves the target file via `getFileForDownload()` (which permits view-readable files) but does not require upload right on the file's source folder. Result: a user with upload right on any folder A can rename a file in folder B as long as they can view it. They can also overwrite the file's description. Version 5.0.10 contains a fix.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:54.057"
-  },
-  {
-    "id": "CVE-2026-47231",
-    "description": "Admidio is an open-source user management solution. Prior to version 5.0.10, `modules/documents-files.php` gates state-changing modes by checking that the actor has `hasUploadRight()` on the URL parameter `folder_uuid`. The `move_save` handler then operates on a *separate* URL parameter `file_uuid` and calls `File::moveToFolder($destFolderUUID)`. `File::moveToFolder()` checks the upload right on the destination folder but never on the source folder containing the file. As a result, any user who can upload to any single folder can move any file from any other folder — including private folders to which they have no view rights — into a folder they control, and then download it. Confidentiality is broken (private file contents leak) and integrity is broken (the file is removed from the original location). Version 5.0.10 contains a fix.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:54.210"
-  },
-  {
-    "id": "CVE-2026-47232",
-    "description": "Admidio is an open-source user management solution. Prior to version 5.0.10, the sensitive `mode=export` action in `modules/sso/keys.php` exports a PKCS#12 bundle containing the configured private key and certificate, but the CSRF validation line is commented out. A forged cross-site POST from an administrator session can therefore trigger private key export without a valid form token. Version 5.0.10 contains a fix.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:17:54.360"
-  },
-  {
-    "id": "CVE-2026-67285",
-    "description": "Joomla Extension - joomshaper.com - Unauthenticated arbitrary local PHP file inclusion in SP Page Builder < 6.8.0 - An unauthenticated attacker can perform includes to arbitrary PHP files that are accessible by the system.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T14:18:33.423"
-  },
-  {
-    "id": "CVE-2025-59319",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to certify the integrity of the intended boot partition and selects the first partition index matching a hardcoded type value. A crafted Linux partition could be inserted ahead of this intended target, allowing for code execution in the context of high privilege.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:28.963"
-  },
-  {
-    "id": "CVE-2025-59320",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 stores TPM2.0 secrets in a serialized format within unused disk sectors. An unauthenticated attacker with physical access to the system disk can recover this information and craft an environment to unseal the TPM.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:29.787"
-  },
-  {
-    "id": "CVE-2025-59321",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 contains a default TPM PCR policy that fails to consider the system boot state. This allows the TPM to be unsealed via an unintended execution path or from another hardware platform.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:29.947"
-  },
-  {
-    "id": "CVE-2025-59322",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to properly handle decryption errors and allows encrypted volumes to be mounted as plaintext.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:30.353"
-  },
-  {
-    "id": "CVE-2025-59323",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to validate the integrity of the DataStore, a non-partitioned filesystem, responsible for storing configuration and cryptographic details. Crafted DataStore contents can impact service availability and/or allow for code execution in the context of high privilege.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:30.880"
-  },
-  {
-    "id": "CVE-2025-59324",
-    "description": "CPSD CryptoPro Secure Disk for Bitlocker before v7.7.4 fails to properly validate LUKS encryption and, if encryption is present, all CryptoPro file integrity checks are skipped.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:31.030"
-  },
-  {
-    "id": "CVE-2026-14478",
-    "description": "A maliciously created executable, when executed on the victim's machine, may allow a local low-privileged attacker to inject unauthenticated IPC messages into named pipes, modify pipe permissions or ownership, and potentially impact confidentiality, integrity, and availability.",
-    "severity": "High",
-    "tech": "Installer",
-    "published": "2026-08-12T15:17:31.687"
-  },
-  {
-    "id": "CVE-2026-14479",
-    "description": "A maliciously crafted input, when processed by the Autodesk Installer IPC frame parser, may trigger improper validation of an input-specified position or offset, resulting in an out-of-range substring operation. A malicious actor may leverage this vulnerability to cause the NT AUTHORITY\\SYSTEM service to terminate unexpectedly, resulting in a denial-of-service condition.",
-    "severity": "Medium",
-    "tech": "Installer",
-    "published": "2026-08-12T15:17:31.830"
-  },
-  {
-    "id": "CVE-2026-18171",
-    "description": "Docker Sandboxes (sbx) applies the read-only intent of a runtime host mount to the in-guest container bind only: the underlying virtio-fs host-edge grant is added to the sandbox's policy-share allowlist with no access mode. The directory stays writable at its shared-export path, so unprivileged code inside the sandbox can derive that path and write to a host directory the operator attached read-only.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:32.477"
-  },
-  {
-    "id": "CVE-2026-47233",
-    "description": "Admidio is an open-source user management solution. Version 5.0.9 added a missing `isAdministratorInventory()` gate to `case 'item_delete':` in `modules/inventory.php`. The same fix was not applied to the sibling `case 'field_delete':` handler, which destroys an entire inventory field definition, cascading to every `adm_inventory_item_data` row that referenced that field and every `adm_inventory_field_options` entry. The handler validates only a session-bound CSRF token; there is no `isAdministratorInventory()` check at the controller level, and `Admidio\\Inventory\\Entity\\ItemField::delete()` does not enforce one at the entity level either (unlike its sibling `ItemField::save()`, which does check `$gCurrentUser->isAdministrator()`). Any user who can log in to the site can permanently destroy a non-system inventory field by sending one POST. Version 5.0.10 provides an updated fix.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:33.813"
-  },
-  {
-    "id": "CVE-2026-47234",
-    "description": "Admidio is an open-source user management solution. Prior to version 5.0.10, when debug logging is enabled, `Session::setCookie()` logs full cookie values and `Session::start()` logs the current session ID. In a real Admidio deployment this includes both the active session cookie and the persistent auto-login cookie. Anyone with access to the log sink can recover live bearer-style credentials from the logs. Version 5.0.10 contains a fix.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:33.957"
-  },
-  {
-    "id": "CVE-2026-49262",
-    "description": "In the Aimeos Pagible content management system prior to version 0.10.4, the administrative proxy route (`cmsproxy`) is vulnerable to a Server-Side Request Forgery (SSRF) attack via DNS Rebinding. A Time-of-Check to Time-of-Use (TOCTOU) race condition exists between the URL validation phase and the actual HTTP request phase, allowing attackers to access internal network resources and cloud metadata endpoints. Version 0.10.4 fixes the issue.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:35.867"
-  },
-  {
-    "id": "CVE-2026-49349",
-    "description": "regclient is a Docker and OCI Registry Client in Go. Prior to version 0.11.5, credentials for a registry may be inadvertently leaked to external servers. A prerequisite for this attack is a malicious registry server, a malicious blob store, or a registry that does not restrict the external URLs for foreign blobs. Version 0.11.5 fixes the issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:37.507"
-  },
-  {
-    "id": "CVE-2026-50561",
-    "description": "Yuxi is a large-model-based intelligent knowledge base and knowledge graph agent development platform. Prior to version 0.6.2, the project's authentication mechanism contains a flaw. In affected versions, the system does not sufficiently validate the identity token in the Authorization header — only performing a validity check. This allows an administrator token generated in another deployment instance or local testing environment to be used to access the backend management interfaces of a different affected instance. An attacker who obtains or constructs an acceptable administrator Authorization token may bypass normal login authentication and gain administrator privileges. This vulnerability could allow an attacker to access system configurations, invoke backend management APIs, create administrator accounts, and ultimately take over the system backend. This issue has been fixed in version 0.6.2. Before upgrading, users are advised to implement the following temporary measures: Set the environment variable `JWT_SECRET_KEY` to a non-default value, and configure a unique, sufficiently strong JWT/authentication key for each deployment instance; and/or avoid exposing backend management interfaces directly to the public network.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:17:38.307"
-  },
-  {
-    "id": "CVE-2026-66375",
-    "description": "A low-privilege authenticated user may permanently remove protected internal metadata across repositories under specific conditions.",
-    "severity": "High",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:19.343"
-  },
-  {
-    "id": "CVE-2026-66376",
-    "description": "Credentials for a deleted user may remain valid for a short period under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:19.477"
-  },
-  {
-    "id": "CVE-2026-66377",
-    "description": "An unauthenticated user may access restricted repository information under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:19.597"
-  },
-  {
-    "id": "CVE-2026-66378",
-    "description": "An authenticated user without repository read permission may access private NuGet metadata under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:19.723"
-  },
-  {
-    "id": "CVE-2026-66379",
-    "description": "An authenticated user may view private Puppet module metadata without repository read access.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:19.847"
-  },
-  {
-    "id": "CVE-2026-66380",
-    "description": "An authenticated user without repository read permission may access private OCI referrer metadata under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:19.967"
-  },
-  {
-    "id": "CVE-2026-66381",
-    "description": "A repository reader with cache-deploy permission may access content outside a configured upstream path under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:20.083"
-  },
-  {
-    "id": "CVE-2026-66382",
-    "description": "An authenticated user may write files outside the intended Artifactory work directory under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:20.203"
-  },
-  {
-    "id": "CVE-2026-67286",
-    "description": "Joomla Extension - joomshaper.com - Unauthenticated arbitrary directory creation and file write in SP Page Builder < 6.8.0 - An unauthenticated attacker can create arbitrary directories and files with a predefined name.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:21.613"
-  },
-  {
-    "id": "CVE-2026-67287",
-    "description": "Joomla Extension - joomshaper.com - Unauthenticated comment creation in SP Page Builder < 6.8.0 - An unauthenticated attacker can create comments on instances with disabled guest commenting by overriding the setting in question with user supplied input.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:21.750"
-  },
-  {
-    "id": "CVE-2026-68752",
-    "description": "A Project Resource Manager may gain broader administrative privileges under specific conditions.",
-    "severity": "High",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:21.880"
-  },
-  {
-    "id": "CVE-2026-68753",
-    "description": "An unauthenticated user may access restricted Artifactory content when a credentialed remote repository is configured in a specific way.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:21.993"
-  },
-  {
-    "id": "CVE-2026-68754",
-    "description": "A repository publisher without delete permission may modify protected package content under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:22.117"
-  },
-  {
-    "id": "CVE-2026-68755",
-    "description": "A bundle writer may create misleading release promotion information under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:22.237"
-  },
-  {
-    "id": "CVE-2026-68756",
-    "description": "A party with write access to stored session data may affect JFrog Artifactory under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:22.360"
-  },
-  {
-    "id": "CVE-2026-68757",
-    "description": "A user with access to a valid SAML response may impersonate another user under specific conditions.",
-    "severity": "High",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:22.477"
-  },
-  {
-    "id": "CVE-2026-68760",
-    "description": "An unauthenticated user may bypass authentication under specific cache conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T15:18:22.603"
-  },
-  {
-    "id": "CVE-2026-73262",
-    "description": "Prowler is a cloud security platform. Prior to 5.37.0, Prowler's HTML output formatter in prowler/lib/outputs/html/html.py inserted finding.resource_tags, assembled by unroll_dict and parse_html_string, into generated reports without HTML escaping, allowing a cloud principal who can modify a scanned resource tag to store HTML or JavaScript that executes when another user opens the report. This issue is fixed in version 5.37.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:30.793"
-  },
-  {
-    "id": "CVE-2026-73263",
-    "description": "Prowler is a cloud security platform. Prior to 5.36.0, the Kubernetes provider connection test accepted kubeconfig_content containing a legacy gcp auth-provider with config.cmd-path and config.cmd-args because kubeconfig_contains_exec_auth in api/src/backend/api/v1/serializers.py checked only exec blocks, and POST /api/v1/providers/{id}/connection loaded it through config.load_kube_config_from_dict in prowler/providers/kubernetes/kubernetes_provider.py, causing kubernetes-python CommandTokenSource.token to run the attacker-supplied command through subprocess.Popen on the shared worker. This issue is fixed in version 5.36.0.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:30.943"
-  },
-  {
-    "id": "CVE-2026-73264",
-    "description": "Prowler is a cloud security platform. Prior to 5.33.1, an authenticated user with Lighthouse provider configuration access could supply an unvalidated base_url for the openai_compatible provider through POST /api/v1/lighthouse/providers and POST /api/v1/lighthouse/providers/{id}/connection, causing api/src/backend/tasks/jobs/lighthouse_providers.py to send outbound requests, including the API key in the Authorization header, to attacker-controlled or internal endpoints when client.models.list was called. This issue is fixed in version 5.33.1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:31.087"
-  },
-  {
-    "id": "CVE-2026-73265",
-    "description": "RustFS is a distributed object storage system built in Rust. RustFS authorizes explicit versionId reads in GetObject, CopyObject sources, and UploadPartCopy sources with s3:GetObject instead of s3:GetObjectVersion, allowing principals without historical-version permission to disclose known historical object content. This issue is fixed in version 1.0.0-beta.11.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:31.250"
-  },
-  {
-    "id": "CVE-2026-73284",
-    "description": "RustFS is a distributed object storage system built in Rust. RustFS AddServiceAccount in rustfs/src/admin/handlers/service_account.rs accepts an attacker-controlled target_user after only checking CreateServiceAccountAdminAction, passes it to new_service_account, and prepare_service_account_auth sets is_owner for the resulting root-parent service account. This issue is fixed in version 1.0.0-beta.11.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:31.437"
-  },
-  {
-    "id": "CVE-2026-73285",
-    "description": "RustFS is a distributed object storage system built in Rust. From 1.0.0-alpha.64 until 1.0.0-rc.1, RustFS external OPA authorization enabled by RUSTFS_POLICY_PLUGIN_URL in crates/iam/src/sys.rs sets PreparedIamAuth.needs_existing_object_tag incorrectly for PreparedIamMode::Opa, causing maybe_merge_object_tag_conditions to omit s3:ExistingObjectTag/* values and allowing authenticated users to bypass tag-based policy restrictions. This issue is fixed in version 1.0.0-rc.1.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:31.840"
-  },
-  {
-    "id": "CVE-2026-73286",
-    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, RustFS get_condition_values folds attacker-controlled request headers from HeaderMap into server-derived userid, username, principaltype, groups, versionid, signatureversion, jwt:, and ldap: condition keys, allowing authenticated callers to satisfy identity-based policy conditions. This issue is fixed in version 1.0.0-beta.12.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:32.060"
-  },
-  {
-    "id": "CVE-2026-73287",
-    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, RustFS handles FTPS MKD in FtpsDriver::mkd in crates/protocols/src/ftps/driver.rs by calling storage.create_bucket without authorize_operation for S3Action::CreateBucket, allowing authenticated FTPS users denied s3:CreateBucket to create buckets. This issue is fixed in version 1.0.0-beta.12.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:32.237"
-  },
-  {
-    "id": "CVE-2026-73288",
-    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-rc.1, RustFS Object Lock enforcement in crates/ecstore/src/bucket/object_lock/objectlock_sys.rs lets check_object_lock_for_deletion, delete_prefix, and lifecycle and scanner sweeps treat ConfigNotFound, unreadable .metadata.bin data, or unparseable metadata as no lock configuration, allowing objects under COMPLIANCE retention to be deleted or expired. This issue is fixed in version 1.0.0-rc.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:32.447"
-  },
-  {
-    "id": "CVE-2026-73289",
-    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, RustFS evaluates the ForAllValues: and ForAnyValue: set qualifiers with the negated string operators StringNotEquals, StringNotEqualsIgnoreCase, StringNotLike, ArnNotEquals, and ArnNotLike using each other's semantics because crates/policy/src/policy/function/string.rs negates the aggregate result after eval or eval_like instead of negating each request-value predicate before quantification. Partially overlapping policy and request value sets can therefore make an Allow condition grant access to an excluded principal or make a Deny guardrail fail, including policies based on jwt:groups and jwt:roles; absent keys also receive the opposite ForAllValues: and ForAnyValue: behavior. This issue is fixed in version 1.0.0-beta.12.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:32.733"
-  },
-  {
-    "id": "CVE-2026-73290",
-    "description": "RustFS is a distributed object storage system built in Rust. Prior to 1.0.0-beta.12, an anonymous ListObjectVersions request in rustfs/src/storage/access.rs that lacks a direct bucket-policy grant falls back to an s3:ListBucket check and returns before the policy_allowed path applies deny_anonymous_table_data_plane_if_needed and RestrictPublicBuckets, so a bucket that permits anonymous listing can continue exposing version listings after an operator enables the public-access control. The bypass affects GET /<bucket>?versions= and can disclose object version metadata even though equivalent GetObject requests are denied. This issue is fixed in version 1.0.0-beta.12.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:32.883"
-  },
-  {
-    "id": "CVE-2026-73291",
-    "description": "Seerr is an open-source media request and discovery manager for Jellyfin, Plex, and Emby. Prior to version 3.4.0, Seerr's ImageProxy in server/lib/imageproxy.ts uses the upstream ETag and Content-Type response headers to build a cache filename for the unauthenticated GET /avatarproxy/:jellyfinUserId route, allowing a malicious or compromised Jellyfin or Emby server, or a man-in-the-middle attacker on a plaintext media-server connection, to supply traversal sequences that path.join and fs.writeFile normalize outside the cache directory, overwrite /app/dist/index.js or other files, and execute code as the node user after a container restart. This issue is fixed in version 3.4.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:33.020"
-  },
-  {
-    "id": "CVE-2026-73374",
-    "description": "A stored cross-site scripting (XSS) vulnerability existed in Vulnerability-Lookup in the render_tag_badges Jinja filter used to display reference tags associated with vulnerability records.\n\nValues from containers.cna.references[].tags[] were directly interpolated into HTML badge elements and the resulting string was wrapped in markupsafe.Markup. Because Markup marks the generated content as safe, Jinja's automatic HTML escaping was bypassed.\n\nAn authenticated user with permissions to create or modify vulnerability records, such as a user holding the vulnerability:create or vulnerability:modify permission, could submit a crafted reference tag through the CNA API containing arbitrary HTML or JavaScript-capable markup.\n\nThe malicious value would subsequently be stored as part of the vulnerability record. When another user visited the corresponding public /cve/<id> or /vuln/<id> page, the crafted tag would be rendered as HTML in the viewer's browser. This could result in JavaScript execution in the security context of the Vulnerability-Lookup application.\n\nSuccessful exploitation could allow an attacker to perform actions in the context of a victim, access information available to the victim's browser session, or modify page content. As the affected vulnerability pages can be accessed publicly, exploitation may affect users who are not authenticated.\n\nThe issue was corrected by applying markupsafe.escape() to each reference tag before inserting it into the HTML badge markup, while retaining Markup only for the static HTML scaffolding.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:33.173"
-  },
-  {
-    "id": "CVE-2026-73405",
-    "description": "An authorization bypass vulnerability in Vulnerability-Lookup allowed inactive or unconfirmed accounts to subscribe to Server-Sent Events (SSE) streams through the /pubsub/subscribe/<topic> endpoint.\n\n\nThe token_required decorator used by the Pub/Sub interface authenticated requests solely by matching the X-API-KEY header against an existing user API key. Unlike the REST API authentication mechanism, it did not verify the account's is_active and is_confirmed state.\n\n\nBecause the self-registration process issues an API key before account confirmation is completed, an attacker could create an account and immediately use the resulting API key to access Pub/Sub topics that should only be available to active, confirmed users. This could expose stream events that would otherwise be inaccessible through the REST API, including newly submitted or not-yet-moderated data such as comments.\n\n\nThe vulnerability results from inconsistent authorization enforcement between the REST API and the SSE streaming interface.\n\n\nThe patch corrects the issue by requiring accounts to be both active and confirmed before permitting access to Pub/Sub streams, bringing the SSE authorization boundary in line with the REST API.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:33.343"
-  },
-  {
-    "id": "CVE-2026-73431",
-    "description": "Vulnerability-Lookup contains an \nauthentication weakness in its account activation and password-recovery \nmechanism. Activation and recovery links were generated using stateless \nsigned tokens containing only the user's login. Although the token \nsignature and age were validated, the application did not track whether a\n token had already been successfully used. As a result, a captured \nactivation or password-recovery link remained valid for the entire \nconfigured TOKEN_VALIDITY_PERIOD, even after the associated password had been changed. \n\n\nAn attacker who obtains a valid \nactivation or recovery token could therefore replay it multiple times \nduring its validity period to set a new password and repeatedly take \ncontrol of the affected account. In addition, tokens were not bound to a\n specific purpose, allowing the same token mechanism to be used across \nactivation and recovery workflows. The patch introduces purpose-bound \ntokens and a random nonce whose SHA-256 digest is stored with the user \naccount. The nonce is invalidated after a successful password change, \nmaking tokens single-use, while issuing a new token invalidates any \npreviously issued token.  The password-setting operation now explicitly consumes the token before committing the account change. \n\n\nSuccessful exploitation requires \nthe attacker to obtain a currently valid activation or recovery link, \nbut does not require knowledge of the victim's existing password or an \nauthenticated session.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:33.483"
-  },
-  {
-    "id": "CVE-2026-73432",
-    "description": "Vulnerability-Lookup contains a server-side request forgery (SSRF) vulnerability in the remote-instance synchronization functionality. Remote instance addresses were validated only for basic URL syntax before being stored, while the synchronization worker later dereferenced these addresses using requests.get() with automatic redirect handling and without enforcing network-boundary restrictions. \n\n\nAn authenticated administrator with the admin:access permission could configure a remote instance whose address points to an internal, loopback, link-local, or cloud metadata HTTP(S) service. When synchronization is performed, the Vulnerability-Lookup server would issue the request from its own network context. An attacker could also use a publicly accessible URL that redirects to an internal destination, because redirects were previously followed without revalidating the destination.\n\n\nSuccessful exploitation could allow a privileged attacker to probe or interact with services that are accessible from the Vulnerability-Lookup server but not directly reachable by the attacker, including private network services or cloud instance metadata endpoints. The exact confidentiality, integrity, or availability impact depends on the services reachable from the application server.\n\n\nThe patch introduces a shared outbound URL policy that restricts remote instances to HTTP(S), rejects non-public IP addresses, resolves hostnames at request time, and manually validates each redirect destination before following it.  The implementation explicitly blocks private, loopback, link-local, multicast, reserved, and unspecified addresses.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T15:18:33.617"
-  },
-  {
-    "id": "CVE-2025-20020",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:50.800"
-  },
-  {
-    "id": "CVE-2025-24488",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:50.900"
-  },
-  {
-    "id": "CVE-2025-24837",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:50.967"
-  },
-  {
-    "id": "CVE-2025-25275",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.023"
-  },
-  {
-    "id": "CVE-2025-27245",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.087"
-  },
-  {
-    "id": "CVE-2025-27570",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.147"
-  },
-  {
-    "id": "CVE-2025-30178",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.203"
-  },
-  {
-    "id": "CVE-2025-31943",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.270"
-  },
-  {
-    "id": "CVE-2025-32084",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.330"
-  },
-  {
-    "id": "CVE-2025-32087",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.390"
-  },
-  {
-    "id": "CVE-2025-32737",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.450"
-  },
-  {
-    "id": "CVE-2025-35977",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.513"
-  },
-  {
-    "id": "CVE-2025-35988",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority because it is Unused",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:51.577"
-  },
-  {
-    "id": "CVE-2026-15803",
-    "description": "In Eclipse RDF4J, several XML parser entry points do not fully restrict XML External Entity (XXE) processing when parsing untrusted XML-based RDF data or query results, permitting DOCTYPE declarations, external entity references, and external DTD loading. This is due to an incomplete fix for CVE-2018-1000644: the earlier fix did not cover all parser entry points. The issue is resolved in RDF4J 5.3.2, which rejects or disables DOCTYPE declarations, external entities, and external DTD loading by default.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:16:54.877"
-  },
-  {
-    "id": "CVE-2026-19548",
-    "description": "Multiple Use-After-Free vulnerabilities were found in the add_archive_element function in ld/ldmain.c of the GNU linker (ld), a component of binutils. The root cause is that plugin_maybe_claim() in ld/plugin.c frees the original BFD object via bfd_close/_bfd_delete_bfd when entry->the_bfd->my_archive == NULL, but the caller retains both the original abfd parameter and a shallow copy (orig_input.the_bfd) as dangling pointers. These dangling pointers are subsequently dereferenced at three distinct locations in add_archive_element:\n\n1. Line ~1442: accessing abfd->my_archive via bfd_usrdata(abfd->my_archive)\n2. Line ~1493: multiple accesses to abfd and abfd->my_archive in a conditional check and bfd_get_filename call\n3. Line ~1525: dereferencing the shallow copy orig_input.the_bfd->my_archive in trace/verbose logging\n\nThe vulnerability is triggered when LTO plugins are active (link_info.lto_plugin_active is true) and the input object has abfd->my_archive == NULL, which is a valid state for standalone object files. Red Hat builds binutils with --enable-plugins and --enable-lto, confirming the vulnerable code path is compiled in and reachable.\n\nAn attacker who can supply a crafted object or archive file to a build process using LTO-enabled linking could exploit this flaw to cause a denial of service (linker crash via segmentation fault). Arbitrary code execution is theoretically possible through heap manipulation but is substantially mitigated by hardening measures including stack protector, FORTIFY_SOURCE, ASLR, and PIE.\n\nThe attack surface is limited to build-time environments — the linker is a development tool not exposed in production runtime. The most realistic exploitation scenario is a supply chain attack introducing a crafted object file as a build dependency in CI/CD pipelines or development environments.",
-    "severity": "Medium",
-    "tech": "Hardened images",
-    "published": "2026-08-12T16:16:55.777"
-  },
-  {
-    "id": "CVE-2026-54183",
-    "description": "Apache Airflow's secrets masker hides values stored under sensitive key names when they are displayed in the UI. The masker's recursion-depth limit did not descend into values nested inside a list, tuple, or set beyond that limit, so an Airflow Variable holding such a deeply-nested value was shown unmasked in the Variables UI. The exposure is limited to the UI: any authenticated user who can see the Variable in the UI can already read its full value through the Variables REST API, so this does not disclose data the user could not otherwise obtain — the masking is a shoulder-surfing defense for the UI, not an access-control boundary.\n\nThis is an incomplete-fix follow-up to CVE-2026-42358, whose fix made only the dictionary walk unbounded; lists, tuples, and sets beyond the depth limit remained unmasked in the UI. Deployments that applied the CVE-2026-42358 fix should also upgrade to address this residual case. Upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:04.640"
-  },
-  {
-    "id": "CVE-2026-58076",
-    "description": "Apache Airflow's serialization layer reconstructed exception nodes by calling `import_string()` on a class name taken from the serialized blob and instantiating it with arguments from the same blob, with no restriction on what could be imported. An operator's `executor_config` reaches that branch, so a Dag author could place a value there that causes an arbitrary callable to be imported and invoked -- for example `subprocess.check_output`, or `builtins.eval` on the `builtins`-prefixed variant. The code runs in the **Scheduler**, which reconstructs serialized Dags in its normal loop with no request involved, and in the **API server**, on any authenticated read of the Dag such as `GET /api/v2/dags/{dag_id}/details`. Both are components the Airflow security model states must never execute Dag-author code, and both hold the metadata database credentials and the JWT signing secret. No non-default configuration is required. This is a **different sink from CVE-2026-33264**, which covered only the trigger branch of the same deserializer: deployments that upgraded in response to that advisory are still affected through the exception branch and must upgrade again. Users are advised to upgrade to apache-airflow 3.3.1 or later, which restricts the imported class to a subclass of `BaseException`.",
-    "severity": "High",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:08.317"
-  },
-  {
-    "id": "CVE-2026-59242",
-    "description": "Apache Airflow's XCom `GET /api/v2/{...}/xcomEntries/{key}?deserialize=true` endpoint passed a string-literal payload through `BaseXCom.deserialize_value` without the `_check_forbidden_xcom_keys` guard, allowing an authenticated API user with XCom write-and-read access to instantiate arbitrary `airflow.*` classes on the API server (CWE-502). An authenticated user who can write an XCom value and then read it back with `deserialize=true` triggers the unsafe instantiation. Users are advised to upgrade to apache-airflow 3.3.1 or later, which rejects reserved XCom serialization keys submitted as JSON string literals.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:09.067"
-  },
-  {
-    "id": "CVE-2026-59244",
-    "description": "Apache Airflow's secrets masker did not mask `var.json` Variable values whose value is a dict in the Rendered Templates UI — the dict value failed an `isinstance(str)` guard — so a secret stored as a JSON Variable and referenced in a template via `var.json` was displayed in cleartext to any user with access to that task's Rendered Templates view. Users are advised to upgrade to apache-airflow 3.3.1 or later, which masks nested Variable values regardless of type.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:09.197"
-  },
-  {
-    "id": "CVE-2026-64639",
-    "description": "Incorrect database cloning process in Plesk from 18.0.52 before 18.0.79.6 and 18.0.80.2 allows a low-privileged user (customer, reseller) to execute arbitrary code on behalf of the database server administrator.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:12.280"
-  },
-  {
-    "id": "CVE-2026-65017",
-    "description": "Apache Airflow's Config API did not mask team-scoped sensitive configuration values in multi-team deployments. When an administrator has enabled multi-team mode and exposed the Config API, an authenticated Viewer holding only configuration-read access — with no prior access to the secret — could read a team-scoped Celery broker URL, including its embedded credentials, in cleartext, while the equivalent global option was correctly masked. The secrets masker matched only base section and option names and did not normalize team-prefixed sections before the sensitivity check (CWE-200). This is a distinct masker bypass from CVE-2026-48828 and CVE-2026-48892: deployments that upgraded to apache-airflow 3.3.0 to address those issues remain affected by this team-scoped variant. Users are advised to upgrade to apache-airflow 3.3.1 or later, which normalizes team-scoped sections before masking.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:12.577"
-  },
-  {
-    "id": "CVE-2026-65926",
-    "description": "An anonymous caller when anonymous access is enabled, or a low-privilege authenticated user, may learn private Release Bundle names and versions when the bundle name is known.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:13.393"
-  },
-  {
-    "id": "CVE-2026-65937",
-    "description": "In WhatsUp Gold versions released before 2026.0.2, an authenticated attacker can bypass frontend controls and inject persistent script content.",
-    "severity": "High",
-    "tech": "Whatsup gold",
-    "published": "2026-08-12T16:17:13.527"
-  },
-  {
-    "id": "CVE-2026-65938",
-    "description": "In WhatsUp Gold versions released before 2026.0.2, an improper authorization vulnerability in the Scheduled Reports API allows any authenticated user to invoke restricted actions.",
-    "severity": "Medium",
-    "tech": "Whatsup gold",
-    "published": "2026-08-12T16:17:13.667"
-  },
-  {
-    "id": "CVE-2026-65939",
-    "description": "In WhatsUp Gold versions released before 2026.0.2, a privileged attacker can create a LogToFile action specifying an arbitrary file extension within the IIS web root.",
-    "severity": "Medium",
-    "tech": "Whatsup gold",
-    "published": "2026-08-12T16:17:13.797"
-  },
-  {
-    "id": "CVE-2026-65940",
-    "description": "In WhatsUp Gold versions released before 2026.0.2, a privileged attacker can write arbitrary files to a web-accessible location on the host server.",
-    "severity": "Medium",
-    "tech": "Whatsup gold",
-    "published": "2026-08-12T16:17:13.927"
-  },
-  {
-    "id": "CVE-2026-65941",
-    "description": "In WhatsUp Gold versions released before 2026.0.2, an unauthenticated remote attacker with network access to the affected service can execute arbitrary code in the context of the IIS application service account.",
-    "severity": "High",
-    "tech": "Whatsup gold",
-    "published": "2026-08-12T16:17:14.050"
-  },
-  {
-    "id": "CVE-2026-66016",
-    "description": "Under specific self-hosted Helm configurations, generated TLS private keys may be retained in rendered manifests accessible to highly privileged local users.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:14.383"
-  },
-  {
-    "id": "CVE-2026-66384",
-    "description": "An authenticated user may write data outside the intended Docker cache path under specific remote-repository conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T16:17:14.520"
-  },
-  {
-    "id": "CVE-2026-67260",
-    "description": "Apache Airflow 3.3.0 moved human-in-the-loop tasks from the triggerer to a new `awaiting_input` task state swept by the scheduler. That sweep deserializes the task instance's `next_kwargs` without an allow-list, so a Dag author — who controls that value through the task execution API — can cause an arbitrary module import and object instantiation inside the scheduler process, or terminate the scheduler job. No non-default configuration is required: the sweep runs unconditionally every 15 seconds, and the default `allowed_deserialization_classes` setting does not cover this code path. Versions before 3.3.0 are not affected, because human-in-the-loop tasks deferred onto the triggerer instead. This is a different code path from CVE-2026-58076, which covers the same unguarded exception-node deserialization reached elsewhere — deployments that applied that fix must upgrade for this issue as well. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "High",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:14.813"
-  },
-  {
-    "id": "CVE-2026-67587",
-    "description": "Apache Airflow's Task SDK rebuilt a `Callback` object from serialized data by re-running its constructor, which imports the module named by the stored callback path. Because `SyncCallback` is itself an Airflow class it passes the default `allowed_deserialization_classes` allow-list, so tightening that setting does not help. A Dag author — who controls a task instance's `next_kwargs` through the task execution API — can therefore cause an arbitrary module to be imported inside the scheduler process, when the scheduler's `awaiting_input` timeout sweep deserializes that value. No non-default configuration is required; the sweep runs unconditionally. Versions before 3.3.0 are not affected: the class existed, but the scheduler sweep that reaches it did not. This is a separate code path from CVE-2026-58076 and CVE-2026-67260, which cover different gadgets reaching deserialization — applying either of those fixes does not address this one. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "High",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:15.090"
-  },
-  {
-    "id": "CVE-2026-68076",
-    "description": "Apache Airflow's environment-variable secrets backend resolved a team-scoped Connection or Variable from the wrong team's scope. The guard meant to prevent this only ran when no team scope was supplied, and its pattern could not match a team name containing an underscore, which team names are allowed to contain. When the guard did not apply, the lookup fell through to an unconditional global read that resolved the stored `AIRFLOW_CONN__<TEAM>___<ID>` variable regardless of which team asked. In multi-team mode an authenticated user of one team could therefore have `POST /api/v2/connections/test` resolve another team's Connection and authenticate outward with that team's credentials; the endpoint uses the credentials rather than returning them. Exploitation requires `[core] multi_team` enabled, `[core] test_connection` set to `Enabled` (it ships `Disabled`), team-scoped secrets provisioned as environment variables in the API-server process, and knowledge of the encoded identifier. Redirecting the test at an attacker-controlled host is separately blocked. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:15.223"
-  },
-  {
-    "id": "CVE-2026-68758",
-    "description": "A low-privileged authenticated user may access restricted support information under specific conditions.",
-    "severity": "Medium",
-    "tech": "Artifactory",
-    "published": "2026-08-12T16:17:15.540"
-  },
-  {
-    "id": "CVE-2026-68759",
-    "description": "A holder of a valid integration credential may impersonate other users under specific conditions.",
-    "severity": "High",
-    "tech": "Artifactory",
-    "published": "2026-08-12T16:17:16.887"
-  },
-  {
-    "id": "CVE-2026-68968",
-    "description": "Apache Airflow's Backfill API authorized a request against a Dag id supplied by the caller whenever the `backfill_id` path segment failed to parse. The authorization dependency parsed it with `int()` while the route handler parsed it as pydantic's `NonNegativeInt`, which accepts values `int()` rejects (`1.0` coerces to `1`); FastAPI resolves dependencies before endpoint validation, so the two acted on different Dags. An authenticated user holding edit permission on any single Dag could therefore read, pause and cancel backfills belonging to any other Dag, including moving another Dag's queued runs to `failed`. No non-default configuration is required and backfill ids are sequential, so finding a target is trivial. Users are advised to upgrade to apache-airflow 3.3.1 or later, which parses the backfill id with the same type the routes declare.",
-    "severity": "High",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:19.607"
-  },
-  {
-    "id": "CVE-2026-68969",
-    "description": "Apache Airflow wrote Variable values and Connection `extra` contents to the audit log in cleartext when they were submitted through the bulk endpoints (`PATCH /api/v2/variables` and `PATCH /api/v2/connections`). The audit-log masking recognised only top-level request fields, and a bulk request nests its entities two levels below, so no masking was applied to them. Any authenticated user with audit-log read access -- who need not hold Variables or Connections read at all -- could recover those secrets verbatim, and the Connection `extra` copy is stored unencrypted in the log while the connection table encrypts it. The Airflow UI's *Import Variables* action posts to this endpoint, so an ordinary operator import wrote every secret in the file to the log. This is a different code path from CVE-2026-50204: that fix shipped in 3.3.0 and covers the single-entity endpoints only, so deployments that upgraded in response to that advisory remain affected and must upgrade again. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:19.730"
-  },
-  {
-    "id": "CVE-2026-68970",
-    "description": "Apache Airflow's Task SDK did not mask the contents of a Variable whose JSON value is a list, so secrets stored in that shape appeared in cleartext in task logs and in the Rendered Templates UI. Masking was applied only when the deserialized value was a string or a dict; a list at the top level matched neither and was returned unmasked. Any authenticated user able to read the logs or rendered templates of a task that references such a Variable could recover the values, with no special configuration required. This is the list-shaped counterpart of CVE-2026-59244, whose fix covered the dict case only, so deployments that upgraded in response to that advisory remain affected and must upgrade again. Users are advised to upgrade to apache-airflow 3.3.1 or later.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:19.853"
-  },
-  {
-    "id": "CVE-2026-68971",
-    "description": "Apache Airflow's asset materialization endpoint (`POST /api/v2/assets/{asset_id}/materialize`) and the XCom result check on `wait_dag_run_until_finished` authorized the target Dag without its team, unlike every other authorization site. A team-aware auth manager distinguishes a team-scoped Dag from a global one by that field -- the Keycloak auth manager, for example, checks the `DAG` resource instead of `DAG:<team>` -- so the team-scoped permission that should gate the request was never consulted. In a deployment running multi-team mode with a team-aware auth manager, an authenticated user in one team could trigger Dag runs belonging to another team, supplying their own `dag_run_id` and `conf`, and could read another team's XCom values. Deployments using the FAB auth manager are unaffected, as it has no multi-team support. Users are advised to upgrade to apache-airflow 3.3.1 or later, which resolves the Dag's team at both sites.",
-    "severity": "Medium",
-    "tech": "Airflow",
-    "published": "2026-08-12T16:17:19.970"
-  },
-  {
-    "id": "CVE-2026-69105",
-    "description": "An unauthenticated attacker may cause untrusted package content to be cached under specific conditions, potentially affecting artifact integrity and availability.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:20.093"
-  },
-  {
-    "id": "CVE-2026-69107",
-    "description": "An unauthenticated user may access restricted artifacts in JFrog Artifactory under specific conditions.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:20.220"
-  },
-  {
-    "id": "CVE-2026-70547",
-    "description": "An authenticated user without repository read permission may access package metadata under specific conditions.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:21.440"
-  },
-  {
-    "id": "CVE-2026-73292",
-    "description": "Semaphore UI is a web interface for managing DevOps tools. Prior to 2.18.21, the /api/users/{id}/password endpoint accepts a cross-site request using the authenticated user's semaphore session cookie without CSRF protection or current-password confirmation, allowing an unauthenticated attacker to change an administrator's or another user's password after user interaction. This issue is fixed in version 2.18.21.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:22.343"
-  },
-  {
-    "id": "CVE-2026-73293",
-    "description": "Semaphore UI is a web interface for managing DevOps tools.  Prior to 2.18.19 and from 2.19.0-alpha3 until 2.19.5-beta5, ProjectMiddleware and GetProjectOrGlobalRoleBySlug allow a project manager to use POST /api/project/{id}/roles to create a custom manager role with permission bitmask 15, overriding the built-in manager permissions and granting CanUpdateProject and CanManageProjectUsers owner capabilities. This issue is fixed in versions 2.18.19 and 2.19.5-beta5.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:22.493"
-  },
-  {
-    "id": "CVE-2026-73294",
-    "description": "Semaphore UI is a web interface for managing DevOps tools. Prior to 2.18.17 and 2.19.5-beta2, repository git_url handling passes an attacker-controlled --upload-pack option to CmdGitClient.GetLastRemoteCommitHash through POST /api/project/{id}/repositories and scheduled commit-hash polling, allowing a project Manager or Owner to execute arbitrary OS commands in the Semaphore server process. This issue is fixed in versions 2.18.17 and 2.19.5-beta2.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:22.640"
-  },
-  {
-    "id": "CVE-2026-73325",
-    "description": "Fujitsu Research's OneCompression library before 1.2.1 contains an unsafe deserialization vulnerability that allows attackers to execute arbitrary code by supplying a crafted model.pt checkpoint file, as QuantizedModelLoader.load_quantized_model_pt() unconditionally calls torch.load with weights_only=False, invoking Python's pickle machinery during deserialization. Attackers can embed malicious __reduce__ methods in a crafted model checkpoint to execute arbitrary Python code, including system commands, when the library loads the file from a caller-selected model directory.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T16:17:23.000"
-  },
-  {
-    "id": "CVE-2026-16694",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 is vulnerable to stored cross-site scripting. This vulnerability allows an authenticated user to embed arbitrary JavaScript code in the Web UI thus altering the intended functionality potentially leading to credentials disclosure within a trusted session.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T17:17:23.993"
-  },
-  {
-    "id": "CVE-2026-17094",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information and manipulate files due to a path traversal vulnerability.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T17:17:24.443"
-  },
-  {
-    "id": "CVE-2026-17095",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to unsafe reflection.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T17:17:24.570"
-  },
-  {
-    "id": "CVE-2026-18098",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information and compromise system integrity due to an XML injection flaw.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T17:17:24.993"
-  },
-  {
-    "id": "CVE-2026-18106",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to improper validation of user-supplied path input.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T17:17:25.120"
-  },
-  {
-    "id": "CVE-2026-18144",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to improper authorization.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T17:17:25.247"
-  },
-  {
-    "id": "CVE-2026-18246",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to an interpretation conflict in the multipart parser.",
-    "severity": "Low",
-    "tech": "I",
-    "published": "2026-08-12T17:17:25.527"
-  },
-  {
-    "id": "CVE-2026-18499",
-    "description": "IBM WebSphere Application Server - Liberty 17.0.0.3 through 26.0.0.8 is vulnerable to a privilege escalation when using Liberty collectives.",
-    "severity": "High",
-    "tech": "Websphere application server",
-    "published": "2026-08-12T17:17:25.650"
-  },
-  {
-    "id": "CVE-2026-18683",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 is vulnerable to privilege escalation via Navigator for i. An authenticated user could elevate privileges to a root user to execute commands.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T17:17:25.790"
-  },
-  {
-    "id": "CVE-2026-18847",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote unauthenticated attacker to harvest credentials due to spoofing of Navigator for i.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T17:17:25.920"
-  },
-  {
-    "id": "CVE-2026-48550",
-    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 are vulnerable to reflected cross-site scripting in cmd.cgi via the NagFormId parameter. An unauthenticated remote attacker can craft a malicious link that, when followed by an authenticated user, executes arbitrary JavaScript in the victim's browser.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:27.190"
-  },
-  {
-    "id": "CVE-2026-48551",
-    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 contain a cross-site request forgery protection bypass via a self-supplied double-submit cookie. An attacker can supply matching cookie and request parameter values to bypass CSRF protection, enabling unauthenticated attackers to run commands as authorized users via malicious links.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:27.353"
-  },
-  {
-    "id": "CVE-2026-48552",
-    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 are vulnerable to DOM-based cross-site scripting in jsonquery.js. Unencoded JSON string values reflected from stored fields are inserted into the DOM without sanitization, allowing attackers to run arbitrary JavaScript in the victim's browser.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:27.523"
-  },
-  {
-    "id": "CVE-2026-48553",
-    "description": "Nagios Core before 4.5.13 and Nagios XI before 2026R1.5 are vulnerable to authenticated remote code execution via custom-variable macro injection through the Nagios Remote Data Processor (NRDP). When a custom variable defined on a host, service, or contact is referenced in a shell-executed command line, an authenticated attacker with NRDP access can inject OS commands through the macro value. Exploitation requires a non-default configuration in which a custom variable is defined and referenced in a shell-executed command.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:27.697"
-  },
-  {
-    "id": "CVE-2026-48554",
-    "description": "Nagios Core before 4.5.14 and Nagios XI before 2026R1.7 are vulnerable to authenticated remote code execution via unfiltered NOTIFICATION-family macro substitution through the com_data parameter. When a notification command references $NOTIFICATIONCOMMENT$ or $NOTIFICATIONAUTHOR$ in a shell-reachable position, authenticated UI users can run arbitrary commands as the nagios user. Exploitation requires a non-default configuration in which a notification command references these macros in a shell-executed command line.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:27.840"
-  },
-  {
-    "id": "CVE-2026-73237",
-    "description": "XSS vulnerability in Markdown handling in Apache Allura.\n\nThis issue affects Apache Allura: from 1.10.0 before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
-    "severity": "Medium",
-    "tech": "Allura",
-    "published": "2026-08-12T17:17:31.960"
-  },
-  {
-    "id": "CVE-2026-73238",
-    "description": "XSS vulnerability in code display in Apache Allura.\n\nThis issue affects Apache Allura: before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
-    "severity": "Medium",
-    "tech": "Allura",
-    "published": "2026-08-12T17:17:32.080"
-  },
-  {
-    "id": "CVE-2026-73239",
-    "description": "Insecure Direct Object Reference (IDOR) due to missing permission checks for multiple Artifact types in Apache Allura.\n\nThis issue affects Apache Allura: before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
-    "severity": "Medium",
-    "tech": "Allura",
-    "published": "2026-08-12T17:17:32.190"
-  },
-  {
-    "id": "CVE-2026-73240",
-    "description": "Specifically crafted inputs may lead to git argument injection in Apache Allura.\n\nThis issue affects Apache Allura: before 1.19.1.\n\nUsers are recommended to upgrade to version 1.19.1, which fixes the issue.",
-    "severity": "Critical",
-    "tech": "Allura",
-    "published": "2026-08-12T17:17:32.307"
-  },
-  {
-    "id": "CVE-2026-73295",
-    "description": "Material for MkDocs is a powerful documentation framework built on top of MkDocs. From 7.2.0 until 9.7.7, the mountSearchSuggest function in src/templates/assets/javascripts/components/search/suggest/index.ts contains a DOM-based cross-site scripting vulnerability in the optional search.suggest feature that allows a crafted q URL parameter to execute JavaScript in a documentation site's origin after user interaction. This issue is fixed in version 9.7.7.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:32.637"
-  },
-  {
-    "id": "CVE-2026-73296",
-    "description": "Microsoft UFO open-source framework for intelligent automation across devices and platforms. Prior to 3.0.8, create_mobile_data_collection_server and create_mobile_action_server in ufo/client/mcp/http_servers/mobile_mcp_server.py exposed Streamable HTTP MCP services on TCP ports 8020 and 8021 without authentication, allowing an unauthenticated remote attacker to invoke capture_screenshot, get_ui_tree, tap, swipe, type_text, launch_app, press_key, and click_control against an ADB-connected Android device, disclose screen and device data, and modify device state. This issue is fixed in version 3.0.8.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:32.780"
-  },
-  {
-    "id": "CVE-2026-73297",
-    "description": "Microsoft UFO open-source framework for intelligent automation across devices and platforms. Prior to 3.0.8, _is_blocked_ip in ufo/utils/url_security.py did not block NAT64 prefixes 64:ff9b::/96 and 64:ff9b:1::/48, the 6to4 prefix 2002::/16, or the Teredo prefix 2001::/32 and did not re-check embedded IPv4 destinations, allowing an unauthenticated remote attacker who can influence URLs processed by validate_url to bypass the SSRF guard and reach cloud metadata, internal services, or localhost. This issue is fixed in version 3.0.8.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T17:17:32.933"
-  },
-  {
-    "id": "CVE-2026-15423",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 19.0 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to execute CI/CD pipelines on a protected branch without the required push permissions due to improper authorization in pipeline reference validation.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-08-12T18:17:23.820"
-  },
-  {
-    "id": "CVE-2026-16627",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 19.2 before 19.2.2 that under certain conditions could have allowed an authenticated user with developer-role permissions to escalate privileges due to improper sanitization of HTML content rendered in a CI job modal.",
-    "severity": "High",
-    "tech": "Gitlab",
-    "published": "2026-08-12T18:17:24.160"
-  },
-  {
-    "id": "CVE-2026-16856",
-    "description": "IBM i 7.6, and 7.5 could allow a local attacker to gain elevated privileges due to improper neutralization of special elements used in an OS command.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:24.277"
-  },
-  {
-    "id": "CVE-2026-16860",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary code due to an uncontrolled search path element.",
-    "severity": "Critical",
-    "tech": "I",
-    "published": "2026-08-12T18:17:24.397"
-  },
-  {
-    "id": "CVE-2026-16863",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to an out-of-bounds read.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:24.517"
-  },
-  {
-    "id": "CVE-2026-16904",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary commands due to improper privilege management during monitor owner reassignment.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:24.633"
-  },
-  {
-    "id": "CVE-2026-16906",
-    "description": "IBM i 7.6, and 7.5 could allow a remote authenticated attacker to execute arbitrary commands with elevated privileges due to improper neutralization of special elements used in an OS command.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:24.773"
-  },
-  {
-    "id": "CVE-2026-16907",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary code due to improper bounds checking.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:24.890"
-  },
-  {
-    "id": "CVE-2026-16931",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to cause a denial of service due to improper handling of zero-length TCP options.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:25.010"
-  },
-  {
-    "id": "CVE-2026-16956",
-    "description": "IBM Db2 Mirror for i 7.4, 7.5, and 7.6 could allow a remote attacker to execute arbitrary commands due to improper neutralization of special elements used in an OS command.",
-    "severity": "Critical",
-    "tech": "Db2 mirror for i",
-    "published": "2026-08-12T18:17:25.133"
-  },
-  {
-    "id": "CVE-2026-17109",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to add unexpected parameters to a command due to parameter injection.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T18:17:25.503"
-  },
-  {
-    "id": "CVE-2026-17110",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary commands and obtain sensitive information due to improper privilege management.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:25.717"
-  },
-  {
-    "id": "CVE-2026-17218",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to execute arbitrary code due to an out-of-bounds write.",
-    "severity": "Critical",
-    "tech": "I",
-    "published": "2026-08-12T18:17:25.867"
-  },
-  {
-    "id": "CVE-2026-17222",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to modify data in certain SQL tables due to improper neutralization of special elements used in an SQL command.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.027"
-  },
-  {
-    "id": "CVE-2026-17248",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to cause a denial of service due to improper neutralization of special elements in an OS command.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.190"
-  },
-  {
-    "id": "CVE-2026-17266",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information due to improper limitation of a pathname to a restricted directory.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.313"
-  },
-  {
-    "id": "CVE-2026-17268",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to improper validation of a session token.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.437"
-  },
-  {
-    "id": "CVE-2026-17271",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote attacker to cause a denial of service due to improper validation of input size.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.557"
-  },
-  {
-    "id": "CVE-2026-17276",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to escalate privileges due to improper authorization in the handling of high-authority threads.",
-    "severity": "Critical",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.680"
-  },
-  {
-    "id": "CVE-2026-17418",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a local authenticated attacker to cause a denial of service due to improper neutralization of special elements used in an SQL command.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.807"
-  },
-  {
-    "id": "CVE-2026-17419",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to modify SQL tables due to improper neutralization of special elements used in an SQL command.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T18:17:26.950"
-  },
-  {
-    "id": "CVE-2026-17420",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to bypass security restrictions due to improper neutralization of special elements in an SQL parameter.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T18:17:27.073"
-  },
-  {
-    "id": "CVE-2026-18235",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to execute arbitrary Control Language commands due to insufficient input validation.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:28.000"
-  },
-  {
-    "id": "CVE-2026-18244",
-    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.7 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2 that under certain conditions could have allowed an authenticated user to view restricted configuration settings due to improper authorization checks on a group settings page.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-08-12T18:17:28.127"
-  },
-  {
-    "id": "CVE-2026-18250",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 could allow a remote authenticated attacker to obtain sensitive information and bypass security restrictions due to a race condition.",
-    "severity": "Medium",
-    "tech": "I",
-    "published": "2026-08-12T18:17:28.253"
-  },
-  {
-    "id": "CVE-2026-18669",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 is vulnerable to a privilege escalation as the result of a remote code execution vulnerability in the activation engine component. An authenticated attacker can execute a maliciously planted script with root authority.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:28.723"
-  },
-  {
-    "id": "CVE-2026-18713",
-    "description": "IBM i 7.6, 7.5, 7.4, and 7.3 s vulnerable to privilege escalation via Navigator for i. An authenticated user could elevate privileges to a root user to execute commands.",
-    "severity": "High",
-    "tech": "I",
-    "published": "2026-08-12T18:17:28.967"
-  },
-  {
-    "id": "CVE-2026-42018",
-    "description": "JFrog Artifactory could return an internal anonymous-user token to an unauthenticated caller when anonymous access is disabled, potentially exposing sensitive resources.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:17:29.473"
-  },
-  {
-    "id": "CVE-2026-44741",
-    "description": "Pimcore's Admin Classic Bundle provides a Backend UI for Pimcore. Versions prior to 2.3.6 and 1.7.18 have a SQL injection vulnerability in Pimcore's translation grid date filter — the user-supplied `property` field from the filter JSON is interpolated directly into a `UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(...)))` SQL expression without parameterization or allowlist validation. Versiosn 2.3.6 and 1.7.18 fix the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:17:29.823"
-  },
-  {
-    "id": "CVE-2026-49467",
-    "description": "Pingvin Share X is a secure and easy self-hosted file sharing platform. A vulnerability in versions 1.5.0 through 1.18.0 allow an attacker to bypass password verification when managing Time-based One-Time Password (TOTP) settings. The root cause is a missing `await` keyword on calls to the asynchronous `verifyPassword` method in `authTotp.service.ts` and the `authenticateUser` method in `auth.service.ts`. In JavaScript, an unawaited `Promise` is always truthy. So the logic intended to throw a `ForbiddenException` when a password is incorrect. It never executes because the expression evaluates the existence of the `Promise` object rather than its resolved boolean result. The vulnerability is fixed in version 1.18.1 by ensuring all asynchronous authentication calls are properly awaited. There are no official workarounds. If a user is locked out, an administrator must manually reset the user's TOTP status in the database.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:17:30.637"
-  },
-  {
-    "id": "CVE-2026-69106",
-    "description": "A low-privileged user may poison cached artifact metadata under specific conditions, potentially causing consumers to retrieve untrusted content.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:18:11.273"
-  },
-  {
-    "id": "CVE-2026-73298",
-    "description": "The Microsoft Container Migration Solution Accelerator is a multi-service application that provides a multi-agent, AI-driven migration solution for moving container service configurations to Azure Kubernetes Service. In version 2.1.2 and earlier, a security vulnerability was identified in the Container Migration Solution Accelerator, specifically an authenticated IDOR (Insecure Direct Object Reference) that allows users to read, write, and delete processes belonging to other authenticated users. The issue affects multiple API endpoints, where ownership checks are missing, enabling unauthorized access and modification of migration data across users within the same organization. The vulnerability is present in both process and file management APIs, and the application relies on Entra ID authentication but lacks proper authorization controls between users. Authenticated users are able to access, modify, and delete processes and files belonging to other users without proper authorization checks.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:18:15.057"
-  },
-  {
-    "id": "CVE-2026-73299",
-    "description": "Prompty is a markdown file format (.prompty) for LLM prompts. Prior to 0.1.5 and 2.0.0-beta.5, the TypeScript Nunjucks renderer evaluated untrusted .prompty template bodies with unrestricted JavaScript member access. An attacker-controlled template could traverse constructor and prototype properties to execute JavaScript in the host Node.js process. This issue is fixed in versions 0.1.5 and 2.0.0-beta.5.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:18:15.197"
-  },
-  {
-    "id": "CVE-2026-73300",
-    "description": "Budibase is an open-source low-code platform. Prior to 3.40.0, the MySQL integration component in Budibase is configured with multipleStatements: true, enabling execution of multiple SQL statements in a single query. Attackers can inject malicious SQL commands through user input fields, leading to complete database compromise. This vulnerability is fixed in 3.40.0.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:18:15.340"
-  },
-  {
-    "id": "CVE-2026-73327",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority as the reported behavior is intentional. The update process is designed to write files to disk and is restricted to the highest-privilege users working with cryptographically verified Joomla archives.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-12T18:18:15.480"
-  },
-  {
-    "id": "CVE-2026-7427",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.5 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2 that under certain conditions could have allowed an unauthenticated user to cause a denial of service due to improper input validation.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-08-12T18:18:16.157"
-  },
-  {
-    "id": "CVE-2026-8667",
-    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.6 before 19.0.6, 19.1 before 19.1.4, and 19.2 before 19.2.2  that under certain conditions could have allowed an authenticated user with developer role to modify certain package registry metadata without the required maintainer-level permissions due to improper authorization checks.",
-    "severity": "Medium",
-    "tech": "Gitlab",
-    "published": "2026-08-12T18:18:16.283"
-  },
-  {
     "id": "CVE-2026-18673",
     "description": "When kuma-dp is configured with the Envoy admin API on a Unix domain socket, which is the default, its readiness service on TCP port 9902 - bound to all interfaces - forwards almost the entire Envoy admin API to any caller that can reach the port, with no authentication.\n\n\n\nAn attacker with network access to a data plane's port 9902, for example another pod on the cluster network, can read Envoy and data plane configuration without credentials: config dumps, cluster and listener lists, stats, and the mesh trust bundle. Exposure is read-only - destructive Envoy admin actions are blocked and private keys are not exposed.",
     "severity": "Unknown",
@@ -1431,7 +297,7 @@
     "id": "CVE-2026-62420",
     "description": "An authorization bypass vulnerability in LXD allows an authenticated attacker to bypass target project security restrictions during cross-project instance migrations. When moving an instance cross-project to a different cluster member via POST /1.0/instances/{name} with migration: true, project: <target>, and target: <member>, the destination node skips all project restriction checks because the request arrives as an internal cluster notification. An attacker can exploit this to introduce disallowed instance configurations into a restricted project.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:46.897"
   },
   {
@@ -1445,49 +311,49 @@
     "id": "CVE-2026-63294",
     "description": "A link following vulnerability in LXD allows an attacker to achieve root command execution on the host system. During the import or unpacking of crafted image or backup archives, LXD fails to properly validate and confine the backup.yaml file when it exists as a symbolic link. An attacker can exploit this flaw by providing a malicious archive with a symlinked backup.yaml file, causing LXD to process unconfined configuration metadata and execute arbitrary commands with root privileges.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:47.187"
   },
   {
     "id": "CVE-2026-63295",
     "description": "An authorization bypass vulnerability in LXD allows an authenticated attacker to bypass project-level container isolation restrictions. When a project is configured with restrictions on container privileges (such as enforcing restricted.containers.privilege=isolated), LXD fails to enforce the requirement if an instance configuration omits the security.idmap.isolated key. An attacker can exploit this flaw by creating or updating an instance without explicitly setting security.idmap.isolated, bypassing the target project's security constraints.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:47.303"
   },
   {
     "id": "CVE-2026-63296",
     "description": "An authorization bypass vulnerability in LXD allows an authenticated attacker to bypass target project restrictions during instance migration. When migrating an instance to a target project, LXD accepts configuration overrides without validating the new configuration against the target project's enforced restrictions. An attacker can exploit this flaw to move instances with disallowed high-privilege configurations into restricted projects, bypassing security controls.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:47.437"
   },
   {
     "id": "CVE-2026-63297",
     "description": "An authorization bypass vulnerability in LXD due to a timing flaw during configuration merging allows an authenticated attacker to bypass target project restrictions during cross-project instance copies. When copying an instance to a target project, LXD performs restriction checks before configuration merging is complete, creating a time-of-check to time-of-use (TOCTOU) condition. An attacker can exploit this flaw to copy instances with disallowed high-privilege configurations into restricted projects, bypassing security controls.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:47.583"
   },
   {
     "id": "CVE-2026-63298",
     "description": "An improper neutralization of special elements vulnerability in LXD's NVIDIA instance configuration handling allows an authenticated attacker to inject arbitrary configuration directives. By supplying newline characters within the 'nvidia.driver.capabilities' or 'nvidia.require.*' configuration values, an attacker can manipulate the generated lxc.conf file. This flaw enables the attacker to execute arbitrary code on the host system with the privileges of the LXD daemon.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:47.713"
   },
   {
     "id": "CVE-2026-63299",
     "description": "An authorization bypass vulnerability in LXD allows an authenticated user to bypass project-level disk and volume limits. Two related code paths fail to verify resource limits during volume operations: the storagePoolVolumeTypePostMove function omits the limits.AllowVolumeCreation check before moving a volume across projects, and volume snapshot restore operations skip the AllowVolumeUpdate check when the configuration is nil (Config == nil). An attacker can exploit these flaws to allocate storage resources that exceed the administrative limits configured for a project.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:47.830"
   },
   {
     "id": "CVE-2026-63300",
     "description": "An improper validation vulnerability in the instancePostMigration function in lxd/instance_post.go of LXD allows an authenticated attacker with can_create_instances permissions on a restricted project to bypass project-level security restrictions. When migrating an instance between projects, LXD fails to validate the instance's configuration against the target project's enforced restrictions (such as restricted.containers.lowlevel, restricted.devices.*, and restricted.networks.access). An attacker can exploit this by creating a disallowed or high-privilege instance in an unrestricted project and subsequently moving it into the restricted project.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T20:17:47.953"
   },
   {
@@ -1893,7 +759,7 @@
     "id": "CVE-2026-16033",
     "description": "A path traversal vulnerability in LXD allows an attacker to achieve arbitrary host file read or unconstrained file creation. When processing image metadata templates, LXD fails to properly sanitize or restrict template file paths from escaping the instance templates directory (specifically affecting virtual machine / QEMU driver execution paths). An attacker can exploit this flaw by providing a crafted image archive with malicious template directives containing path traversal sequences, causing LXD to access or write files outside the intended template directory on the host system.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T21:17:35.880"
   },
   {
@@ -1935,28 +801,28 @@
     "id": "CVE-2026-18888",
     "description": "The MongoDB BI Connector ODBC Driver converts floating point column values into text without checking that the result fits within the destination buffer. When an application reads a sufficiently large floating point value as text, the driver may write beyond the end of that buffer and corrupt adjacent memory. A user who can store data in a collection read through the BI Connector could use this to crash the application performing the read.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Bi connector odbc driver",
     "published": "2026-08-12T21:17:37.170"
   },
   {
     "id": "CVE-2026-19001",
     "description": "The MongoDB BI Connector ODBC Driver may write outside the bounds of a fixed-size buffer when an application supplies an unusually long catalog, schema, or object name to a metadata retrieval function. This may result in memory corruption within the calling application's process, leading to abnormal termination and, under certain conditions, the potential for arbitrary code execution.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Bi connector odbc driver",
     "published": "2026-08-12T21:17:37.307"
   },
   {
     "id": "CVE-2026-19002",
     "description": "A missing bounds check when parsing stored procedure parameter metadata in the MongoDB BI Connector ODBC Driver can result in an out-of-bounds write in the client application process. Triggering this issue requires control over the server the driver connects to, or the ability to respond in its place, in order to return malformed metadata. The resulting memory corruption may cause the client application to terminate abnormally or, under certain conditions, execute unintended code.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Bi connector odbc driver",
     "published": "2026-08-12T21:17:37.440"
   },
   {
     "id": "CVE-2026-19004",
     "description": "An application using the MongoDB BI Connector ODBC Driver may experience a memory-safety issue when processing output parameters from a stored procedure. Triggering this issue requires connecting to an untrusted or impersonated database server that returns crafted metadata. This may result in process termination, disclosure of process memory, or, under certain conditions, arbitrary code execution.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Bi connector odbc driver",
     "published": "2026-08-12T21:17:37.577"
   },
   {
@@ -2012,7 +878,7 @@
     "id": "CVE-2026-66898",
     "description": "A path traversal vulnerability in LXD allows an attacker to manipulate file system paths during backup import and restore operations. When importing or restoring a backup archive, LXD fails to validate instance and storage volume names contained within the archive metadata. An attacker can exploit this flaw by supplying a crafted backup archive with malicious instance or volume names containing path traversal sequences, potentially allowing file access or overwriting outside the designated restore directory.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-12T21:17:39.700"
   },
   {
@@ -2145,7 +1011,7 @@
     "id": "CVE-2026-19003",
     "description": "A data source definition containing an over-length file path setting may cause the MongoDB BI Connector ODBC Driver setup dialog to write outside the bounds of an allocated buffer. The issue stems from an incorrect buffer capacity calculation in the dialog's file and folder selection handling, and is reached only when a user opens the setup dialog for such a data source and initiates a file or folder selection. Depending on build configuration, the result may range from abnormal process termination to, under certain conditions, execution of unintended code in the context of the user running the dialog.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Bi connector odbc driver",
     "published": "2026-08-12T22:17:15.153"
   },
   {
@@ -37488,91 +36354,91 @@
     "id": "CVE-2026-69224",
     "description": "There is an information disclosure vulnerability in Esri Portal for ArcGIS versions 12.0 and earlier that may under difficult to reproduce circumstances allow a remote, unauthenticated attacker to reflect sensitive information in a http response body.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:03.150"
   },
   {
     "id": "CVE-2026-69225",
     "description": "There is an information disclosure vulnerability in Esri Portal for ArcGIS versions 11.5 through 12.0 and earlier that may allow a remote, unauthenticated attacker to reflect sensitive information in a http response body.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:03.300"
   },
   {
     "id": "CVE-2026-69228",
     "description": "There is a missing authentication vulnerability in Esri Portal for ArcGIS versions 12.0 and prior that may allow a remote, unauthenticated attacker to access a specific resource (not user content) that should only be accessible by authenticated users. Users working with ArcGIS Enterprise 11.1, 11.3, 11.5, or 12.0 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:03.423"
   },
   {
     "id": "CVE-2026-69229",
     "description": "There is an HTML injection vulnerability in Esri Portal for ArcGIS versions 12.0 and prior that allows a remote, authenticated attacker to insert arbitrary HTML into the Portal for ArcGIS Home application. Users working with ArcGIS Enterprise 11.1, 11.3, 11.5 and 12.0 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:03.547"
   },
   {
     "id": "CVE-2026-69230",
     "description": "There is a stored cross site scripting issue in Esri Portal for ArcGIS versions 11.5 and prior that may allow a remote, administratively privileged attacker to inject malicious code that could potentially execute arbitrary in a victim’s browser. Users working with ArcGIS Enterprise 11.1, 11.3, and 11.5 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:03.670"
   },
   {
     "id": "CVE-2026-69231",
     "description": "There is a stored cross site scripting issue in Esri Portal for ArcGIS versions 11.5 and prior that may allow a remote, privileged attacker to inject malicious code that could potentially execute arbitrary JavaScript in a victim’s browser. Users working with ArcGIS Enterprise 11.1, 11.3, 11.5 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:03.787"
   },
   {
     "id": "CVE-2026-69232",
     "description": "There is a stored cross site scripting issue in Esri Portal for ArcGIS versions 11.5 and prior that may allow a remote, privileged attacker to inject malicious code that could potentially execute arbitrary JavaScript in a victim’s browser. Users working with ArcGIS Enterprise 11.1, 11.3, 11.5 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:03.907"
   },
   {
     "id": "CVE-2026-69233",
     "description": "There is a stored cross site scripting issue in Esri Portal for ArcGIS versions 11.5 and prior that may allow a remote, administratively privileged attacker to inject malicious code that could potentially execute arbitrary in a victim’s browser. Users working with ArcGIS Enterprise 11.1, 11.3, and 11.5 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:04.023"
   },
   {
     "id": "CVE-2026-69234",
     "description": "There is a reflected cross site scripting vulnerability in Esri Portal for ArcGIS versions 11.5 and prior which may allow a remote, unauthenticated attacker to create a crafted link which when clicked could potentially execute arbitrary JavaScript code in the victim’s browser. Users working with ArcGIS Enterprise 11.1, 11.3, and 11.5 are encouraged to patch. All users are advised to upgrade to the latest long-term support release. Users working with ArcGIS Web App Builder developer edition are advised to migrate to ArcGIS Experience Builder, as ArcGIS Web App Builder developer edition is unsupported when this CVE is assigned.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:04.140"
   },
   {
     "id": "CVE-2026-69235",
     "description": "There is a stored cross site scripting issue in Esri Portal for ArcGIS versions 11.5 and prior that may allow a remote, privileged attacker to inject malicious code that could potentially execute arbitrary in a victim’s browser. Users working with ArcGIS Enterprise 11.1, 11.3, and 11.5 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:04.260"
   },
   {
     "id": "CVE-2026-69236",
     "description": "There is a stored cross site scripting issue in Esri Portal for ArcGIS versions 12.1 and prior that may allow a remote, privileged attacker to inject malicious code that could potentially execute arbitrary JavaScript in a victim’s browser. Users working with ArcGIS Enterprise 11.1, 11.3, 11.5, 12.0 or 12.1 are encouraged to patch. All users are advised to upgrade to the latest long-term support release and apply the patch.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:04.380"
   },
   {
     "id": "CVE-2026-69237",
     "description": "There is an HTML injection vulnerability in Esri Portal for ArcGIS versions 11.3 and prior that allows a remote attacker with administrative privileges to insert arbitrary HTML into an administrative API. Users working with ArcGIS Enterprise 11.1, and 11.3 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:04.503"
   },
   {
     "id": "CVE-2026-69238",
     "description": "There is an HTML injection vulnerability in Esri Portal for ArcGIS versions 11.5 and prior that allows a remote, highly priviliged attacker to insert arbitrary HTML into the Portal for ArcGIS Home application. Users working with ArcGIS Enterprise 11.1, 11.3, and 11.5 are encouraged to patch. All users are advised to upgrade to the latest long-term support release.",
     "severity": "Low",
-    "tech": "Unknown",
+    "tech": "Portal for arcgis",
     "published": "2026-08-21T21:17:04.617"
   },
   {
@@ -40253,7 +39119,7 @@
     "id": "CVE-2026-66897",
     "description": "A path traversal vulnerability in LXD's instance template processing allows an attacker with container edit permissions, or any user launching a crafted image, to overwrite arbitrary files on the host system as root. When processing target template paths specified in metadata.yaml, LXD validates the path against a confined os.Root directory handle but subsequently opens and creates the file using os.Create with an unconfined string path. This discrepancy between path resolution checks and file creation allows an attacker to escape directory confinement, overwrite root-owned host files, and achieve host root code execution.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Lxd",
     "published": "2026-08-24T10:16:39.767"
   },
   {
@@ -50170,8 +49036,8 @@
   },
   {
     "id": "CVE-2026-65646",
-    "description": "Improper neutralization of special elements in Plesk allows remote authenticated users to disclose arbitrary local files and escalate privileges.",
-    "severity": "Unknown",
+    "description": "Improper neutralization of special elements in in Plesk's DNS zone management functionality allows remote authenticated users to disclose arbitrary local files and escalate privileges.",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-08-26T22:16:26.020"
   },
@@ -58012,14 +56878,14 @@
     "id": "CVE-2026-81532",
     "description": "A user able to submit SQL through an application using the MongoDB Connector for BI ODBC driver can supply a positioned-cursor statement whose cursor name exceeds the size of an internal fixed-length buffer. Because the name length is not bounded before the driver builds its diagnostic message, memory adjacent to that buffer is overwritten with user-supplied content. This can terminate the hosting application process and may allow unintended code to run within it.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Bi connector odbc driver",
     "published": "2026-08-28T22:16:54.793"
   },
   {
     "id": "CVE-2026-81533",
     "description": "An application using the MongoDB BI Connector ODBC Driver may encounter a memory-safety issue when a submitted SQL statement contains an unusually long run of digits following a LIMIT clause. The issue occurs only on connections where the driver's optional prefetch setting is enabled, and stems from the driver copying the digit sequence into a fixed-size internal buffer without checking its length. A user able to influence the numeric portion of a LIMIT clause could cause the hosting application process to terminate unexpectedly or corrupt adjacent memory in that process.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Bi connector odbc driver",
     "published": "2026-08-28T22:16:54.930"
   },
   {
@@ -68742,29 +67608,29 @@
   {
     "id": "CVE-2026-85236",
     "description": "A cross-site request forgery (CSRF) vulnerability existed in the cullEmptyEvents action of MISP. The endpoint performed a state-changing and irreversible operation while accepting HTTP GET requests.\n\n\nBecause bodyless GET requests are not subject to CakePHP's CSRF validation, an attacker could cause an authenticated MISP user with sufficient privileges to invoke the endpoint simply by causing their browser to load a crafted URL, for example through an embedded image or other automatically requested resource.\n\n\nSuccessful exploitation triggers the deletion of published empty events. The deletion is particularly significant because the operation uses skipBlocklist, meaning the removed events do not leave blocklist entries that could prevent or track their subsequent synchronization. This can result in unintended and potentially irreversible deletion of MISP event records without explicit user interaction.\n\n\nThe vulnerability was addressed by restricting cullEmptyEvents to HTTP POST requests, ensuring that CakePHP's normal CSRF protections are applied to the operation.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Misp",
     "published": "2026-09-03T16:18:27.013"
   },
   {
     "id": "CVE-2026-85237",
     "description": "A vulnerability in MISP's email-based one-time password (OTP) authentication flow allowed an attacker to perform an unrestricted number of OTP verification attempts.\n\n\nThe email_otp() endpoint did not apply brute-force protection when validating submitted OTP values. An attacker who had reached the OTP verification stage, for example after successfully providing a user's primary authentication credentials, could repeatedly submit candidate OTP values while the same OTP remained valid. This significantly increased the feasibility of guessing the OTP and bypassing the additional authentication factor, potentially resulting in unauthorized access to the affected user's account.\n\n\nThe issue was exacerbated by the fact that the OTP is associated with the user rather than with an individual pending login session, allowing multiple concurrent sessions to attempt guesses against the same valid OTP.\n\n\nThe patch integrates the existing MISP brute-force protection mechanism into the email OTP flow. Failed OTP attempts are now counted against the user, further attempts are rejected once the configured threshold is reached, and the active OTP is invalidated when the attempt budget is exhausted. Blocklisted users are also prevented from requesting the generation of a fresh OTP. In addition, OTP comparison now uses hash_equals() and validates that the submitted value is a string.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Misp",
     "published": "2026-09-03T16:18:27.163"
   },
   {
     "id": "CVE-2026-85238",
     "description": "MISP contains a session fixation vulnerability in the CustomAuth authentication (a custom configuration) flow. When a user was successfully authenticated through CustomAuth, MISP stored the authenticated user identity in the existing session without first rotating the session identifier.\n\n\nAs a result, if an attacker can cause a victim to use a session identifier known to the attacker before authentication, that same session identifier remains valid after the victim successfully authenticates. The attacker could subsequently reuse the fixed session identifier to access the victim's authenticated MISP session, potentially gaining the privileges associated with the victim's account.\n\n\nThe issue occurs because __customAuthentication() wrote the authenticated user into the existing CakePHP session while the call to Session->renew() had previously been disabled. The patch restores session identifier rotation when a new authentication occurs or when the authenticated user changes, while avoiding unnecessary session renewal on every request.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Misp",
     "published": "2026-09-03T16:18:27.313"
   },
   {
     "id": "CVE-2026-85239",
     "description": "A vulnerability in MISP's event template handling allowed an authenticated user with permission to create or modify event templates to bypass validation of the template definition field.\n\nThe EventTemplate::beforeValidate() method only performed semantic validation when the supplied definition was already represented as an array. If a caller instead supplied a pre-encoded string, including malformed JSON or JSON representing an unexpected data type, the value bypassed validateDefinition() and only needed to satisfy the generic notBlank validation rule. As a result, an invalid event template definition could be stored persistently in the database.\n\nWhen event templates were subsequently retrieved, EventTemplate::afterFind() attempted to decode the stored definition using JsonTool::decode() without handling decoding failures. A definition containing invalid JSON could therefore trigger an exception during retrieval. Because the event template index is available to all authenticated users, a single malicious or malformed template could make the event template listing and other functionality relying on EventTemplate queries return HTTP 500 errors until the offending database row was manually repaired.\n\nValid JSON representing an unexpected type, rather than the expected JSON object, could similarly result in invalid data reaching downstream consumers.\n\nThe vulnerability can therefore be exploited by a user capable of saving event templates to persist malformed template data and cause a persistent denial of service against event-template functionality for other users.\n\nThe patch enforces that event template definitions must be supplied as structured objects before saving and always applies semantic validation. On retrieval, malformed JSON and definitions that do not decode to the expected structure are caught, logged, and replaced with an empty definition, preventing a malformed database entry from breaking all event template queries.\n\n Poisoning doesn't seem reachable according to the lead developer.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Misp",
     "published": "2026-09-03T16:18:27.457"
   },
   {
@@ -73082,57 +71948,57 @@
   {
     "id": "CVE-2026-57159",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit 673b978, a remote out-of-bounds read and write can occur in the SDP negotiator when the remote payload-type map maintenance feature is enabled. assign_pt_and_update_map() in pjmedia/src/pjmedia/sdp_neg.c uses payload-type numbers taken from a remote SDP offer or answer to index fixed-size internal tables without sufficient bounds validation, so a crafted remote SDP can cause memory access outside those tables. The practical impact is memory corruption and denial of service; code execution is not demonstrated. This path is only reached when PJMEDIA_SDP_NEG_MAINTAIN_REMOTE_PT_MAP is enabled. The default is disabled, so default builds are not affected; the feature is an interoperability option that integrating products may enable. This issue has been patched via commit 673b978.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:53.313"
   },
   {
     "id": "CVE-2026-57160",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit d6a0e7f, a buffer overflow can occur in pjsip_generic_array_hdr_print() in pjsip/src/pjsip/sip_msg.c, the function that serializes generic array headers (such as Allow, Require, Supported, and Unsupported). Under certain output-buffer boundary conditions the function can write one byte past the end of the buffer. This is reachable mainly in applications that parse and re-serialize incoming SIP requests — for example a proxy, SBC, or B2BUA — where a remote peer can influence the serialized message. The out-of-bounds write is a single fixed byte; code execution and information disclosure are not demonstrated, and in typical pool-based allocations the byte falls within allocation slack. This issue has been patched via commit d6a0e7f.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:53.740"
   },
   {
     "id": "CVE-2026-57161",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit acc03b5, a stack buffer overflow exists in PJSUA when processing Service-Route headers in a registration response (update_service_route() in pjsua_acc.c). This affects applications that register using the PJSUA/PJSUA2 account API (the default registration path). The Service-Route URIs from a 2xx response to REGISTER are stored into a fixed-size array without bounding the number of headers; a registrar that returns an excessive number of Service-Route headers can write past the end of the array on the stack. The values written are internal pointers rather than arbitrary data, so the most likely impact is unexpected application termination (denial of service), though memory corruption cannot be excluded. The malicious response may come from a compromised or malicious registrar, or — over unprotected transports — a spoofed response. This issue has been patched via commit acc03b5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:54.193"
   },
   {
     "id": "CVE-2026-57162",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit a1b707c, a stack buffer overflow exists in the SRTP/SDES media transport when processing a=crypto attributes during SDP offer/answer (sdes_encode_sdp() in transport_srtp_sdes.c). This affects applications with SRTP enabled (use_srtp optional or mandatory, using SDES keying). During media negotiation, the crypto attributes from the remote SDP are collected into a fixed-size array without bounding their number; a remote peer that includes an excessive number of a=crypto attributes in a single media description can write past the end of that array on the stack. This is reachable from an incoming SIP INVITE during offer/answer, before application-level authentication. Impact may range from unexpected application termination to control flow hijack/memory corruption. Applications that do not enable SRTP are not affected. This issue has been patched via commit a1b707c.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:54.360"
   },
   {
     "id": "CVE-2026-57163",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit c4a151a, a stack buffer overflow exists in the GnuTLS TLS backend when parsing the Subject Alternative Name extension of a peer certificate (tls_cert_get_info() in ssl_sock_gtls.c). Only GnuTLS builds are affected (--with-gnutls); OpenSSL and Apple SecureTransport/Network.framework builds are not affected. While extracting certificate information after a TLS handshake, an incorrect buffer-size value can cause an oversized SubjectAltName entry to be written past the end of a fixed-size stack buffer. A network-positioned attacker presenting a crafted certificate — a malicious server to a connecting client, or a malicious client to a server that requests certificates — can trigger this during the TLS handshake, before any SIP-level authentication. Impact may range from unexpected application termination to control flow hijack/memory corruption. This issue has been patched via commit c4a151a.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:54.547"
   },
   {
     "id": "CVE-2026-57164",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit 8d5956a, a heap buffer overflow exists in the PJLIB-UTIL HTTP client (http_client.c) when buffering an HTTP response body. This affects applications that use the PJLIB-UTIL HTTP client to receive a whole response body at once (a completion callback with no incremental on_data_read callback). When growing the response buffer, an incorrect size calculation based on the server-supplied Content-Length can leave the buffer too small, causing response data to be written past the end of the allocation. A malicious or man-in-the-middle HTTP server can trigger this with a crafted response; impact may range from unexpected application termination to memory corruption. Applications that consume the response incrementally (via on_data_read), or that only connect to trusted servers, are not affected. This issue has been patched via commit 8d5956a.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:54.703"
   },
   {
     "id": "CVE-2026-57165",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit 628b716, a stack buffer overflow exists in the PJLIB-UTIL telnet CLI front-end when redrawing the command line during history recall (handle_up_down() in cli_telnet.c). This affects only applications that enable the telnet CLI front-end (same gating as the related CLI issue). The line-redraw sequence for a recalled history entry can accumulate more data than a fixed-size stack buffer holds, which may lead to application termination. Exploitation requires access to the unauthenticated telnet CLI, which already permits arbitrary CLI commands, so the additional impact is limited. Applications that do not enable the telnet CLI front-end are not affected. This issue has been patched via commit 628b716.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:54.863"
   },
   {
     "id": "CVE-2026-57166",
     "description": "PJSIP is a free and open source multimedia communication library written in C. Prior to commit 4472a31, a stack buffer overflow exists in the PJLIB-UTIL telnet CLI front-end when rendering feedback for an entered command line. Several command-line handling paths write an attacker-influenced amount of data into fixed-size buffers without sufficient bounds checking, so a long command line can overflow them. This affects only applications that enable the telnet CLI front-end (e.g. pj_cli_telnet_create() / --cli-telnet-port). The telnet CLI is an interactive administration interface with no authentication, so any client able to reach it can already issue arbitrary CLI commands. A malformed or overly long command line can overflow a fixed-size stack buffer while rendering command-line feedback, which may lead to application termination. Because reaching this code already requires access to the unauthenticated CLI, the impact beyond that existing access is limited. Applications that do not enable the telnet CLI front-end are not affected. This issue has been patched via commit 4472a31.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "Pjsip",
     "published": "2026-09-04T18:17:55.007"
   },
   {
@@ -73370,7 +72236,7 @@
     "id": "CVE-2026-84890",
     "description": "undici's decompress interceptor decompresses response bodies according to the untrusted Content-Encoding header. While the number of content-encoding layers is capped, the total decompressed output size is unbounded and there is no configuration option to limit it. A malicious or faulty upstream can therefore return a small compressed payload, a compression bomb, that expands to hundreds of megabytes or more in client memory, an asymmetric resource consumption that can exhaust memory and crash the process. This affects undici versions from 7.15.0 up to 7.29.1 and from 8.0.0 up to 8.10.2. Users should upgrade to undici 7.29.1 or 8.10.2.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Undici",
     "published": "2026-09-04T18:18:01.633"
   },
   {
@@ -77947,36 +76813,36 @@
   {
     "id": "CVE-2026-77089",
     "description": "Command Center API contained an authentication bypass issue affecting privilege management. Software customers upgrade to resolved maintenance release. Update Command Center.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Commvault",
     "published": "2026-09-08T13:17:25.227"
   },
   {
     "id": "CVE-2026-77091",
     "description": "DataCube contained a path traversal issue affecting security feature enforcement. Software customers upgrade to resolved maintenance release. Update Content Extractor and Index Store.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Commvault",
     "published": "2026-09-08T13:17:25.357"
   },
   {
     "id": "CVE-2026-77092",
     "description": "Content Extractor contained a deserialization of untrusted data issue affecting privilege management. Software customers upgrade to resolved maintenance release. Update Content Extractor.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Commvault",
     "published": "2026-09-08T13:17:25.480"
   },
   {
     "id": "CVE-2026-77097",
     "description": "Private Metrics Server contained a missing authentication condition affecting metrics upload functionality and service availability. Software customers upgrade to resolved maintenance release. Update Private Metrics Server.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Commvault",
     "published": "2026-09-08T13:17:25.610"
   },
   {
     "id": "CVE-2026-77098",
     "description": "Private Metrics Server contained an SQL injection condition affecting database operations. Software customers upgrade to resolved maintenance release. Update Private Metrics Server.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Critical",
+    "tech": "Commvault",
     "published": "2026-09-08T13:17:25.730"
   },
   {
@@ -78017,8 +76883,8 @@
   {
     "id": "CVE-2026-77106",
     "description": "Cvlaunchd contained a missing authorization issue affecting command execution authorization. Software customers upgrade to resolved maintenance release. Update all Commvault installations, including Commserve, Webserver, Command Center, Media Agents, Clients and HyperScale X.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "Commvault",
     "published": "2026-09-08T13:17:26.517"
   },
   {
@@ -78990,8 +77856,8 @@
   {
     "id": "CVE-2026-86073",
     "description": "n8n is an open source workflow automation platform. Prior to 2.37.7 and 2.38.1, the OAuth token endpoint bound an authorization code's first access token to the consented resource but did not bind its refresh token. Refreshing checked only that the requested resource was registered, not that it matched the original grant. An OAuth client approved for one workflow could substitute a different workflow URL in the resource parameter and obtain a valid token for an unapproved workflow accessible to the consenting user. This issue is fixed in versions 2.37.7 and 2.38.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "N8n",
     "published": "2026-09-08T17:18:39.167"
   },
   {
@@ -84549,7 +83415,7 @@
     "id": "CVE-2026-77905",
     "description": "Use after free in Windows Management Instrumentation allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-09-08T18:20:40.560"
   },
   {
@@ -84612,21 +83478,21 @@
     "id": "CVE-2026-78444",
     "description": "Untrusted pointer dereference in Windows Failover Cluster allows an unauthorized attacker to execute code over a network.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 10 1809",
     "published": "2026-09-08T18:20:42.133"
   },
   {
     "id": "CVE-2026-78445",
     "description": "Use after free in Windows Services for NFS ONCRPC XDR Driver allows an unauthorized attacker to execute code over a network.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Windows server 2012",
     "published": "2026-09-08T18:20:42.263"
   },
   {
     "id": "CVE-2026-78446",
     "description": "Use after free in Windows Distributed File System (DFS) allows an authorized attacker to deny service over a network.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-09-08T18:20:42.417"
   },
   {
@@ -84661,28 +83527,28 @@
     "id": "CVE-2026-78451",
     "description": "Untrusted pointer dereference in Microsoft Windows SCSI Class System File allows an unauthorized attacker to elevate privileges with a physical attack.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1809",
     "published": "2026-09-08T18:20:43.480"
   },
   {
     "id": "CVE-2026-78452",
     "description": "Out-of-bounds read in Microsoft Windows SCSI Class System File allows an unauthorized attacker to disclose information with a physical attack.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1809",
     "published": "2026-09-08T18:20:43.637"
   },
   {
     "id": "CVE-2026-78453",
     "description": "Integer underflow (wrap or wraparound) in Microsoft Windows SCSI Class System File allows an unauthorized attacker to disclose information over a network.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-09-08T18:20:43.793"
   },
   {
     "id": "CVE-2026-78454",
     "description": "Out-of-bounds read in Windows CD-ROM Driver allows an authorized attacker to disclose information locally.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Windows 10 1607",
     "published": "2026-09-08T18:20:43.973"
   },
   {
@@ -84703,7 +83569,7 @@
     "id": "CVE-2026-78457",
     "description": "Use after free in Windows Security Health Service allows an authorized attacker to elevate privileges locally.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Windows 11 24h2",
     "published": "2026-09-08T18:20:44.407"
   },
   {
@@ -85766,8 +84632,8 @@
   {
     "id": "CVE-2026-86074",
     "description": "n8n is an open source workflow automation platform. Prior to 2.37.7 and 2.38.2, the Instance AI credential setup flow accepted a credential test or verification URL without checking that it matched the workflow node's origin. Attacker-controlled fetched content could influence that URL after a user injected it into the setup flow, causing authenticated requests, redirects, or probes to reach another origin. The affected logic includes packages/@n8n/instance-ai/src/tools/workflows/credential-utils.ts and the extractServiceOrigin origin derivation. This issue is fixed in versions 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "N8n",
     "published": "2026-09-08T18:21:14.273"
   },
   {
@@ -86649,7 +85515,7 @@
     "id": "CVE-2025-64589",
     "description": "Adobe Experience Manager is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a low-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field. Scope is changed.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Experience manager",
     "published": "2026-09-08T20:17:26.303"
   },
   {
@@ -86677,14 +85543,14 @@
     "id": "CVE-2025-64838",
     "description": "Adobe Experience Manager is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a low-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field. Scope is changed.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Experience manager",
     "published": "2026-09-08T20:17:26.807"
   },
   {
     "id": "CVE-2025-64854",
     "description": "Adobe Experience Manager is affected by a stored Cross-Site Scripting (XSS) vulnerability that could be abused by a low-privileged attacker to inject malicious scripts into vulnerable form fields. Malicious JavaScript may be executed in a victim's browser when they browse to the page containing the vulnerable field. Scope is changed.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Experience manager",
     "published": "2026-09-08T20:17:26.923"
   },
   {
@@ -86712,14 +85578,14 @@
     "id": "CVE-2026-19479",
     "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Experience manager",
     "published": "2026-09-08T20:17:29.213"
   },
   {
     "id": "CVE-2026-19612",
     "description": "Adobe Experience Manager is affected by a DOM-based Cross-Site Scripting (XSS) vulnerability. An attacker could exploit this issue by manipulating the DOM environment to execute malicious JavaScript within the context of the victim's browser. Exploitation of this issue requires user interaction in that a victim must visit a crafted webpage. Scope is changed.",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Experience manager",
     "published": "2026-09-08T20:17:29.333"
   },
   {
@@ -87398,21 +86264,21 @@
     "id": "CVE-2026-75771",
     "description": "Photoshop Desktop is affected by an Integer Overflow or Wraparound vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Photoshop",
     "published": "2026-09-08T20:18:22.243"
   },
   {
     "id": "CVE-2026-75862",
     "description": "Photoshop Desktop is affected by an Integer Overflow or Wraparound vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Photoshop",
     "published": "2026-09-08T20:18:22.353"
   },
   {
     "id": "CVE-2026-75863",
     "description": "Photoshop Desktop is affected by an Integer Overflow or Wraparound vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Photoshop",
     "published": "2026-09-08T20:18:22.470"
   },
   {
@@ -87482,7 +86348,7 @@
     "id": "CVE-2026-76199",
     "description": "Photoshop Desktop is affected by an Uncontrolled Search Path Element vulnerability that could result in arbitrary code execution in the context of the current user. An attacker could exploit this vulnerability to execute arbitrary code. Exploitation of this issue requires user interaction in that a victim must open a malicious file. Scope is changed.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Photoshop",
     "published": "2026-09-08T20:18:24.280"
   },
   {
@@ -87587,7 +86453,7 @@
     "id": "CVE-2026-82005",
     "description": "Photoshop Desktop is affected by an out-of-bounds write vulnerability that could result in arbitrary code execution in the context of the current user. Exploitation of this issue requires user interaction in that a victim must open a malicious file.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Photoshop",
     "published": "2026-09-08T20:18:48.667"
   },
   {
@@ -88104,43 +86970,43 @@
   {
     "id": "CVE-2026-86075",
     "description": "n8n is an open source workflow automation platform. Prior to 2.37.7 and 2.38.2, the OAuth Dynamic Client Registration endpoint bounded redirect_uris but accepted arbitrarily large client_name and grant_types values. An unauthenticated remote caller could repeatedly persist oversized values in oauth_clients and exhaust database storage. The affected validation is in packages/cli/src/modules/oauth-server/oauth-server.service.ts, including MAX_CLIENT_NAME_LENGTH and MAX_GRANT_TYPES. This issue is fixed in versions 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:16.250"
   },
   {
     "id": "CVE-2026-86076",
     "description": "n8n is an open source workflow automation platform. Prior to 1.123.76, 2.37.7, and 2.38.2, the expression compiler sanitizer resolved through dynamically scoped this and did not reject reserved class member names. A class field named __sanitize could rebind the sanitizer and reach the Function constructor, enabling backend code execution and editor-preview JavaScript execution. The affected AST hook is PrototypeSanitizer in packages/workflow/src/expression-sandboxing.ts. This issue is fixed in versions 1.123.76, 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:16.387"
   },
   {
     "id": "CVE-2026-86077",
     "description": "n8n is an open source workflow automation platform. Prior to 2.37.7 and 2.38.2, the /chat WebSocket route accepted a resumeToken and resumed a paused execution without checking that the target node supported chat messages. An anonymous form submitter who received that token could reuse it on the chat route to release a Send-and-Wait, non-chat HITL, or Wait approval gate. The affected authorization logic is packages/cli/src/chat/chat-execution-manager.ts, where canResumeOverChat did not gate the resume target. This issue is fixed in versions 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:16.533"
   },
   {
     "id": "CVE-2026-86078",
     "description": "n8n is an open source workflow automation platform. Prior to 2.37.7 and 2.38.2, the Instance AI workflow summary used node names and connection keys from stored workflows as ordinary object keys. A workflow submitted through the REST API could contain __proto__ or constructor, causing nested writes to reach Object.prototype in the main n8n process and disrupt later requests. The affected function is summarizeWorkflowStructure in packages/@n8n/instance-ai/src/tools/workflows/summarize-workflow.ts. This issue is fixed in versions 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:16.677"
   },
   {
     "id": "CVE-2026-86079",
     "description": "n8n is an open source workflow automation platform. Prior to 1.123.76, 2.37.7, and 2.38.2, the Elasticsearch and ElasticSecurity nodes interpolated workflow-controlled index and document identifiers directly into REST request paths. An identifier containing path separators or dot segments could select another index or a cluster administration endpoint under the stored Elasticsearch credential. The affected request construction includes packages/nodes-base/nodes/Elastic/Elasticsearch/GenericFunctions.ts and the missing toPathSegment encoding. This issue is fixed in versions 1.123.76, 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:16.813"
   },
   {
     "id": "CVE-2026-86080",
     "description": "n8n is an open source workflow automation platform. Prior to 1.123.76, 2.37.7, and 2.38.2, the GitHub Trigger generated a webhook secret but discarded it when GitHub returned HTTP 422 and the node reused an existing webhook. Workflow static data then retained webhookId without webhookSecret, and X-Hub-Signature-256 verification accepted deliveries without a stored secret. The affected logic includes packages/nodes-base/nodes/Github/GithubTriggerHelpers.ts and the 422 webhook reuse path. This issue is fixed in versions 1.123.76, 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:16.953"
   },
   {
@@ -88153,15 +87019,15 @@
   {
     "id": "CVE-2026-86082",
     "description": "n8n is an open source workflow automation platform. Prior to 1.123.76, 2.37.7, and 2.38.2, the OpenAI Chat Model node enforced credential allowed-domain restrictions for normal calls but not for the model-search dropdown. A workflow editor could set options.baseURL to an arbitrary host and make the searchModels path send the openAiApi credential there. The affected implementation is packages/@n8n/nodes-langchain/nodes/llms/LMChatOpenAi/methods/loadModels.ts, which omitted assertOpenAiCredentialAllowsUrl. This issue is fixed in versions 1.123.76, 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "Medium",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:17.240"
   },
   {
     "id": "CVE-2026-86083",
     "description": "n8n is an open source workflow automation platform. Prior to 1.123.76, 2.37.7, and 2.38.2, the legacy expression engine generated source text by calling the mutable global JSON.stringify while printing synthetic string literals and interpolating timezone data. An expression could replace JSON.stringify and cause later generated source to contain executable attacker-controlled code. The affected code-generation paths include packages/@n8n/expression-runtime/src/bridge/isolated-vm-bridge.ts and packages/@n8n/tournament/src/ExpressionBuilder.ts, and the issue does not affect the vm expression engine. This issue is fixed in versions 1.123.76, 2.37.7 and 2.38.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
+    "severity": "High",
+    "tech": "N8n",
     "published": "2026-09-08T22:19:17.383"
   },
   {
@@ -89351,7 +88217,7 @@
     "id": "CVE-2026-87580",
     "description": "Incorrect authorization in WebAppInstalls in Google Chrome prior to 153.0.8010.36 allowed a remote attacker who had compromised the renderer process and leveraged social engineering to bypass site isolation via a crafted HTML page. (Chromium security severity: Medium)",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Chrome",
     "published": "2026-09-09T01:17:15.813"
   },
   {
@@ -89379,7 +88245,7 @@
     "id": "CVE-2026-87584",
     "description": "Incorrect authorization in WebUI in Google Chrome prior to 153.0.8010.36 allowed a remote attacker to bypass system access restrictions into a privileged page via a crafted HTML page. (Chromium security severity: Medium)",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Chrome",
     "published": "2026-09-09T01:17:16.257"
   },
   {
@@ -89414,21 +88280,21 @@
     "id": "CVE-2026-87589",
     "description": "Incorrect authorization in SiteIsolation in Google Chrome prior to 153.0.8010.36 allowed a remote attacker who had compromised the renderer process to bypass system access restrictions via a crafted HTML page. (Chromium security severity: Medium)",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Chrome",
     "published": "2026-09-09T01:17:16.793"
   },
   {
     "id": "CVE-2026-87590",
     "description": "Improper input validation in Passwords in Google Chrome prior to 153.0.8010.36 allowed a remote attacker to potentially leak sensitive information via crafted network traffic. (Chromium security severity: Medium)",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Chrome",
     "published": "2026-09-09T01:17:16.900"
   },
   {
     "id": "CVE-2026-87591",
     "description": "Incorrect authorization in Extensions in Google Chrome prior to 153.0.8010.36 allowed a remote attacker to bypass system access restrictions via a crafted Chrome extension. (Chromium security severity: Medium)",
     "severity": "Medium",
-    "tech": "Unknown",
+    "tech": "Chrome",
     "published": "2026-09-09T01:17:17.010"
   },
   {
@@ -94137,7 +93003,7 @@
   },
   {
     "id": "CVE-2026-81789",
-    "description": "Unauthenticated Arbitrary File Deletion in Advanced Product Fields Extended for WooCommerce <= 3.1.6 versions.",
+    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Studio Wombat Advanced Product Fields Extended for WooCommerce allows Path Traversal.\n\nThis issue affects Advanced Product Fields Extended for WooCommerce: from n/a through 3.1.6.",
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-10T15:17:44.867"
@@ -95076,7 +93942,7 @@
   {
     "id": "CVE-2026-79592",
     "description": "An out-of-bounds read vulnerability exists in the xls_dumpSummary() function of libxls 1.6.3 due to insufficient validation of file-controlled OLE summary offsets.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-10T21:17:47.047"
   },
@@ -95132,7 +93998,7 @@
   {
     "id": "CVE-2025-57231",
     "description": "Path Traversal in avatar attachments in Docmost v0.21.0 allows an unauthenticated malicious actor to disclose local files via a POST Request in a public url.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-10T22:16:54.070"
   },
@@ -95153,7 +94019,7 @@
   {
     "id": "CVE-2026-36392",
     "description": "FairSketch Rise CRM Version 3.9.6 is vulnerable to Cross Site Scripting (XSS). An authenticated administrator can inject arbitrary JavaScript into an item's title, which is stored server-side and executed in the browser of any client user who visits the store page, enabling session hijacking, account takeover, and phishing.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-10T22:16:55.970"
   },
@@ -95279,7 +94145,7 @@
   {
     "id": "CVE-2026-71647",
     "description": "An issue in EGO-Planner-v2 All versions up to commit 5c99a95880401e2599638d567abc0e240396cb42 allows an attacker to cause a denial of service via the checkCollisionCallback, execFSMCallback, planFromGlobalTraj in ego_replan_fsm.cpp",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-10T22:16:59.190"
   },
@@ -95901,7 +94767,7 @@
   },
   {
     "id": "CVE-2026-89060",
-    "description": "A flaw was found in multicluster-observability-addon. This vulnerability allows a managed-cluster identity to reference configuration resources outside its designated namespace. This can lead to the disclosure of sensitive hub Secrets to an attacker-controlled managed cluster.",
+    "description": "A cross-namespace authorization flaw in multicluster-observability-addon allows a user with permission to modify a managed cluster’s ManagedClusterAddOn configuration to reference ClusterLogForwarder or OpenTelemetryCollector resources outside the permitted namespace. If those resources reference Secrets, the add-on may copy the referenced Secrets to the attacker-controlled managed cluster.",
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-11T05:16:38.557"
@@ -96153,7 +95019,7 @@
   },
   {
     "id": "CVE-2025-15679",
-    "description": "Under certain circumstances such as reset to factory default operation, the BMC root account is made active without a password.",
+    "description": "Under certain circumstances such as reset to factory default operation, the BMC root account is made active without a password on BullSequana XH3406 and XH3515.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-09-11T09:17:20.067"
@@ -96451,5 +95317,453 @@
     "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-09-11T13:18:18.980"
+  },
+  {
+    "id": "CVE-2026-11765",
+    "description": "Improper neutralization of argument delimiters in a command ('argument injection') vulnerability in TUBITAK BILGEM Software Technologies Research Institute Pardus Pen allows Argument Injection.\n\nThis issue affects Pardus Pen: before 4.2.1.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:23.710"
+  },
+  {
+    "id": "CVE-2026-15710",
+    "description": "An information leakage vulnerability exists in the Endpoint DLP component (epdlpdrv.sys) of Netskope Client for Windows prior to version R141. An internal communication channel used by the user-space hook DLL to pass messages through the kernel driver to the daemon lacked proper token-based message validation, allowing local unprivileged processes to send unauthorized queries. Additionally, a reply buffer used by the port message handler was not properly initialized before returning data, leaking residual kernel pool memory from prior allocations. A local unprivileged attacker could exploit this vulnerability to enumerate DLP configuration and feature flags, extract live session tokens, and read kernel memory fragments from other users' operations.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:25.533"
+  },
+  {
+    "id": "CVE-2026-57842",
+    "description": "NetBSD contains a use-after-free and double-free vulnerability in msg_recv_copyin() within the COMPAT_NETBSD32 compatibility layer due to a missing return statement before the cleanup label on the success path. Any local user able to execute a 32-bit binary on a 64-bit NetBSD system can trigger a kernel panic or memory corruption by calling recvmsg() with msg_iovlen between 9 and IOV_MAX, causing the kernel to access a freed iovec buffer and subsequently free the same allocation a second time.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:27.873"
+  },
+  {
+    "id": "CVE-2026-57843",
+    "description": "NetBSD contains an information disclosure vulnerability in mm_open() within sys/dev/mm.c that allows unprivileged local users to obtain real kernel virtual addresses by opening world-accessible devices such as /dev/null or /dev/zero, which incorrectly receive the PK_KMEM process flag. Attackers can exploit this misconfigured flag to bypass the CANSEE_KPTR obfuscation mechanism and read kernel virtual addresses for sensitive kernel structures including struct proc, kauth_cred, filedesc, and vmspace via sysctl KERN_PROC queries.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:28.067"
+  },
+  {
+    "id": "CVE-2026-71416",
+    "description": "Headroom compresses data before the data reaches a large language model. Prior to version 0.35.0, the Headroom WebSocket server does not validate the `Origin` header of incoming client WebSocket requests before forwarding the request to the upstream server, allowing malicious WebSocket clients to perform arbitrary LLM requests without authentication. This can be exploited by a malicious WebSocket client executed in a traditional or headless browser such as lightpanda, if the browser has access to the Headroom proxy and the OpenAI API key is stored in the `OPENAI_API_KEY` environment variable. Version 0.35.0 fixes the issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:32.390"
+  },
+  {
+    "id": "CVE-2026-71641",
+    "description": "An issue in ZJU-FAST-Lab EGO-Planner-v2 All versions up to commit 5c99a95880401e2599638d567abc0e240396cb42 allows an attacker to cause a denial of service via thenteraction between traj_server, poscmd_2_odom, and the EGOReplanFSM emergency recovery logic",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:32.547"
+  },
+  {
+    "id": "CVE-2026-71644",
+    "description": "An issue in Robotics-STAR-Lab (SYSU STAR Group) RACER Tested affected version: commit abcdef1234567890 allows an attacker to cause unsafe trajectory planning and potential UAV collisions via a missing default case in the FSM that stops publishing swarm trajectories when the drone enters IDLE",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:32.667"
+  },
+  {
+    "id": "CVE-2026-89212",
+    "description": "A flaw resulting in XML external entity (XXE) was found in Akana API Platform in which references were improperly restricted during XML-to-JSON processing. The issue affects Akana versions 2026.1, 2025.1.1, and all versions before 2024.1.6 (including older unsupported versions of Akana) and has been fixed as a security patch in the latest release of supported versions.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:36.847"
+  },
+  {
+    "id": "CVE-2026-89298",
+    "description": "A flaw was found in the Dynamic Client Registration service of Keycloak, an open-source identity and access management solution. The issue occurs when a user with the view-clients role accesses the client registration endpoint to retrieve client details. Due to a failure to mask sensitive information, the service returns the client's confidential secret in cleartext. This could allow a read-only administrator to obtain full access to the affected client's account and potentially escalate their privileges within the realm.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T14:17:37.173"
+  },
+  {
+    "id": "CVE-2026-38056",
+    "description": "A local privilege escalation vulnerability exists in the iDirect iQ200 VSAT terminal running firmware 23.0.1.0. The iQ200 is a rackmount satellite modem deployed across oil and gas, maritime, defense, and remote infrastructure as the primary, and often sole communications link for offshore rigs, vessels, and remote sites. Important context: the device ships from the factory with a pre-configured low-privilege local user account. This account is intended for field technicians who need shell access for maintenance and diagnostics but should not have full administrative control over the device. This built-in account provides the initial access required to exploit this vulnerability. No additional credentials need to be obtained or brute-forced.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:01.070"
+  },
+  {
+    "id": "CVE-2026-38058",
+    "description": "The endpoint on the iDirect iQ200 VSAT terminal returns the complete device configuration as JSON, including the SECURITY section which contains MD5-crypt password hashes for the root SSH and web administration accounts. Any user with valid web credentials can extract these hashes and crack them offline using commodity hardware.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:01.407"
+  },
+  {
+    "id": "CVE-2026-78224",
+    "description": "The XSLT Transformer Step builds a bare TransformerFactory without the proper security options set, so XXE injection can allow data exfiltration and denial-of-service attacks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:04.337"
+  },
+  {
+    "id": "CVE-2026-82578",
+    "description": "When XML batch processing is turned on and the XPath option is selected, the raw batch input goes through a default XPath/JAXP setup with no entity restrictions, so XXE injection can allow data exfiltration and denial-of-service attacks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:06.357"
+  },
+  {
+    "id": "CVE-2026-82583",
+    "description": "NextGen Connect (Mirth Connect) versions 4.7.1 and earlier allow an authenticated user to execute arbitrary SQL through a Database Connector API, which could result in disclosure of stored credentials for connected systems, arbitrary file write, and a denial-of-service condition.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:06.510"
+  },
+  {
+    "id": "CVE-2026-85083",
+    "description": "The ANJIA AJL33PC0801 IP camera uses a hard-coded credential for bootloader authentication. An attacker with physical access to the device may leverage this weakness to gain privileged bootloader access, allowing unauthorized modification of firmware and system configuration and potentially resulting in complete device compromise.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:06.660"
+  },
+  {
+    "id": "CVE-2026-85979",
+    "description": "Affected versions of Puppet Enterprise contain a command injection vulnerability in the handling of the java_keystore_passwd parameter. An authenticated user with Puppet administrative privileges can inject arbitrary shell commands by providing a specially crafted value for this parameter, which is passed to a shell execution context without sufficient sanitization. Because the resulting commands are executed with root privileges, successful exploitation can lead to full compromise of the affected system.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:06.807"
+  },
+  {
+    "id": "CVE-2026-87020",
+    "description": "An integer overflow in a specified pitch and buffer-size computation leads to a heap out-of-bounds write when Orthanc DICOM Server decodes an attacker-supplied PNG.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:06.937"
+  },
+  {
+    "id": "CVE-2026-87983",
+    "description": "An arbitrary file read vulnerability in Mistral Vibe, introduced in version 2.6.0, allows an attacker to bypass workspace restrictions using quoted absolute paths in allowlisted shell commands. Improper handling of quotation marks during path validation enables files outside the active workspace to be read without user approval.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:07.240"
+  },
+  {
+    "id": "CVE-2026-87984",
+    "description": "An arbitrary file write vulnerability in Mistral Vibe, introduced in version 1.3.4, allows an attacker to create or overwrite files outside the active workspace without user approval. Shell redirection destinations are omitted from permission checks, enabling otherwise allowlisted commands to write to arbitrary paths accessible to the Vibe process.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:07.383"
+  },
+  {
+    "id": "CVE-2026-87985",
+    "description": "An arbitrary code execution vulnerability in Mistral Vibe allows an attacker to bypass command permission checks using ANSI-C quoted arguments. These arguments are not properly inspected, enabling a crafted allowlisted command to execute arbitrary code on the user's system without approval.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:07.520"
+  },
+  {
+    "id": "CVE-2026-87986",
+    "description": "An arbitrary code execution vulnerability in Mistral Vibe allows an attacker to bypass command permission checks using shell constructs it's parser cannot interpret. Unparsed portions are omitted from inspection, enabling embedded commands to execute on the user's system without approval.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:07.653"
+  },
+  {
+    "id": "CVE-2026-87987",
+    "description": "An arbitrary code execution vulnerability in Mistral Vibe allows an attacker to bypass command permission checks using environment variable assignments preceding allowlisted commands. These assignments are excluded from inspection, enabling attacker-controlled environment variables to cause arbitrary code execution without user approval.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:07.793"
+  },
+  {
+    "id": "CVE-2026-87988",
+    "description": "An arbitrary file access vulnerability in Mistral Vibe allows an attacker to bypass workspace restrictions through commands classified as unconditionally allowed. Missing path validation for these commands enables access to files outside the active workspace without user approval.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:07.930"
+  },
+  {
+    "id": "CVE-2026-89009",
+    "description": "WAVLINK WN535M1 and WN535M3 routers running firmware prior to M35M1_V250922 contain an unauthenticated arbitrary file write vulnerability that allows remote attackers to overwrite any file on the device by sending a crafted payload to the sync_server daemon on TCP port 13136. The daemon, which runs as root and requires no authentication, accepts a 100-byte filename field in its protocol header without path canonicalization, allowing attackers to supply an absolute path and write arbitrary content to overwrite startup scripts or credential stores to achieve persistent system compromise.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:08.190"
+  },
+  {
+    "id": "CVE-2026-89010",
+    "description": "WAVLINK WN535M1 and WN535M3 routers running firmware prior to M35M1_V250922 contain an unauthenticated OS command injection vulnerability that allows remote attackers to execute arbitrary commands as root by sending crafted filenames to the sync_server daemon on TCP port 13136. The daemon interpolates attacker-controlled filename input containing shell metacharacters into a shell command string via sprintf() and passes it to system() without sanitization, enabling root-level command execution on the device.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:08.357"
+  },
+  {
+    "id": "CVE-2026-8301",
+    "description": "Improper neutralization of special elements used in an OS command ('OS command injection') vulnerability in TUBITAK BILGEM Software Technologies Research Institute Pardus Boot Repair allows OS Command Injection.\n\nThis issue affects Pardus Boot Repair: before 1.0.8.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:09.540"
+  },
+  {
+    "id": "CVE-2026-8303",
+    "description": "Incorrect privilege assignment vulnerability in TUBITAK BILGEM Software Technologies Research Institute Pardus-software allows Privilege Escalation.\n\nThis issue affects Pardus-software: before 1.0.5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T15:17:09.667"
+  },
+  {
+    "id": "CVE-2026-15439",
+    "description": "The GamiPress plugin for WordPress is vulnerable to authenticated (Subscriber+) SQL Injection via the 'q' parameter of the wpForo integration AJAX selector (action gamipress_wpforo_get_posts) in versions up to, and including, 7.9.7. The value is passed only through $wpdb->esc_like() and interpolated directly into a single-quoted LIKE clause with no %s placeholder. Because esc_like() runs after WordPress core magic quotes, it doubles the injected backslash (\\' -> \\\\'), which MySQL reads as one literal backslash followed by a live closing quote, allowing the attacker to break out of the string and inject boolean-based SQL. The wpForo plugin only needs to be active to register the callback; no wpForo vulnerability is used. Requires a Subscriber account, which can read the gamipress_admin nonce (exposed on every admin page, e.g. /wp-admin/profile.php). Note: the researcher's Simple:Press vectors (PoC 2 & 3) do not reproduce in current code, which uses $wpdb->prepare() with %s placeholders; only the wpForo selector is confirmed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:05.597"
+  },
+  {
+    "id": "CVE-2026-3869",
+    "description": "CWE-303 : Incorrect Implementation of Authentication Algorithm vulnerability exists that could cause loss of confidentiality, integrity and availability of the PLC provided an application project with a lower application level is running on the PLC.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:06.200"
+  },
+  {
+    "id": "CVE-2026-68497",
+    "description": "jackson-databind binds a JSON string to a javax.xml.datatype.Duration or javax.xml.datatype.XMLGregorianCalendar field by passing the raw string verbatim to DatatypeFactory.newDuration(value) or newXMLGregorianCalendar(value) in CoreXMLDeserializers.Std._deserialize. These deserializers are registered by default with no opt-in, so a plain ObjectMapper or JsonMapper with no polymorphic typing and no special configuration reaches this path. The XML Schema lexical grammar permits numeric components of arbitrary length, which the JDK materializes through the native BigInteger(String) and BigDecimal(String) constructors, both quadratic in digit count. Because the digits sit inside a JSON string token rather than a JSON number token, jackson-core's StreamReadConstraints.maxNumberLength guard never applies; jackson's own NumberDeserializers call validateIntegerLength or validateFPLength before parsing a stringified number, but the XML datatype deserializer omits that pre-check. An unauthenticated attacker can therefore submit a single request of a few megabytes, such as a Duration value consisting of the letter P followed by several million digits and the letter Y, and force tens of seconds to several minutes of single-threaded CPU work; a handful of concurrent requests can saturate a server's worker threads. This affects com.fasterxml.jackson.core:jackson-databind from 2.0.0 before 2.18.10, from 2.19.0 before 2.21.6, and from 2.22.0 before 2.22.2, and tools.jackson.core:jackson-databind from 3.0.0 before 3.1.6 and from 3.2.0 before 3.2.2. Users should upgrade to 2.18.10, 2.21.6, 2.22.2, 3.1.6, or 3.2.2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:39.610"
+  },
+  {
+    "id": "CVE-2026-70341",
+    "description": "Use after free in Microsoft Edge (Chromium-based) allows an authorized attacker to execute code over a network.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:46.080"
+  },
+  {
+    "id": "CVE-2026-7863",
+    "description": "Improper neutralization of special elements used in an OS command ('OS command injection') vulnerability in TUBITAK BILGEM Software Technologies Research Institute Pardus Software allows OS Command Injection.\n\nThis issue affects Pardus Software: before 1.0.5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:47.490"
+  },
+  {
+    "id": "CVE-2026-81861",
+    "description": "CWE-522: Insufficiently Protected Credentials vulnerability that could result in exposure of authentication information and unauthorized access to RTU functionality.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:47.613"
+  },
+  {
+    "id": "CVE-2026-87122",
+    "description": "Rejected reason: ** REJECT ** DO NOT USE THIS CANDIDATE NUMBER. ConsultIDs: CVE-2026-85984. Reason: This candidate is a reservation duplicate of CVE-2026-85984. Notes: All CVE users should reference CVE-2026-85984 instead of this candidate. All references and descriptions in this candidate have been removed to prevent accidental usage.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:47.857"
+  },
+  {
+    "id": "CVE-2026-89012",
+    "description": "Dolibarr 24.0.0 before 24.0.1 contains a case-sensitive denylist bypass vulnerability in the sqlfilters API query parameter that allows authenticated attackers to recover protected database fields by supplying uppercase variants of denylist-protected field names. Attackers can exploit the case-insensitive database column resolution against the case-sensitive denylist check in the core library to use prefix-matching predicates as a boolean oracle and extract full password hashes for any user account, including administrators.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:48.680"
+  },
+  {
+    "id": "CVE-2026-89013",
+    "description": "Dolibarr 23.0.4 before 24.0.1 ontains an authorization bypass vulnerability that allows unauthenticated attackers to read arbitrary files through the document storage endpoints by supplying a crafted hashp parameter value. Attackers can send a request with hashp=shared to skip token validation while satisfying the authorization condition in htdocs/document.php and htdocs/viewimage.php, gaining access to application logs, uploaded business documents, database backups containing password hashes, and files belonging to other multicompany entities.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:48.853"
+  },
+  {
+    "id": "CVE-2026-89065",
+    "description": "Relative path traversal in the generated file manifest cleanup component in projen before 0.101.37 might allow context-dependent attackers to recursively delete files and directories outside the project directory that are writable by the environment running projen, via crafted entries in the version-controlled generated file manifest that is consumed during project synthesis.\n\n\n\nTo remediate this issue, users should upgrade to version 0.101.37. The corrected containment check is automatically applied by the projen runtime next time you run it.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:49.253"
+  },
+  {
+    "id": "CVE-2026-89066",
+    "description": "Improper neutralization of special elements used in an OS command in the task synthesis component in projen before 0.103.0 might allow context-dependent attackers to execute arbitrary commands on a developer workstation or continuous integration runner via shell metacharacters in project configuration values and repository file names that are interpolated into generated task definitions.\n\n\n\nTo remediate this issue, users should upgrade to version 0.103.0 and then re-synthesize the project so that .projen/tasks.json is regenerated with the corrected task definitions. Upgrading alone is not sufficient because the generated task definition file is committed to the repository.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:49.400"
+  },
+  {
+    "id": "CVE-2026-89260",
+    "description": "MoguBlog through 6.2 contains an XML external entity injection vulnerability in the WeChat callback handler at POST /wechat/wechatCheck. The WechatRestApi.index() method passes the raw request body to SignUtil.xmlToMap(), which uses an unhardened dom4j SAXReader without DTD or external-entity restrictions. Unauthenticated remote attackers can submit DOCTYPE declarations with external parameter entities to read arbitrary local files or trigger outbound HTTP requests, with resolved entities reflected in error responses.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:50.560"
+  },
+  {
+    "id": "CVE-2026-89261",
+    "description": "MoguBlog through 6.2 exposes Elasticsearch index management endpoints in the mogu_search service without authentication, allowing remote attackers to delete, recreate, or alter the blog search index. Attackers can invoke POST endpoints to wipe the entire search index, delete specific documents, or inject malicious index entries, causing search functionality to return incorrect or no results.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:50.740"
+  },
+  {
+    "id": "CVE-2026-89262",
+    "description": "MoguBlog through 6.2 contains an authorization bypass vulnerability in the comment deletion endpoint that performs ownership checks against request-body fields instead of the authenticated principal. Attackers can delete arbitrary comments and their replies by supplying comment UIDs and author UIDs obtained from unauthenticated listing endpoints.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:50.907"
+  },
+  {
+    "id": "CVE-2026-89263",
+    "description": "MoguBlog through 6.2 fails to authenticate requests to the /web/comment/closeEmailNotification endpoint, allowing unauthenticated attackers to disable email notifications for arbitrary users. Remote callers can modify the startEmailNotification flag in Redis cache for any user identifier to suppress reply notifications without authorization.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:51.053"
+  },
+  {
+    "id": "CVE-2026-89264",
+    "description": "MoguBlog through 6.2 fails to validate the comment author identity in the POST /web/comment/add endpoint, allowing authenticated users to post comments attributed to any other user. Attackers can supply arbitrary userUid values in the request body to impersonate other accounts including administrators.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:51.193"
+  },
+  {
+    "id": "CVE-2026-89265",
+    "description": "MoguBlog through 6.2 contains an authorization bypass vulnerability in the POST /pictureSort/getPictureSortByUid endpoint, which omits the @AuthorityVerify annotation required to enforce role-based permissions. Authenticated back-office users without image-category permissions can supply a category uid to retrieve restricted image-category records including metadata such as name, cover file uid, sort order and timestamps.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:51.337"
+  },
+  {
+    "id": "CVE-2026-8304",
+    "description": "Missing Authorization vulnerability in TUBITAK BILGEM Software Technologies Research Institute Pardus About allows Exploiting Incorrectly Configured Access Control Security Levels.\n\nThis issue affects Pardus About: from 1.2.1 before 1.2.5.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T16:17:51.710"
+  },
+  {
+    "id": "CVE-2026-18061",
+    "description": "Improper restriction of XML external entity references in the RemoteQueryCachePlugin in AWS Advanced JDBC Wrapper 3.3.0 through 4.2.0 might allow an actor with write access to the shared cache infrastructure to disclose sensitive files from application hosts that read cached query results, including stored database and IAM role credentials, via crafted XML data in a cached column value.\n\n\n\nTo remediate this issue, users should upgrade to version 4.3.0 or later.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T17:17:08.927"
+  },
+  {
+    "id": "CVE-2026-54047",
+    "description": "Laci Synchroni is a decentralized mod and appearance sync server and plugin for Dalamud. Versions of the backend prior to 1.2.3 have an improper authentication vulnerability in the application's OAuth2 login flow. The application relies on client-side state by trusting the `UID` field inside the `Authentications` object of a user's local `config.json` file. By manually editing this local file on their PC prior to logging in, a user can supply an arbitrary UID. Because the server fails to validate that the authenticated OAuth2 identity matches the requested UID, an attacker can fully impersonate any target user and perform actions on their behalf. This issue has been resolved in version 1.2.3. The patch modifies `AuthorizeOauthAsync` inside the `SecretKeyAuthenticatorService` to strictly bind the lookup of the requested User ID (`requestedUid`) to the record of the successfully authenticated identity (`primaryUid`). The server will no longer load or return session tokens for a requested UID unless it matches the verified, authenticated database record. No known workarounds are available.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T17:17:10.477"
+  },
+  {
+    "id": "CVE-2026-72708",
+    "description": "SPIP before 4.4.18 contains an unauthenticated blind SQL injection vulnerability in the public sitemap endpoint where the MySQL escaper spip_mysql_cite() in ecrire/req/mysql.php returns values unescaped when the target column is a date type and the supplied value matches the pattern of a word character followed by an open parenthesis. Attackers can supply a crafted value such as a time-based payload through the annee parameter in squelettes-dist/sitemap.xml.html to embed arbitrary SQL directly into the generated query, enabling time-based and boolean-based blind SQL injection that can expose arbitrary database content including the alea_ephemere secret used to sign action nonces.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T17:18:57.197"
+  },
+  {
+    "id": "CVE-2026-72709",
+    "description": "SPIP before 4.4.18 contains a missing authorization vulnerability in the administrative action endpoints under ecrire/action/ that allows unauthenticated attackers to perform privileged actions by supplying a valid HMAC-SHA256 nonce without any server-side permission check via autoriser(). Attackers can obtain a valid nonce, compute it for any action as the anonymous user, and invoke the editer_auteur action directly over HTTP to reset the password of any user account, including the administrator.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-11T17:18:58.760"
+  },
+  {
+    "id": "CVE-2026-72710",
+    "description": "SPIP before 4.4.18 contains a remote code execution vulnerability in the editer_objet action where the arg parameter resolves SQL table names without enforcing an editable columns allowlist, allowing attackers with a valid nonce to inject attacker-controlled rows into the spip_jobs table. Attackers can supply arg=job/0 with crafted fonction and args values, which are later unserialized and executed when the cron job queue is drained, resulting in arbitrary PHP function execution on the underlying system.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-11T17:18:58.907"
+  },
+  {
+    "id": "CVE-2026-18122",
+    "description": "Concrete CMS 9.2.0 to 9.5.2 Express REST API list endpoint exposes restricted Express entries via Missing Authorization; the Concrete CMS REST API's Express entry collection endpoint disabled the per-entry view permission check. An OAuth token with read scope for an Express entity could enumerate entries that its user context lacked permission to view, disclosing each entry's public identifier, URL, label, dates, and any attribute or associated-entry data requested via the includes parameter. The Concrete CMS security team gave this vulnerability a CVSS v4.0 score of 6.0 with vector CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N. Thanks riodrwn for reporting.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:56.567"
+  },
+  {
+    "id": "CVE-2026-18495",
+    "description": "A flaw was found in libtiff. A heap-buffer overflow vulnerability exists in the `tiff2pdf` utility due to an integer truncation error when processing crafted BigTIFF files. An attacker can provide a specially crafted BigTIFF file, causing a 64-bit `StripByteCounts` value to be truncated to a 32-bit integer. This leads to an undersized memory allocation and a subsequent out-of-bounds memory copy, resulting in a crash and severe memory corruption.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:56.690"
+  },
+  {
+    "id": "CVE-2026-67211",
+    "description": "OOM Denial of Service via Unbounded Map Pre-Sizing in Apache OpenNLP SymSpellModelSerializer\n\nVersions Affected: \n\n- 3.0.0-M4\n- 3.0.0-M5\n\n(The opennlp-spellcheck extension was introduced in 3.0.0-M4. Releases 1.x and 2.x do not contain the affected code.)\n\nDescription:\n\nThe SymSpellModelSerializer.create() method reads two 32-bit signed integer count fields (unigramCount and bigramCount) from a binary SymSpell model stream and passes each value directly to LinkedHashMap.newLinkedHashMap() after validating only that it is non-negative. No upper bound is applied, so the count is fully attacker-controlled when the model file originates from an untrusted source.\n\nA crafted .bin model file in which either count field is set to Integer.MAX_VALUE (or any value large enough to exhaust the available heap) causes the map to be pre-sized to a capacity of 2^30 entries. The oversized backing array is allocated on the first put() into that map, requesting 4–8 GB depending on whether compressed oops are in effect, and the load fails with an OutOfMemoryError. Because the count fields sit immediately after a fixed-size header (magic, format version, three UTF strings, the configuration fields, and the edit-distance identifier) the attacker pays no meaningful size cost to weaponize a payload: a file of well under 100 bytes plus a single real entry is sufficient to crash a JVM that loads it.\n\nAny code path that deserializes a SymSpell model is affected, including SymSpellModels.deserialize(InputStream), SymSpellModels.fromBytes(byte[]), classpath model loading via SymSpellModelResolver.resolveByLanguage(String), the CorrectTextTool command-line tool, and model-archive loading through the registered ArtifactSerializer. The opennlp-spellcheck extension ships in the official OpenNLP binary distribution.\n\nThe practical impact is denial of service against processes that load SymSpell model files from untrusted or semi-trusted origins.\n\nMitigation:\n\n- 3.x users should upgrade to 3.0.0-M6.\n\nNote: The fix applies an upper bound to both count fields, checked before the map is pre-sized; counts that are negative or exceed the bound cause an IOException to be thrown and the read to fail fast with no large allocation. The bound is the existing AbstractModelReader.MAX_ENTRIES limit introduced earlie, which the current change promotes to public visibility so that serializers implementing their own binary format can share it. The default bound is 10,000,000, which is well above the entry counts of legitimate SymSpell dictionaries but far below any value that would threaten heap exhaustion. Deployments that legitimately need to load larger dictionaries can raise the limit at JVM startup by setting the OPENNLP_MAX_ENTRIES system property to the desired positive integer (e.g. -DOPENNLP_MAX_ENTRIES=50000000); invalid or non-positive values fall back to the default. Note that this property is shared with the model-reader limit and raising it relaxes both.\n\nUsers who cannot upgrade immediately should treat all SymSpell .bin model files as untrusted input unless their provenance is verified, and should avoid loading models supplied by end users or fetched from third-party repositories without integrity checks.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:57.470"
+  },
+  {
+    "id": "CVE-2026-68528",
+    "description": "Concrete CMS RSS Displayer block below version 9.5.3  rendered remote feed item titles without HTML escaping, resulting in stored cross-site scripting. An attacker able to control a title in a syndicated feed could execute script in the site origin for any visitor to the affected page, including administrators, without holding an account on that site. The Concrete CMS security team gave this vulnerability a CVSS v4.0 score of 6.0 with vector CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:P/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N. Thanks riodrwn for reporting.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:57.643"
+  },
+  {
+    "id": "CVE-2026-78807",
+    "description": "An issue in wpa_supplicant all versions before v.2.12 allows a local attacker to bypass proper network context and AKMP matching for PMKSA caching via missing validation in the driver based PMKSA selection path in wpa.c",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:58.120"
+  },
+  {
+    "id": "CVE-2026-7298",
+    "description": "Improper neutralization of input during web page generation ('cross-site scripting') vulnerability in IdeaSoft Software Industry and Trade Inc. Smart E-Commerce allows Reflected XSS.\n\nThis issue affects Smart E-Commerce: through 11092026. NOTE: The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:58.340"
+  },
+  {
+    "id": "CVE-2026-81908",
+    "description": "Concrete CMS 9.2.0 to 9.5.2 contain a missing authorization vulnerability in the REST API Groups list endpoint. The listGroups() method in concrete/src/Api/Controller/Groups.php registers a permissions checker callback that unconditionally returns true, so no per-object (tree node) authorization is enforced when the group collection is returned. An authenticated user whose API token carries the groups:read scope can call GET /ccm/api/1.0/groups and receive every group on the site regardless of the view permissions on those groups, disclosing the organization's group structure, roles, and access hierarchy. The Concrete CMS security team gave this vulnerability a CVSS v4.0 score of 6.0 with vector CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N. Thanks Winston Crooker for reporting.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:58.810"
+  },
+  {
+    "id": "CVE-2026-81909",
+    "description": "Concrete CMS 9 through 9.5.2 is vulnerable to Missing Authorization in the block alias route (Process::alias() in concrete/controllers/backend/block/process.php).It does not verify that the referenced block is genuinely orphaned on the target page, nor that the caller holds any permission over the source block. A user granted only an area-scoped add_block_to_area delegation on their own page can therefore pass any block ID on the site: the source block's content is duplicated into an area the rogue editor controls, disclosing that content, and the original block is then force-deleted in the same request, destroying arbitrary site content. The Concrete CMS security team gave this vulnerability a CVSS v4.0 score of 5.9 with vector CVSS:4.0/AV:N/AC:L/AT:P/PR:H/UI:N/VC:N/VI:H/VA:H/SC:N/SI:N/SA:N. Thanks Yonatan Drori from Tenzai for reporting.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:58.930"
+  },
+  {
+    "id": "CVE-2026-82535",
+    "description": "Chamilo LMS before 1.11.42 and 3.0.0 contains a stored cross-site scripting vulnerability that allows unauthenticated attackers to inject malicious script payloads into survey answers by computing deterministic invitation codes and bypassing authorization checks in the survey submission endpoint. Attackers can submit crafted answers containing unescaped HTML rendered in reporting views to execute arbitrary scripts in the browser sessions of teachers or administrators, enabling persistent backdoor account creation by exploiting the victim's authenticated session.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:59.290"
+  },
+  {
+    "id": "CVE-2026-82617",
+    "description": "The two built-in name-finder patterns exposed by\nopennlp.tools.namefind.RegexNameFinderFactory - DEFAULT_REGEX_NAME_FINDER.EMAIL\nand DEFAULT_REGEX_NAME_FINDER.URL - contain ambiguous nested quantifiers. An\napplication that obtains these finders through\nRegexNameFinderFactory.getDefaultRegexNameFinders(...) and then applies them to\nuntrusted text through RegexNameFinder.find(String[]) or RegexNameFinder.find(String)\ncan be driven into super-linear backtracking or into unbounded matcher recursion by a\nsmall crafted input.\n\n\n\n\n\nFor the EMAIL pattern, a long run of local-part characters that is never followed by an\n@ forces the matcher to re-scan to end-of-input from every starting offset. Cost grows\nquadratically with input length: an input of approximately 32 KB consumes several seconds\nof CPU in a single find() call and returns no match, and each doubling of the input\nmultiplies the cost roughly four-fold.\n\n\n\n\n\nFor the URL pattern, the query-string sub-expression nests a capturing repetition inside\nan outer repetition. The JDK matcher recurses once per query token, so an input of\napproximately 4 KB containing many &-separated tokens exhausts the thread stack and\ncauses java.lang.StackOverflowError to propagate out of find(), terminating the\ncalling thread. On a thread created with a smaller stack (for example -Xss512k, typical\nof server worker pools) approximately 1 KB is sufficient.\n\n\n\n\n\nIn both cases an attacker who can supply text for analysis can convert a single request\ninto seconds to minutes of pinned CPU, or into an abrupt thread death, denying service to\nthe embedding application. No authentication, special configuration, or model file is\nrequired beyond the application having selected one of the two built-in finders.\n\n\n\n\n\nThis issue affects Apache OpenNLP: from 2.0.0 through 2.5.11; from 3.0.0-M1 through\n3.0.0-M5.\n\n\n\n\n\n\n\n\n\nUsers are recommended to upgrade to version 2.5.12, or to 3.0.0-M6 for users tracking the\n3.0.0 milestone line, which fix the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:59.443"
+  },
+  {
+    "id": "CVE-2026-87910",
+    "description": "When tarfile extracts a link on a system that doesn't support links, it falls back to extracting a member from the archive. In this case, the filter function is run twice: once for the extracted member, and once with name set to the location of the link. For one of the calls, the return value was ignored. Instead, the member should be skipped if either call returns None.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:16:59.800"
+  },
+  {
+    "id": "CVE-2026-89090",
+    "description": "An unrecovered panic in the event stream header decoder in Amazon AWS SDK for Go v2 before release-2026-03-23 might allow an unauthenticated remote actor to terminate the consuming application process via a crafted event stream response frame containing a header value type outside the valid range.\n\n\n\nTo remediate this issue, users should upgrade to release-2026-03-23 or later, and patch any forked or derivative code.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:17:00.097"
+  },
+  {
+    "id": "CVE-2026-89099",
+    "description": "A race condition in the document value layer of MongoDB Server can allow concurrent server threads to operate on the same internal memory without synchronization, leading to memory corruption. An authenticated user holding ordinary read-write privileges on a database may be able to trigger this condition over the normal client protocol, resulting in server termination and potential corruption of process memory with user-influenced content. Successful use of this issue may impact the confidentiality, integrity, and availability of the affected server process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:17:00.360"
+  },
+  {
+    "id": "CVE-2026-9160",
+    "description": "Improper neutralization of special elements used in a template engine vulnerability in Arma Digital Media Inc. Website Template allows Code Injection.\n\nThis issue affects Website Template: through 11092026. NOTE: The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-11T18:17:00.497"
   }
 ]
