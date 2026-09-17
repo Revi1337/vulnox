@@ -1,5 +1,1118 @@
 [
   {
+    "id": "CVE-2026-85789",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T23:16:54.250"
+  },
+  {
+    "id": "CVE-2026-65388",
+    "description": "A remote attacker who controls a container registry may be able to direct a client's token request to a host of the attacker's choice, and disclose the victim's registry credentials to that host. This vulnerability is addressed in containerization version 0.41.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T23:16:54.147"
+  },
+  {
+    "id": "CVE-2026-61599",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, the djust live transport resolves the LiveView to mount from a client-supplied dotted path by calling `__import__(module_path, ...)`. The module is imported — running its top-level code (import side effects) — before the framework checks that the resolved object is a `LiveView` subclass and before any per-view authentication. The `LIVEVIEW_ALLOWED_MODULES` allowlist that should contain this is fail-open (`if allowed_modules:` — skipped when the setting is unset, the framework default) and uses loose `startswith` matching. An unauthenticated WebSocket client (the WS handshake does not require auth; per-view auth runs only after import + instantiate) can therefore send a `mount` / `live_redirect_mount` / `url_change` frame (or an SSE mount) with `view = \"<any.importable.module>.AnyName\"` and cause the server to import — and execute the top-level code of — any importable Python module by name. Version 1.0.7 fixes the issue with a fail-closed resolution gate (`djust._view_resolution.is_view_import_allowed`): a client view path resolves only if (a) its module is already loaded (`sys.modules` — so resolving runs no new code; URL-routed views loaded by URLconf at startup keep working with zero config) or (b) it matches `LIVEVIEW_ALLOWED_MODULES` on a module-segment boundary (explicit opt-in for lazily-imported views). The gate runs before `__import__` at all three sinks (+ defense-in-depth inside `_instantiate_view`). As a workaround, set `LIVEVIEW_ALLOWED_MODULES` to the narrow list of modules that contain your mountable LiveView classes. (Note: pre-patch the allowlist is `startswith`-matched and the import still precedes the subclass check, so this is mitigation, not a complete fix.)",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T23:16:54.010"
+  },
+  {
+    "id": "CVE-2026-61596",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, djust's per-object authorization (`get_object` + `has_object_permission`, ADR-017) was enforced on the WebSocket mount and event paths but not on three other render entry points: (a) the initial HTTP GET render, (b) SPA `url_change` navigation, and (c) `{% live_render %}` embedded child views. An authenticated user could therefore view (and on some paths act on) an object they are not authorized for by loading the page directly, navigating to it via SPA url-change, or composing it as an embedded child — a classic IDOR / broken object-level access control on object-scoped views. This is fixed in djust 1.0.7. All render entry points now route through a shared `enforce_object_permission` chokepoint: HTTP GET returns 403, `url_change` emits a `permission_denied` frame and skips the render, and `{% live_render %}` (eager + lazy) refuses the embed. Views without a custom `get_object` are unaffected (no-op). No reliable workaround short of upgrading. Do not expose object-scoped views through the HTTP-GET / url_change / live_render paths until patched.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T23:16:53.860"
+  },
+  {
+    "id": "CVE-2026-61589",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, the WebSocket `handle_mount` and `ViewRuntime._build_request` rebuild an `HttpRequest` via `RequestFactory().get(...)` with no `HTTP_HOST`, so `request.get_host()` defaulted to `\"testserver\"` on the live path. Host/subdomain/domain `TenantResolver`s then misresolved the tenant — `None` on the live path while the HTTP path resolved correctly. With `STRICT_MODE=False` the tenant-scoped managers returned unscoped rows (cross-tenant disclosure); with the default they returned an empty queryset (broken tenancy). This is fixed in djust 1.0.7. The handshake Host is extracted from the ASGI scope, validated against `ALLOWED_HOSTS` (the same logic as the CSWSH Origin gate, parsed with Django's `split_domain_port` so malformed Hosts are rejected at the boundary), and propagated — with the TLS scheme — into the reconstructed request, so live-path tenant resolution matches HTTP exactly. There is no known workaround on the live path short of upgrading. Users are most exposed when combined with `STRICT_MODE=False`.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T23:16:53.717"
+  },
+  {
+    "id": "CVE-2026-61588",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, when a Django `Model` instance is assigned to a public view attribute, djust serialized it to the client with no sensitive-field denylist — sending fields such as `password` (the hash), privilege flags (e.g. `is_staff` / `is_superuser`), tokens, and other PII to the browser. Because exposing model objects to templates is a normal djust pattern, this could leak credentials/PII without the developer realizing the full object crossed the wire. This is fixed in djust 1.0.7. Model serialization applies a secure-by-default sensitive-field denylist (password/hash/token/secret-style fields and known privilege flags are withheld) with an identity-subset fallback. As a workaround, keep `Model` instances on `_private` attributes and expose only the specific fields needed, until patched.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T23:16:52.630"
+  },
+  {
+    "id": "CVE-2026-92599",
+    "description": "joi (npm package `joi`, hapi.js) versions >=17.2.0 <17.13.7 and >=18.0.0 <18.2.6 are vulnerable to regular expression denial of service in the `Joi.string().isoDate()` validation rule. One of the regular expressions the rule applies to the input is unanchored, so a valid ISO date followed by a long run of fractional-second digits causes the regex engine to restart its search from every position in the string, yielding time proportional to the square of the input length (about 1.4 s for 64 KB of digits and about 22 s for 256 KB). A remote attacker who can supply a string to an isoDate validation can stall the application with a single request. Fixed in 17.13.7 and 18.2.6; as a workaround, cap the length of the string before it reaches joi.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.980"
+  },
+  {
+    "id": "CVE-2026-92598",
+    "description": "Nodemailer before 9.1.0 fails to apply UTS-46 normalization when encoding international domain names, causing the domain resolver to compute a different Punycode A-label than standards-compliant parsers. Attackers can craft recipient addresses with invisible characters or compatibility mappings that pass domain allow-list checks but are delivered to attacker-controlled domains via SMTP.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.840"
+  },
+  {
+    "id": "CVE-2026-92597",
+    "description": "Nodemailer versions >= 6.9.16 and < 9.1.0 mis-parse RFC 5322 comments in email addresses: in lib/addressparser, a comment closed immediately before a non-break character causes the tokenizer to concatenate the atoms surrounding the comment instead of treating the comment as folding whitespace that terminates the domain. A recipient address such as user@good-corp.com(x)evil.com is therefore read by Nodemailer as the single domain good-corp.comevil.com (registrable domain comevil.com, which an attacker can register) and used for both the SMTP envelope (RCPT TO) and the emitted To:/From: headers, while a conformant RFC 5322 parser terminates the domain at the comment and reads good-corp.com. An application that validates the recipient domain with a strict RFC 5322 parser (without inspecting parse defects) or a naive prefix/substring allow-list and then hands the raw address to Nodemailer can be induced to deliver mail to a domain the attacker controls. Fixed in 9.1.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.700"
+  },
+  {
+    "id": "CVE-2026-92596",
+    "description": "Nodemailer before 9.1.0 contains a quadratic time complexity vulnerability in the addressparser component that allows remote attackers to cause denial of service by supplying a crafted comma-separated address list. Attackers can send a single email with a large number of addresses to block the Node.js event loop for extended periods, consuming 100% CPU and freezing the process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.557"
+  },
+  {
+    "id": "CVE-2026-92595",
+    "description": "Nodemailer (npm package `nodemailer`) versions 9.1.0 and earlier do not honor the `disableFileAccess` and `disableUrlAccess` sandbox options when message content is resolved through the public plugin API `MailMessage.resolveContent()` using the documented legacy three-argument signature `resolveContent(data, key, callback)`. Because `shared.resolveContent()` normalizes the missing `options` argument to an empty object, the message-level flags copied into `mail.data` by the MailMessage constructor are discarded, and `resolveContentValue()` skips both access-control checks, reaching `nmfetch(url)` or `fs.createReadStream(path)`. As a result, plugin or application code that resolves untrusted message content (html, text, attachment `path` or `href`) via this API can be induced to read arbitrary local files or issue outbound HTTP(S) requests (server-side request forgery), bypassing the sandbox the application enabled. The internal paths used by `transporter.sendMail()` (`resolveAll()`, `_convertDataImages()`, and the MIME streaming path) are not affected. Fixed in version 9.1.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.417"
+  },
+  {
+    "id": "CVE-2026-92594",
+    "description": "Craft CMS 5.0.0-RC1 through versions before 5.11.0 incorrectly authorize the GraphQL draftCreator and revisionCreator fields: instead of requiring the user-data scope enforced by Gql::canQueryUsers() (usergroups.*:read), these fields are gated only on the elements.drafts:read / elements.revisions:read scopes, and their resolver returns a raw User element whose email, username, fullName, and addresses fields have no per-field authorization. A client holding only the drafts or revisions scope — including an unauthenticated client when the operator has enabled the public GraphQL schema with those scopes — can therefore harvest the email addresses, usernames, full names, and postal addresses of all draft/revision creators (typically site editors and administrators). The issue is fixed in 5.11.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.283"
+  },
+  {
+    "id": "CVE-2026-92593",
+    "description": "Craft CMS versions 5.10.0 through 5.10.12 contain an incomplete fix for CVE-2026-55794: the Controller::getPostedRedirectUrl() -> View::renderObjectTemplate() sink remained unsandboxed, and the same fix commit added a self-signing oracle in Cp::elementLabelHtml(). Because Craft/Yii HMAC tokens are not bound to a parameter name, an authenticated low-privilege control panel user with edit rights on a single element type can mint a token over attacker-controlled Twig for the returnUrl parameter and replay it as the redirect POST parameter, reaching the unsandboxed sink and achieving server-side template injection that executes arbitrary PHP code (full server compromise). The issue is fixed in 5.10.13.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.150"
+  },
+  {
+    "id": "CVE-2026-92592",
+    "description": "Craft CMS 4.8.0 through 4.18.5 and 5.0.0 through 5.10.12 sign an authenticated user's attacker-controlled license-shun cookie with the same key and format used to validate signed redirect parameters, because the HMAC signature is not bound to its purpose (Yii's cookieValidationKey is derived from the same Craft securityKey used for signed request parameters). An authenticated, non-administrator user (Control Panel access is not required) can set the cookie via the license-shun endpoint and transplant the signed envelope into the redirect parameter; on a successful login, Craft validates the signature and renders the authenticated bytes as an unsandboxed Twig template, where Twig's map filter accepts a string callback and allows PHP system() to execute arbitrary operating-system commands as the web-server user. Exploitation requires an account using password authentication without active 2FA, the default request configuration, and availability of PHP system(). The issue is fixed in 4.18.6 and 5.10.13.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:30.013"
+  },
+  {
+    "id": "CVE-2026-92591",
+    "description": "Craft CMS 5.0.0 through 5.10.12 treats a database connection failure as meaning that Craft is not installed, which makes anonymous installer actions — including install/validate-site — reachable on an installed production site whenever PHP remains available but the configured MySQL endpoint does not. The action accepts a site name, serializes it through Site::getName(), and expands ${NAME} expressions using App::env(). An unauthenticated attacker who obtained a guest session cookie and matching CSRF token before the outage and whose session remains valid during it can submit a predictable variable name (for example Craft's conventional CRAFT_SECURITY_KEY) and receive its value, disclosing Craft secrets, process environment variables, $_SERVER entries, or PHP constants such as the security key, database credentials, or API keys. The issue requires an independently occurring database outage; the vulnerability itself provides no way to induce it. Fixed in 5.10.13.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:29.873"
+  },
+  {
+    "id": "CVE-2026-92590",
+    "description": "Craft CMS versions from 5.7.0 before 5.10.13 contain a stored cross-site scripting vulnerability in the Generated Fields feature that disables Twig autoescaping and fails to encode cached values. Content editors can inject malicious JavaScript through editable fields that executes in authenticated Control Panel sessions of higher-privileged users viewing element indexes.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:29.730"
+  },
+  {
+    "id": "CVE-2026-92589",
+    "description": "Craft CMS 5.0.0 through 5.10.12 (fixed in 5.10.13) contains a broken access control flaw in the nested-elements reorder endpoint. When an authenticated control panel user with viewEntries and viewPeerEntries (but without savePeerEntries) opens another author's entry in read-only mode, Craft unconditionally grants that session a `manageNestedElements::<ownerId>::field:<handle>` authorization flag for the entry's Matrix/Address fields. Unlike the corresponding delete endpoint, actions/nested-elements/reorder trusts this session flag alone and never rechecks the caller's save permission for the owner element. As a result, a view-only user can POST to actions/nested-elements/reorder using the ownerElementType, ownerId, ownerSiteId, attribute, elementIds, and offset parameters present in the read-only page source and rewrite the sort order of Matrix blocks or Addresses belonging to content they are explicitly denied save access to.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:29.583"
+  },
+  {
+    "id": "CVE-2026-92588",
+    "description": "n8n is a workflow automation platform. In n8n versions before 1.123.76, 2.37.7, and 2.38.2, the source control push endpoint derived the set of files to push from the file paths and status supplied in the client request payload instead of from the server-side status computed for the requesting user. An authenticated project-scoped user (e.g., a project admin) could therefore reference files belonging to projects they have no access to and push a deletion of those projects' workflows and credentials, resulting in cross-project data destruction. Exploitation requires the Source Control (Environments) enterprise feature to be licensed, enabled, and connected to a remote repository. The issue is fixed in 1.123.76, 2.37.7, and 2.38.2.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:29.447"
+  },
+  {
+    "id": "CVE-2026-92587",
+    "description": "n8n is a workflow automation platform. In versions before 1.123.76, 2.37.7, and 2.38.2, the Git node validated a relative remote URL against the configured repositoryPath but then invoked git with that path as its working directory; git walked up to the enclosing repository's top level and resolved the same relative URL from there. An authenticated user (member) who nested the repository one level below the configured path could therefore make an identical URL string pass the file-access check while git resolved it outside the sandbox. A subsequent fetch or pull read a git repository outside N8N_RESTRICT_FILE_ACCESS_TO and merged its objects into the user's own repository, where their contents could be read back. The issue is fixed in n8n 1.123.76, 2.37.7, and 2.38.2, which resolve the remote reference from the directory git actually operates in before applying the sandbox check. As a workaround, the Git node can be disabled by adding n8n-nodes-base.git to NODES_EXCLUDE.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:29.293"
+  },
+  {
+    "id": "CVE-2026-92586",
+    "description": "AVideo through 29.0 (commit c3edcc274c389816d434acadac07ee78eaf330c1) fails to verify video access permissions in the set_api_comment function, allowing authenticated users to post comments on password-protected and group-restricted videos. Attackers can submit POST requests to the comment API endpoint with arbitrary video IDs to write comments on videos they cannot watch.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:29.157"
+  },
+  {
+    "id": "CVE-2026-92585",
+    "description": "AVideo through 29.0 (commit c3edcc274c389816d434acadac07ee78eaf330c1) fails to validate video access permissions in the API like endpoint, allowing logged-in users to vote on password-protected and group-restricted videos. Attackers can submit like and dislike requests to increment vote counters on videos they cannot watch by calling the set.json.php endpoint with APIName parameters.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:29.027"
+  },
+  {
+    "id": "CVE-2026-92584",
+    "description": "AVideo through 29.0 (current revision e01e41ecc) contains a stored cross-site scripting vulnerability. The unauthenticated view-counter endpoint objects/videoAddViewCount.json.php reaches VideoStatistic::save(), which writes the caller's User-Agent (via getUserAgentInfo(), which returns unrecognized agent strings verbatim) directly into the `app` column of the videos_statistics table without invoking the sanitizing setter setApp(); normalizeApp() only truncates the value to 45 characters. The video owner's and administrator's statistics page (view/videoViewsInfo.php) renders this field in a DataTables 1.12.1 column with an unescaped renderer, and DataTables assigns cell content using innerHTML, so attacker-supplied HTML is parsed and executed in the privileged user's authenticated session when the statistics page is viewed. No patched version was available at the time of the advisory.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:28.890"
+  },
+  {
+    "id": "CVE-2026-92583",
+    "description": "AVideo through 29.0 contains a race condition in the enforceRateLimit() function that fails to atomically increment rate limit counters, allowing attackers to bypass all rate limits including login brute-force protection by issuing concurrent requests. Attackers can submit parallel credential attempts to exceed the documented 30-attempts-per-5-minutes login limit by an arbitrary factor determined only by their connection concurrency.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:28.747"
+  },
+  {
+    "id": "CVE-2026-92582",
+    "description": "AVideo (WWBN/AVideo) through 29.0 (commit e01e41ecc) is vulnerable to cross-site request forgery. objects/videoAddNew.json.php disables AVideo's automatic CSRF guard ($global['skipAutoCSRFCheck']) and the untrusted-request check ($global['bypassSameDomainCheck']) merely because 'user' and 'pass' parameters are present in the request; the values are never validated and are read from $_REQUEST, so an attacker can supply them in the query string of a cross-site request. Because User::loginFromRequestIfNotLogged() returns immediately when a session already exists, a victim who is authenticated by cookie satisfies the check while the attacker-supplied credentials are discarded. An attacker who lures an authenticated user with upload rights to visit a crafted page can therefore submit cross-origin requests that modify video records — including ownership transfer (setUsers_id), deletion of user-group access restrictions, can_download, can_share, only_for_paid, video_password, rating, status, creation date, and view count. For a victim with administrator or Permissions::canAdminVideos() rights, any video on the site can be altered, including removing group restrictions from private content. No patched version was available at the time of the advisory.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:28.600"
+  },
+  {
+    "id": "CVE-2026-92581",
+    "description": "In AVideo through 29.0, Like::__construct() performs counter arithmetic on raw request values before validation, allowing array-typed parameters to desynchronize stored votes from counters. Authenticated attackers can send array-typed like parameters followed by ordinary requests to drive video like counts arbitrarily negative, with the corruption persisting in the denormalized counter until manual repair.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:28.470"
+  },
+  {
+    "id": "CVE-2026-92580",
+    "description": "In AVideo through 29.0, the CloneSite plugin is vulnerable to stored OS command injection. In plugin/CloneSite/cloneClient.json.php (line ~270) the stored SSH password is substituted into the command string `sshpass -p '{password}' rsync ...` with a plain str_replace and no escaping, so a single quote in the password breaks out of the quoted word and injects arbitrary shell. The password is written through the admin-only endpoint objects/pluginAddDataObject.json.php, whose only CSRF defense (isUntrustedRequest()/forbidIfIsUntrustedRequest()) is a no-op when the request source appears to be loopback — as happens behind a same-host TLS-terminating reverse proxy with $global['trustedProxies'] unset — or when an attacker-controlled application is co-hosted on the same hostname; on HTTPS the session cookie is issued with SameSite=None, so a cross-site POST carries it. An unauthenticated remote attacker can therefore lure an authenticated administrator into planting a malicious password (and an attacker-controlled cloneSiteURL), after which the plugin's documented crontab entry executes the injected command with no further administrator action, as the crontab owner (commonly root or www-data). Exploitation requires the CloneSite plugin to be enabled with the documented crontab installed and one of the above CSRF channels; default single-process Apache deployments are reported as not CSRF-exploitable. This is a residual sink of CVE-2026-41304. The issue is confirmed at master HEAD (8963b6a1); no patched version is available.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:28.333"
+  },
+  {
+    "id": "CVE-2026-92579",
+    "description": "In AVideo through 29.0, the autoCSRFGuard() function maintains a hardcoded allowlist of exempt basenames tested without directory context, allowing plugin files matching core filenames to inherit CSRF exemptions. The LoginWordPress plugin file login.json.php inherits an exemption and unconditionally logs out authenticated users on cross-site POST requests before validating credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:28.193"
+  },
+  {
+    "id": "CVE-2026-92578",
+    "description": "WWBN AVideo through 29.0 contains an authentication bypass vulnerability where the stored password hash is accepted as a valid login credential through two independent code paths in loginFromRequest() and encryptPasswordVerify(). Attackers who obtain the stored users.password hash value can authenticate as any user by submitting the hash directly to login endpoints, completely bypassing password verification.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:28.053"
+  },
+  {
+    "id": "CVE-2026-92577",
+    "description": "In AVideo through 29.0, the API get_api_video endpoint contains a broken access control vulnerability in the clean_title branch that returns user-group-restricted videos with owner PII to anonymous callers. Attackers can query videos by their public slug to bypass group restrictions and retrieve sensitive user fields including email, phone, address, birth date, and administrator status.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:27.910"
+  },
+  {
+    "id": "CVE-2026-92576",
+    "description": "HKUDS nanobot before 0.3.0 contains a server-side request forgery vulnerability in the WebFetchTool component where the _validate_url() function fails to block internal IP ranges and private addresses. Attackers can send messages instructing the bot to fetch cloud metadata endpoints, localhost services, and RFC 1918 addresses to extract IAM credentials and internal service data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:27.757"
+  },
+  {
+    "id": "CVE-2026-89034",
+    "description": "TCH QRing smart ring model R20_B006 running firmware RT09R20_1.00.00_250318 contains an unauthenticated Bluetooth Low Energy access vulnerability that allows any nearby attacker to connect to the device without pairing, authentication, or user approval by exploiting the exposed Nordic UART Service which enforces no client authentication or command authorization. Attackers within Bluetooth Low Energy range can connect directly to the ring, bypassing the official application and cloud authentication, to read battery levels, activate live heart rate monitoring, and retrieve stored historical heart rate and blood oxygen records.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:27.613"
+  },
+  {
+    "id": "CVE-2026-85469",
+    "description": "A flaw was found in quay-builder-qemu. A remote attacker could exploit this by compromising the upstream `Noelware/docker-manifest-action` used in the release workflow, which is pinned to a mutable branch. This allows the attacker to inject arbitrary code, leading to the exfiltration of sensitive registry credentials or the publication of malicious images. The workflow also exposes the default GitHub token, increasing the severity of the compromise.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:18:27.037"
+  },
+  {
+    "id": "CVE-2026-64684",
+    "description": "RMCP is an official Rust SDK for the Model Context Protocol. Prior to 2.1.0, the rmcp crate's StreamableHttpClientTransport in crates/rmcp/src/transport/common/reqwest/streamable_http_client.rs builds its default_http_client with reqwest's automatic redirect policy and applies caller-supplied values from StreamableHttpClientTransportConfig.custom_headers without marking them as sensitive. When a malicious or compromised MCP endpoint returns a cross-origin 307 or 308 redirect, reqwest follows the redirect and apply_custom_headers causes custom API keys or authentication tokens to be replayed to the new origin, where an attacker can capture and reuse them. The separate auth_header path is not affected because it uses the standard Authorization header, which reqwest strips on cross-origin redirects. This issue is fixed in version 2.1.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:17:04.577"
+  },
+  {
+    "id": "CVE-2026-61597",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, many djust built-in component template tags (`djust.components.templatetags.*`) render a developer/user-supplied URL into an `href` / `action` attribute, HTML-escaping it with `conditional_escape` but never validating the URL scheme. HTML escaping prevents attribute breakout but does not neutralize a `javascript:` URI (which needs no escapable characters), so a URL value of `javascript:alert(document.cookie)` lands verbatim in `<a href=\"javascript:alert(document.cookie)\">` and executes in the victim's session on click. Version 1.0.7 contains a fix. As a workaround, do not pass user-controllable URLs to the affected built-in component tags; pre-validate URL schemes in application code before binding them to component arguments.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:17:03.187"
+  },
+  {
+    "id": "CVE-2026-61594",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, the live (WebSocket) transport authorizes a mount via `check_view_auth`, not Django's `View.dispatch()` chain. As a result, standard Django authorization — `LoginRequiredMixin`, `PermissionRequiredMixin`, `UserPassesTestMixin`, `@method_decorator(login_required, name=\"dispatch\")`, and custom `dispatch()` guards — and the djust admin extension's staff gate (applied only in the HTTP `as_view` wrapper) were enforced on the initial HTTP GET but silently bypassed over WebSocket, where all events and state flow. An anonymous or under-privileged client could open a WebSocket and mount such a view — including admin list/create/change/delete — and dispatch its handlers. This is fixed in djust 1.0.7. `check_view_auth` now honors the Django `AccessMixin` family on every transport; a new system check S004 fails loud at startup on auth patterns the runtime cannot safely replay (decorator/overridden-`dispatch` forms); and the admin base mixin declares `login_required = True` + an active-staff `check_permissions` gate. As a workaround, gate views using djust's `login_required` / `permission_required` / `check_permissions` attributes (honored on all transports) rather than HTTP-only mixins/decorators.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:17:03.047"
+  },
+  {
+    "id": "CVE-2026-61592",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, SSE sessions were keyed solely by a client-chosen `session_id` with no binding to the authenticated user — a control the WebSocket transport has but that was dropped on SSE. An attacker who learns (or a victim who leaks) a `session_id` could connect to the message endpoint and dispatch event handlers that execute with the victim's identity and state. This is fixed in djust 1.0.7. Each SSE session is bound to its owning principal at creation and cross-principal access is rejected; SSE session creation is additionally capped per principal. As a workaround, disable the SSE transport.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:17:02.900"
+  },
+  {
+    "id": "CVE-2026-61591",
+    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, for views that opt into state snapshots, the snapshot `state_json` embedded in the client page was restored on reconnect as trusted view state with no integrity check. A client could edit the unsigned `state_json` in their page and return it in the reconnect mount frame to inject arbitrary view attributes — e.g. flip `is_admin` to `True`, or change `account_id` / `balance` — escalating privilege or tampering with business state held in public view attributes (the normal djust pattern). This issue is fixed in djust 1.0.7. State snapshots are signed; unsigned or forged snapshots are rejected on the back-navigation restore path. As a workaround, do not enable state snapshots; do not hold authorization/ownership state in public view attributes.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T22:17:02.763"
+  },
+  {
+    "id": "CVE-2026-92816",
+    "description": "ComfyUI before 0.30.0 fails to sanitize folder_name input in dataset save nodes, allowing attackers to write files to arbitrary paths outside the output directory. Attackers can load a crafted workflow that writes attacker-controlled content to arbitrary locations, enabling code execution through modified startup files or package initializers.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:31.647"
+  },
+  {
+    "id": "CVE-2026-92815",
+    "description": "changedetection.io through 0.60.6 fails to validate the Goto URL action in browser steps, allowing unauthenticated attackers to access internal addresses. Attackers can supply arbitrary internal URLs in the optional_value parameter to retrieve responses from restricted network locations.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:31.503"
+  },
+  {
+    "id": "CVE-2026-92814",
+    "description": "changedetection.io through 0.60.6 fails to escape the scraped page title in HTML notifications, allowing arbitrary markup injection. Attackers can place malicious markup in monitored page titles that reaches notification channels like email and Telegram as live content when the watch_title token is used in templates.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:31.343"
+  },
+  {
+    "id": "CVE-2026-92813",
+    "description": "Metabase through 0.63.18 fails to properly validate the unspecified address 0.0.0.0 in custom GeoJSON URLs, allowing unauthenticated attackers to reach loopback services. Attackers can save a malicious GeoJSON entry with 0.0.0.0 and trigger requests that return loopback service responses to unauthenticated callers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:31.163"
+  },
+  {
+    "id": "CVE-2026-92812",
+    "description": "decap-server contains a path traversal vulnerability in the local proxy containment guard that uses plain string prefix comparison without path separator validation. Attackers can access sibling directories whose names begin with the repository directory name to read, write, or delete files outside the intended repository root.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:31.017"
+  },
+  {
+    "id": "CVE-2026-92811",
+    "description": "browserless versions 1.44.0 through 2.56.7 fail to enforce file protocol restrictions in Playwright websocket endpoints, allowing authenticated token holders to read arbitrary files. Attackers can navigate Playwright-driven browsers to file scheme URLs and access files accessible to the container process despite the ALLOW_FILE_PROTOCOL setting defaulting to false.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:30.877"
+  },
+  {
+    "id": "CVE-2026-92810",
+    "description": "PrestaShop blockwishlist through 3.0.2 fails to validate wishlist ownership in the getUrlByIdWishListAction method, allowing authenticated customers to retrieve share tokens for any wishlist by identifier. Attackers can supply sequential wishlist identifiers to obtain valid share links and read other customers' private wishlist contents.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:30.723"
+  },
+  {
+    "id": "CVE-2026-92809",
+    "description": "PrestaShop psgdpr versions through 1.4.3 fail to validate that GDPR consent log entries are attributed to the authenticated customer. Authenticated attackers can submit arbitrary customer identifiers to create forged consent records for other customers, corrupting audit logs.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:30.570"
+  },
+  {
+    "id": "CVE-2026-92806",
+    "description": "phpList versions before 3.6.17 fail to validate cross-site request forgery tokens in the mass subscriber removal form handler. Attackers can induce logged-in administrators to visit crafted pages that silently delete and blacklist arbitrary subscriber addresses without authentication verification.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:30.410"
+  },
+  {
+    "id": "CVE-2026-92805",
+    "description": "UVdesk Community Skeleton through 1.1.8 fails to authenticate or validate installation state on wizard endpoints in ConfigureHelpdesk controller actions. Unauthenticated attackers can repoint the database and create super administrator accounts by submitting crafted requests to wizard endpoints, gaining full control of the instance.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:30.267"
+  },
+  {
+    "id": "CVE-2026-92804",
+    "description": "Nango through 0.70.4 fails to validate caller-supplied connection configuration values interpolated into provider token and proxy URL templates. Authenticated attackers can supply malicious configuration values to direct server requests at internal addresses or cloud metadata endpoints, potentially exfiltrating provider credentials.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:30.120"
+  },
+  {
+    "id": "CVE-2026-92803",
+    "description": "LibreTranslate through 1.9.6 omits the access_check decorator from the download_file route, allowing unauthenticated access to translated files. Attackers can bypass API key requirements and abuse ban lists to download files without authentication on protected instances.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:29.970"
+  },
+  {
+    "id": "CVE-2026-92802",
+    "description": "kan through 0.6.0 fails to properly validate board creation permissions in the GitHub project import endpoint, allowing guests to create boards despite lacking board:create permission. Attackers can bypass authorization checks by using the importProjects mutation to create boards while remaining blocked on direct creation paths.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:29.830"
+  },
+  {
+    "id": "CVE-2026-92801",
+    "description": "cc-connect through 1.5.0 fails to enforce per-user allowlist filtering in the onCardAction handler for Feishu interactive card callbacks. Attackers can dispatch agent commands by triggering card actions in admitted chats, bypassing the per-user access controls that protect the text message handler.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:29.680"
+  },
+  {
+    "id": "CVE-2026-92800",
+    "description": "Docs before 5.4.1 fails to properly revoke websocket collaboration connections when access is revoked at parent documents. Attackers with revoked access can retain real-time read and write access to sub-documents through open websocket sessions that are never disconnected.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:29.533"
+  },
+  {
+    "id": "CVE-2026-92796",
+    "description": "Manticore Search versions 27.0.0 before 28.4.4 fail to validate permissions for all statements in multi-statement SQL requests, allowing read-only users to execute unauthorized queries. Attackers can append additional SELECT statements after the first statement to read credential tables and obtain password hashes that authenticate as administrators without plaintext recovery.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:29.377"
+  },
+  {
+    "id": "CVE-2026-92795",
+    "description": "Coze Studio through 0.5.1 fails to restrict the server URL supplied when registering plugin tools, allowing authenticated users to make the backend fetch internal services. Attackers can construct plugin requests to access cloud metadata endpoints and internal services reachable only from the backend network, reading responses containing sensitive information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:29.227"
+  },
+  {
+    "id": "CVE-2026-92794",
+    "description": "OpenSign through 2.41.3 fails to validate caller identity in the getDocument cloud function when one-time-password verification is disabled. Attackers can supply a document identifier from guest signing links to retrieve complete document details including all signers' information, sender identity, and valid download tokens without authentication.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:29.073"
+  },
+  {
+    "id": "CVE-2026-92793",
+    "description": "GoAdmin through 1.2.26 fails to properly anchor the logout pattern when checking permissions, allowing authenticated users to bypass permission checks by appending a query parameter. Attackers can append a query string containing the admin prefix followed by /logout to reach administrative endpoints and perform unauthorized actions including reading sensitive data and modifying application state.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:28.923"
+  },
+  {
+    "id": "CVE-2026-92792",
+    "description": "OpenNHP through 1.0.2 selects its trusted-execution attestation verifier based on attacker-supplied evidence containing a test_purpose key, causing the FallbackVerifier to execute unconditionally. Attackers can bypass attestation verification by including the test_purpose key in evidence and providing enrolled measure and serial number pairs from the allowlist to gain unauthorized access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:28.780"
+  },
+  {
+    "id": "CVE-2026-92791",
+    "description": "Uber Kraken through 0.1.29 fails to validate the tag parameter in the /tags/{tag} endpoint, allowing unauthenticated attackers to traverse outside the configured storage root. Attackers can use percent-encoded parent-directory segments in the tag parameter to read arbitrary files accessible to the testfs backend process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:28.627"
+  },
+  {
+    "id": "CVE-2026-92790",
+    "description": "Higress before 2.2.4 panics when processing a Cookie header segment without an equals sign, causing the plugin wrapper to recover and return a continue action that bypasses AI token rate limiting. Unauthenticated attackers can craft a malformed Cookie header to skip rate limit checks and exceed thresholds intended to restrict costly model backend calls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:28.480"
+  },
+  {
+    "id": "CVE-2026-92789",
+    "description": "Graylog through 7.1.4 validates outbound URLs against an allowlist before making requests but fails to re-validate after following HTTP redirects. Attackers with lookup table or event notification permissions can craft allowlisted endpoints that redirect to internal services, enabling the server to fetch and return internal responses.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:28.330"
+  },
+  {
+    "id": "CVE-2026-92788",
+    "description": "Coze Studio through 0.5.1 fails to validate that table names in workflow SQL customization nodes belong to the caller's workspace. Authenticated attackers can enumerate predictable table identifiers and execute SQL statements against other workspaces' memory databases to read, insert, or delete data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:28.180"
+  },
+  {
+    "id": "CVE-2026-92787",
+    "description": "Feast through 0.66.0 fails to verify JWT token signatures before establishing user identity, allowing attackers to bypass all role-based access control by presenting an unverified token with a hardcoded claim value. Attackers can obtain trusted internal identity and gain unchecked read and write access to all entities, feature views, data sources, and permission policies on the server.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:28.023"
+  },
+  {
+    "id": "CVE-2026-92786",
+    "description": "LightGBM through 4.7.0 fails to validate child and split array values when parsing text models, allowing attackers to write out-of-bounds memory during SHAP prediction. Attackers can craft malicious model files with invalid node references that trigger out-of-bounds writes at attacker-chosen offsets in the leaf_depth_ buffer during feature contribution computation.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:27.880"
+  },
+  {
+    "id": "CVE-2026-92785",
+    "description": "Angel through 3.3.0 deserializes untrusted setAlgoMetrics payload using Kryo without class registration or allowlist validation. Unauthenticated network attackers can instantiate arbitrary classes or exhaust coordinator memory by sending crafted serialized objects to the master RPC endpoint.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:27.730"
+  },
+  {
+    "id": "CVE-2026-92784",
+    "description": "@refinedev/inferencer through 7.0.0 fails to escape API field names when interpolating them into generated JSX source code. Attackers controlling the data provider can inject malicious JavaScript through crafted JSON property names that execute in the developer's browser when the Inferencer page renders.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:27.580"
+  },
+  {
+    "id": "CVE-2026-92783",
+    "description": "Yeti through 2.11.0 fails to validate caller permissions in the DELETE /api/v2/rbac/{id} endpoint, allowing users with read access to delete access control relationships. Attackers can revoke the owner's grant and permanently lock legitimate owners out of objects.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:27.433"
+  },
+  {
+    "id": "CVE-2026-92782",
+    "description": "Chroma through 1.5.9 fails to validate tenant and database segments when resolving collections, allowing authenticated attackers to access collections from other tenants by knowing the collection identifier. Attackers can read, modify, and update records in foreign collections by issuing requests under their own tenant path, bypassing authorization checks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:27.280"
+  },
+  {
+    "id": "CVE-2026-92781",
+    "description": "Builder.io Gen2 SDKs through versions 5.2.11 and 0.25.13 contain a prototype pollution vulnerability in the unflatten helper that processes builder.userAttributes query parameters without prototype guards. Attackers can craft preview links with __proto__ or prototype segments to pollute Object.prototype in a visitor's browser when the SDK processes the malicious URL.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:27.130"
+  },
+  {
+    "id": "CVE-2026-92780",
+    "description": "KnowStreaming through 3.4.1 fails to enforce role-based access control on REST API endpoints, allowing any authenticated user to access protected functionality. Attackers can call identity-management endpoints to create administrator accounts or grant themselves administrative privileges without proper authorization.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:26.987"
+  },
+  {
+    "id": "CVE-2026-92779",
+    "description": "Builder.io Gen2 SDKs through versions 5.2.11 and 0.25.13 contain a prototype pollution vulnerability in the deep-set helper function that processes content block bindings without validation. Attackers can craft content blocks with binding keys containing __proto__, prototype, or constructor paths to pollute Object.prototype during rendering, affecting all subsequent objects created in the process including other tenants' renders.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:26.827"
+  },
+  {
+    "id": "CVE-2026-92778",
+    "description": "CMAK through 3.0.0.6 fails to apply the scheduled leader election feature toggle to HTML form routes, allowing attackers to bypass the feature gate. Attackers can access the form endpoints to start and stop the recurring election scheduler, disrupting leadership across managed Kafka clusters.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:26.690"
+  },
+  {
+    "id": "CVE-2026-92776",
+    "description": "Wiki.js through 2.5.314 fails to require path separators when matching START and END page rules, allowing attackers to access pages sharing a prefix with authorized folders. Users granted access to a folder can read and modify unrelated pages with matching prefixes, bypassing intended access controls.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:26.547"
+  },
+  {
+    "id": "CVE-2026-92775",
+    "description": "Wiki.js through 2.5.314 contains a server-side request forgery vulnerability in the Image Prefetch renderer that fetches arbitrary URLs without protocol, host, or address validation. Attackers with page editing permissions can inject img elements with the prefetch-candidate class to make the server request internal services and cloud metadata endpoints, with responses returned to the attacker.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:26.390"
+  },
+  {
+    "id": "CVE-2026-92774",
+    "description": "Wiki.js through 2.5.314 omits page tags from authorization checks in multiple GraphQL resolvers, allowing tag-based access restrictions to be bypassed. Attackers can query the list, tree, tags, searchTags, and links resolvers to retrieve restricted page metadata including titles, descriptions, paths, and tag information without proper authorization.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:26.247"
+  },
+  {
+    "id": "CVE-2026-92773",
+    "description": "Trigger.dev before 4.6.0 fails to verify that an authenticated user controls a GitHub App installation before binding it to their organization. Attackers can claim another user's GitHub App installation by replaying state cookies and supplying sequential installation identifiers, gaining unauthorized access to the victim's repositories.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:26.063"
+  },
+  {
+    "id": "CVE-2026-92772",
+    "description": "Leantime before 3.9.6 contains an authorization bypass vulnerability in the HTMX plugin install endpoint that lacks permission validation. Authenticated users with limited roles can install marketplace plugins and control arbitrary properties including identifier, version, and license key to deploy malicious plugins.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:25.897"
+  },
+  {
+    "id": "CVE-2026-92771",
+    "description": "Twenty before 2.35.0 fails to validate field and row permissions in the groupBy-with-records GraphQL resolver, allowing authenticated users to bypass permission checks. Attackers with canReadObjectRecords permission but canReadFieldValue false can retrieve restricted field values through the groupBy resolver that would normally be denied.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:25.750"
+  },
+  {
+    "id": "CVE-2026-92770",
+    "description": "Harbor through 2.15.2 fails to properly restrict the q query parameter filtering on scanner registration access credentials. Project administrators can exploit fuzzy filtering on the AccessCredential column to recover the scanner adapter secret one character at a time through response row counts.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:25.597"
+  },
+  {
+    "id": "CVE-2026-92765",
+    "description": "ArcherySec through 2.0.6 fails to validate organization ownership in the WebScanVulnList endpoint, allowing authenticated users to read vulnerability findings from other organizations. Attackers can supply arbitrary scan identifiers to retrieve complete web vulnerability data including titles, severities, statuses, and analyst notes from other tenants.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:25.447"
+  },
+  {
+    "id": "CVE-2026-92764",
+    "description": "OpenCVE before 3.1.0 fails to properly scope the organizations API endpoint to the token's organization, instead returning the token creator's memberships. Attackers with organization-scoped tokens can list and retrieve every organization their creator belongs to, bypassing intended token isolation boundaries.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:25.303"
+  },
+  {
+    "id": "CVE-2026-92763",
+    "description": "Rundeck through 6.2.1 fails to properly authorize the importConfig and importNodesSources parameters in the project archive import endpoint. Attackers with only the import action can replace project configuration files including security-relevant settings like node executors and SSH key paths that affect job execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:25.150"
+  },
+  {
+    "id": "CVE-2026-92762",
+    "description": "Pelican Panel versions before 1.0.0-beta35 enforce startup write permissions only through disabled form controls rather than server-side authorization checks. Attackers with startup.read permission can craft Livewire state updates to invoke afterStateUpdated callbacks and modify startup commands, docker images, and variables to execute arbitrary commands in the container.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:24.930"
+  },
+  {
+    "id": "CVE-2026-92761",
+    "description": "WebVirtCloud fails to properly validate permission flags in UserInstance grants, allowing view-only users to perform privileged actions. Attackers with read-only grants can power off virtual machines, reset root passwords, install SSH keys, and manage ISO images by exploiting the get_instance gate that only checks grant existence.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:24.780"
+  },
+  {
+    "id": "CVE-2026-92760",
+    "description": "Shlink through 5.1.6 fails to enforce API key role restrictions when issuing Mercure subscription tokens, allowing restricted keys to subscribe to all topics. Attackers with author-only or domain-only keys can access the mercure-info endpoint to receive visit data including referrer, user agent, geolocation, and full short URL objects for URLs outside their authorization boundary.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:24.630"
+  },
+  {
+    "id": "CVE-2026-92759",
+    "description": "SecObserve versions before 1.59.1 contain an information disclosure vulnerability in the ApiConfigurationSerializer that fails to strip the basic_auth_password field from API configuration responses. View-only product members can retrieve the decrypted basic-auth password of configured scanner or integration service accounts through standard REST endpoints.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:24.470"
+  },
+  {
+    "id": "CVE-2026-92754",
+    "description": "PatrowlManager through 1.8.4 contains an improper access control vulnerability in the user listing API endpoint where the authorization decorator is commented out. Authenticated attackers with low-privilege accounts can enumerate all users and their privilege flags including superuser and staff status by accessing the endpoint.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:24.323"
+  },
+  {
+    "id": "CVE-2026-92753",
+    "description": "PatrowlManager through 1.8.4 contains an authorization bypass vulnerability in the events and alerts API endpoints that lack ownership filtering. Authenticated attackers can read platform event history, delete arbitrary events, and modify alerts belonging to other users.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:24.180"
+  },
+  {
+    "id": "CVE-2026-92752",
+    "description": "metasfresh DocumentAttachmentsRestController and CommentsRestController endpoints check only that callers are logged in without enforcing record-level permissions. Attackers can enumerate sequential document identifiers to read, replace, and delete attachments and comments on records their role cannot access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:24.023"
+  },
+  {
+    "id": "CVE-2026-92751",
+    "description": "CMAK through 3.0.0.6 fails to install a cross-site request forgery filter, allowing attackers to perform state-changing actions on behalf of authenticated operators. Attackers can craft hidden forms that submit to destructive endpoints like topic deletion and cluster configuration changes, leveraging the operator's HTTP Basic authentication credentials or play-basic-authentication cookie without SameSite protection.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:23.863"
+  },
+  {
+    "id": "CVE-2026-92750",
+    "description": "Harness through 3.3.0 omits access control validation in the infrastructure provider read endpoint, allowing authenticated users to retrieve provider configurations from spaces they do not belong to. Attackers can query the GET /api/v1/infraproviders endpoint with arbitrary space identifiers to expose sensitive provider metadata including Docker endpoints, TLS certificate paths, and cloud project identifiers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:23.720"
+  },
+  {
+    "id": "CVE-2026-92749",
+    "description": "SafeLine through 9.4.1 derives the management console session-signing secret from a time-seeded math/rand generator, allowing attackers to reconstruct the key offline. Unauthenticated remote attackers who can bound the install timestamp can regenerate the secret and forge valid administrator session cookies to gain control of protected sites.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:23.563"
+  },
+  {
+    "id": "CVE-2026-92748",
+    "description": "BC Security Empire before 6.7.1 fails to validate the multipart filename parameter in upload endpoints, allowing authenticated operators to write files to arbitrary paths on the C2 server. Attackers can use path traversal sequences in the filename to bypass directory containment and write malicious files to sensitive locations for code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:23.387"
+  },
+  {
+    "id": "CVE-2026-92527",
+    "description": "A vulnerability has been found in chatwoot up to 4.17.1. This impacts an unknown function of the file callbacks_controller.rb of the component Shopify OAuth. The manipulation leads to server-side request forgery. Remote exploitation of the attack is possible. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:23.170"
+  },
+  {
+    "id": "CVE-2026-81872",
+    "description": "OpenTelemetry-Go is the Go implementation of OpenTelemetry. Prior to version 0.21.0, the go.opentelemetry.io/otel/sdk/log BatchingProcessor can enter a tight CPU loop when attacker-driven log emission fills its asynchronous export buffer while the exporter is backpressured. NewBatchingProcessor wraps the exporter with newBufferExporter(exporter, 1), and the poll loop calls queue.TryDequeue and bufferExporter.EnqueueExport before immediately signaling pollTrigger whenever the queue remains at or above batchSize. Because a failed nonblocking EnqueueExport leaves the queue length unchanged, the processor repeatedly retries without waiting for its ticker, exhausting CPU and degrading or denying service in the embedding process. This issue is fixed in version 0.21.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:22.467"
+  },
+  {
+    "id": "CVE-2026-81871",
+    "description": "OpenTelemetry-Go is the Go implementation of OpenTelemetry. Prior to version 0.21.0, the exporters/otlp/otlplog/otlploggrpc package loads OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE, OTEL_EXPORTER_OTLP_CERTIFICATE, and related client certificate environment variables through loadEnvTLS into cfg.tlsCfg, but newGRPCDialOptions does not apply cfg.tlsCfg when creating gRPC transport credentials. The environment-only TLS path instead uses credentials.NewTLS with system roots and no configured client certificate, bypassing intended private CA pinning and mutual TLS unless the application also supplies WithTLSCredentials. A network attacker able to intercept or spoof the collector connection with a system-trusted certificate can read or alter log telemetry. This issue is fixed in version 0.21.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:22.323"
+  },
+  {
+    "id": "CVE-2026-81869",
+    "description": "OpenTelemetry-Go is the Go implementation of OpenTelemetry. From version 1.10.0 until 1.33.0, the sdk/trace/span.go attribute truncation path can fail to enforce AttributeValueLengthLimit for string and string-slice attributes containing the valid Unicode replacement character U+FFFD. safeTruncateValidUTF8 treats the valid replacement rune as invalid UTF-8 and returns the original input, while strings.ToValidUTF8 leaves that valid rune unchanged, so a second safeTruncate attempt can also return the oversized value. An attacker who controls span attribute content can retain values longer than the configured limit, increasing per-span memory use and weakening denial-of-service protection in the instrumented process. This issue is fixed in version 1.33.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:22.180"
+  },
+  {
+    "id": "CVE-2026-76460",
+    "description": "A vulnerability in an API of Cisco Identity Services Engine (ISE) could allow an unauthenticated, remote attacker to bypass authentication.\r\n\r\nThis vulnerability is due to insufficient authentication control on an API endpoint. An attacker could exploit this vulnerability by sending a crafted request to an affected API endpoint. A successful exploit could allow the attacker to gain unauthorized access to the affected device by bypassing the web-based management interface.",
+    "severity": "Critical",
+    "tech": "Identity services engine",
+    "published": "2026-09-16T21:17:21.430"
+  },
+  {
+    "id": "CVE-2026-76451",
+    "description": "A vulnerability in Cisco Identity Services Engine (ISE) and Cisco ISE Passive Identity Connector (ISE-PIC) could allow an authenticated, remote attacker to conduct an SQL or HQL injection attack on an affected device.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input to the affected APIs before it is used to build database queries. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to execute arbitrary SQL or HQL queries against the underlying database, which could allow the attacker to view or modify data that they are not authorized to access. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:21.300"
+  },
+  {
+    "id": "CVE-2026-76450",
+    "description": "A vulnerability in Cisco Identity Services Engine (ISE) and Cisco ISE Passive Identity Connector (ISE-PIC) could allow an authenticated, remote attacker to conduct an SQL or HQL injection attack on an affected device.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input to the affected APIs before it is used to build database queries. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to execute arbitrary SQL or HQL queries against the underlying database, which could allow the attacker to view or modify data that they are not authorized to access. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:21.163"
+  },
+  {
+    "id": "CVE-2026-76449",
+    "description": "A vulnerability in Cisco Identity Services Engine (ISE) and Cisco ISE Passive Identity Connector (ISE-PIC) could allow an authenticated, remote attacker to conduct an SQL or HQL injection attack on an affected device.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input to the affected APIs before it is used to build database queries. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to execute arbitrary SQL or HQL queries against the underlying database, which could allow the attacker to view or modify data that they are not authorized to access. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:21.017"
+  },
+  {
+    "id": "CVE-2026-76448",
+    "description": "A vulnerability in Cisco Identity Services Engine (ISE) and Cisco ISE Passive Identity Connector (ISE-PIC) could allow an authenticated, remote attacker to conduct an SQL or HQL injection attack on an affected device.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input to the affected APIs before it is used to build database queries. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to execute arbitrary SQL or HQL queries against the underlying database, which could allow the attacker to view or modify data that they are not authorized to access. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:20.867"
+  },
+  {
+    "id": "CVE-2026-76447",
+    "description": "A vulnerability in the Online Certificate Status Protocol (OCSP) responder of Cisco ISE and Cisco ISE-PIC could allow an unauthenticated, remote attacker to cause an administrative reload of the OCSP responder certificate and key material.\r\n\r\nThis vulnerability is due to missing authentication on a function of the OCSP responder. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to cause the OCSP responder to reload certificate and key material on demand.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:20.730"
+  },
+  {
+    "id": "CVE-2026-76446",
+    "description": "A vulnerability in an API of Cisco ISE and Cisco ISE-PIC could allow an authenticated, remote attacker to read specific&nbsp;files on the underlying operating system of an affected device.\r\n\r\nThis vulnerability is due to improper restriction of XML external entity references. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to read specific&nbsp;files on the affected system that the underlying process has permission to access.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:20.597"
+  },
+  {
+    "id": "CVE-2026-76444",
+    "description": "A vulnerability in an internal service of Cisco ISE and Cisco ISE-PIC could allow an unauthenticated, remote attacker to retrieve sensitive configuration information from an affected device.\r\n\r\nThis vulnerability is due to missing authentication on the Policy Runtime Repository Table (PRRT) service. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to obtain sensitive configuration information from the affected device.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:19.463"
+  },
+  {
+    "id": "CVE-2026-76439",
+    "description": "A vulnerability in the endpoint posture status reporting functionality of the guest portal web application of Cisco ISE could allow an unauthenticated, remote attacker to submit forged posture status events into the endpoint posture pipeline.\r\n\r\nThis vulnerability is due to insufficient authentication on an internal interface that is exposed through the guest portal. An attacker could exploit this vulnerability by sending a crafted request to an affected system. A successful exploit could allow the attacker to manipulate the posture status on the affected system.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:19.303"
+  },
+  {
+    "id": "CVE-2026-76438",
+    "description": "A vulnerability in the web-based management interface of Cisco BroadWorks CommPilot Application Software could allow an authenticated, remote attacker with low privileges to alter configurations on an affected device.\r\n\r\nThis vulnerability is due to missing authorization checks. An attacker could exploit this vulnerability by sending a crafted HTTP request.&nbsp;A successful exploit could allow the attacker to alter configurations on select pages.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:15.373"
+  },
+  {
+    "id": "CVE-2026-76434",
+    "description": "A vulnerability in the certificate import functionality of the web-based management interface of Cisco ISE and Cisco ISE-PIC could allow an authenticated, remote attacker to read arbitrary files from the affected system. To exploit this vulnerability, the attacker must have valid administrative credentials.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input by the affected feature. An attacker could exploit this vulnerability by sending a crafted request to the web-based management interface of an affected device. A successful exploit could allow the attacker to read arbitrary files from the affected device, which could contain sensitive information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:15.177"
+  },
+  {
+    "id": "CVE-2026-76433",
+    "description": "A vulnerability in the client provisioning download feature of Cisco ISE and Cisco ISE-PIC could allow an unauthenticated, remote attacker to access protected files on an affected device.\r\n\r\nThis vulnerability is due to insufficient validation of directory traversal character sequences in a user-supplied path when the software processes provisioning resource requests. An attacker could exploit this vulnerability by sending a crafted request to the provisioning download service. A successful exploit could allow the attacker to access protected files without authentication, potentially exposing sensitive information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:15.017"
+  },
+  {
+    "id": "CVE-2026-76432",
+    "description": "A vulnerability in the web-based management interface of Cisco ISE and Cisco ISE-PIC could allow an authenticated, remote attacker with administrative-level privileges to write arbitrary files on an affected device.\r\n\r\nThis vulnerability exists because the affected software does not properly validate directory traversal character sequences in a user-supplied file path during the upload process. An attacker could exploit this vulnerability by uploading a crafted file to the affected system. A successful exploit could allow the attacker to write files to an arbitrary location on the affected system.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:14.867"
+  },
+  {
+    "id": "CVE-2026-76431",
+    "description": "A vulnerability in the file management function of the web-based management interface of Cisco ISE and Cisco ISE-PIC could allow an authenticated, remote attacker to delete arbitrary files and directories on an affected device. To exploit this vulnerability, the attacker must have valid administrative credentials.\r\n\r\nThis vulnerability is due to improper validation of directory traversal character sequences in a user-supplied file path before the request is validated. An attacker could exploit this vulnerability by sending a crafted request to the web-based management interface of an affected device. A successful exploit could allow the attacker to delete arbitrary files and directories on the underlying operating system of the affected device.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:14.713"
+  },
+  {
+    "id": "CVE-2026-76428",
+    "description": "A vulnerability in the REST APIs of Cisco ISE and Cisco ISE-PIC could allow an authenticated, remote attacker to conduct SQL injection attacks against the session database.\r\n\r\nThis vulnerability is due to certain parameters being concatenated directly into SQL clauses without parameterization. An attacker could exploit this vulnerability by sending a crafted request that contains SQL statements in one of the affected parameters. A successful exploit could allow the attacker to read information from the session database. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:14.553"
+  },
+  {
+    "id": "CVE-2026-76427",
+    "description": "A vulnerability in the offline profiler feed service of Cisco ISE could allow an authenticated, remote attacker to read arbitrary files that are stored on an affected device.\r\n\r\nThis vulnerability is due to the parsing of attacker-controlled feed metadata with an XML parser that does not disable external entity resolution. An attacker could exploit this vulnerability by uploading a crafted offline feed package through the administrative interface. A successful exploit could allow the attacker to read arbitrary files from the file system and issue requests to internal systems from the affected device. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:14.393"
+  },
+  {
+    "id": "CVE-2026-76426",
+    "description": "A vulnerability in the REST API of Cisco ISE and Cisco ISE-PIC could allow an authenticated, remote attacker to conduct SQL injection attacks against the monitoring database.\r\n\r\nThis vulnerability is due to insufficient validation of specific parameters that are then concatenated into an SQL statement. An attacker could exploit this vulnerability by sending a crafted request that contains SQL statements in one of the affected parameters. A successful exploit could allow the attacker to read information from the monitoring database. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:14.240"
+  },
+  {
+    "id": "CVE-2026-76425",
+    "description": "A vulnerability in the APIs of Cisco ISE could allow an authenticated, remote attacker to conduct SQL injection attacks against the backend database.\r\n\r\nThis vulnerability is due to insufficient validation of certain parameters that are concatenated directly into an SQL query. An attacker could exploit this vulnerability by sending a crafted request that contains SQL statements to an affected endpoint. A successful exploit could allow the attacker to read arbitrary content from the SQL database and conduct server-side request forgery (SSRF) attacks. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:14.107"
+  },
+  {
+    "id": "CVE-2026-76424",
+    "description": "A vulnerability in the REST API of Cisco ISE could allow an authenticated, remote attacker to upload or copy arbitrary files on an affected device.\r\n\r\nThis vulnerability is due to insufficient validation in file operations. An attacker could exploit this vulnerability by uploading a file with a crafted path. A successful exploit could allow the attacker to upload files to arbitrary locations and execute arbitrary commands as root on the affected device.&nbsp;To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:13.983"
+  },
+  {
+    "id": "CVE-2026-76413",
+    "description": "A vulnerability in Cisco Adaptive Security Device Manager (ASDM) single sign-on (SSO) handler for Cisco Secure FMC Software could allow an unauthenticated, remote attacker to log in as the Cisco ASDM administrator user.\r\n\r\nThis vulnerability is due to improper management of the Cisco ASDM SSO token. An attacker could exploit this vulnerability by performing session token forgery techniques. A successful exploit could allow the attacker to log in as the administrator user and, by repeating this action, keep legitimate administrators locked out of the ASDM indefinitely.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:13.840"
+  },
+  {
+    "id": "CVE-2026-76412",
+    "description": "A vulnerability in the remote diagnostics debugger of Cisco Secure FMC Software could allow an authenticated, remote attacker to enable the remote diagnostics debugger service.\r\n\r\nThis vulnerability is due to an error when checking the privilege level of a user who is invoking remote diagnostics. An attacker could exploit this vulnerability by authenticating to the device, either through the web-based management interface or the REST API, and using the remote diagnostics debugger to grant a user elevated privileges. A successful exploit could allow the attacker to elevate privileges to root.\r\nNotes:\r\n\r\nTo exploit this vulnerability, the attacker must have valid user credentials on the affected device.\r\nThe CVSSv3.1 Attack Complexity is High due to the multistage process required to fully exploit this vulnerability.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:13.717"
+  },
+  {
+    "id": "CVE-2026-76409",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Nexus Dashboard engineering team has conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities.\r\n\r\nThe vulnerabilities tracked by CVE-2026-76409 are related to improper limitation of a pathname issues that are grouped under the Common Weakness Enumeration (CWE) CWE-22.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:13.597"
+  },
+  {
+    "id": "CVE-2026-75513",
+    "description": "Marten is a .NET Transactional Document DB and Event Store on PostgreSQL. From version 7.0.0 until 9.13.0, several Marten LINQ and tenant-management paths interpolate runtime, potentially attacker-controlled strings into single-quoted SQL literals without escaping or parameterization. The primary confirmed vector is a dictionary indexer key used by Where filters in src/Marten/Linq/Members/Dictionaries/DictionaryItemMember.cs. Additional affected sinks include SelectParser.cs, DatabaseScopedTenantPartitions.cs, and DeleteAllForTenant.cs reached through IEventStore.DeleteProjectionProgressAsync, while DictionaryContainsKeyFilter.cs (Newtonsoft serializer only; System.Text.Json is not affected) handles ContainsKey calls. Events/Daemon/Internals/EventLoader.cs contains a related per-tenant partition-pruning literal that the advisory identifies as a defense-in-depth sink. A crafted single quote can escape the generated literal, enabling filter or multi-tenant authorization bypass and blind data exfiltration, and deployments that permit semicolon-batched Npgsql statements may also allow data modification. This issue is fixed in version 9.13.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:13.440"
+  },
+  {
+    "id": "CVE-2026-63506",
+    "description": "Tina is a headless content management system. Prior to @tinacms/auth 1.1.4 and next-tinacms-azure 15.0.1, isAuthorized accepts a request-controlled clientID and asks isUserAuthorized to validate the bearer token against that selected TinaCloud app instead of the self-hosted site's configured app. An attacker with any TinaCloud account can submit the attacker's own app ID and valid token to a victim endpoint, causing TinaCloudBackendAuthProvider or an affected media authorized callback to accept the attacker's verified status across the tenant boundary. The vulnerable logic is present in packages/@tinacms/auth/src/index.ts and packages/next-tinacms-azure/src/auth.ts. Successful exploitation permits media listing, reading, upload, or deletion and, when TinaCloudBackendAuthProvider is used, GraphQL read, create, update, and delete operations on the victim's content without a victim account or victim interaction. This vulnerability is fixed in @tinacms/auth 1.1.4 and next-tinacms-azure 15.0.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:13.163"
+  },
+  {
+    "id": "CVE-2026-62997",
+    "description": "Kedro-Datasets provides data connectors for Kedro. From version 5.0.0 until 9.5.0, kedro_datasets_experimental.pytorch.PyTorchDataset in kedro-datasets loads .pt model files with torch.load without enforcing weights_only=True, and user-supplied load_args are silently dropped. On PyTorch versions earlier than 2.6, a malicious pickle-backed model from an attacker-influenced shared registry, downloaded checkpoint, or partitioned external source can execute arbitrary code when a Kedro pipeline loads it. The issue affects only the opt-in kedro_datasets_experimental component and does not affect users who load only trusted files. This issue is fixed in version 9.5.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:12.990"
+  },
+  {
+    "id": "CVE-2026-20360",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Nexus Dashboard engineering team has conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities.\r\n\r\nThe vulnerabilities tracked by CVE-2026-20360 are related to information exposure and insecure handling issues that are grouped under the Common Weakness Enumeration (CWE) CWE-200.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:12.640"
+  },
+  {
+    "id": "CVE-2026-20352",
+    "description": "A vulnerability in the RADIUS feature of Cisco Identity Services Engine (ISE) could allow an unauthenticated, remote attacker to cause a denial of service (DoS) condition on an affected device.\r\n\r\nThis vulnerability is due to improper handling of certain RADIUS requests. An attacker could exploit this vulnerability by sending a crafted RADIUS request directly to an affected device. A successful exploit could allow the attacker to cause the ISE node to become unavailable. For single node deployments in that condition, endpoints that have not already authenticated would be unable to access the network until the&nbsp;node comes back up on its own.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:12.517"
+  },
+  {
+    "id": "CVE-2026-20350",
+    "description": "A vulnerability in the web-based management interface of Cisco ThousandEyes Virtual Appliance could allow an authenticated, remote attacker to inject arbitrary operating system commands.\r\n\r\nThis vulnerability is due to improper validation of user-supplied input to the web-based management interface. An attacker could exploit this vulnerability by saving configuration details that contain malicious values. A successful exploit could allow the attacker to execute arbitrary operating system commands with root privileges. To exploit this vulnerability, the attacker must have valid administrative credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:12.380"
+  },
+  {
+    "id": "CVE-2026-20344",
+    "description": "A vulnerability in the web-based management interface of Cisco Secure FMC Software could allow an authenticated, remote attacker to perform a SQL injection attack against an affected device. To exploit this vulnerability, the attacker must have a valid account on the device with the role of Security Approver, Access Admin, or Network Admin.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input. An attacker could exploit this vulnerability by sending a crafted HTTP request to the web-based management interface of an affected device. A successful exploit could allow the attacker to obtain any data from the database, obtain the session credentials of an authenticated Administrator, and take actions with administrative privileges on the affected device.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:11.967"
+  },
+  {
+    "id": "CVE-2026-20343",
+    "description": "A vulnerability in a critical API for Cisco Secure FMC Software could allow an unauthenticated, remote attacker to download sensitive files and use unbounded disk space.\r\n\r\nThis vulnerability exists because a critical API lacks authentication.&nbsp;An attacker could exploit this vulnerability by repeatedly invoking the API. A successful exploit could allow the attacker to download sensitive files that should be restricted and consume disk space so the device could become unresponsive, causing a DoS condition.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:11.850"
+  },
+  {
+    "id": "CVE-2026-20342",
+    "description": "A vulnerability in a specific file download API of Cisco Secure FMC Software could allow an authenticated, remote attacker to download arbitrary files from an affected system.\r\n\r\nThis vulnerability exists because user input is not being sanitized. An attacker could exploit this vulnerability by sending a crafted HTTPS request. A successful exploit could allow the attacker to download arbitrary files from the affected system.\r\nTo exploit this vulnerability, the attacker must have valid credentials for a user account with at least the role of Security Analyst (read-only).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:11.707"
+  },
+  {
+    "id": "CVE-2026-20340",
+    "description": "A vulnerability in Cisco Secure FMC Software could allow an authenticated, remote attacker to execute arbitrary commands at the&nbsp;root privilege level.\r\n\r\nThis vulnerability is due to unsecured deserialization of web-management user-controlled data. An attacker could exploit this vulnerability by authenticating to the device and sending a crafted HTTP payload. A successful exploit could allow the attacker to save the crafted payload and then execute it on the underlying operating system as root.\r\nTo exploit this vulnerability, the attacker must have valid credentials for a user account with at least the role of Security Analyst (read-only).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:11.560"
+  },
+  {
+    "id": "CVE-2026-20336",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Secure Adaptive Security Appliance Software, Cisco Secure Firewall Threat Defense Software and Cisco Secure Firewall Management Center Software engineering team has conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities.\r\n\r\nThe vulnerabilities tracked by CVE-2026-20336 are related to issues concerning improper control of a resource through its lifetime that are grouped under the Common Weakness Enumeration (CWE) Pillar CWE-664.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:11.350"
+  },
+  {
+    "id": "CVE-2026-20335",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Secure Adaptive Security Appliance Software, Cisco Secure Firewall Threat Defense Software and Cisco Secure Firewall Management Center Software engineering team has conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities.\r\n\r\nThe vulnerabilities tracked by CVE-2026-20335 are related to incorrect calculation issues that are grouped under the Common Weakness Enumeration (CWE) Pillar CWE-682.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:11.137"
+  },
+  {
+    "id": "CVE-2026-20334",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Secure Adaptive Security Appliance Software, Cisco Secure Firewall Threat Defense Software and Cisco Secure Firewall Management Center Software engineering team has conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities.\r\n\r\nThe vulnerabilities tracked by CVE-2026-20334 are related to issues concerning improper adherence to coding standards that are grouped under the Common Weakness Enumeration (CWE) Pillar CWE-710.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:10.917"
+  },
+  {
+    "id": "CVE-2026-20333",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Secure Adaptive Security Appliance Software, Cisco Secure Firewall Threat Defense Software and Cisco Secure Firewall Management Center Software engineering team has conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities.\r\n\r\nThe vulnerabilities tracked by CVE-2026-20333 are related to incorrect comparison conditions that are grouped under the Common Weakness Enumeration (CWE) Pillar CWE-697.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:10.690"
+  },
+  {
+    "id": "CVE-2026-20332",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Secure Adaptive Security Appliance Software, Cisco Secure Firewall Threat Defense Software and Cisco Secure Firewall Management Center Software engineering team has conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities. &nbsp;\r\n\r\nThe vulnerabilities tracked by CVE-2026-20332 are related to improper access control issues that are grouped under the Common Weakness Enumeration (CWE) Pillar CWE-284.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:10.480"
+  },
+  {
+    "id": "CVE-2026-20323",
+    "description": "A vulnerability in the sftunnel inter-device communication protocol of Cisco Secure FMC Software and Cisco Secure FTD Software could allow an unauthenticated, adjacent attacker to impersonate the peer device and obtain access at the level of the&nbsp;manager role, which is equivalent to root.\r\n\r\nThis vulnerability is due to improper management of the TLS certificate for the sftunnel management connection. An attacker could exploit this vulnerability by connecting to the sftunnel port using a crafted TLS certificate. A successful exploit could allow the attacker to become a registered sftunnel peer with root access.\r\nNote: The attack is successful only if the sftunnel connection is down or the attack can disrupt the sftunnel connection long enough to execute the attack.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:10.313"
+  },
+  {
+    "id": "CVE-2026-20309",
+    "description": "A vulnerability in the web-based management interface of Cisco Identity Services Engine (ISE) could allow an unauthenticated, remote attacker to conduct a reflected cross-site scripting (XSS) attack against a user of the interface.\r\n\r\nThis vulnerability exists because the web-based management interface does not properly validate user-supplied input. An attacker could exploit this vulnerability by persuading a user of the interface to click a crafted link. A successful exploit could allow the attacker to execute arbitrary script code in the context of the affected interface or access sensitive, browser-based information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:10.020"
+  },
+  {
+    "id": "CVE-2026-20300",
+    "description": "A vulnerability in Cisco ISE could allow an authenticated, remote attacker to conduct SQL injection attacks on an affected device. To exploit this vulnerability, the attacker must have at least low-privileged administrative credentials.\r\n\r\nThis vulnerability is due to improper validation of user-supplied input. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to read or modify data in the underlying database.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:09.897"
+  },
+  {
+    "id": "CVE-2026-20295",
+    "description": "A vulnerability in the sftunnel inter-device communication protocol of Cisco Secure FMC Software and Cisco Secure FTD Software could allow an unauthenticated, remote attacker to exhaust the available memory of an affected device.\r\n\r\nThis vulnerability is due to improper management of memory resources during sftunnel TLS connection setup. An attacker could exploit this vulnerability by sending crafted sftunnel TLS frames to an affected device&nbsp;during the connection setup. A successful exploit could allow the attacker to exhaust the available memory on the affected device, which could result in a DoS condition.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:09.740"
+  },
+  {
+    "id": "CVE-2026-20290",
+    "description": "A vulnerability in SSL/TLS certificate parsing in the Snort 2 Detection Engine of Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to cause the Snort 2 Detection Engine to restart.\r\n\r\nThis vulnerability is due to incomplete validation of the SSL certificate. An attacker could exploit this vulnerability by sending a crafted SSL connection setup request to be parsed by Snort 2. A successful exploit could allow the attacker to cause the Snort 2 Detection Engine to restart unexpectedly, resulting in a denial of service (DoS) condition.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:09.610"
+  },
+  {
+    "id": "CVE-2026-20287",
+    "description": "As part of Cisco's ongoing commitment to proactive security and product quality, the Cisco Identity Services Engine (ISE) and Cisco ISE Passive Identity Connector (ISE-PIC) engineering teams have conducted a comprehensive internal security review. This review resulted in a software hardening release that addresses multiple internally discovered vulnerabilities.\r\n\r\nThe vulnerabilities tracked by CVE-2026-20287 are related to improper privilege managment issues that are grouped under the Common Weakness Enumeration (CWE) Pillar CWE-269.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:09.480"
+  },
+  {
+    "id": "CVE-2026-20286",
+    "description": "A vulnerability in the web-based management interface of Cisco Identify Services Engine (ISE) could allow an authenticated, remote attacker to modify parts of the configuration on an affected device.\r\n\r\nThis vulnerability is due to the lack of server-side validation of&nbsp;Administrator&nbsp;permissions. An attacker could exploit this vulnerability by submitting a crafted HTTP request to an affected system. A successful exploit could allow the attacker to modify descriptions of files on a specific page. To exploit this vulnerability, an attacker would need valid&nbsp;Administrator credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:09.353"
+  },
+  {
+    "id": "CVE-2026-20285",
+    "description": "A vulnerability in the web-based management interface of Cisco Identity Services Engine (ISE) and Cisco ISE Passive Identity Connector (ISE-PIC) could allow an authenticated, remote attacker to modify parts of the configuration on an affected device.\r\n\r\nThis vulnerability is due to the lack of server-side validation of&nbsp;Administrator&nbsp;permissions. An attacker could exploit this vulnerability by submitting a crafted HTTP request to an affected system. A successful exploit could allow the attacker to modify descriptions of files on a specific page. To exploit this vulnerability, an attacker would need valid&nbsp;Administrator credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:09.217"
+  },
+  {
+    "id": "CVE-2026-20284",
+    "description": "A vulnerability in the SXP REST API of Cisco ISE could allow an authenticated, remote attacker to conduct SQL injection attacks.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input in REST API calls. An attacker could exploit this vulnerability by sending crafted input to an affected device. A successful exploit could allow the attacker to view or modify data on the underlying database for the affected device. In single-node deployments, successful exploitation of this vulnerability could cause the affected ISE node to become unavailable, resulting in a DoS condition. In that condition, endpoints that have not already authenticated would be unable to access the network until the node is restored.\r\nTo exploit this vulnerability, the attacker must have valid administrative credentials, have the SXP service enabled, and have at least one SXP connection configured.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:09.090"
+  },
+  {
+    "id": "CVE-2026-20283",
+    "description": "A vulnerability in the IPsec Open API endpoint of Cisco ISE could allow an authenticated, remote attacker to inject arbitrary commands on the underlying operating system.&nbsp;\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input in IPsec Open API calls. An attacker could exploit this vulnerability by sending crafted input to the IPsec Open API endpoint on an affected device. A successful exploit could allow the attacker to execute arbitrary commands on the underlying operating system.&nbsp;\r\nTo exploit this vulnerability, the attacker must have valid administrative credentials and the node must have more than one network interface, one of which must be configured as an active IPsec tunnel.\r\nNote: For CVE-2026-20283, Cisco has assigned a Security Impact Rating (SIR) of High rather than Medium as the score indicates. The reason is that it is easy to get to root from the achieved privilege level.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:08.970"
+  },
+  {
+    "id": "CVE-2026-20282",
+    "description": "A vulnerability in Cisco ISE could allow an authenticated, remote attacker to obtain write access on the underlying operating system of an affected device.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied input. An attacker could exploit this vulnerability by sending a crafted HTTP request to an affected device. A successful exploit could allow the attacker to obtain write access to the underlying operating system.\r\nTo exploit this vulnerability, the attacker must have valid administrative credentials.\r\nNote: For CVE-2026-20282, Cisco has assigned a Security Impact Rating (SIR) of High rather than Medium as the score indicates. The reason is that it is easy to get to root from the achieved privilege level.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:08.837"
+  },
+  {
+    "id": "CVE-2026-20250",
+    "description": "A vulnerability in Datagram TLS (DTLS) message handling of Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software for Cisco Secure Firewall 3100 Series and 4200 Series devices could allow an unauthenticated, remote attacker to cause a denial of service (DoS) condition on an affected device.\r\n\r\nThis vulnerability is due to improper resource management when processing certain DTLS messages. An attacker could exploit this vulnerability by sending a crafted stream of DTLS traffic to an affected device. A successful exploit could allow the attacker to cause the device to reload, resulting in a DoS condition.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:08.713"
+  },
+  {
+    "id": "CVE-2026-20249",
+    "description": "A vulnerability in the certification authentication feature of Internet Key Exchange version 2 (IKEv2)&nbsp;for Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to cause an affected device to reload unexpectedly.\r\n\r\nThis vulnerability is due to a logic error during the certificate authentication phase of the IKEv2 connection setup. An attacker could exploit this vulnerability by attempting to establish an IKEv2 VPN connection with a crafted certificate. A successful exploit could allow the attacker to cause the IKEv2 process to crash, causing a denial of service (DoS) condition.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:08.517"
+  },
+  {
+    "id": "CVE-2026-20248",
+    "description": "A vulnerability in the DNS over TCP implementation of Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to cause the TCP DNS&nbsp;response handler to unexpectedly restart, causing the device to reload.\r\n\r\nThis vulnerability is due to a logic error when parsing a DNS query and tracking the size of the incoming buffers. An attacker could exploit this vulnerability by formatting a crafted reply to a DNS query sent from the targeted device. A successful exploit could allow the attacker to cause the device to reload, causing a denial of service (DoS) condition.\r\nNote: The attacker must be able to respond to DNS queries from the device, either by controlling the DNS service or through a machine-in-the-middle attack.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:08.320"
+  },
+  {
+    "id": "CVE-2026-20247",
+    "description": "A vulnerability in Cisco ISE could allow an unauthenticated, remote attacker to conduct SQL injection attacks on an affected device.\r\n\r\nThis vulnerability is due to improper validation of user-supplied input. An attacker could exploit this vulnerability by sending a crafted request to an affected device. A successful exploit could allow the attacker to modify data in the underlying database.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:08.190"
+  },
+  {
+    "id": "CVE-2026-20235",
+    "description": "A vulnerability in the API of Cisco Identity Services Engine (ISE) could allow an authenticated, remote attacker to view sensitive information on an affected device. To exploit this vulnerability, the attacker must have valid administrative credentials.\r\n\r\nThis vulnerability is due to insufficient validation of user-supplied parameters in API requests. An attacker could exploit this vulnerability by sending a crafted API request to an affected device. A successful exploit could allow the attacker to gain access to sensitive information, including hashed credentials that could be used in future attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:08.060"
+  },
+  {
+    "id": "CVE-2026-20222",
+    "description": "A vulnerability in the EIGRP implementation in Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, adjacent attacker to cause the device to reload unexpectedly, resulting in a denial of service (DoS) condition.\r\n\r\nThis vulnerability is due to improper resource management when handling EIGRP update messages. An attacker could exploit this vulnerability by sending crafted EIGRP updates at a high rate to an affected device. A successful exploit could allow the attacker to trigger a memory leak that will eventually cause the affected device to reload unexpectedly.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:07.910"
+  },
+  {
+    "id": "CVE-2026-20154",
+    "description": "A vulnerability in the system rate-limiting process for syslog message 419002 of Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to cause high CPU utilization on an affected device, resulting in a denial of service (DoS) condition.\r\n\r\nThis vulnerability is due to improper rate limiting for syslog message 419002. An attacker could exploit this vulnerability by sending a flood of TCP synchronization (SYN) packets to an affected device. A successful exploit could allow the attacker to cause high CPU utilization, resulting in performance degradation.&nbsp;",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:07.723"
+  },
+  {
+    "id": "CVE-2026-20135",
+    "description": "A vulnerability in the TLS 1.3 implementation in Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to cause an affected device to reload unexpectedly, resulting in a denial of service (DoS) condition.\r\n\r\nThis vulnerability is due to improper buffer management during the TLS 1.3 connection. An attacker could exploit this vulnerability by sending a crafted TLS 1.3 packet to an affected system through a TLS 1.3-enabled listening socket. A successful exploit could allow the attacker to cause the LINA process to crash, which would cause the device to reload. The reload can happen before or after authentication of the connection.Note:&nbsp;TLS 1.3 connections include both data traffic and user-management traffic.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:07.587"
+  },
+  {
+    "id": "CVE-2026-20121",
+    "description": "A vulnerability in the access control list (ACL) Object Group Search (OGS) implementation of Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to bypass configured access controls.\r\n\r\nThis vulnerability is due to a logic error in populating group access control policies (ACPs) with OGS configured. An attacker could exploit this vulnerability by sending traffic that should be blocked through the device. A successful exploit could allow the attacker to bypass access controls and reach devices in protected networks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:07.467"
+  },
+  {
+    "id": "CVE-2026-20120",
+    "description": "A vulnerability in the access control list (ACL) Object Group Search (OGS) implementation of Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to bypass configured access controls.\r\n\r\nThis vulnerability is due to a logic error in populating group access control policies (ACPs) with OGS configured. An attacker could exploit this vulnerability by sending traffic that should be blocked through the device. A successful exploit could allow the attacker to bypass access controls and reach devices in protected networks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:07.343"
+  },
+  {
+    "id": "CVE-2026-20072",
+    "description": "A vulnerability in the web-based management interface of Cisco ISE could allow an authenticated, remote attacker to obtain sensitive information from network users that are outside the security group that the attacker is assigned to. &nbsp;\r\n\r\nThis vulnerability exists because certain files lack proper authorization enforcement. An attacker with administrative privileges and management rights over network users could exploit this vulnerability by exporting the&nbsp;users. A successful exploit could allow the attacker to view passwords that are normally not visible to administrators.&nbsp;",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:07.223"
+  },
+  {
+    "id": "CVE-2026-20071",
+    "description": "A vulnerability in the SSID bring-your-own-device (BYOD) onboarding workflow of Cisco ISE could allow an unauthenticated, adjacent attacker to hijack the onboarding session of&nbsp;another user and access protected 802.1X networks. &nbsp;\r\n\r\nThis vulnerability is due to insufficient authentication checks that are performed while a user is being onboarded. An attacker could exploit this vulnerability by spoofing the legitimate user and triggering&nbsp;a redirection to the guest web portal. A successful exploit could allow the attacker to take over the user session and gain access to the protected 802.1X network.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:07.087"
+  },
+  {
+    "id": "CVE-2025-56566",
+    "description": "MikroTik firmware 7.19.4 stores sensitive authentication credentials and network state in cleartext within non-volatile storage. An attacker with physical access to the device can extract this material from an SPI flash dump, without authenticating to the device and without knowledge of the administrative password.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:06.767"
+  },
+  {
+    "id": "CVE-2025-56565",
+    "description": "DD-WRT firmware, as deployed on TP-Link TL-WR740N v1 through v4 hardware, stores sensitive authentication credentials in cleartext within non-volatile memory. The exposed material includes SSH private keys, dynamic DNS passwords, email notification credentials and administrative passwords. An attacker with physical access to the device can extract these credentials from an SPI flash dump, leading to device compromise, infiltration of the connected network and unauthorised access to dependent third-party services.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:06.657"
+  },
+  {
+    "id": "CVE-2025-56563",
+    "description": "A Server-Side Request Forgery vulnerability exists in sat_proxy.php in Zenith Satellite Tracker 1.0. The script accepts an attacker-controlled address URL parameter and passes it to curl_setopt(CURLOPT_URL) without host or scheme validation. An unauthenticated remote attacker can leverage this to make arbitrary HTTP and HTTPS requests from the server to internal networks or cloud metadata services, potentially obtaining sensitive information or pivoting to further attacks.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-16T21:17:06.537"
+  },
+  {
     "id": "CVE-2026-92808",
     "description": "A server-side request forgery (SSRF) vulnerability exists in the UnifiedLogin service of Altium Enterprise Server. An unauthenticated network attacker can cause the server to issue outbound HTTP requests to a destination of the attacker's choosing, including internal services that are reachable only from the server itself.\n\n\n\n\nOne such internal service exposes server configuration and credential material without authentication, relying only on the request originating locally. Because the forged requests originate from the server process, that check is satisfied. An unauthenticated attacker can therefore retrieve stored credentials and use them to obtain an administrative session, resulting in full compromise of the server and all of its services. Altium 365 cloud deployments are not affected, as the affected endpoint is disabled in cloud mode.",
     "severity": "Unknown",
@@ -499,7 +1612,7 @@
   {
     "id": "CVE-2026-68536",
     "description": "Server-Side Request Forgery / Local File Inclusion in Apache MyFace Core.\n\nOlder unsupported versions may also be affected. \n\nUsers are recommended to upgrade to versions 2.3.12, 2.3-next-M9, 3.0.4, 4.0.4, or 4.1.4, which fix this issue.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-09-16T19:17:25.143"
   },
@@ -14037,7 +15150,7 @@
   {
     "id": "CVE-2026-92005",
     "description": "Use-after-free in the Audio/Video: Web Codecs component. This vulnerability was fixed in Firefox 156, Firefox ESR 140.16, Firefox ESR 153.3, Thunderbird 156, Thunderbird 140.16, and Thunderbird 153.3.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-15T13:16:48.110"
   },
@@ -20536,201 +21649,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-14T00:16:55.700"
-  },
-  {
-    "id": "CVE-2026-90603",
-    "description": "A vulnerability was identified in Anil-matcha Open-Generative-AI up to 1.0.11/2.0.0. Affected by this issue is some unknown functionality of the file /api/upload-binary of the component S3 Upload. Such manipulation of the argument x-proxy-target-url leads to unrestricted upload. The attack may be launched remotely. The name of the patch is f013270957f75e439eaf97eb2a93decb32a4543e. Applying a patch is advised to resolve this issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.703"
-  },
-  {
-    "id": "CVE-2026-90602",
-    "description": "A vulnerability was determined in Anil-matcha Open-Generative-AI up to 1.0.11/2.0.0. Affected by this vulnerability is the function renderHistory of the file ImageStudio.js of the component Studio Components. This manipulation causes cross site scripting. The attack may be initiated remotely. The pull request to fix this issue awaits acceptance.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.520"
-  },
-  {
-    "id": "CVE-2026-90601",
-    "description": "A vulnerability was found in getzep graphiti up to 0.30.2. Affected is an unknown function of the file server/graph_service/main.py of the component REST API. The manipulation results in improper authentication. The attack can be launched remotely. The pull request to fix this issue awaits acceptance.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.343"
-  },
-  {
-    "id": "CVE-2026-90600",
-    "description": "A vulnerability has been found in itsourcecode Sales and Inventory System 1.0. This impacts an unknown function of the file /pages/inv_edit1.php. The manipulation of the argument ID leads to sql injection. The attack can be initiated remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.173"
-  },
-  {
-    "id": "CVE-2026-15892",
-    "description": "The mcumgr SMP settings-management group handlers settings_mgmt_read(), settings_mgmt_write(), and settings_mgmt_delete() in subsys/mgmt/mcumgr/grp/settings_mgmt/src/settings_mgmt.c allocate a key_name buffer (and, for read, a data buffer) via k_malloc() when CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP is enabled, relying on the end: label to k_free() them. When CONFIG_MCUMGR_GRP_SETTINGS_ACCESS_HOOK is also enabled and the application access hook rejects a request by returning status MGMT_CB_ERROR_RC, the handler executed return ret_rc; directly, bypassing end: and leaking the heap allocation on every rejected request.\n\nThe settings handlers are reachable over the unauthenticated SMP transport (Bluetooth LE, UART, or UDP, depending on product configuration). The access hook is the mechanism applications use to deny unauthorized settings access, and MGMT_CB_ERROR_RC is a common rejection style, so an attacker who can send settings read/write/delete commands that the hook rejects triggers a heap leak on each attempt.\n\nBecause the leaked memory is never reclaimed until reboot, a sustained stream of rejected requests monotonically exhausts the kernel heap until k_malloc() fails, denying mcumgr service and impacting any other heap consumer on the device — a denial of service. The impact is availability-only; there is no memory corruption or information disclosure. Only configurations that select the heap buffer type, enable the access hook, and register a hook that returns MGMT_CB_ERROR_RC are affected (the default stack buffer type cannot leak).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.023"
-  },
-  {
-    "id": "CVE-2026-15891",
-    "description": "The MQTT-SN client keepalive handler process_ping() in subsys/net/lib/mqtt_sn/mqtt_sn.c removes the gateway record after PINGREQ retries are exhausted. It invoked SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateways, gw, next) but discarded the result. That macro is a pure expression that does not assign to gw, so gw retained its NULL initializer regardless of the list contents.\n\nThe code then dereferences the NULL gw (gw->gw_id) and passes it to mqtt_sn_gw_destroy(), reaching k_mem_slab_free(&gateways, NULL). With CONFIG_MEM_SLAB_POINTER_VALIDATE enabled this triggers k_panic(); in the default configuration it performs a write through the NULL pointer ((char )mem = slab->free_list;) and corrupts the slab free list. The outcome is a crash/kernel panic or, on targets where address 0 is writable, silent memory-allocator corruption.\n\nThe vulnerable branch runs whenever the connected MQTT-SN gateway fails to answer keepalive PINGREQs for the configured number of retries. This condition is controlled by the remote peer: a malicious or compromised gateway, or an on-path/adjacent attacker that advertises itself as a gateway and then stops responding (or blackholes the real gateway's PINGRESPs), forces the client into the defect. MQTT-SN runs over UDP and no authentication is required.\n\nThe impact is a remotely triggerable denial of service (availability) of the affected MQTT-SN client; there is no attacker-controlled data written. The sibling remover process_advertise() uses SYS_SLIST_FOR_EACH_CONTAINER_SAFE and is not affected. The fix assigns the macro's return value to gw.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:27.870"
-  },
-  {
-    "id": "CVE-2026-90599",
-    "description": "A flaw has been found in Rizwan17 inventory-management-system up to 5e74a46b4b70623d0e4a0c9c4aee3bd1777185d2. This affects an unknown function of the file includes/process.php. Executing a manipulation can lead to cross-site request forgery. It is possible to launch the attack remotely. The exploit has been published and may be used. This product takes the approach of rolling releases to provide continious delivery. Therefore, version details for affected and updated releases are not available. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T22:17:01.053"
-  },
-  {
-    "id": "CVE-2026-90598",
-    "description": "A vulnerability was detected in jaygajera17 E-commerce-project-springBoot up to 5e74a46b4b70623d0e4a0c9c4aee3bd1777185d2. The impacted element is the function UserController.updateUser of the file UserController.java. Performing a manipulation of the argument userid results in authorization bypass. It is possible to initiate the attack remotely. The exploit is now public and may be used. This product is using a rolling release to provide continious delivery. Therefore, no version details for affected nor updated releases are available. The pull request to fix this issue awaits acceptance.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T22:17:00.897"
-  },
-  {
-    "id": "CVE-2026-90597",
-    "description": "A security vulnerability has been detected in itsourcecode Sales and Inventory System 1.0. The affected element is an unknown function of the file /pages/sup_edit1.php. Such manipulation of the argument ID leads to sql injection. The attack may be performed from remote. The exploit has been disclosed publicly and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T22:17:00.737"
-  },
-  {
-    "id": "CVE-2026-90596",
-    "description": "A weakness has been identified in embedded-graphics up to 0.8.2 on 32-bit. Impacted is the function ImageRaw::new/bytes_per_row of the file src/image/image_raw.rs. This manipulation causes integer overflow. The attack is possible to be carried out remotely. Upgrading the affected component is recommended. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T22:17:00.577"
-  },
-  {
-    "id": "CVE-2026-52297",
-    "description": "FFmpeg before 9.0 has an out-of-bounds read because there is insufficiently padded extradata in the MOV parsing path in mov_read_iacb in libavformat/mov.c.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-13T22:17:00.433"
-  },
-  {
-    "id": "CVE-2026-52296",
-    "description": "FFmpeg before 9.0 has an out-of-bounds read because of missing required padding in WMA extradata allocation paths in libavcodec/wmaenc.c.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-13T22:17:00.297"
-  },
-  {
-    "id": "CVE-2026-35867",
-    "description": "A Command Injection vulnerability exists in the bs_SetLimitCli_info function within the libshare.so library of the LB-LINK router AC1900_AZ2 V1.0.2 via shell metacharacters, if the device is deployed in a scenario where an actor is able to make a \"POST /goform/set_LimitClient_cfg\" call but does not already have administrative access to the device.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-13T22:16:59.473"
-  },
-  {
-    "id": "CVE-2026-90595",
-    "description": "A security flaw has been discovered in wxiaoqi Spring-Cloud-Platform 1.0/2.2/3.0. This issue affects the function OnlineController.getOnlineInfo of the file aceModules/ace-admin/auth/controller/OnlineController.java. The manipulation results in missing authorization. The attack can be executed remotely. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:03.173"
-  },
-  {
-    "id": "CVE-2026-90594",
-    "description": "A vulnerability was identified in wxiaoqi Spring-Cloud-Platform 3.0.1/3.1.0. This vulnerability affects the function PermissionService.checkUserPermission of the file /rpc/service/PermissionService.java of the component Permission Service. The manipulation leads to missing authorization. Remote exploitation of the attack is possible. The exploit is publicly available and might be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:02.980"
-  },
-  {
-    "id": "CVE-2026-90593",
-    "description": "A vulnerability was determined in embedded-graphics up to 0.8.2. This affects the function ImageRaw::draw_sub_image of the file src/image/image_raw.rs. Executing a manipulation of the argument width can lead to integer overflow. The attack may be launched remotely. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:02.787"
-  },
-  {
-    "id": "CVE-2026-90584",
-    "description": "A weakness has been identified in TooTallNate Java-WebSocket up to 1.6.1. The impacted element is the function processFrameContinuousAndNonFin of the file Draft_6455.java of the component Fragmentation Handler. Executing a manipulation can lead to allocation of resources. The attack may be performed from remote. The exploit has been made available to the public and could be used for attacks. The pull request to fix this issue awaits acceptance.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:02.603"
-  },
-  {
-    "id": "CVE-2026-89050",
-    "description": "The Quads Ads Manager for Google AdSense WordPress plugin before 3.0.5 does not verify payment completion with the configured payment gateway before marking an ad-selling order as paid, allowing users who can place an order to obtain a paid ad placement without payment.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:02.460"
-  },
-  {
-    "id": "CVE-2026-88802",
-    "description": "The MDJM Event Management WordPress plugin before 1.7.8.5 and the Mobile Events Manager WordPress plugin through 1.4.8.3 do not check a capability, a nonce or the type of the record before permanently deleting the post identified in a request to their playlist entry removal, allowing unauthenticated attackers to destroy arbitrary posts, pages and media attachments, bypassing the trash.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:02.323"
-  },
-  {
-    "id": "CVE-2026-88793",
-    "description": "The YouTube Embed WordPress plugin from 10.0 to 10.3 does not perform any authorisation check on one of its AJAX actions, relying only on a nonce it prints on every front-end page, and does not escape the stored data before rendering it, allowing unauthenticated attackers to store arbitrary web scripts which will execute in the session of any user viewing the affected content, including an administrator.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:02.197"
-  },
-  {
-    "id": "CVE-2026-85129",
-    "description": "The Hoo Companion WordPress plugin 1.0.2 does not have any authorisation or validation checks in one of its import features, and does not sanitise the data submitted to it before storing it as the active theme's settings, allowing unauthenticated attackers to inject arbitrary web scripts which will execute for anyone viewing the site, including administrators. The same request destroys the site's existing theme settings.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:02.063"
-  },
-  {
-    "id": "CVE-2026-81648",
-    "description": "The CryptoPayment Gateway WordPress plugin from 1.2.1 to 1.2.2 does not apply an authorization check on one of its AJAX endpoints, allowing unauthenticated users to invoke administrative operations, including deleting arbitrary files on the server, overwriting the payment gateway configuration and recovering stored wallet credentials in cleartext.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:01.930"
-  },
-  {
-    "id": "CVE-2026-74933",
-    "description": "The GenieWords WordPress plugin from 1.5.27 to 1.5.34 does not have authorisation checks on some of its REST API and AJAX actions, and decodes stored values before printing them, allowing unauthenticated users to overwrite its configuration and inject arbitrary web scripts that execute on every front-end page.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:01.800"
-  },
-  {
-    "id": "CVE-2026-49030",
-    "description": "Rejected reason: DO NOT USE THIS CANDIDATE NUMBER.  ConsultIDs: none.  Reason: This candidate was withdrawn by its CNA.  Further investigation showed that it was not a security issue.  Notes: none.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:01.643"
-  },
-  {
-    "id": "CVE-2026-38332",
-    "description": "TinyEXIF before 1.1.0 has a heap-based buffer over-read in EntryParser::Fetch methods reachable via a crafted SubjectArea length.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:01.460"
-  },
-  {
-    "id": "CVE-2026-37008",
-    "description": "CrewAI before fb2323b offers a Python blocklist approach that operates at the wrong level of abstraction, a different vulnerability than CVE-2026-2275. Import-time blocking of module names does not address the availability of Python's complete object graph. For example, calling ctypes.CDLL(None) loads the C library without relying in any import statements. In other words, a within-process sandbox cannot merely account for the import system and instead must account for the complete runtime of the Python interpreter.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:01.303"
-  },
-  {
-    "id": "CVE-2026-36989",
-    "description": "A SQL Injection vulnerability exists in LuxSoft LuxCal through 5.3.4L via rssfeed.php and common/retrieve.php.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:17:01.140"
-  },
-  {
-    "id": "CVE-2026-36453",
-    "description": "Rhymix before 2.1.31 allows insecure direct object reference, aka RVE-2026-1. Arbitrary files can be accessed via extra variables.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T21:16:59.947"
   }
 ]
