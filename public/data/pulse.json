@@ -1,5 +1,229 @@
 [
   {
+    "id": "CVE-2026-94368",
+    "description": "A flaw was found in the signature verification logic of noobaa-core, the core component of the NooBaa Multicloud Object Gateway. The issue occurs when the service processes S3 presigned URLs using Signature Version 4 (SigV4). Due to improper validation, the service fails to reject requests containing unsigned x-amz- headers, instead simply dropping them from the signature calculation. This allows an attacker who possesses a valid presigned PUT URL to add an unsigned x-amz-copy-source header, effectively converting a simple upload into a CopyObject operation. This can lead to unauthorized access and copying of any data the original signer is permitted to reach across the entire storage system.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:29.010"
+  },
+  {
+    "id": "CVE-2026-94210",
+    "description": "A flaw has been found in Hyve5 Leantime up to 3.9.8. Affected by this vulnerability is the function getAllGrouped of the file app/Domain/Tickets/Services/Tickets.php of the component Kanban Board. This manipulation causes cross site scripting. The attack is possible to be carried out remotely. The exploit has been published and may be used. Patch name: a30a6837b4071ac05a4f58d0e1baa2c62aa8695e. To fix this issue, it is recommended to deploy a patch.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:27.177"
+  },
+  {
+    "id": "CVE-2026-91867",
+    "description": "When Neethi fetches a remote policy reference, it only limits the time per read, not the whole transfer, so a server that trickles bytes slowly can keep the fetch alive indefinitely and tie up the calling thread (denial of service).\nUsers are recommended to upgrade to version 3.2.4, which fixes this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:25.107"
+  },
+  {
+    "id": "CVE-2026-91866",
+    "description": "A specially crafted pair of WS-Policy documents can force Neethi's policy-intersection to do exponential amounts of work, pinning the CPU for a long time (denial of service).\nUsers are recommended to upgrade to version 3.2.4, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:25.000"
+  },
+  {
+    "id": "CVE-2026-91865",
+    "description": "A small WS-Policy document using repeated policy references can force Neethi to re-expand the same references exponentially during normalization, consuming huge amounts of CPU and memory (denial of service).\nUsers are recommended to upgrade to version 3.2.4, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:24.903"
+  },
+  {
+    "id": "CVE-2026-91864",
+    "description": "A specially crafted WS-Policy document can pack unlimited content inside a policy assertion, which Neethi copies into memory without counting it against its size limits, exhausting the heap (denial of service).\nUsers are recommended to upgrade to version 3.2.4, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:24.807"
+  },
+  {
+    "id": "CVE-2026-91863",
+    "description": "A specially crafted WS-Policy document with deeply nested policy elements can bypass Neethi's nesting-depth limit and exhaust the thread stack, crashing the parser (denial of service).\nUsers are recommended to upgrade to version 3.2.4, which fixes this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:24.697"
+  },
+  {
+    "id": "CVE-2026-89139",
+    "description": "Temporal Server compiles a Worker Controller Instance module into its Worker Service, and that module registers a compute provider named subprocess whose function is to launch a worker by running a command on the machine hosting the Worker Service. The program name and the argument vector that provider executes are taken from the compute provider configuration supplied in the caller's request rather than from operator configuration. An authenticated caller holding only a write role in a single namespace can therefore configure a worker deployment version so that the Worker Service executes a command of the caller's choosing on its own host, under the account the server process runs as. Execution is immediate rather than deferred: the configuration handler invokes every provider using the invoke strategy directly after validating the submitted specification, so no scaling decision, task arrival, or unusual request sequence is required. Because the Worker Service process holds the persistence credentials for every namespace in the cluster and the cluster's TLS material, the consequence reaches beyond the caller's namespace to the cluster as a whole. The provider is present in the official temporal-server binaries and container images for the affected releases. The only control that can keep it unreachable is the compute provider allowlist, the per-namespace dynamic configuration setting workercontroller.compute_providers.enabled, and that control does not deny by default: its default value is an unset list, and the allowlist check is skipped entirely when the value is unset, so every registered compute provider is permitted, this one included. To determine whether a deployment is affected, check the following together. The deployed Temporal Server version is 1.31.0 or later and earlier than 1.31.3. The Worker Service is running, which it is in the default service set and therefore in a stock deployment. The effective per-namespace value of workercontroller.compute_providers.enabled is either unset or contains subprocess. And authorization is configured, meaning a real authorizer and claim mapper are in place; a deployment running with no authorizer already grants every caller unrestricted access to every namespace, so it has no namespace boundary for this to cross. Note that the separate per-namespace dynamic configuration setting workercontroller.enabled does not gate the affected path. It defaults to false, and a deployment that has never set it in any namespace is still affected, which was confirmed by running an affected release with no value for that setting present anywhere in dynamic configuration. To look for a compute configuration that is already attached, call DescribeWorkerDeploymentVersion for each worker deployment version in each namespace and check whether any scaling group's compute provider type is subprocess.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:24.440"
+  },
+  {
+    "id": "CVE-2026-87858",
+    "description": "Temporal Server decided whether a Workflow completion callback was internal by reading a caller-supplied HTTP header. An authenticated caller holding only write permission in a single namespace could attach a completion callback whose URL host matched the configured callback address allowlist, whose URL path was any Temporal HTTP API route, and whose header map contained a non-empty header named source. When the History service delivered that callback, the non-empty source header caused it to re-target the request at the local frontend client and rewrite only the scheme and host, preserving the caller's path, query, and request body. Where an internal frontend is deployed with its HTTP API enabled, that client resolves to the internal frontend, which authorizes every request as a system administrator without requiring authentication information. The result is that the server performs an attacker-chosen state-changing HTTP POST against its own administrative API on the caller's behalf, in namespaces where the caller has no permission. The caller never needs network access to the internal frontend, because the History service makes the request. Confirmed effects include terminating Workflows in other namespaces, registering namespaces, modifying another namespace's configuration, and deleting another namespace and its Workflows. The affected routing logic is present in both the HSM and CHASM callback delivery implementations. This description and the CVSS score in this record describe releases 1.30.0 and later, where any non-empty source header is sufficient. Releases 1.25.0 through 1.29.7 are affected by a narrower form of the same defect in which the header must exactly match a configured cluster ID, a UUID that a namespace-scoped caller cannot read through the API. The consequence once that match occurs is the same, but the attack is materially harder and scores lower. To determine whether a deployment is affected, check two settings together: the static Server configuration for a non-zero services.internal-frontend.rpc.httpPort, and the effective per-namespace dynamic configuration value of component.callbacks.allowedAddresses. A deployment is exposed only when an internal frontend is deployed with a non-zero HTTP port, at least one allowlist rule admits a host, and authorization is enabled. The allowlist is empty by default, which denies all external callback URLs, and the stock static topology does not include an internal frontend. Note that a failed attach returns the error 'invalid url: url does not match any configured callback address', which proves only that one tested URL did not match and does not prove the effective allowlist is empty. To look for callbacks already attached, use DescribeWorkflowExecution, which returns callback information for a Workflow's registered completion callbacks. Operators should be aware of a gap when searching for evidence of delivery: the frontend HTTP API server records the request method and URL at debug level only, so at default log levels a delivered request is not written to the internal frontend's logs, and the absence of such log entries is not evidence that the issue was not exploited.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:22.230"
+  },
+  {
+    "id": "CVE-2026-65654",
+    "description": "github.com/temporalio/ringpop-go enforces configured LabelOptions limits when an application changes the local node's labels, but affected versions do not apply those limits to label maps received in SWIM membership changes. A network peer that can reach a live Ringpop TChannel listener can repeatedly submit changes for distinct member addresses containing label keys, values, or counts that exceed the receiver's configured limits. Accepted labels are retained in the member list and disseminated to peers, allowing memory and gossip-bandwidth consumption to exceed configured bounds and potentially making the hosting process unavailable. The fix validates peer-supplied label maps before they are retained or disseminated. Availability only; no confidentiality or integrity impact was identified.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:16.133"
+  },
+  {
+    "id": "CVE-2026-65653",
+    "description": "github.com/temporalio/tchannel-go did not reject TChannel call fragments containing checksum metadata but no length-prefixed argument chunks. The fragment reader left its chunk slice empty and then unconditionally selected the first element. A network peer can supply such a malformed call fragment, including as a direct initial call request after completing the standard initialization handshake. On that inbound path, the resulting unrecovered Go slice-bounds panic occurs on a library-created dispatch goroutine and terminates the hosting process. This allows remote denial of service against applications that expose the listener to untrusted peers. The impact is limited to availability; no confidentiality or integrity impact was identified.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:15.973"
+  },
+  {
+    "id": "CVE-2026-65652",
+    "description": "github.com/temporalio/tchannel-go did not validate the one-byte checksum-type field in inbound TChannel call frames. A network peer that can reach a listener can complete the standard initialization handshake and send a call request with an unsupported checksum type. The parser uses that value as an index into a four-entry checksum pool, causing an unrecovered Go panic on the connection read goroutine and terminating the hosting process. This allows remote denial of service against applications that expose the listener to untrusted peers. The impact is limited to availability; no confidentiality or integrity impact was identified.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:15.800"
+  },
+  {
+    "id": "CVE-2026-65651",
+    "description": "temporalio/sqlparser accepts SQL containing deeply nested unary expressions and can return a correspondingly deep abstract syntax tree without enforcing an applicable nesting limit. The library's String and Walk operations recursively traverse that tree. An application that parses attacker-controlled SQL and later formats or walks the returned tree can encounter a runtime-fatal Go stack overflow that terminates the process; Go panic recovery cannot contain this condition. Temporal Server passes caller-controlled query input through the affected parser in archival, visibility, and worker-query paths. In affected validation paths, the Server recursively formats an invalid expression while constructing an error. In a supported authenticated deployment, a caller with namespace read permission can terminate the receiving Frontend or Matching process. The dynamically confirmed ListWorkers route additionally requires at least one retained worker heartbeat. Repeated requests can sustain a denial of service. The issue affects availability only; no confidentiality or integrity impact was identified.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:15.553"
+  },
+  {
+    "id": "CVE-2026-16652",
+    "description": "Temporal Server did not bound the work performed while searching for a Schedule's next action time. An authenticated caller with namespace write permission could create or update a Schedule that combines a fine-grained cadence with an exclusion calendar that rejects every candidate time, causing the server to evaluate excluded candidates without a per-search work budget. This can consume excessive CPU in Frontend and Schedule worker components. A persisted specification can also cause its backing Schedule Workflow to repeatedly fail and retry, allowing CPU consumption to continue without additional requests until the Schedule is deleted or its backing Workflow is terminated. Repeated or parallel exploitation can deny service. The issue affects availability only; it does not expose or modify Workflow data.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:10.400"
+  },
+  {
+    "id": "CVE-2026-16651",
+    "description": "temporalio/sqlparser can panic when Parse, ParseStrictDDL, or ParseNext processes a MySQL version comment whose contents are empty or consist only of one to five decimal digits. ExtractMysqlComment does not check the -1 result returned by strings.IndexFunc before using it as a slice boundary. The resulting Go runtime panic propagates unless the caller recovers it on the parsing goroutine, so applications that parse attacker-controlled SQL can terminate. Temporal Server exposes the affected parser through ListWorkers. When that API is enabled, an authenticated caller with namespace read permission can submit a malformed query that terminates the receiving Matching process. Repeated requests can sustain a denial of service. The issue affects availability only; no confidentiality or integrity impact was identified.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T12:17:10.167"
+  },
+  {
+    "id": "CVE-2026-92612",
+    "description": "In Eclipse iceoryx2 versions greater than v0.8.0, the StaticString exposes its contents as mutable bytes through safe APIs, while String::as_str() converts those bytes into a Rust string slice without validating UTF-8. An application can therefore create an invalid &str and trigger undefined behavior using entirely safe Rust.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T11:17:12.590"
+  },
+  {
+    "id": "CVE-2026-77021",
+    "description": "Improper handling of highly compressed data (data amplification) in Checkmk <2.5.0p14, <2.4.0p37, <2.3.0p51 and 2.2.0 (EOL) allows an attacker who controls a host registered for push mode to exhaust the memory of the agent receiver by sending a small zlib compressed payload that decompresses to an arbitrary size.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T11:17:12.200"
+  },
+  {
+    "id": "CVE-2026-94277",
+    "description": "MISP's galaxy matrix statistics view (app/View/Users/statistics_galaxymatrix.ctp) renders the galaxy name directly into HTML output via sprintf() without any HTML encoding. An authenticated user holding the perm_galaxy_editor permission can create or modify a galaxy whose name contains arbitrary HTML or JavaScript markup. Because the value is interpolated verbatim into the page, any user who subsequently opens the galaxy matrix statistics page will have the embedded script executed in their browser context. This enables session hijacking, credential theft, data exfiltration, or the performance of arbitrary actions on behalf of the victim within the MISP application.\n\nVersion affected: <2.5.47",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T10:17:17.570"
+  },
+  {
+    "id": "CVE-2026-92574",
+    "description": "A vulnerability in CRI-O checkpoint restore allows a user who can create a pod from a malicious checkpointed container to bypass the destination Kubernetes security context. The restored process may retain credentials, Linux capabilities, no_new_privs, and seccomp state from the checkpoint instead of enforcing the destination configuration. This can allow execution with elevated privileges across the container security boundary.\nAffected upstream supported versions are CRI-O 1.34 and later. Downstream Red Hat products are affected from OCP 4.17 onward. Fixes have been applied to supported branches but are not yet released.\nExploitation requires permission to create a pod from a malicious checkpoint image and checkpoint restore functionality to be available.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T10:17:17.360"
+  },
+  {
+    "id": "CVE-2026-91921",
+    "description": "Cross-Site Scripting (XSS) vulnerability due to inadequate input sanitisation in the client-side rendering engine of the 1millionbot AI Chat Platform. An unauthenticated remote user could cause external hyperlinks to be rendered in the web interface by sending messages containing Markdown syntax and certain unsanitised content blocks. The impact is limited to the user’s own interactive session; no compromise of internal infrastructure, access to third-party data or impact on administrative panels has been identified.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T10:17:15.873"
+  },
+  {
+    "id": "CVE-2026-94152",
+    "description": "A security vulnerability has been detected in Omega Solution FBP Fulfillment by People 2025. This impacts an unknown function of the file /user/ of the component User Profile API. The manipulation of the argument ID leads to authorization bypass. Remote exploitation of the attack is possible. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:06.747"
+  },
+  {
+    "id": "CVE-2026-94151",
+    "description": "A weakness has been identified in Omega Solution HRM OS up to 20260717. This affects an unknown function of the file /role-permission/permission of the component Role Permission API. Executing a manipulation of the argument roleId can lead to missing authentication. The attack may be launched remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:06.567"
+  },
+  {
+    "id": "CVE-2026-94150",
+    "description": "A security flaw has been discovered in Omega Solution HRM OS up to 20260717. The impacted element is an unknown function of the file /media/view/ of the component SVG File Upload. Performing a manipulation results in cross site scripting. The attack may be initiated remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:06.387"
+  },
+  {
+    "id": "CVE-2026-92400",
+    "description": "The Payment Gateway for PayPal on WooCommerce WordPress plugin before 9.2.1 does not verify that an incoming payment notification was confirmed in the store's configured payment environment or paid to the store's own merchant account before marking an order complete, allowing unauthenticated users to mark their own orders as paid using a genuine transaction from a payment sandbox they control.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:06.270"
+  },
+  {
+    "id": "CVE-2026-86802",
+    "description": "The To Do List Member WordPress plugin through 1.6 does not have authorisation or nonce checks in an import routine, and does not validate the location it fetches the imported data from, allowing unauthenticated users to create arbitrary published posts and taxonomy terms on the site.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:06.157"
+  },
+  {
+    "id": "CVE-2026-85113",
+    "description": "The GiveWP WordPress plugin before 4.16.9 does not remove shortcode delimiters from donor-supplied values before rendering them on public pages, and the shortcode stripping it applies can be defeated by nesting, allowing unauthenticated users to execute arbitrary shortcodes registered on the site.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:06.040"
+  },
+  {
+    "id": "CVE-2026-85010",
+    "description": "The RestroPress WordPress plugin before 3.4.6 does not validate a client-supplied item add-on price on the server side when items are added to or updated in the cart, allowing unauthenticated users to set an arbitrary price and place orders for an attacker-chosen total, down to and including zero.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:05.920"
+  },
+  {
+    "id": "CVE-2026-15801",
+    "description": "A vulnerability was found in CRI-O related to the container checkpoint and restore feature. When CRI-O is configured to restore containers from checkpoint archives, insufficient validation of restore metadata may allow a user with sufficient privileges to perform unintended operations on the host filesystem. Successful exploitation requires that container checkpoint and restore functionality is enabled, which is not the default configuration. An attacker must also be able to trigger restoration of a container from untrusted checkpoint content.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:05.743"
+  },
+  {
+    "id": "CVE-2025-12999",
+    "description": "UrlUtil.getBaseUrl builds the absolute URLs in a response — download links, icons, asset and API URLs — from the X-Forwarded-Host, X-Forwarded-Proto and X-Forwarded-Prefix request headers, with no check on whether the sender was a trusted proxy, falling back to the client-supplied Host header.                                                                                   \n\n                                                                                                                                                                                              \n\n\nThose responses are cached under keys that do not include the host (extension.json since 0.6.0, namespace.details.json since 0.9.0, sitemap since 0.14.5, latest.extension.version.vscode since 0.34.2). A single request carrying a forged header therefore places attacker-chosen URLs into an entry served to every other client for the lifetime of that entry — one hour by default, and cluster-wide where ovsx.redis.enabled is set.\n\n\n\nThe VSIX download URL, its signature URL and the public key URL are all derived from the same base URL, so extension signing does not limit the impact: an attacker who poisons an entry supplies the package, the signature over it, and the key used to verify it.                                                                                    \n\n\n\nExploitability depends on deployment topology. A server reachable directly by clients, or fronted by a proxy that relays the client's X-Forwarded-Host rather than overwriting it, is exploitable by an unauthenticated remote attacker. A proxy that overwrites the header is not.\n\n\n\nAn unauthenticated attacker can poison Open VSX's per-extension metadata cache with attacker-controlled download, signature, and public-key URLs by supplying a crafted X-Forwarded-Host header, causing downstream VS Code-compatible editors to fetch and install a malicious VSIX.\n\n\n\nWorkarounds (unpatched versions)\n\n  \n\n\n1. Configure the reverse proxy to set rather than relay X-Forwarded-Host, X-Forwarded-Proto and X-Forwarded-Prefix — note that nginx's $host is the client's Host header and is not a safe value.\n\n\n\n2. Ensure the server is not reachable except through that proxy.\n\n\n\n3. Flush the caches afterwards; poisoned entries survive the configuration change.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-21T09:17:04.533"
+  },
+  {
+    "id": "CVE-2026-94149",
+    "description": "A vulnerability was identified in Omega Solution HRM OS up to 20260717. The affected element is an unknown function of the file /role-permission/permission of the component Role Permission Retrieval Endpoint. Such manipulation of the argument roleId leads to improper control of resource identifiers. The attack can be launched remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T08:16:39.190"
+  },
+  {
+    "id": "CVE-2026-94148",
+    "description": "A vulnerability was determined in ScadaBR up to 1.1. Impacted is the function EmportDwr.createExportJSON of the file /ScadaBR/export_project.htm of the component Export Project Endpoint. This manipulation causes information disclosure. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized. Upgrading to version 1.2.0 is recommended to address this issue. Patch name: c852b4988a15bce6011ef169299ad604538f70a9. The affected component should be upgraded. Import path was already gated with Permissions.ensureAdmin(); only export was left unprotected.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-21T08:16:38.987"
+  },
+  {
+    "id": "CVE-2026-47321",
+    "description": "The CompressionFilter class uses ZLib to deflate and inflate data sent and received. When we inflate incoming data, the filter does not control the resulting size, and create a buffer no matter what.\n\nSome compressed data may have a compression ration greater than 1 thousand, leading to an exhaustion of the application memory, as we don't control the deflated size.\n\n\n\n\nThe fix adds such a control by allowing the application developer to provide a fixed size limit, which when reached throws an exception. It also allows the user to provide a compression ratio that should not be exceeded, protected the application from small inflated files that inflate in gigantic files, but with a grace limit for the resulting size (1Mb) to avoid false positive (like a very small file inflating with a high ratio, but resulting with a acceptable size, like a few thousands bytes)\n\n\n\n\nFor application using this feature, it is highly recommended to create the CompressionFilter and to pass the maximum limit as a forth constructor parameter, maxDecompressedSize:\n\n\n\n\npublic CompressionFilter(final boolean compressInbound, final boolean compressOutbound, final int compressionLevel, final int maxDecompressedSize)Optionally one can also provide a maxDecompressRatio fifth parameter, and a decompressRatioMinSize sixth parameter to allow small inflated files with a high compression ratio to still be accepted.\n\n\n\n\nHere are the additional constructor:\n\n\n\n\n\n\npublic CompressionFilter(final boolean compressInbound, final boolean compressOutbound,\n\n\n\n            final int compressionLevel, final int maxDecompressedSize,\n\n\n\n            final long maxDecompressRatio, final long decompressRatioMinSize)\n\n\n\n\n\n\n\n\nAlso note that a fluent API has been added to spare the users the pain to call a constructor with that many parameters:\n\n\n\n\n\n\n CompressionFilter compressionFilter = new CompressionFilter()\n\n                                                .setCompressionLevel(Zlib.COMPRESSION_MAX)\n\n                                                .setMaxDecompressedSize(1_000_000)\n\n                                                .setMaxDecompressRatio(100).\n\n                                                .setDecompressRatioMinSize(100_000); \n\n\n\n\n\n\n\n\n\nApplications using Apache MINA are advised to upgrade and configure their CompressionFilter instance.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-21T08:16:37.520"
+  },
+  {
     "id": "CVE-2026-94218",
     "description": "A flaw was found in the authentication session management of Keycloak, an identity and access management solution. The issue occurs when an administrator enforces a stronger authentication flow, such as mandatory two-factor authentication (2FA) setup, through a client policy. A user can bypass this requirement by manually visiting a specific session restart web link during the login process. This action clears the internal markers that track the required security steps, allowing the user to log in with only a password and gain access without completing the mandated 2FA setup.",
     "severity": "Low",
@@ -3748,7 +3972,7 @@
     "id": "CVE-2025-14754",
     "description": "IBM Cloud Pak for Data 5.1.2 could allow an authenticated user to execute arbitrary commands with elevated privileges on the system due to improper validation of user supplied input.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Cloud pak for data",
     "published": "2026-09-18T16:17:02.253"
   },
   {
@@ -4198,530 +4422,5 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-18T13:18:38.723"
-  },
-  {
-    "id": "CVE-2026-93488",
-    "description": "A flaw was found in Netty. SpdySessionHandler accepts an unlimited number of concurrent remote-initiated streams because localConcurrentStreams defaults to Integer.MAX_VALUE and the handler provides no API to change it. A remote peer can open a SPDY connection and send a large number of SYN_STREAM frames with FLAG_FIN=0, causing unbounded heap and direct memory allocation that can lead to JVM OutOfMemoryError and a denial of service.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T12:17:30.667"
-  },
-  {
-    "id": "CVE-2026-28199",
-    "description": "An authenticated user with access to the NetBackup Flex OS management \nshell could read arbitrary files from the underlying operating system by\n supplying a specially crafted path argument to a diagnostic command. \nSuccessful exploitation could expose sensitive system configuration and \ncredential material stored on the appliance.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-18T12:17:24.850"
-  },
-  {
-    "id": "CVE-2026-28198",
-    "description": "An authenticated, low-privileged user with access to the NetBackup Flex \nOS management shell could bypass the cryptographic signature \nverification step of a privileged support command by supplying a \nspecially formed access credential. Successful exploitation grants the \nattacker an unrestricted root shell with full control over the Flex \nappliance host and all hosted containers, completely compromising \nconfidentiality, integrity, and availability.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T12:17:24.717"
-  },
-  {
-    "id": "CVE-2026-28197",
-    "description": "An authenticated, low-privileged user with access to the NetBackup Flex \nOS management shell could supply a specially crafted input to a \nprivileged administrative command, causing it to execute arbitrary code \nwith root-level permissions. Successful exploitation grants the attacker\n unrestricted control over the Flex appliance host and all hosted \ncontainers, fully compromising confidentiality, integrity, and \navailability.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T12:17:24.573"
-  },
-  {
-    "id": "CVE-2026-21806",
-    "description": "HCL BigFix Service Management is affected by an Administrative Session Concurrency vulnerability. The application allows multiple simultaneous authenticated sessions for the same administrative account, which could enable an unauthorized attacker to predict or hijack valid session identifiers. Successful exploitation allows an attacker to compromise affected administrative sessions and execute actions with full privileged user permissions.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-18T12:17:24.440"
-  },
-  {
-    "id": "CVE-2026-93578",
-    "description": "A flaw was found in Netty's Online Certificate Status Protocol (OCSP) Client. The client fails to verify the 'id-kp-OCSPSigning' Extended Key Usage (EKU) in OCSP responder certificates. A remote attacker, holding any valid certificate issued by the same Certificate Authority (CA), can exploit this by forging 'GOOD' OCSP responses for revoked certificates. This bypasses certificate revocation checks, allowing applications using Netty's OCSP Client to accept certificates that should have been revoked, leading to an authorization bypass.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T11:17:22.170"
-  },
-  {
-    "id": "CVE-2026-93575",
-    "description": "A flaw was found in Netty's MqttDecoder. An unauthenticated remote attacker can exploit this vulnerability by sending a specially crafted MQTT CONNECT packet. The decoder fails to properly validate the 'Properties Length' against the 'Remaining Length', allowing an attacker to bypass size limits. This leads to excessive memory and CPU consumption, resulting in a denial of service (DoS) due to an OutOfMemoryError.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T11:17:22.033"
-  },
-  {
-    "id": "CVE-2026-93572",
-    "description": "A flaw was found in Netty's `RedisArrayAggregator` component. A remote attacker can exploit this vulnerability by sending specially crafted nested Redis (RESP) array headers. This can cause the `RedisArrayAggregator` to eagerly preallocate a large amount of heap memory, leading to heap memory exhaustion and a Denial of Service (DoS) for applications using `RedisDecoder` with `RedisArrayAggregator` on untrusted traffic.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T11:17:21.900"
-  },
-  {
-    "id": "CVE-2026-93563",
-    "description": "A flaw was found in Netty's `SmtpResponseDecoder` component. A remote attacker, acting as a malicious or man-in-the-middle (MITM) SMTP server, could exploit this by sending a specially crafted, unbounded multi-line SMTP response without a terminator. This vulnerability leads to unbounded memory accumulation within the client's Java Virtual Machine (JVM) heap, causing an `OutOfMemoryError` and a denial of service (DoS) due to a process crash.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T11:17:21.773"
-  },
-  {
-    "id": "CVE-2026-93561",
-    "description": "A flaw was found in io.netty/netty-codec-memcache. The Memcache binary protocol codec incorrectly reads `keyLength` and `extrasLength` as signed Java types instead of unsigned, as specified by the protocol. A malicious Memcache server can exploit this type mismatch by sending a specially crafted response. This can lead to frame desynchronization and response smuggling, where one client's data may be inadvertently exposed to another client's response stream in proxy or cache environments.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T11:17:21.650"
-  },
-  {
-    "id": "CVE-2026-81627",
-    "description": "A flaw was found in QEMU. The VAPIC setup hypercall in hw/i386/vapic.c does not validate that the writable RAM alias remains within the option ROM window. A privileged guest user on a Q35/KVM machine can position this alias over locked SMRAM, bypassing chipset D_LCK protection and injecting code into System Management Mode memory.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T11:17:18.490"
-  },
-  {
-    "id": "CVE-2026-92976",
-    "description": "A stored Cross-Site Scripting (XSS) vulnerability in the profile management functionality of T-Systems’ TAO 2.0 suite. An authenticated user could inject malicious HTML or JavaScript content into the fields containing their personal data. The content entered is stored and displayed without being properly sanitised when another user, including administrative staff, views the affected profile. Successful exploitation could allow JavaScript code to be executed in the victim’s browser, access to information available within the session, or the performance of actions using the victim’s permissions.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-18T10:17:08.130"
-  },
-  {
-    "id": "CVE-2026-90884",
-    "description": "The WP Recipe Maker plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'notes' parameter in all versions up to, and including, 10.8.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with Contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T10:17:08.000"
-  },
-  {
-    "id": "CVE-2026-87915",
-    "description": "The Popup Maker – Boost Sales, Conversions, Optins, Subscribers with the Ultimate WP Popup Builder plugin for WordPress is vulnerable to Stored Cross-Site Scripting via values[Name] Parameter in all versions up to, and including, 1.24.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The wp_kses sanitization applied on output is insufficient in this context because HTML entities within allowed attribute values survive normalization intact and are later evaluated by the jQuery(link.attr('href')) sink in wp-admin/js/common.js when a contextual help tab anchor is clicked.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T10:17:07.717"
-  },
-  {
-    "id": "CVE-2026-87743",
-    "description": "A flaw was found in Quarkus HTTP security. An unauthenticated attacker can exploit a discrepancy in how paths are normalized between the security matcher and HTTP request dispatchers. This allows the attacker to craft a URL that the security matcher considers public, but which is then routed to a protected endpoint, leading to an authorization bypass and potential unauthorized access to sensitive information.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T10:17:07.520"
-  },
-  {
-    "id": "CVE-2026-18405",
-    "description": "The Jeg Kit for Elementor – Powerful Addons for Elementor, Widgets & Templates for WordPress plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Comment Content in all versions up to, and including, 3.2.16 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Successful exploitation requires that the targeted post also renders a legitimate Jeg Kit Countdown widget, which causes the countdown frontend script to be enqueued and to initialize on any matching DOM element — including forged widget markup stored in comments.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T10:17:06.310"
-  },
-  {
-    "id": "CVE-2026-15797",
-    "description": "The Popup Maker – Boost Sales, Conversions, Optins, Subscribers with the Ultimate WP Popup Builder plugin for WordPress is vulnerable to Stored Cross-Site Scripting via post_title in all versions up to, and including, 1.24.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This requires the attacker to create a post with an HTML entity-encoded payload in the title, which bypasses sanitize_text_field on save and is later decoded and executed by the browser when rendered by the Select2 component.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T10:17:06.133"
-  },
-  {
-    "id": "CVE-2026-15579",
-    "description": "An out-of-bounds write vulnerability exists in some of the Ethernet switches because of improper validation of the username field length during Web login processing. This may allow a remote attacker to submit a specially crafted overly long input, triggering a buffer overflow that can cause the authentication process to crash and result in a Denial of Service (DoS) attack.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-18T10:17:04.537"
-  },
-  {
-    "id": "CVE-2026-85410",
-    "description": "The Master Addons for Elementor – Elementor Addons, Widgets, Mega Menu Builder, Popup Builder, Widget Builder & Template Kits plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 3.2.2. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with contributor-level access and above, to modify the title and metadata of arbitrary WordPress posts or permanently delete arbitrary WordPress posts by supplying an attacker-controlled popup_id. The required nonce is emitted on the edit-jltma_popup admin screen, which is accessible to Contributors because the jltma_popup custom post type is registered with capability_type='post'.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:42.500"
-  },
-  {
-    "id": "CVE-2026-83561",
-    "description": "The Complianz GDPR/CCPA Cookie Consent Banner plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Comment Content via Elementor Cookie Blocker Regex in all versions up to, and including, 7.5.4 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Successful exploitation requires an administrator to approve the attacker's comment, and the site must have both the Elementor plugin installed and Complianz configured with the Twitter or Facebook cookie/script blocker enabled.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:42.357"
-  },
-  {
-    "id": "CVE-2026-6205",
-    "description": "An external control of file name or path vulnerability in Upload API in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote authenticated users to write arbitrary files and conduct denial-of-service attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:42.133"
-  },
-  {
-    "id": "CVE-2026-56597",
-    "description": "HCL BigFix Service Management is affected by a Sensitive Information Leakage vulnerability, which could allow an unauthenticated attacker to extract internal IP addresses from the application's responses, enabling them to map the underlying network topology and identify potential internal targets.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:42.017"
-  },
-  {
-    "id": "CVE-2026-56595",
-    "description": "HCL BigFix Service Management is affected by a CORS Misconfiguration vulnerability due to improperly validated origin headers, which could allow an attacker to craft a malicious web page that interacts with the vulnerable application, enabling unauthorized access to protected resources and restricted APIs on behalf of a victim.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.900"
-  },
-  {
-    "id": "CVE-2026-56592",
-    "description": "HCL BigFix Service Management is affected by an Improper Authentication validation vulnerability related to inadequate account lockouts, which could allow an unauthenticated attacker to execute sustained brute-force attacks against the login interface, resulting in unauthorized system access.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.783"
-  },
-  {
-    "id": "CVE-2026-56590",
-    "description": "HCL BigFix Service Management is affected by an Unrestricted File Upload vulnerability due to improper file validation controls, which could allow an unauthenticated attacker to upload and execute malicious payloads, resulting in a complete server compromise.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.663"
-  },
-  {
-    "id": "CVE-2026-4036",
-    "description": "An improper neutralization of special elements used in an SQL command ('SQL injection') vulnerability in Sharing API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote authenticated users to obtain arbitrary sharing files.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.547"
-  },
-  {
-    "id": "CVE-2026-40539",
-    "description": "An improper certificate validation vulnerability in Email API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows man-in-the-middle attackers to read or write arbitrary files and conduct denial-of-service attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.423"
-  },
-  {
-    "id": "CVE-2026-40538",
-    "description": "An improper restriction of excessive authentication attempts vulnerability in Auto block in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote attackers to read limited files via brute-force attacks.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.307"
-  },
-  {
-    "id": "CVE-2026-40537",
-    "description": "A server-side request forgery (SSRF) vulnerability in PersonMail API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote authenticated users to obtain non-sensitive information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.190"
-  },
-  {
-    "id": "CVE-2026-40536",
-    "description": "An improper limitation of a pathname to a restricted directory ('path traversal') vulnerability in Audio API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote authenticated users to obtain non-sensitive information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:41.077"
-  },
-  {
-    "id": "CVE-2026-40535",
-    "description": "An improper limitation of a pathname to a restricted directory ('path traversal') vulnerability in Desktop API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote attackers to write limited files and conduct limited denial-of-service attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:40.960"
-  },
-  {
-    "id": "CVE-2026-40534",
-    "description": "An improper neutralization of input during web page generation ('cross-site scripting') vulnerability in Video API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote authenticated users to read or write limited files when the player is launched.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:40.840"
-  },
-  {
-    "id": "CVE-2026-40533",
-    "description": "An exposure of sensitive information through data queries vulnerability in Desktop API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote attackers to obtain non-sensitive information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:40.627"
-  },
-  {
-    "id": "CVE-2026-40532",
-    "description": "A direct request ('forced browsing') vulnerability in Wallpaper Path in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote authenticated users to obtain sensitive information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:40.473"
-  },
-  {
-    "id": "CVE-2026-40531",
-    "description": "An integer overflow or wraparound vulnerability in File Operation in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote authenticated users to conduct limited denial-of-service attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:40.357"
-  },
-  {
-    "id": "CVE-2026-40530",
-    "description": "An improper neutralization of CRLF sequences ('CRLF injection') vulnerability in User API in Synology DiskStation Manager (DSM) before 7.2.1-69057-10, 7.2.2-72806-7 and 7.3.2-86009-2 allows remote authenticated users to read or write arbitrary files and conduct denial-of-service attacks after the system is rebooted.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:40.237"
-  },
-  {
-    "id": "CVE-2026-21848",
-    "description": "HCL BigFix Service Management is affected by a Security Misconfiguration vulnerability, which could allow an authenticated attacker to exploit improper access controls, enabling the unauthorized viewing of restricted data elements across tenant boundaries.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:40.117"
-  },
-  {
-    "id": "CVE-2026-21822",
-    "description": "HCLSoftware AppScan 360° was affected by a Path Traversal vulnerability in the ASReportService component. Improper handling of file paths allows an authenticated attacker to read or write files outside the intended directory, potentially enabling file system structure inspection or unauthorized file modification within the application's directory scope.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:39.990"
-  },
-  {
-    "id": "CVE-2026-13684",
-    "description": "An improper encoding or escaping of output vulnerability in SCGI in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote attackers to read or write arbitrary files and conduct denial-of-service attacks.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:39.237"
-  },
-  {
-    "id": "CVE-2026-13683",
-    "description": "An improper neutralization of special elements used in an SQL command ('SQL Injection') vulnerability in EventScheduler API in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote authenticated users with administrator privileges to obtain non-sensitive information.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:39.117"
-  },
-  {
-    "id": "CVE-2026-13673",
-    "description": "An incorrect permission assignment for critical resource vulnerability in LDAP API in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote authenticated users to read or write arbitrary files and conduct denial-of-service attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:38.997"
-  },
-  {
-    "id": "CVE-2026-13666",
-    "description": "An improper neutralization of CRLF sequences ('CRLF Injection') vulnerability in Sharing API in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote authenticated users to write limited files when a victim clicks a sharing URL.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:38.877"
-  },
-  {
-    "id": "CVE-2026-13639",
-    "description": "An insufficient entropy vulnerability in login logic in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote attackers to read or write arbitrary files and conduct denial-of-service attacks.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:38.757"
-  },
-  {
-    "id": "CVE-2026-13635",
-    "description": "An improper encoding or escaping of output vulnerability in Auth API in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote attackers to obtain non-sensitive information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:38.637"
-  },
-  {
-    "id": "CVE-2026-13623",
-    "description": "An improper neutralization of input during web page generation ('Cross-site Scripting') vulnerability in Theme API in Synology DiskStation Manager (DSM) before 7.2.1-69057-12, 7.2.2-72806-9, 7.3.2-86009-4 and 7.4-90075 allows remote authenticated users with administrator privileges to read or write limited files.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:38.500"
-  },
-  {
-    "id": "CVE-2025-13533",
-    "description": "The CSS & JavaScript Toolbox plugin for WordPress is vulnerable to Stored Cross-Site Scripting in all versions up to, and including, 12.0.6 via the Assignment Engine fields. This is due to insufficient input sanitization and output escaping on assignment data fields including Expressions, URLs, and Advanced assignment data. This makes it possible for authenticated attackers, with Administrator-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses the CJT block edit screen in the admin dashboard.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T09:16:38.333"
-  },
-  {
-    "id": "CVE-2026-93494",
-    "description": "A flaw was found in Netty's StompSubframeDecoder component. A remote attacker can exploit this vulnerability by sending a specially crafted STOMP frame body without its terminating null byte. This causes the decoder to allocate a ByteBuf (a buffer for bytes) that is never released, leading to a permanent memory leak. Over time, this uncontrolled memory consumption can result in a Denial of Service (DoS) for the application using the affected STOMP codec.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:02.647"
-  },
-  {
-    "id": "CVE-2026-93493",
-    "description": "A flaw was found in Netty's `netty-handler-ssl-ocsp` component. A remote attacker can exploit this vulnerability by providing an Online Certificate Status Protocol (OCSP) response that omits the optional `nextUpdate` field. This omission causes the OCSP validation to be silently skipped, leading to applications proceeding with an unvalidated certificate. This can result in a bypass of security controls where certificate validation is expected.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:02.523"
-  },
-  {
-    "id": "CVE-2026-92622",
-    "description": "The Strong Testimonials plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'lightbox_class' Shortcode Attribute in all versions up to, and including, 3.3.8 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires that the targeted testimonial view has at least one published testimonial with a featured image and the lightbox wrapper enabled, as the vulnerable code path is only reached when a thumbnail is rendered.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:02.377"
-  },
-  {
-    "id": "CVE-2026-92554",
-    "description": "The ShopLentor – All-in-One WooCommerce Growth & Store Enhancement Plugin plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via Query-String Parameter Name in all versions up to, and including, 3.5.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link. The vulnerability is triggered via the WL: Product Horizontal Filter widget, which reflects attacker-supplied query-string parameter names from the current URL into option element value attributes without escaping, allowing payload breakout from the value=\"...\" attribute context.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:02.240"
-  },
-  {
-    "id": "CVE-2026-92249",
-    "description": "The Qi Addons For Elementor plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 's' parameter in all versions up to, and including, 1.11 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires the Table of Contents widget to be placed on a template that renders on the WordPress search-results page (e.g., a sitewide header or footer template) with the 'Limit ToC to Main Page Content' option left at its default value of No, so the widget scans the search-results heading that reflects the unsanitized `s` parameter.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:02.100"
-  },
-  {
-    "id": "CVE-2026-90981",
-    "description": "The Newsletter – Send awesome emails from WordPress plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'nn' parameter in all versions up to, and including, 9.3.8 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link. Successful exploitation requires the victim to be a logged-in administrator, as the antibot check auto-passes for authenticated users, routing the unsanitized payload through the administrator-visible output branch of dienow().",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:01.960"
-  },
-  {
-    "id": "CVE-2026-89059",
-    "description": "A flaw was found in RESTEasy's IIOImageProvider, which decodes attacker-supplied image request bodies without enforcing any limit on the declared image dimensions or pixel count. A remote, unauthenticated attacker can send a small crafted image declaring enormous dimensions to trigger a very large memory allocation, exhausting the JVM heap and resulting in a denial of service.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:01.783"
-  },
-  {
-    "id": "CVE-2026-89058",
-    "description": "A flaw was found in RESTEasy's CorsFilter, which, when configured to allow all origins (\"*\"), reflects the request's Origin header back in the Access-Control-Allow-Origin response together with Access-Control-Allow-Credentials: true. This permissive cross-origin policy allows a malicious website to make credentialed cross-origin requests and read authenticated responses from a victim's session, resulting in a loss of confidentiality.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:01.653"
-  },
-  {
-    "id": "CVE-2026-85705",
-    "description": "The Location Manager plugin for WordPress is vulnerable to generic SQL Injection via 'latitude' and 'longitude' REST API Parameters in all versions up to, and including, 2.3.38 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The injection is triggered when the orderby=lat_lon parameter is supplied, and affects multiple publicly accessible REST endpoints including geodir/v2/locations/cities, /regions, /countries, and /neighbourhoods via both the get_locations() and get_neighbourhoods() functions.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:01.520"
-  },
-  {
-    "id": "CVE-2026-85652",
-    "description": "The Photo Gallery by 10Web – Mobile-Friendly Image Gallery plugin for WordPress is vulnerable to time-based SQL Injection via 'album_id' Shortcode Attribute in all versions up to, and including, 1.8.44 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with author-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. An Author-level user can store a SQL injection payload inside a published post's shortcode attribute, causing the payload to execute when any visitor renders the post; notably, the unsanitized value appears on both sides of a UNION query, potentially doubling the observable time-based delay.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:01.373"
-  },
-  {
-    "id": "CVE-2026-75961",
-    "description": "The NEX-Forms – Ultimate Forms Plugin for WordPress plugin for WordPress is vulnerable to generic SQL Injection via the 'additional_params' parameter in all versions up to, and including, 9.3.0 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with custom-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The operator allowlist applied by get_table_records() when building its own WHERE fragment is not enforced on the same tainted additional_params array when it is forwarded to get_total_records(), leaving the SQL sink unprotected.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:01.227"
-  },
-  {
-    "id": "CVE-2026-75157",
-    "description": "Apache Airflow's asset queued-events DELETE endpoints checked the caller's Dag-axis permission with `READ` instead of `EDIT`. Any authenticated user who could read a Dag could therefore delete that Dag's queued asset events, silently suppressing asset-triggered scheduling for it — a state-changing action gated on a read-only permission. Deployments are affected whenever asset-triggered scheduling is in use and Dag read access is granted more widely than Dag edit access, which is the normal RBAC arrangement; no special configuration is required. Upgrade to apache-airflow 3.3.2 or later.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:01.093"
-  },
-  {
-    "id": "CVE-2026-67103",
-    "description": "HCL BigFix Service Management is affected by Cross-Site Scripting (XSS) vulnerability, which could allow an attacker to inject unsanitized malicious scripts that execute in a victim's browser, enabling session hijacking, account takeover, and unauthorized actions on behalf of affected users.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.977"
-  },
-  {
-    "id": "CVE-2026-67102",
-    "description": "HCL BigFix Service Management is affected by a high-severity Broken Access Control vulnerability, which could allow a low-privileged user to gain unauthorized access to administrative screens and functions reserved for higher-privileged roles.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.857"
-  },
-  {
-    "id": "CVE-2026-67101",
-    "description": "HCL BigFix Service Management is affected by a Server-Side Request Forgery (SSRF) vulnerability in its search functionality, which could allow an attacker to force the application server to send requests to internal systems that are not accessible from the internet.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.740"
-  },
-  {
-    "id": "CVE-2026-67100",
-    "description": "HCL BigFix Service Management is affected by SQL Injection flaw and a Cross-Tenant Data Exposure flaw vulnerabilities. which could allow an authenticated attacker to inject database commands to extract sensitive system details, as well as manipulate request values to gain unauthorized access to full personal profile data and PII across different organizations.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.603"
-  },
-  {
-    "id": "CVE-2026-18442",
-    "description": "The WCFM Marketplace – Multivendor Marketplace for WooCommerce plugin for WordPress is vulnerable to generic SQL Injection via the 'wcfmmp_user_location_lng' parameter in all versions up to, and including, 3.8.2 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.443"
-  },
-  {
-    "id": "CVE-2026-17607",
-    "description": "The WP Inventory Manager plugin for WordPress is vulnerable to SQL Injection via the 'where' shortcode attribute of the [wpinventory] shortcode in versions up to, and including, 2.5.1. This is due to insufficient escaping on the user-supplied parameter and lack of sufficient preparation on the existing SQL query in the WPIMItem::get_all() function — parse_custom_where() only performs html_entity_decode(), strips semicolons, and does field-label name replacements, without using $wpdb->prepare() or a whitelist. The resulting string is concatenated into a raw SELECT statement that is executed via $wpdb->get_results(). This makes it possible for authenticated attackers, with Contributor-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.303"
-  },
-  {
-    "id": "CVE-2026-17586",
-    "description": "The VK All in One Expansion Unit plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'vkExUnit_cta_img_position' Post Meta in all versions up to, and including, 9.118.0 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The sanitize_text_field callback applied on save does not strip double-quote characters or on* event-handler attributes, and the output filter Vk_Call_To_Action::safe_kses_post() only rewrites disallowed iframe elements while returning all other content verbatim, leaving the injected payload intact in the rendered HTML.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.160"
-  },
-  {
-    "id": "CVE-2026-16777",
-    "description": "The Store Exporter – Export WooCommerce Products, Orders, Subscriptions, Customers plugin for WordPress is vulnerable to Directory Traversal in all versions up to, and including, 2.8.0 via the 'filename' parameter parameter. This makes it possible for authenticated attackers, with shop manager-level access and above, to read the contents of arbitrary files on the server, which can contain sensitive information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:17:00.017"
-  },
-  {
-    "id": "CVE-2026-15275",
-    "description": "The WP Multi Store Locator Pro plugin for WordPress is vulnerable to generic SQL Injection via the 'store_locatore_search_radius' parameter in all versions up to, and including, 4.5.1 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The injection occurs in a numeric, unquoted SQL context, meaning WordPress's wp_magic_quotes() addslashes-based protection cannot neutralize the payload, and the AJAX handler is registered on wp_ajax_nopriv_make_search_request with no nonce or capability check, making it fully accessible without authentication.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:59.870"
-  },
-  {
-    "id": "CVE-2026-15004",
-    "description": "The FileBird – WordPress Media Library Folders & File Manager plugin for WordPress is vulnerable to Stored Cross-Site Scripting via image alt text in all versions up to, and including, 6.5.6 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with Author-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:59.730"
-  },
-  {
-    "id": "CVE-2026-14472",
-    "description": "The Kubio AI Page Builder plugin for WordPress is vulnerable to Stored Cross-Site Scripting via kubio/copyright Block Content in all versions up to, and including, 2.8.4 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This bypasses both the WordPress core kses-on-save filter and the plugin's own wp_kses_post() call, because entity-encoded script tags are treated as inert text by kses but are decoded into live HTML by the subsequent html_entity_decode() call in CopyrightBlock::render_template().",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:59.567"
-  },
-  {
-    "id": "CVE-2026-14323",
-    "description": "The Printcart Web to Print Product Designer for WooCommerce plugin for WordPress is vulnerable to Directory Traversal in all versions up to, and including, 2.8.5 via the 'mockups' parameter. This makes it possible for unauthenticated attackers to read the contents of arbitrary files on the server, which can contain sensitive information. A valid nonce is obtainable by unauthenticated users via the companion nbd_check_use_logged_in nopriv AJAX endpoint, which freely mints and returns a nbdesigner-get-data nonce to any visitor; additionally, if the NBDESIGNER_ENABLE_NONCE constant is disabled, even this nonce gate is bypassed entirely.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:59.403"
-  },
-  {
-    "id": "CVE-2026-13471",
-    "description": "The LatePoint – Calendar Booking Plugin for Appointments and Events plugin for WordPress is vulnerable to Insecure Direct Object Reference in all versions up to, and including, 5.6.3 via the LatePointAbilityDeleteBooking::execute due to missing validation on a user controlled key. This makes it possible for attackers, with  LatePoint Agent-level access and above, to read bookings and customer PII (full name, email, phone, and notes) assigned to other LatePoint agents, and delete arbitrary bookings by supplying any booking ID. This vulnerability is only exploitable when an administrator has enabled the Abilities API toggles (latepoint_abilities_api, latepoint_abilities_api_delete, and/or latepoint_abilities_api_edit) in the plugin settings.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:59.243"
-  },
-  {
-    "id": "CVE-2026-12954",
-    "description": "The Mapster WP Maps plugin for WordPress is vulnerable to Arbitrary User Meta Write in all versions up to, and including, 1.23.0 via the `my_profile_update()` function. This is due to the function performing no nonce verification, no capability check, and no allowlist validation on the meta key supplied via the `acf-photo-gallery-groups` POST parameter before passing both the meta key and its corresponding value directly to `update_user_meta()`. This makes it possible for authenticated attackers, with Subscriber-level access and above, to update arbitrary user meta values, though privilege escalation is not possible.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:59.100"
-  },
-  {
-    "id": "CVE-2026-12739",
-    "description": "The WP Easy Pay – Payment and Donation form Builder for Square plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 4.5.0. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with subscriber-level access and above, to permanently delete arbitrary posts, pages, and custom post types (bypassing the trash via force deletion) or change any published post to draft status.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:58.937"
-  },
-  {
-    "id": "CVE-2026-12384",
-    "description": "Authorization bypass through User-Controlled key vulnerability in TECHIN2B TECHIN2B Application allows Privilege Abuse.\n\nThis issue affects TECHIN2B Application: from V1.0.7676.13 through 18092026.\nNOTE: The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:58.813"
-  },
-  {
-    "id": "CVE-2026-11757",
-    "description": "Improper neutralization of input during web page generation ('cross-site scripting') vulnerability in KA Informatics Technologies Ltd. Co. Bar Association Website allows Reflected XSS.\n\nThis issue affects Bar Association Website: through 18092026. \nNOTE: The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-18T08:16:57.710"
   }
 ]
