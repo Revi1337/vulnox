@@ -1,138 +1,5 @@
 [
   {
-    "id": "CVE-2026-82417",
-    "description": "### Summary\n\n\n\n`qs.stringify` throws a `TypeError` when it serializes an object whose own `constructor` property has a truthy, non-callable `isBuffer` member. `utils.isBuffer` duck-types buffers by calling `obj.constructor.isBuffer(obj)` after checking only that the property is truthy, so a value such as `{ constructor: { isBuffer: \"x\" } }` makes the call throw `TypeError: obj.constructor.isBuffer is not a function`.\n\n\n\n### Details\n\n\n\n`lib/stringify.js:127` calls `utils.isBuffer` on every non-primitive value it serializes. `utils.isBuffer` (`lib/utils.js:332`) reads `obj.constructor.isBuffer` and invokes it without verifying that it is a function. `constructor` and `isBuffer` are ordinary property names, so any object carrying them as own properties reaches the unchecked call.\n\n\n\nSuch an object can be built from untrusted input. `qs.parse(\"x[constructor][isBuffer]=y\", { plainObjects: true })` or `{ allowPrototypes: true }` keeps the `constructor` key as an own property (the default parse options drop it), and `JSON.parse(\"{\\\"a\\\":{\\\"constructor\\\":{\\\"isBuffer\\\":\\\"x\\\"}}}\")` produces the same shape with no qs option involved. Express 4 with its default `query parser` setting and body-parser with `extended: true` both call `qs.parse` with `allowPrototypes: true`, so on those stacks `req.query` and `req.body` can carry the shape directly.\n\n\n\n#### PoC\n\n\n\n```js\n\n\n\nvar qs = require(\"qs\");\n\n\n\nqs.stringify(qs.parse(\"x[constructor][isBuffer]=y\", { plainObjects: true }));\n\n\n\nqs.stringify(JSON.parse(\"{\\\"a\\\":{\\\"constructor\\\":{\\\"isBuffer\\\":\\\"x\\\"}}}\"));\n\n\n\n// TypeError: obj.constructor.isBuffer is not a function\n\n\n\n//     at Object.isBuffer (lib/utils.js:332:78)\n\n\n\n//     at stringify (lib/stringify.js:127:45)\n\n\n\n```\n\n\n\n#### Fix\n\n\n\n`lib/utils.js`, applied in e83d321 on `main` and released as v6.16.0:\n\n\n\n```diff\n\n\n\n- return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));\n\n\n\n+ return !!(obj.constructor && typeof obj.constructor.isBuffer === \"function\" && obj.constructor.isBuffer(obj));\n\n\n\n```\n\n\n\nReal `Buffer`, `safer-buffer`, and browserify `buffer` polyfill instances serialize exactly as before; only the throw is removed.\n\n\n\n### Affected versions\n\n\n\n`>=2.2.5 <6.16.0`, fixed in v6.16.0.\n\n\n\nThe unguarded duck-type was introduced in 3768a75 and first shipped in v2.2.5 (September 2014). v2.2.4 and earlier used `Buffer.isBuffer` and are not affected. Every release from v2.2.5 through v6.15.3 contains the unguarded call.\n\n\n\n### Impact\n\n\n\nAn unauthenticated request can make any code path that re-serializes attacker-influenced data with `qs.stringify` (for example, rebuilding a query string from `req.query` for a redirect or an upstream request, or serializing a parsed JSON body) throw synchronously. In a typical Node.js HTTP framework the throw is caught by the framework error boundary and the affected request returns a 500; the process survives and other requests are unaffected. Where the call runs outside an error boundary, such as an `async` Express 4 handler (where the throw becomes an unhandled promise rejection) or a background job, the process exits, so the impact in that case depends on the application error handling rather than on qs.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-30T00:16:34.657"
-  },
-  {
-    "id": "CVE-2026-75847",
-    "description": "Cleartext Storage of Sensitive Information vulnerability in ash-project ash_paper_trail allows an attacker with read access to the generated version resource to recover the plaintext of sensitive? attributes.\n\nAshPaperTrail stores the values of tracked sensitive? attributes in the generated version resource's changes map, which is declared public? true and sensitive? false, so the values are returned by the version resource's default read action and printed in logs, inspect output, and error messages instead of being redacted. AshPaperTrail.Resource.Transformers.CreateVersionResource derives the changes map's sensitivity from the ignore_attributes list (the attributes excluded from changes) rather than from the tracked attributes actually stored in it, and ignore_attributes defaults to empty, so the flag is effectively always false.\n\nThis issue affects ash_paper_trail: from 0.1.1 before 0.7.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-30T01:20:24.617"
-  },
-  {
-    "id": "CVE-2026-77831",
-    "description": "Inefficient Algorithmic Complexity vulnerability in ash-project ash_paper_trail allows a user who can submit a large array attribute to a paper-trailed create or update action to cause a denial of service through excessive CPU and memory use.\n\nWith full-diff change tracking, AshPaperTrail.ChangeBuilders.FullDiff.ListChange pairs each prior array element against the new list by rebuilding the remaining-elements accumulator with acc ++ [tuple] on every step, copying the growing list each time, so the pairing scales cubically in the array length. Nothing bounds the length and the value comes straight from action input, so one request carrying a large accepted {:array, _} attribute forces tens of seconds of CPU and multi-gigabyte allocations.\n\nThis issue affects ash_paper_trail: from 0.1.1 before 0.7.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-30T01:20:29.597"
-  },
-  {
-    "id": "CVE-2026-77970",
-    "description": "Cleartext Storage of Sensitive Information vulnerability in ash-project ash_paper_trail allows an attacker with read access to the generated version resource to recover sensitive values nested inside embedded resources, unions, or lists.\n\nsensitive_attributes :redact and :ignore only act on the tracked resource's top-level attributes. maybe_redact_changes/3 and the stored-action-input path in AshPaperTrail.Resource.Changes.CreateNewVersion derive the sensitive set from the resource's own attributes and never descend into embedded, union, or list values, so a non-sensitive attribute or action argument that holds an embed with a sensitive? field (for example an accepted credentials embed carrying a token) is written to the version table in cleartext.\n\nThis issue affects ash_paper_trail: from 0.3.0 before 0.7.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-30T01:20:29.773"
-  },
-  {
-    "id": "CVE-2026-82562",
-    "description": "### Summary\n\n\n\nWhen `qs.parse` is called with `comma: true` and `throwOnLimitExceeded: true`, a comma-separated value under a bracket-push key (`a[]=1,2,3,4`) is split into an array without being compared against `arrayLimit`, while the same value under a flat key (`a=1,2,3,4`), an indexed key (`a[0]=`), a nested key (`a[b]=`), or a dotted key (`a.b=` with `allowDots`) throws the documented `RangeError`. A single parameter such as `a[]=1,2,2,...` therefore produces an inner array of arbitrary length even though the caller opted into the hard limit. This is the `[]=` key form that the fix for CVE-2026-2391 (qs 6.14.2) did not cover.\n\n\n\n### Details\n\n\n\nIn `lib/parse.js`, a comma-separated value under a `[]=` key is split and then wrapped as a single nested element (`val = [val]`, so that each `a[]=x,y` group counts as one element of the outer array). The `arrayLimit` check that 6.14.2 added for comma values runs after that wrap, so for `[]=` parts it only ever saw the wrapper of length 1. 6.15.3 added a pre-split comma count so that an oversized value throws before it is allocated, but gated it on an `isFlatArrayValue` flag that `parseValues` set to `false` for any part containing `[]=`, and did not pass it for object-valued input, so the gap remained.\n\n\n\n#### PoC\n\n\n\n```js\n\n\n\nvar qs = require('qs');\n\n\n\nvar options = { comma: true, arrayLimit: 3, throwOnLimitExceeded: true };\n\n\n\nqs.parse('a=1,2,3,4', options);   // RangeError: Array limit exceeded. Only 3 elements allowed in an array.\n\n\n\nqs.parse('a[]=1,2,3,4', options); // { a: [ [ '1', '2', '3', '4' ] ] }  (no throw)\n\n\n\nqs.parse('a[]=' + '1,'.repeat(1000000) + '1', { comma: true, arrayLimit: 20, throwOnLimitExceeded: true });\n\n\n\n// no throw; a 1,000,001-element inner array is allocated\n\n\n\n```\n\n\n\n#### Fix\n\n\n\n`lib/parse.js`, applied in 8859c37 on `main` and released as v6.16.0: the `isFlatArrayValue` gate is removed, so every comma-split value is counted against `arrayLimit` before splitting regardless of key form. An in-limit group under `a[]=` still counts as one element of the outer array, and the default (`throwOnLimitExceeded: false`) path is unchanged.\n\n\n\n### Affected versions\n\n\n\n`>=6.14.2 <6.16.0`, fixed in v6.16.0.\n\n\n\nv6.14.2 introduced `arrayLimit` enforcement for comma values (the fix for CVE-2026-2391) but only for values not under a `[]=` key, and every release from v6.14.2 through v6.15.3 has the same gap. v6.14.0 and v6.14.1, where `throwOnLimitExceeded` exists but does not apply to any comma form, are covered by CVE-2026-2391 rather than this record. Earlier lines (6.7.x through 6.13.x) have `comma` but no `throwOnLimitExceeded`, so there is no hard cap on any comma path to bypass; releases before 6.7.0 have no `comma` option.\n\n\n\n### Impact\n\n\n\nAn unauthenticated attacker who can reach an application that parses untrusted query strings or urlencoded bodies with both `comma: true` and `throwOnLimitExceeded: true` (both non-default) can bypass the configured limit with a single `a[]=` parameter and force the parser to allocate an array proportional to the request size. The cost is strictly linear in the attacker-supplied bytes (about 0.1 microseconds and 6 to 7 retained bytes per input byte; the same out-of-memory threshold as the documented default `throwOnLimitExceeded: false` path), so a transport-layer request or body size limit bounds it completely (and node's default maximum HTTP header size of 16 KB already bounds the request line, so multi-megabyte payloads need a body parser). The impact is that an opt-in hard limit fails open on one key spelling, not unbounded allocation from a small input.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-30T01:20:32.820"
-  },
-  {
-    "id": "CVE-2026-75759",
-    "description": "Improper Verification of Cryptographic Signature vulnerability in erlef oidcc allows an unauthenticated attacker to impersonate an arbitrary user via an encrypted ID token or JARM response carrying no nested signature. OpenID Connect Core 1.0 section 2 requires that an encrypted ID token be signed then encrypted, with the result being a Nested JWT, and JARM processing rule 5 requires the client to check the signature unconditionally. oidcc instead accepted a JWE wrapping unsigned claims as fully validated, so anyone holding the relying party's public encryption key could mint a token with an arbitrary sub, iss, and aud without possessing the provider's signing key.\n\nIn oidcc_jwt_util:verify_decrypted_token/4, a decrypted payload that is not a signed JWS fell back to parsing the plaintext claims and returning them with no verifying key. oidcc_token:int_validate_jwt/4 then matched on the JOSE structure type rather than on whether a signature had been verified, and returned success. The JARM path in oidcc_token:validate_jarm/3 is reachable through the browser front channel. UserInfo responses are not affected, because OpenID Connect Core 1.0 section 5.3.2 permits them to be encrypted without also being signed.\n\nThis issue affects oidcc: from 3.2.0-beta.1 before 3.9.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-30T02:18:30.110"
-  },
-  {
-    "id": "CVE-2026-77846",
-    "description": "Improper Neutralization of Special Elements in Data Query Logic vulnerability in ash-project ash_sqlite allows an attacker who controls a get_path/2 segment to traverse into nested JSON the application never exposed, disclosing private or sensitive? embedded fields.\n\nAshSqlite.SqlImplementation builds the SQLite json_extract path with \"$.\" <> Enum.join(right, \".\"), so a single segment containing ., [, ], or $ re-interprets the JSON path (for example \"private.secret\" descends two levels instead of naming one key). The path is bound as a parameter, so this is confined to the JSON-path grammar rather than SQL. Any endpoint that lets user input reach a get_path segment (a common pick-a-field pattern) can read nested values it never meant to expose.\n\nThis issue affects ash_sqlite: from 0.1.2-rc.0 before 0.2.18.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-30T03:16:32.530"
-  },
-  {
-    "id": "CVE-2026-15980",
-    "description": "The MyHome Core plugin for WordPress is vulnerable to Authentication Bypass in all versions up to, and including, 4.4.5. This is due to missing authorization in the send_link() AJAX handler and improper token validation in the activate() function. This makes it possible for unauthenticated attackers to generate an activation token for an unconfirmed user account and obtain a valid authentication cookie for that account, including administrators. Successful exploitation requires the MyHome theme to be configured in legacy/WPBakery mode with frontend registration and confirmation email enabled, and the target account must not already have the myhome_agent_confirmed user meta set.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-30T05:16:58.407"
-  },
-  {
-    "id": "CVE-2026-82478",
-    "description": "A vulnerability was determined in NASA Trick 19.6.0. This issue affects the function JSONVariableServerThread::parse_request of the file trick_source/sim_services/JSONVariableServer/JSONVariableServerThread.cpp of the component TCP Socket Handler. This manipulation causes stack-based buffer overflow. The attack is possible to be carried out remotely. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-30T05:16:59.380"
-  },
-  {
-    "id": "CVE-2026-82479",
-    "description": "A vulnerability was identified in NASA cFS up to 7.0.1. Impacted is the function OS_read of the file modules/protocol/tcp/fsw/src/sbn_tcp_if.c of the component SBN TCP Module. Such manipulation of the argument MsgSz leads to buffer overflow. The attack must be carried out from within the local network. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-30T06:16:55.450"
-  },
-  {
-    "id": "CVE-2026-82480",
-    "description": "A security flaw has been discovered in NASA cFS up to 7.0.1. The affected element is the function CFE_SB_GetUserDataLength of the file src/cFS/cfe/modules/sb/fsw/src/cfe_sb_util.c of the component cFE Software Bus. Performing a manipulation of the argument TotalMsgSize/HdrSize results in integer underflow. It is possible to initiate the attack remotely. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-30T06:16:56.730"
-  },
-  {
-    "id": "CVE-2026-14307",
-    "description": "The geotargetingwp WordPress plugin before 3.5.6.2 does not sanitise or escape several parameters before reflecting them back in AJAX responses that are served with an HTML content type, allowing unauthenticated attackers to inject arbitrary web scripts that execute when a victim is tricked into submitting a crafted request.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:20.000"
-  },
-  {
-    "id": "CVE-2026-14835",
-    "description": "The SOGO Add Script to Individual Pages Header Footer WordPress plugin through 3.9 does not sanitise or escape the custom header/footer script values saved from its post metabox, and does not restrict them to users with the unfiltered_html capability, allowing users with contributor-level access and above to store JavaScript that executes in the browser of any administrator who reviews the post and of any visitor once the post is published.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:20.777"
-  },
-  {
-    "id": "CVE-2026-19722",
-    "description": "The WPvivid — Backup, Migration & Staging WordPress plugin before 0.9.133 does not validate the destination of files extracted from a backup package during restoration, allowing high privilege users such as administrators to write arbitrary files outside the intended restore directory, which can lead to code execution.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:20.880"
-  },
-  {
-    "id": "CVE-2026-76585",
-    "description": "The Customer Reviews for WooCommerce WordPress plugin before 5.118.0 does not sanitise and escape the content of customer reviews received via one of its endpoints, which could allow unauthenticated users to perform Stored Cross-Site Scripting attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:20.997"
-  },
-  {
-    "id": "CVE-2026-78364",
-    "description": "The MW WP Form WordPress plugin before 5.1.6 does not sanitise and escape some of its form settings before outputting them back in an admin dashboard page, which could allow users with a role as low as Editor to perform Stored Cross-Site Scripting attacks against high privilege users such as admin.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:21.097"
-  },
-  {
-    "id": "CVE-2026-81660",
-    "description": "The Groundhogg — CRM, Newsletters, and Marketing Automation WordPress plugin before 4.5.13 does not validate or escape values submitted to some optional web form fields before storing them and outputting them back in an administrative area, allowing unauthenticated users to perform Stored Cross-Site Scripting attacks against high privilege users.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:21.790"
-  },
-  {
-    "id": "CVE-2026-81766",
-    "description": "The Really Simple Security  WordPress plugin before 9.8.0 does not check that the user is allowed to install Really Simple Security  WordPress plugin before 9.8.0 before installing one from a user-supplied URL, allowing an administrator of a subsite on a multisite network to install and execute arbitrary code in the network-shared Really Simple Security  WordPress plugin before 9.8.0 directory, which WordPress otherwise reserves to the network administrator. Exploitation requires the network administrator to have enabled the Really Simple Security  WordPress plugin before 9.8.0 administration menu for subsites, which is not the default.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:21.890"
-  },
-  {
-    "id": "CVE-2026-82482",
-    "description": "A security vulnerability has been detected in coppermine-gallery Coppermine Photo Gallery up to 1.6.28. This affects an unknown function of the file profile.php of the component edit_profile Endpoint. The manipulation of the argument Biography leads to cross site scripting. The attack can be initiated remotely. The exploit has been disclosed publicly and may be used. Upgrading to version 1.6.29 mitigates this issue. Upgrading the affected component is recommended.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-30T07:17:22.000"
-  },
-  {
     "id": "CVE-2026-82483",
     "description": "A vulnerability was detected in coppermine-gallery Coppermine Photo Gallery up to 1.6.28. This impacts an unknown function of the file db_input.php of the component Hidden Album Update Endpoint. The manipulation results in cross site scripting. The attack can be launched remotely. The exploit is now public and may be used. Upgrading to version 1.6.29 will fix this issue. It is recommended to upgrade the affected component.",
     "severity": "Low",
@@ -86900,7 +86767,7 @@
   {
     "id": "CVE-2026-51996",
     "description": "An issue in geelen mcp-remote 0.1.16 through 0.1.38 allows a remote attacker to execute arbitrary code via the src/lib/utils.ts and the getServerUrlHash function",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-09-24T15:17:23.280"
   },
@@ -87215,7 +87082,7 @@
   {
     "id": "CVE-2026-88358",
     "description": "simdjson 4.6.1 contains a one-byte out-of-bounds read vulnerability in dom::parser::parse_unpadded(). A specially crafted truncated JSON document whose final structural token closes a nested array or object can cause json_iterator::walk_document() to access buf[len] after the input buffer has been exhausted. This results in a heap out-of-bounds read and may cause application termination, leading to denial of service.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-24T16:17:13.090"
   },
@@ -87236,7 +87103,7 @@
   {
     "id": "CVE-2026-88365",
     "description": "minimp3 commit ea99364f contains an integer overflow vulnerability in mp3dec_skip_id3v1() when parsing the APEv2 tag-size field.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-09-24T16:17:13.483"
   },
@@ -88013,14 +87880,14 @@
   {
     "id": "CVE-2026-88377",
     "description": "Bento4 1.6.0.0 contains an integer underflow vulnerability in the avcC and hvcC configuration atom parsers. A specially crafted MP4 file containing an atom with a declared size smaller than AP4_ATOM_HEADER_SIZE can cause AP4_AvccAtom::Create() or AP4_HvccAtom::Create() to underflow the payload-size calculation. The resulting oversized buffer operation can cause invalid or NULL pointers to be passed to the AP4_DataBuffer copy path, resulting in application termination and denial of service.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-24T17:17:07.433"
   },
   {
     "id": "CVE-2026-88378",
     "description": "QuickJS commit 04be24600 contains a heap out-of-bounds write condition in JS_ReadFunctionTag().",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-09-24T17:17:07.550"
   },
@@ -89952,7 +89819,7 @@
   {
     "id": "CVE-2026-88387",
     "description": "LibRaw 0.22.0 contains an incorrect numeric conversion vulnerability in LibRaw::parse_tiff_ifd() when processing TIFF tag 0x00fe (NewSubfileType). A specially crafted RAW, TIFF, or DNG file can supply an attacker-controlled NewSubfileType value outside the range of a signed int. The parser converts this value and narrows it to int without performing range validation. This out-of-range conversion triggers undefined behavior, resulting in process termination and denial of service.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-24T21:18:57.120"
   },
@@ -93207,7 +93074,7 @@
   {
     "id": "CVE-2026-51772",
     "description": "A Server-Side Request Forgery (SSRF) vulnerability exists in the Image API (v2) of OpenStack Glance. When the show_multiple_locations configuration option is enabled in glance-api.conf, an authenticated attacker can manipulate the locations attribute of an image in the queued state by sending a crafted HTTP PATCH request",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-25T13:17:14.550"
   },
@@ -93242,7 +93109,7 @@
   {
     "id": "CVE-2026-88420",
     "description": "A reflected cross-site scripting (XSS) vulnerability in the EntryAbstract.save() component of APSL puput v1.2.1 through v2.2.0 allows authenticated attackers with Wagtail Editor privileges to execute arbitrary code in the context of the victim's browser via a crafted payload.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-25T13:17:16.787"
   },
@@ -93557,7 +93424,7 @@
   {
     "id": "CVE-2026-88389",
     "description": "Espruino 2v29 (commit bffc6d0) contains a NULL pointer dereference vulnerability in jslGetRawString() in src/jslex.c. Crafted raw/binary string input can cause the lexer to pass a NULL iterator target to jsvLockAgain(). In RELEASE/NO_ASSERT builds, the missing assertion guard allows a write through the NULL pointer, resulting in memory corruption and application termination or denial of service.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-09-25T15:17:56.687"
   },
@@ -99923,5 +99790,341 @@
     "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-28T23:17:02.007"
+  },
+  {
+    "id": "CVE-2026-101263",
+    "description": "A vulnerability was found in Ziroom ZHOME A0101 1.0.1.0. This issue affects some unknown processing of the file /api/ZRQos/set_online_client. The manipulation of the argument mac results in command injection. It is possible to launch the attack remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:01.540"
+  },
+  {
+    "id": "CVE-2026-101264",
+    "description": "A vulnerability was determined in Ziroom ZHOME A0101 1.0.1.0. Impacted is an unknown function of the file /api/ZRnetwork/set_passwd. This manipulation of the argument password1 causes command injection. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:02.663"
+  },
+  {
+    "id": "CVE-2026-101265",
+    "description": "A vulnerability was identified in Intelbras TIP 125i 4.3.35/4.3.41. The affected element is an unknown function of the component Básico Page. Such manipulation leads to inclusion of sensitive information in source code. The attack can be launched remotely. A high complexity level is associated with this attack. The exploitability is described as difficult. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:02.833"
+  },
+  {
+    "id": "CVE-2026-101277",
+    "description": "A security flaw has been discovered in Trusted Domain Project OpenDKIM up to 2.11.0. The impacted element is the function dkim_process_set of the file dkim.c of the component Tag Tokenizer. Performing a manipulation results in use of less trusted source. The attack may be initiated remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.010"
+  },
+  {
+    "id": "CVE-2026-102361",
+    "description": "mall4j through 4.0 contains a missing authentication vulnerability in the PUT /user/updatePwd endpoint that allows unauthenticated attackers to reset any storefront account password. Attackers can supply a target username in the request body to overwrite passwords without verification, enabling account takeover and access to orders and personal data.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.183"
+  },
+  {
+    "id": "CVE-2026-102362",
+    "description": "mall4j through 4.0 fails to implement authentication controls on the DELETE /prodComm endpoint in ProdCommController. Unauthenticated attackers can delete arbitrary product reviews by supplying the prodCommId parameter without authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.337"
+  },
+  {
+    "id": "CVE-2026-102363",
+    "description": "mall4j through 4.0 contains a missing authentication vulnerability in the DeliveryController checkDelivery endpoint that allows unauthenticated attackers to read shipment tracking information by supplying an order number parameter. Attackers can access carrier names, waybill numbers, and complete logistics trails for any order without authentication or ownership verification.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.483"
+  },
+  {
+    "id": "CVE-2026-102364",
+    "description": "mall4j through 4.0 fails to validate the sysType field in sa-token sessions, allowing storefront customers to authenticate as back-office users by reusing their session tokens. Attackers can register on the public storefront and use their customer session token to access admin endpoints lacking @PreAuthorize permission checks, including menu listings, file uploads, and configuration endpoints.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.633"
+  },
+  {
+    "id": "CVE-2026-102365",
+    "description": "mall4j through 4.0 fails to enforce authorization checks on GET endpoints in UserAddrController that retrieve customer address data. Authenticated attackers can call /user/addr/page and /user/addr/info endpoints to harvest all customer addresses including names, phone numbers, and postal information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.777"
+  },
+  {
+    "id": "CVE-2026-102366",
+    "description": "mall4j through 4.0 contains an unrestricted file upload vulnerability in FileController endpoints that lack authorization checks and accept arbitrary file types without validation. Attackers with any authenticated token can upload HTML or SVG files that execute scripts in administrator browsers when accessed from the local storage path, resulting in stored cross-site scripting.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.917"
+  },
+  {
+    "id": "CVE-2026-102367",
+    "description": "mall4j through 4.0 contains an insufficient session expiration vulnerability in the token refresh endpoint that fails to validate the enabled flag when issuing new sessions. Disabled user accounts can indefinitely renew their sessions through the POST /token/refresh endpoint, retaining access that account disabling was intended to remove.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.060"
+  },
+  {
+    "id": "CVE-2026-18417",
+    "description": "The native BSD-socket layer recorded a pending asynchronous socket error by type-punning it into struct net_context's void user_data field (ctx->user_data = INT_TO_POINTER(-status) in zsock_accepted_cb(), zsock_received_cb(), zsock_connected_cb() and zsock_close_ctx() in subsys/net/lib/sockets/sockets_inet.c), reading it back with POINTER_TO_INT(). That same field is owned by the network stack for listening TCP contexts: net_tcp_accept() stores the parent context pointer there and the TCP core passes it back to the registered accept callback. A failed accept therefore left a small integer (an errno value) where the stack expected a struct net_context .\n\nWhen the network interface carrying a listening TCP socket goes down, close_tcp_conn() in subsys/net/ip/tcp.c invokes the accept callback with -ENETDOWN and the context's user_data. In v4.3.0 the callback was not disarmed afterwards, so a second interface-down event forwarded the previously stored errno to zsock_accepted_cb(), which dereferenced it as the parent context and performed several stores through it (sock_set_error()'s read-modify-write of socket_data, k_fifo_cancel_wait(&parent->recv_q)) — the crash described in the fix's commit message. v4.3.1 and v4.4.x carry a later change clearing conn->accept_cb after the error callback (269cb8823d3 on the v4.3 branch, 913fae5169425550f2364655298fceb79b320066 on main), which closes that repeat path; on those releases the poisoned cookie remains reachable only by a narrower race, a handshake completing alongside the interface-down still passing the stale cookie to k_fifo_put(&parent->accept_q, ...), and by getsockopt(SO_ERROR), which reads the field back unconditionally.\n\nOn v4.3.0 an application that keeps a listening TCP socket open across repeated link-down events is sufficient to reach the defect; the triggering condition is a network-interface state change, not attacker-supplied packet data, so the practical attacker is one able to force the link down repeatedly (for example an adjacent attacker disrupting a wireless link) or one with local/physical access. Because both the faulting address and the stored data are fixed small constants derived from the errno value, the outcome is a wild-pointer access leading to a kernel fatal error — a denial of service (device crash or reset) rather than an attacker-directed memory corruption.\n\nThe fix stores the pending error in a dedicated net_context.sock_error field and converts every producer and consumer to sock_set_error()/sock_get_error(), leaving user_data untouched. As a side effect it also stops getsockopt(SO_ERROR) — which is evaluated unconditionally — from returning the kernel address held in user_data to a userspace application.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.207"
+  },
+  {
+    "id": "CVE-2026-18746",
+    "description": "parse_write_op() in subsys/net/lib/lwm2m/lwm2m_message_handling.c handles inbound CoAP WRITE/CREATE requests that carry a Block1 option. For the first block of a transfer it called init_block_ctx() and then immediately stored the peer-selected block size with block_ctx->ctx.block_size = block_size before inspecting the return code. init_block_ctx() sets the caller's pointer to NULL and returns -ENOMEM when no entry of the static block1_contexts[] pool is free or timed out, so that store dereferences a NULL pointer.\n\nThe pool holds CONFIG_LWM2M_NUM_BLOCK1_CONTEXT entries (default 3) and an entry is only reclaimed once its transfer completes, fails, or ages past 30 seconds. A peer that reaches the client's LwM2M socket can therefore start three block-wise writes on three distinct object paths with the CoAP More bit set and leave them incomplete, then send the first block of a fourth write on a new path to reach the unguarded dereference. Reachability is gated only by the connected UDP socket's source-address filter unless CONFIG_LWM2M_DTLS_SUPPORT is enabled — which has no default — so in a NoSec deployment an on-path or address-spoofing attacker needs no credentials; the same sequence is also reachable from a bootstrap or lower-trust server, and can be hit accidentally by a legitimate server running four concurrent block transfers.\n\nThe write targets a fixed low address with a value between 0 and 7, so the consequence is a fatal memory fault (BusFault or corrupted low memory leading to a fault) rather than a usable memory-corruption primitive: the device crashes or resets. Confidentiality and integrity are not affected. The fix moves the store below the guard and validates the context pointer itself instead of the return code, so the context is only touched once it is known to be valid.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.347"
+  },
+  {
+    "id": "CVE-2026-18747",
+    "description": "The MCUmgr SMP-over-console transport decodes a base64 frame, reads a 16-bit packet length from it, verifies a CRC and then unconditionally strips the trailing CRC with rx_ctxt->nb->len -= 2U; in mcumgr_serial_process_frag() (subsys/mgmt/mcumgr/transport/src/serial_util.c). mcumgr_serial_extract_len() accepted any declared length, including 0 and 1, and a packet declaring length 0 passes the checksum test for free because crc16_itu_t() over zero bytes returns the zero seed. Since net_buf::len is a uint16_t, the subtraction underflows and the buffer is handed to SMP claiming roughly 65 KB of payload while its data area is only CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE bytes (default 384).\n\nThe trigger is a single unauthenticated 7-byte line on the management console — the 0x06 0x09 packet marker followed by the base64 group AAA= and a newline — delivered to any transport built on this helper: CONFIG_MCUMGR_TRANSPORT_UART (smp_uart.c) or CONFIG_MCUMGR_TRANSPORT_SHELL (smp_shell.c), both of which select MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE. No prior session state, fragmentation or credentials are required to trigger the underflow, and the malformed frame is mishandled before any command handler or command-level access control runs. The attacker only needs write access to that console, which on many boards is a USB CDC-ACM port rather than a bare UART header.\n\nWith the inflated length, smp_process_request_packet() in subsys/mgmt/mcumgr/smp/src/smp.c loses its bound: cbor_nb_reader_init() gives the CBOR decoder a ~65 KB window into a 384-byte buffer, and each request header's nh_len is checked only against the inflated length. On its own the 7-byte frame re-parses whatever stale bytes the reused pool buffer still holds, typically a replay of the previously received request followed by a parse error, without leaving the buffer. Because the transport is unauthenticated, though, the attacker also controls the frames sent before the trigger, and can stage buffer contents so that a request succeeds with an nh_len larger than the buffer; net_buf_pull(), guarded only by __ASSERT_NO_MSG, then moves the parse cursor out of bounds and the loop reads further headers and CBOR from adjacent memory. The consequence is an out-of-bounds read that can fault the MCUmgr thread (denial of service); memory disclosure is also possible, since the default-enabled os echo handler (CONFIG_MCUMGR_GRP_OS_ECHO) decodes its string inside that window and copies it into its response. There is no integrity gain beyond what the unauthenticated transport already permits.\n\nThe fix rejects any declared packet length of two bytes or fewer in mcumgr_serial_extract_len(), so the CRC-strip subtraction can no longer underflow. The identical pattern remains in the test-only loopback transport subsys/mgmt/mcumgr/transport/src/smp_dummy.c (CONFIG_MCUMGR_TRANSPORT_DUMMY), which has no external input path and therefore carries no practical exposure.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.473"
+  },
+  {
+    "id": "CVE-2026-101278",
+    "description": "A weakness has been identified in Trusted Domain Project OpenDMARC up to 1.4.2. This affects the function opendmarc_get_tld of the file libopendmarc/opendmarc_tld.c : of the component PSL Wildcard Handler. Executing a manipulation can lead to origin validation error. The attack may be launched remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T01:16:43.787"
+  },
+  {
+    "id": "CVE-2026-101279",
+    "description": "A security vulnerability has been detected in Trusted Domain Project OpenDMARC up to 1.4.2. This impacts an unknown function of the file libopendmarc/opendmarc_policy.c of the component DMARC Parser. The manipulation of the argument pct leads to integer overflow. Remote exploitation of the attack is possible. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T01:16:43.997"
+  },
+  {
+    "id": "CVE-2026-101280",
+    "description": "A vulnerability was detected in Trusted Domain Project OpenDMARC up to 1.4.2. Affected is the function opendmarc_policy_query_dmarc of the component Multi-Record Set Handler. The manipulation results in authentication bypass by spoofing. The attack can be executed remotely. The exploit is now public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T01:16:44.193"
+  },
+  {
+    "id": "CVE-2026-101281",
+    "description": "A flaw has been found in Trusted Domain Project OpenDMARC up to 1.4.2. Affected by this vulnerability is the function opendmarc_sp2_find_mailfrom_domain of the file libopendmarc/opendmarc_spf.c of the component SPF Macro Handler. This manipulation causes improper authentication. The attack is possible to be carried out remotely. The exploit has been published and may be used. Patch name: c48a74c758677fc5272a73eff15ffdbf8afda1a6. Applying a patch is the recommended action to fix this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T01:16:44.367"
+  },
+  {
+    "id": "CVE-2026-102372",
+    "description": "GestSup versions before 3.2.62 fail to properly sanitize HTML email bodies in the IMAP LOGIN connector, allowing unauthenticated attackers to store arbitrary JavaScript in ticket descriptions and replies. Attackers can send emails to the monitored mailbox containing script tags and event handlers that execute in technician browsers, enabling ticket data theft and unauthorized actions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T01:16:44.593"
+  },
+  {
+    "id": "CVE-2026-102373",
+    "description": "GestSup versions before 3.2.62 fail to validate ticket ownership when loading comments via the threadedit parameter in thread.php. Authenticated attackers can enumerate sequential comment IDs to read private comments from other users' tickets without proper authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T01:16:44.757"
+  },
+  {
+    "id": "CVE-2026-102374",
+    "description": "GestSup versions before 3.2.62 contain a stored cross-site scripting vulnerability in the IMAP OAuth connector that double-decodes MIME-encoded email subjects after HTML escaping. Unauthenticated attackers can send crafted emails to monitored mailboxes with nested MIME encoded-words to inject JavaScript that executes in technician sessions when viewing tickets.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T01:16:44.900"
+  },
+  {
+    "id": "CVE-2026-101354",
+    "description": "A security flaw has been discovered in FAST FAC1203R 20200116_2.0.4. The affected element is the function _tWlanTask of the component MmtAtePrase Parser. Performing a manipulation results in stack-based buffer overflow. The attacker must have access to the local network to execute the attack. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T02:16:53.230"
+  },
+  {
+    "id": "CVE-2026-101858",
+    "description": "A flaw has been found in RaspAP raspap-webgui up to 3.5.5. Affected is the function WiFiManager::writeWpaSupplicant of the file src/RaspAP/Networking/Hotspot/WiFiManager.php of the component SSID Processing. This manipulation of the argument ssid causes os command injection. The attack can be initiated remotely. The exploit has been published and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T02:16:54.417"
+  },
+  {
+    "id": "CVE-2026-101859",
+    "description": "A vulnerability has been found in RaspAP raspap-webgui up to 3.5.5. Affected by this vulnerability is the function escapeshellcmd of the file ajax/openvpn/del_ovpncfg.php of the component OpenVPN Configuration Handler. Such manipulation of the argument cfg_id leads to os command injection. The attack can be launched remotely. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T02:16:54.607"
+  },
+  {
+    "id": "CVE-2026-101860",
+    "description": "A vulnerability was found in RaspAP raspap-webgui up to 3.5.5. Affected by this issue is the function PluginInstaller::addSudoers of the file src/RaspAP/Plugins/PluginInstaller.php of the component sudo Configuration. Performing a manipulation results in improper privilege management. The attack may be initiated remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T02:16:54.787"
+  },
+  {
+    "id": "CVE-2026-101878",
+    "description": "Bitwarden Server 2025.6.0 before 2026.5.0 declares the @ExternalId parameter of the User_ReadBySsoUserOrganizationIdExternalId stored procedure as NVARCHAR(50) while the column it queries stores NVARCHAR(300), silently truncating the SSO login identifier on SQL Server deployments and allowing a user whose identity-provider identifier begins with another organization member's full 50-character identifier to authenticate as that member and obtain a victim-scoped access token.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T02:16:54.990"
+  },
+  {
+    "id": "CVE-2026-102240",
+    "description": "A vulnerability was found in Netcore NAP930 0.1.241010.141410. This affects the function eval of the file /www/cgi-bin/network_tools of the component Network Tools CGI. The manipulation of the argument sid results in os command injection. The attack may be performed from remote. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T02:16:55.153"
+  },
+  {
+    "id": "CVE-2026-96326",
+    "description": "The HT Contact Form – Drag & Drop Form Builder for WordPress plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the Rich Text Editor Field in all versions up to, and including, 2.10.2 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T02:16:55.957"
+  },
+  {
+    "id": "CVE-2026-102241",
+    "description": "A vulnerability was determined in Netcore NAP930 0.1.241010.141410. This vulnerability affects unknown code of the file /lib/functions/backup_common.sh of the component Backup/Restore. This manipulation of the argument aes_pass causes use of hard-coded cryptographic key\r . It is possible to initiate the attack remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T03:17:14.510"
+  },
+  {
+    "id": "CVE-2026-102243",
+    "description": "A vulnerability was identified in MODSetter SurfSense up to 2.0.3. This issue affects some unknown processing of the file /api/search-source/connectors/mcp/test of the component MCP Connector Integration. Such manipulation leads to command injection. It is possible to launch the attack remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T03:17:15.730"
+  },
+  {
+    "id": "CVE-2026-102244",
+    "description": "A security flaw has been discovered in MODSetter SurfSense up to 0.0.36. Impacted is an unknown function of the file surfsense_backend/app/routes/editor_routes.py of the component Document Export Feature. Performing a manipulation results in server-side request forgery. The attack can be initiated remotely. The exploit has been released to the public and may be used for attacks. Upgrading to version 0.0.36.3 is recommended to address this issue. The patch is named 2faff7b3823322a9cb6797973e6caf089386c354. The affected component should be upgraded.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T03:17:15.913"
+  },
+  {
+    "id": "CVE-2026-97685",
+    "description": "An authenticated LimeSurvey Community Edition 7.3.0 user allowed to create surveys can use their own survey as an authorized context while supplying question or answer identifiers belonging to another user's survey. The REST survey-patching endpoint checks the attacker's permission against the survey ID in the request URL, but the vulnerable persistence operations resolve the target object independently by its global qid or aid and never verify that it belongs to that authorized survey.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-29T03:17:23.233"
+  },
+  {
+    "id": "CVE-2026-102245",
+    "description": "A weakness has been identified in MODSetter SurfSense up to 2.0.3. The affected element is an unknown function of the file surfsense_backend/app/routes/circleback_webhook_route.py of the component circleback Endpoint. Executing a manipulation can lead to missing authentication. The attack can be launched remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:17:52.653"
+  },
+  {
+    "id": "CVE-2026-102247",
+    "description": "A vulnerability was detected in FastAdmin 1.6.1.20250430/1.6.5.20260602. This affects an unknown function of the file application/database.php of the component Database Management. The manipulation results in execution with unnecessary privileges. The attack may be launched remotely. The exploit is now public and may be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:17:54.110"
+  },
+  {
+    "id": "CVE-2026-102248",
+    "description": "A vulnerability was identified in Rebuild up to 4.4.7/4.5.0-beta5. This affects an unknown part of the file /user/login of the component Login Endpoint. The manipulation leads to improper authentication. It is possible to initiate the attack remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:17:54.570"
+  },
+  {
+    "id": "CVE-2026-102249",
+    "description": "A security flaw has been discovered in REBUILD up to 4.4.11. This vulnerability affects unknown code of the file /commons/file-editor-save. The manipulation of the argument url/fileKey results in missing authorization. It is possible to launch the attack remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:17:54.917"
+  },
+  {
+    "id": "CVE-2026-102414",
+    "description": "pbkdf2 through 3.1.6 re-hashes passwords longer than the digest's block size on every iteration in its JavaScript fallback (lib/sync.js). A password longer than the block size (64 bytes, or 128 bytes for sha384 and sha512) is passed to HMAC as the key on every iteration, and HMAC hashes such keys in full each time. Cost is therefore O(iterations × password length), and a long password can block the event loop. The fallback is used by pbkdf2Sync and pbkdf2 on Node.js before 0.12, on Bun (1.0.0 through 1.1.34, and 1.2.6 and later), and on Deno 2.9.0 and later, because their native pbkdf2Sync fails the library's feature check. It is also used when lib/sync.js is imported directly. Node.js 0.12 and later, and browser builds (which use lib/sync-browser.js), are not affected. Applications that enforce a reasonable maximum password length are not meaningfully affected.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:17:55.180"
+  },
+  {
+    "id": "CVE-2026-102422",
+    "description": "shell-quote's `quote()` function emits a `{ comment }` token as `#` followed by its text, which comments out the rest of the shell line, including the opening quote of any later string token. A line terminator (\\n, \\r, U+2028, U+2029) in that later string therefore ends the comment, and the rest of the string is parsed as shell input: `quote(['echo', 'ok', { comment: 'x' }, 'a\\nid;#'])` runs `id` in sh, bash, dash, ksh and zsh. `parse()` emits a comment token for a `#` in the middle of a word (for example `http://example.com/#frag`), so callers that combine `parse()` output with another untrusted string, such as `quote(parse(untrustedCommand).concat(untrustedArg))`, are affected. The fix for CVE-2026-9277 rejected line terminators in the comment's own text, but not in the tokens after it. Fixed in 1.11.0: `quote()` throws a `TypeError` when a string after a `{ comment }` token contains a line terminator.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:17:55.707"
+  },
+  {
+    "id": "CVE-2026-97024",
+    "description": "A path traversal vulnerability in Flatpak's handling of the files/etc directory during app deployment allows a malicious Flatpak app to cause certain host system files (such as passwd, group, machine-id, or resolv.conf) to be emptied or replaced with a symlink when the app is installed or upgraded. In system-wide installations, the write is performed as root.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:18:02.397"
+  },
+  {
+    "id": "CVE-2026-97029",
+    "description": "Flatpak's process ID namespace separation does not prevent a sandboxed app's kill(0, signal) or killpg(0, signal) calls from reaching processes outside the sandbox that share the same process group. A malicious or compromised Flatpak app can use this to cause denial of service by terminating processes outside its sandbox, such as the desktop shell.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T04:18:02.573"
+  },
+  {
+    "id": "CVE-2026-102261",
+    "description": "A flaw has been found in owen2345 Camaleon CMS up to 2.9.2. Impacted is the function crop of the file app/controllers/camaleon_cms/admin/media_controller.rb of the component Media Crop Handler. This manipulation of the argument saved_avatar causes authorization bypass. The attack may be initiated remotely. The exploit has been published and may be used. Upgrading to version 2.9.3 is recommended to address this issue. Patch name: c143e145caa600947e70a240e87f2fed889149d3. It is suggested to upgrade the affected component.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T05:16:57.380"
+  },
+  {
+    "id": "CVE-2026-102263",
+    "description": "A vulnerability has been found in mwasikz robo-cafe-rms up to 228c44a02823f04e85db32b7137809a2856148fc. The affected element is an unknown function of the file manage-food.php. Such manipulation leads to unrestricted upload. The attack may be launched remotely. The exploit has been disclosed to the public and may be used. This product operates on a rolling release basis, ensuring continuous delivery. Consequently, there are no version details for either affected or updated releases. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T05:16:58.867"
+  },
+  {
+    "id": "CVE-2026-102264",
+    "description": "A vulnerability was found in mwasikz robo-cafe-rms up to 228c44a02823f04e85db32b7137809a2856148fc. The impacted element is an unknown function of the file frontend/update-account.php of the component Edit Profile Feature. Performing a manipulation of the argument Name/Address/City results in cross site scripting. Remote exploitation of the attack is possible. The exploit has been made public and could be used. This product follows a rolling release approach for continuous delivery, so version details for affected or updated releases are not provided. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T05:16:59.033"
+  },
+  {
+    "id": "CVE-2026-102290",
+    "description": "A vulnerability was determined in CodeCanyon Rocket LMS up to 2.2. This affects an unknown function of the component Student Profile Image Upload. Executing a manipulation can lead to cross site scripting. The attack can be executed remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T05:16:59.200"
+  },
+  {
+    "id": "CVE-2026-102292",
+    "description": "A flaw has been found in coolbeans1212 MateisHomePage-Website up to ea2a4226deeca27ab1fb9df0552ec76444547811. Affected by this issue is some unknown functionality of the file users.php. This manipulation of the argument Search causes cross site scripting. The attack can be initiated remotely. The exploit has been published and may be used. Continious delivery with rolling releases is used by this product. Therefore, no version details of affected nor updated releases are available. Patch name: 6406308df9771d2fd477b56dafe4878dd846df6e. Applying a patch is the recommended action to fix this issue.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T06:16:58.320"
+  },
+  {
+    "id": "CVE-2026-102293",
+    "description": "A vulnerability was identified in realjerrytang tacomall 1.0.0. Impacted is the function OrgStaffServiceImpl.add of the file ApiMaApplication.java of the component api-admin Backend. The manipulation of the argument isAdmin/jobId leads to improper authorization. Remote exploitation of the attack is possible. The exploit is publicly available and might be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T06:16:58.543"
+  },
+  {
+    "id": "CVE-2026-86157",
+    "description": "Exposure of privileged IPC functionality in Progress Telerik Fiddler Everywhere before version 8.2.0 allows a local, low-privileged attacker who can modify application launch parameters and persuade a user to start the application to replace the application UI or settings with attacker-controlled content. Successful exploitation could result in disclosure of OAuth authentication tokens, execution of locally accessible programs, or unauthorized modification of application-generated configuration files.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T07:16:35.377"
+  },
+  {
+    "id": "CVE-2026-86158",
+    "description": "Missing authentication in the local .NET backend (Fiddler.WebUi) of Progress Software Fiddler Everywhere 8.0.2 allows a local unauthenticated attacker to mint OAuth tokens and read the machine-in-the-middle root certificate through an unauthenticated localhost HTTP and SignalR RPC channel.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-29T07:16:35.520"
   }
 ]
