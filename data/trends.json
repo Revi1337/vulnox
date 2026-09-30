@@ -1,369 +1,5 @@
 [
   {
-    "id": "CVE-2026-77956",
-    "description": "Improper Control of Generation of Code (Code Injection) vulnerability in ash-project ash_ai allows a remote, unauthenticated client to execute arbitrary Elixir code.\n\nAshAi.Actions.Prompt evaluates prompt content through EEx.eval_string/2. The documented prompt: fn input, context -> ... end form lets the prompt content be built from action arguments, so when a prompt action's text incorporates request data, that attacker-controlled text is compiled and run as an EEx template (Elixir source). Content such as <%= System.cmd(...) %> therefore executes on the server before any model request is made, requiring no authentication beyond reaching a prompt action. The fix stops evaluating function-supplied prompt content as EEx; only statically configured templates are evaluated.\n\nThis issue affects ash_ai: from 0.1.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T01:16:49.563"
-  },
-  {
-    "id": "CVE-2026-81315",
-    "description": "Origin Validation Error vulnerability in ash-project ash_ai allows a malicious web page to bypass the MCP server's DNS-rebinding protection and issue cross-site requests to a user's local MCP server with that user's actor.\n\nIn AshAi.Mcp.Server, with the default allowed_origins: nil, origin_allowed?/3 accepts an origin when uri.host == conn.host and the forwarded scheme is https. Both values are attacker-controlled: conn.host comes from the Host header and the scheme is read from the raw x-forwarded-proto header with no trusted-proxy check. Under DNS rebinding the browser sends the attacker's origin and a matching host, and page JavaScript may set X-Forwarded-Proto: https, so the check passes with no TLS or proxy involved. The fix trusts only localhost origins by default; other origins require an explicit allowed_origins allowlist.\n\nThis issue affects ash_ai: from 0.8.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T01:16:49.977"
-  },
-  {
-    "id": "CVE-2026-82597",
-    "description": "A vulnerability was identified in TOTOLINK NR1800X 9.1.0u.6681_B20230703. This affects the function setUssd of the file /cgi-bin/cstecgi.cgi. The manipulation of the argument ussd leads to command injection. The attack can be initiated remotely. The exploit is publicly available and might be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T01:16:50.190"
-  },
-  {
-    "id": "CVE-2026-82598",
-    "description": "A vulnerability was determined in SeaCMS up to 13.6. Affected is the function parseIf of the file search.php of the component Template Engine. This manipulation of the argument searchtype causes code injection. It is possible to initiate the attack remotely. The exploit has been publicly disclosed and may be utilized.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T01:16:50.417"
-  },
-  {
-    "id": "CVE-2026-82599",
-    "description": "A vulnerability was identified in SeaCMS up to 13.6. Affected by this vulnerability is the function unlink of the file /member.php?action=chgpwdsubmit of the component Avatar Upload. Such manipulation of the argument oldpic leads to path traversal. It is possible to launch the attack remotely. The exploit is publicly available and might be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T01:16:50.630"
-  },
-  {
-    "id": "CVE-2026-75760",
-    "description": "Generation of Error Message Containing Sensitive Information vulnerability in ash-project ash_ai discloses provider request state and credentials in a user-facing validation error.\n\nIn AshAi.Changes.Vectorize, when the embedding provider call fails the change added a changeset error whose message inspected the raw error term (An error occurred while generating embeddings: #{inspect(error)}). A plain-string add_error produces an Ash.Error.Changes.InvalidChanges in the :invalid class, which AshJsonApi and AshGraphql render back to the caller. The embedding client's error term is not sanitized, so it can carry the request URL, the provider response body, and, for HTTP clients that keep the request in the error struct, the outbound Authorization header with the provider API key. Failures are attacker-reachable via oversized or malformed vectorized content. The fix logs the raw error and returns a generic message.\n\nThis issue affects ash_ai: from 0.1.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:01.313"
-  },
-  {
-    "id": "CVE-2026-82564",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in ash-project ash_ai allows a caller of an identity-configured tool to update or destroy records it never identified, including every row in the table.\n\nIn AshAi.Tool.Execution, identity_filter/3 built the update/destroy filter directly from the raw tool arguments as [{key, Map.get(arguments, to_string(key))}] and passed it to Ash.Query.do_filter/2. A map value is parsed as a predicate expression rather than a literal, so a caller can send {\"public_ref\": {\"not_eq\": \"<own-ref>\"}} and, combined with Ash.Query.limit(1) and Ash.bulk_update!/Ash.bulk_destroy!, retarget the write at a record it never identified; an omitted key yields an IS NULL filter that matches an arbitrary row. The fix casts each identity value to the field type, rejecting non-scalar inputs.\n\nThis issue affects ash_ai: from 0.6.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:02.103"
-  },
-  {
-    "id": "CVE-2026-82579",
-    "description": "Loop with Unreachable Exit Condition (Infinite Loop) vulnerability in ash-project ash_ai allows an attacker who can influence a model's output to hang the tool loop and drive unbounded, repeated model requests.\n\nAshAi.ToolLoop classifies a model response of :tool_calls, then filters the calls through normalize_tool_calls/2 and unprocessed_tool_calls/2. Both can empty the list: a call missing a valid name, or one reusing a tool_call_id that already has a result in history, is dropped. With an empty list the loop appended nothing and recursed with a byte-identical message list, so the conversation never advanced and the same request was re-sent every iteration. Under the supported max_iterations: :infinity this never terminated; otherwise it exhausted the full budget. Prompt-injected content can make the model re-emit a spent tool_call_id. The fix treats an empty post-filter list as terminal.\n\nThis issue affects ash_ai: from 0.6.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:02.270"
-  },
-  {
-    "id": "CVE-2026-82580",
-    "description": "Generation of Error Message Containing Sensitive Information vulnerability in ash-project ash_ai discloses internal error text to chat users.\n\nIn AshAi.ToolLoop and AshAi.Tools, an exception raised while executing a tool was serialized verbatim with Exception.message/1 into the tool-result content. That content is appended to the conversation, emitted as a {:tool_result, ...} stream event, and sent back to the model, which typically relays it to the user. No filtering happened first, so anything raised inside a tool callback or lifecycle hook (database constraint messages, adapter errors, query fragments, policy or validation internals) was echoed as-is. A chat user who can steer tool arguments into a raising code path receives the raw internal text. The fix routes raised tool errors through the same safe formatter used for other tool errors.\n\nThis issue affects ash_ai: from 0.6.0 before 1.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:02.440"
-  },
-  {
-    "id": "CVE-2026-82600",
-    "description": "A security flaw has been discovered in SeaCMS up to 13.6. Affected by this issue is some unknown functionality of the file /zyapi.php?ac=videolist. Performing a manipulation of the argument ids results in sql injection. The attack can be initiated remotely. The exploit has been released to the public and may be used for attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:02.603"
-  },
-  {
-    "id": "CVE-2026-82601",
-    "description": "A weakness has been identified in SeaCMS up to 13.6. This affects an unknown part of the file /err.php. Executing a manipulation of the argument errtxt can lead to cross site scripting. The attack can be launched remotely. The exploit has been made available to the public and could be used for attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:02.817"
-  },
-  {
-    "id": "CVE-2026-82602",
-    "description": "A security vulnerability has been detected in SeaCMS up to 13.6. This vulnerability affects unknown code of the file /ass.php. The manipulation leads to authorization bypass. The attack may be initiated remotely. The exploit has been disclosed publicly and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:03.003"
-  },
-  {
-    "id": "CVE-2026-82603",
-    "description": "A vulnerability was detected in SeaCMS up to 13.6. This issue affects some unknown processing of the file /member.php?action=del_pl of the component Comment Cache. The manipulation of the argument itype/vid results in path traversal. The attack may be launched remotely. The exploit is now public and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:03.190"
-  },
-  {
-    "id": "CVE-2026-82604",
-    "description": "A flaw has been found in BareBones BBEdit up to 15.5.5. Impacted is an unknown function of the component Java Language Module. This manipulation causes uncontrolled recursion. Remote exploitation of the attack is possible. Upgrading to version 16.0 is recommended to address this issue. You should upgrade the affected component.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T02:17:03.370"
-  },
-  {
-    "id": "CVE-2026-75757",
-    "description": "Reliance on Cookies without Validation and Integrity Checking vulnerability in ash-project ash_admin lets an attacker who controls a sibling subdomain rebind an admin's session to a different actor, tenant, or authorization mode.\n\nAshAdmin's client JavaScript read its state cookies (tenant, actor_resource, actor_primary_key, actor_action, actor_domain, actor_authorizing, actor_paused) by matching the cookie name with an unanchored regular expression (new RegExp(name + \"=([^;]+)\")) against the whole document.cookie. Any cookie whose name merely ends with the requested name therefore matches, and whichever is serialized first wins. Because cookies are shared across a registrable domain, a compromised sibling subdomain can set a shadowing cookie (for example xactor_authorizing) with Domain=.example.com that flows unvalidated into the admin's LiveSocket connect params. The fix matches cookie names by exact equality.\n\nThis issue affects ash_admin: from 0.9.1 before 1.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:42.133"
-  },
-  {
-    "id": "CVE-2026-77850",
-    "description": "Stored Cross-site Scripting vulnerability in ash-project ash_admin executes attacker-supplied record content as script in an administrator's browser.\n\nThe relationship typeahead components AshAdmin.Components.Resource.RelationshipField and AshAdmin.Components.Resource.ManagedRelationshipSelectField highlight the matched search term by wrapping it in <b> tags and rendering the whole string with Phoenix.HTML.raw/1. The highlighted value is the destination record's label_field, ordinary database content that is often written by lower-privileged users. Because raw/1 disables output escaping for the entire string, a stored label such as <img src=x onerror=...> runs as JavaScript in the admin's session as soon as a matching record appears in the dropdown, giving the attacker the admin's privileges over everything AshAdmin exposes. The fix HTML-escapes the label before inserting the highlight markup.\n\nThis issue affects ash_admin: from 0.13.0 before 1.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:42.307"
-  },
-  {
-    "id": "CVE-2026-81852",
-    "description": "Use of Insufficiently Random Values vulnerability in ash-project ash_admin ships a hardcoded, publicly known CSP nonce, defeating nonce-based Content-Security-Policy protection.\n\nWhen mounted without :csp_nonce_assign_key, AshAdmin.Router.ash_admin/2 defaulted the img, style, and script nonces to the literal constant ash_admin-Ed55GFnX, which AshAdmin.Layouts wrote verbatim into the nonce attribute of its inline <style> and <script> tags on every response. The value is a compile-time constant published in the repository and is never rotated per request. If an application's CSP script-src allow-lists that documented default, any HTML-injection sink on an admin page can reuse the known nonce to run inline scripts the policy was meant to block. The fix generates a fresh random nonce per request.\n\nThis issue affects ash_admin: from 0.10.8 before 1.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:42.500"
-  },
-  {
-    "id": "CVE-2026-81853",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in ash-project ash_admin turns a record-lookup URL into an equality oracle over sensitive attributes.\n\nAshAdmin.Helpers.decode_primary_key/2 decodes the composite-primary-key form (Base64 plus ETF) and returns the decoded map verbatim as the lookup filter, without checking that its keys are the resource's primary-key fields. The deserialization guards bound size, block new atoms and funs, and reject nested expressions, but none restricts which fields come back, and :safe still allows any already-interned attribute name. An attacker can therefore encode %{api_token: \"guess\"} and have it spliced into the lookup filter, brute-forcing a sensitive attribute value (API token, reset token) one equality guess at a time; Map.to_list/1 also accepts structs, yielding a bogus __struct__ key. The fix rejects any decoded key that is not a real primary-key field.\n\nThis issue affects ash_admin: from 0.1.0 before 1.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:42.670"
-  },
-  {
-    "id": "CVE-2026-82605",
-    "description": "A vulnerability has been found in BareBones BBEdit up to 15.5.5. The affected element is an unknown function of the component Lasso Language Tokenizer. Such manipulation leads to infinite loop. The attack can be executed remotely. Upgrading to version 16.0 is sufficient to fix this issue. The affected component should be upgraded.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:42.850"
-  },
-  {
-    "id": "CVE-2026-82607",
-    "description": "A vulnerability was found in Cozmoslabs Profile Builder Plugin up to 3.16.1 on WordPress. The impacted element is the function wppb_ajax_simple_avatar of the file /wp-admin/admin-ajax.php of the component Avatar Simple Upload AJAX Handler. Performing a manipulation results in unrestricted upload. The attack is possible to be carried out remotely. The exploit has been made public and could be used. Upgrading to version 3.16.2 is sufficient to resolve this issue. It is suggested to upgrade the affected component.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:43.103"
-  },
-  {
-    "id": "CVE-2026-82608",
-    "description": "A vulnerability was determined in Kamailio up to 5.5.0/6.0.7. This affects the function get_4bytes of the file src/modules/ims_registrar_scscf/cxdx_avp.c of the component AVP Handler. Executing a manipulation can lead to out-of-bounds read. The attack may be performed from remote. The exploit has been publicly disclosed and may be utilized. This patch is called abb5d60af6eefbd367bf6588c5589566b090e272. It is advisable to implement a patch to correct this issue. The vendor points out, that \"[v]ersion 5.5.0 is old and not maintained anymore.\"",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:43.293"
-  },
-  {
-    "id": "CVE-2026-82673",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory (Path Traversal) vulnerability in ash-project ash_admin allows writing attacker-controlled bytes to arbitrary paths on the server.\n\nAshAdmin.Components.Resource.Form.consume_file_uploads/1 builds the destination as Path.join([tmp_dir, entry.client_name]) and writes it with File.cp!/2. entry.client_name is the browser-supplied filename and is not sanitized, and Path.join/1 does not normalize ... An upload named ../../../../var/www/app/priv/static/x.png therefore escapes the random temp directory and lands anywhere the BEAM user can write, enabling arbitrary file write and potentially remote code execution by overwriting application assets, configuration, or cron/ssh files. The only guard is an extension allowlist defaulting to :any that checks only the extension. The fix strips path components with Path.basename/1 before joining.\n\nThis issue affects ash_admin: from 0.13.7 before 1.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:43.473"
-  },
-  {
-    "id": "CVE-2026-82681",
-    "description": "Improper Encoding or Escaping of Output vulnerability in ash-project ash_admin lets an attacker who controls a record's string primary key rewrite the target of AshAdmin's row-action links.\n\nThe Table, DataTable, and Show components built row-action URLs by raw string interpolation, splicing the primary key (and table, domain, and resource names) into the query string without URL-encoding. Ash resources routinely use user-settable string primary keys (slugs, emails). Because Plug.Conn.Query resolves duplicate parameters last-wins and primary_key is interpolated last, a stored key such as foo&action_type=destroy injects parameters that override the link, so an admin clicking edit is sent to a destroy form or an arbitrary resource; a # truncates the query into a fragment. The fix builds every link with URI.encode_query/1, encoding all interpolated values.\n\nThis issue affects ash_admin: from 0.3.0-rc.0 before 1.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:43.643"
-  },
-  {
-    "id": "CVE-2026-82722",
-    "description": "Allocation of Resources Without Limits or Throttling vulnerability in ash-project ash_admin lets any client that can reach the admin LiveView exhaust the BEAM atom table and crash the entire node.\n\nTwo LiveView event handlers interned atoms from unvalidated client input: AshAdmin.PageLive's set_actor built modules from the resource/domain payload with Module.concat/1, and AshAdmin.Components.Resource.Show's calculate converted every submitted form key with String.to_atom/1. Atoms are never garbage collected and the table is capped, so flooding either event with random names mints a new atom per request until the VM aborts, taking down every application on the node. The fix resolves the submitted resource/domain against the known shown resources and maps calculation keys to declared arguments, so no client-supplied string is interned.\n\nThis issue affects ash_admin: from 0.1.0 before 1.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T03:16:43.817"
-  },
-  {
-    "id": "CVE-2026-82609",
-    "description": "A vulnerability was identified in itsourcecode Sales and Inventory System 1.0. This impacts an unknown function of the file /pages/inv_edit.php. The manipulation of the argument ID leads to sql injection. It is possible to initiate the attack remotely. The exploit is publicly available and might be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:16.390"
-  },
-  {
-    "id": "CVE-2026-82610",
-    "description": "A security flaw has been discovered in itsourcecode Online Medicine Delivery System 1.0. Affected is the function Employee::employeeAuthentication of the file /rider/login.php of the component Login Interface. The manipulation of the argument emp_email results in sql injection. It is possible to launch the attack remotely. The exploit has been released to the public and may be used for attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:26.273"
-  },
-  {
-    "id": "CVE-2026-82611",
-    "description": "A weakness has been identified in itsourcecode Online Medicine Delivery System 1.0. Affected by this vulnerability is the function Customer::cusAuthentication of the file /login.php of the component Customer Login Interface. This manipulation of the argument U_USERNAME causes sql injection. The attack can be initiated remotely. The exploit has been made available to the public and could be used for attacks.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:28.317"
-  },
-  {
-    "id": "CVE-2026-82612",
-    "description": "A security vulnerability has been detected in itsourcecode Online Medicine Delivery System 1.0. Affected by this issue is the function loadResultList of the file /index.php?q=single-item of the component Product Detail Page. Such manipulation of the argument ID leads to sql injection. The attack can be launched remotely. The exploit has been disclosed publicly and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:28.543"
-  },
-  {
-    "id": "CVE-2026-82613",
-    "description": "A vulnerability was detected in itsourcecode Online Medicine Delivery System 1.0. This affects the function loadResultList of the file /index.php?q=product of the component Product Search Interface. Performing a manipulation of the argument Search results in sql injection. The attack may be initiated remotely. The exploit is now public and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:28.777"
-  },
-  {
-    "id": "CVE-2026-82724",
-    "description": "Incorrect Authorization vulnerability in ash-project ash_phoenix invokes the SubdomainHook authorization callback with a nil tenant, so tenant-scoped access checks never see the tenant they are meant to enforce.\n\nAshPhoenix.LiveView.SubdomainHook.on_mount/4 attached a handle_params hook to assign the tenant and then immediately called handle_subdomain in the same on_mount. The tenant assign is only written when LiveView later runs handle_params, strictly after on_mount returns, so handle_subdomain read an unset assign and ran as apply(m, f, [socket, nil | a]). A consumer gate that halts when the user does not belong to the tenant instead evaluated nil, either crashing or taking a permissive branch, and it was never re-run once the real subdomain was assigned or on later navigations. The fix runs handle_subdomain inside the handle_params hook with the real tenant on every navigation.\n\nThis issue affects ash_phoenix: from 2.1.26 before 2.3.25.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:28.980"
-  },
-  {
-    "id": "CVE-2026-82725",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in ash-project ash_phoenix lets an attacker who controls filter form parameters filter across relationships the resource author marked non-public, turning the returned rows into a boolean oracle over private related data.\n\nAshPhoenix.FilterForm resolved every relationship hop in the user-supplied path with Ash.Resource.Info.related/2, which traverses private relationships, and only checked the terminal field for publicity. parse_path_and_field/2 also rewrote a field naming a relationship into an extra path segment, so field=some_private_rel was accepted too. Both path and field come straight from form params, and the resulting ref went to Ash.Query.do_filter/2 without the public-only enforcement of Ash.Filter.parse_input/2. The fix resolves each hop with Ash.Resource.Info.public_relationship/2, rejecting the first non-public hop, and requires the terminal field to be public.\n\nThis issue affects ash_phoenix: from 0.6.0-rc.1 before 2.3.25.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:29.167"
-  },
-  {
-    "id": "CVE-2026-82726",
-    "description": "Permissive Regular Expression vulnerability in ash-project ash_phoenix lets a remote client select the tenant an Ash application uses, or degrade the request, by sending a crafted Host header.\n\nAshPhoenix.Helpers.get_subdomain/2 stripped the root domain with String.replace(host, ~r/.?#{root_host}/, \"\"). The root host was interpolated raw, so each . became a wildcard and any metacharacter a pattern, and the replace was global and unanchored, so a match was removed from anywhere in the string. With root_host example.com, Host: foo.exampleXcom.attacker.net returned the tenant foo.attacker.net. A metacharacter-bearing or nil root host degraded the pattern or raised on every request. The comparison was also case-sensitive, so TENANT.EXAMPLE.COM and EXAMPLE.COM slipped past the root-host allowlist. conn.host comes from the client Host header. The fix matches the root host case-insensitively and only as an exact trailing suffix.\n\nThis issue affects ash_phoenix: from 2.1.26 before 2.3.25.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:29.357"
-  },
-  {
-    "id": "CVE-2026-82727",
-    "description": "Generation of Error Message Containing Sensitive Information vulnerability in ash-project ash_phoenix writes the entire raw submitted param map into an exception message, so secrets submitted alongside a union form field leak into logs, crash reports and the dev error page.\n\nWhen AshPhoenix.Form.Auto builds a union sub-form and the submitted _union_type does not match a configured type, both raise sites built the message with inspect(params, pretty: true), embedding the full untrusted param map, and also inspected the internal union constraints[:types]. Because the message is constructed by the library rather than Phoenix's parameter logger, config :phoenix, :filter_parameters never redacts it. An attacker controls both the trigger and the contents: submitting %{\"_union_type\" => \"nope\", \"password\" => \"...\"} puts the password verbatim in the raised message. The fix reports only the offending _union_type and the valid type names, dropping the param and constraints dumps.\n\nThis issue affects ash_phoenix: from 1.2.17 before 2.3.25.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T04:17:29.560"
-  },
-  {
-    "id": "CVE-2026-82614",
-    "description": "A flaw has been found in itsourcecode Online Medicine Delivery System 1.0. This vulnerability affects the function loadResultList of the file /index.php?q=product of the component Product Category Filter Interface. Executing a manipulation of the argument Category can lead to sql injection. The attack may be launched remotely. The exploit has been published and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T05:17:04.020"
-  },
-  {
-    "id": "CVE-2026-82615",
-    "description": "A vulnerability has been found in itsourcecode Online Medicine Delivery System 1.0. This issue affects the function Customer::find_phone of the file /passwordrecover.php of the component Password Recovery Interface. The manipulation of the argument phonenumber leads to sql injection. Remote exploitation of the attack is possible. The exploit has been disclosed to the public and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T05:17:06.217"
-  },
-  {
-    "id": "CVE-2026-82616",
-    "description": "A vulnerability was found in TOTOLINK NR1800X 9.1.0u.6681_B20230703. Impacted is the function setUploadSetting of the file /cgi-bin/cstecgi.cgi. The manipulation of the argument FileName results in stack-based buffer overflow. The attack can be executed remotely. The exploit has been made public and could be used.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-31T05:17:06.393"
-  },
-  {
-    "id": "CVE-2026-82618",
-    "description": "A vulnerability was determined in Systerel S2OPC up to 1.7.3. The affected element is the function set_range_matrix_on_string_array of the file src/Common/opcua_types/sopc_builtintypes.c of the component String Array Range Writing. This manipulation causes out-of-bounds read. The attack is possible to be carried out remotely. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T05:17:06.570"
-  },
-  {
-    "id": "CVE-2026-82619",
-    "description": "A vulnerability was identified in Systerel S2OPC up to 1.7.3. The impacted element is the function monitored_item_event_filter_treatment_bs__init_event_filter_ctx_and_result of the file src/ClientServer/services/bgenc/subscription_mgr.c. Such manipulation of the argument EventFilter leads to use after free. The attack may be performed from remote. The exploit is publicly available and might be used. The name of the patch is a4cee16a851b971be447a6ed531173702c722b99. It is best practice to apply a patch to resolve this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T06:17:07.857"
-  },
-  {
-    "id": "CVE-2026-82620",
-    "description": "A security flaw has been discovered in Soarkey StudentManagement and 学生信息管理系统 up to e08f7f1d5015af407aa4cca0ada3dea189b4937e. This affects the function CourseDao.course_ranking of the file code/src/dao/CourseDao.java. Performing a manipulation of the argument cno results in sql injection. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T06:17:08.103"
-  },
-  {
-    "id": "CVE-2026-82621",
-    "description": "A weakness has been identified in Soarkey StudentManagement and 学生信息管理系统 up to e08f7f1d5015af407aa4cca0ada3dea189b4937e. This impacts the function AdminDao.doGet of the file code/src/service/AdminDao.java of the component Administrative Servlet. Executing a manipulation of the argument action can lead to authorization bypass. It is possible to launch the attack remotely. The exploit has been made available to the public and could be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T06:17:08.280"
-  },
-  {
-    "id": "CVE-2026-40463",
-    "description": "WaveSuite is affected by an insufficient role-based access control vulnerability in the CPB Log Files feature. Successful exploitation allows an authenticated low-privilege user to load pages restricted to higher-privilege roles by requesting the corresponding URL directly in the browser.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:42.610"
-  },
-  {
-    "id": "CVE-2026-40464",
-    "description": "NSP is vulnerable to a stored XSS due to insufficient validation or encoding of user-controlled input in a workflow application. An authenticated attacker with access to the workflow application could embed harmful code that runs when another user views the content.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:43.750"
-  },
-  {
-    "id": "CVE-2026-40465",
-    "description": "NSP is vulnerable to an open redirect due to insufficient server-side validation of the URL (or redirect) parameter.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:43.857"
-  },
-  {
-    "id": "CVE-2026-53620",
-    "description": "GROWI contains a vulnerability with an authorization bypass through user-controlled key in the bookmark folder APIs. If this vulnerability is exploited, an authenticated attacker could retrieve, tamper with, and/or delete the other user's bookmark data.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:43.967"
-  },
-  {
-    "id": "CVE-2026-58574",
-    "description": "Dell PowerStore contains a Missing Authentication for Critical Function vulnerability. An unauthenticated attacker with network access to the restricted management interface could potentially exploit this vulnerability to read internal system information from the appliance filesystem. This is a Critical vulnerability as it could expose sensitive information and credentials which allow full administrative access to the array.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:44.743"
-  },
-  {
-    "id": "CVE-2026-68951",
-    "description": "GROWI contains an incorrect authorization vulnerability. If this vulnerability is exploited, an unauthenticated attacker could retrieve the other user's bookmark data.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:45.400"
-  },
-  {
-    "id": "CVE-2026-77013",
-    "description": "The 爱采集数据采集和发布插件 WordPress plugin through 1.0.0 does not restrict which of its handler methods a request may invoke, and performs no capability or nonce check on them, allowing unauthenticated users to create WordPress user accounts and taxonomy terms.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:45.980"
-  },
-  {
-    "id": "CVE-2026-82622",
-    "description": "A security vulnerability has been detected in code-projects Employee Leave Managing System 1.0. Affected is an unknown function of the file /EmpManageSys/editaction.php of the component Employee Profile Update. The manipulation of the argument Name leads to cross site scripting. The attack can be initiated remotely. The exploit has been disclosed publicly and may be used.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:46.533"
-  },
-  {
-    "id": "CVE-2026-82623",
-    "description": "A vulnerability was detected in open62541 up to 1.5.5. Affected by this vulnerability is the function UA_DataValue_backend_copyRange of the file plugins/historydata/ua_history_data_backend_memory.c of the component History Backend. The manipulation results in use after free. The attack can be launched remotely. The exploit is now public and may be used. The project closed the issue report, stating that this is not the official way to report a security vulnerability.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:46.747"
-  },
-  {
-    "id": "CVE-2026-82624",
-    "description": "A flaw has been found in code-projects Simple Inventory System 1.0. Affected by this issue is some unknown functionality of the file inventorymanagement.sql of the component Database Backup File Handler. This manipulation causes information disclosure. The attack may be initiated remotely. The exploit has been published and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:46.930"
-  },
-  {
-    "id": "CVE-2026-82625",
-    "description": "A vulnerability has been found in code-projects Simple Inventory System 1.0. This affects an unknown part of the file /register.php of the component User Registration. Such manipulation of the argument last_name leads to cross site scripting. The attack may be launched remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:47.120"
-  },
-  {
-    "id": "CVE-2026-82628",
-    "description": "A vulnerability was found in Colorful iGameCenter 2.0.0.81. This vulnerability affects the function sub_11504 in the library WinRing0x64.sys of the component IOCTL Dispatch. Performing a manipulation of the argument PhysicalAddress/AlignNumer/AlignSize results in improper privilege management. Attacking locally is a requirement.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T07:17:47.307"
-  },
-  {
     "id": "CVE-2026-58301",
     "description": "When Apache Shiro is used with the Jakarta EE integration module, a low-privileged user can craft an HTTP request that causes the server to initiate a connection to an attacker-controlled URL and transmit attacker-controlled data. This vulnerability affects Apache Shiro versions 2.x through 3.0.0 only in deployments that use the Jakarta EE integration module.\n\nMitigation: Upgrade to version 3.0.1 or later, which fixes the issue. +\nAlternatively, you can set the `org.apache.shiro.form-resubmit-host` (String) and `org.apache.shiro.form-resubmit-port` (Integer) system properties to restrict the host and port that Shiro will connect to when resubmitting a form.",
     "severity": "Medium",
@@ -103584,5 +103220,495 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-09-30T00:16:37.363"
+  },
+  {
+    "id": "CVE-2026-102804",
+    "description": "A vulnerability was detected in Nothings stb up to 2c980bb59875b0d32144a71867fbdebb2f77cd20. The impacted element is the function hexwave_init in the library stb_hexwave.h. Performing a manipulation of the argument width/oversample results in integer overflow. Remote exploitation of the attack is possible. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:35.990"
+  },
+  {
+    "id": "CVE-2026-102805",
+    "description": "A flaw has been found in Nothings stb up to 1.16. This affects the function stbi_write_png_to_mem/stbi_write_jpg_core/stbi_write_tga_core in the library stb_image_write.h of the component Image Encoding. Executing a manipulation can lead to integer overflow. The attack can be executed remotely. The exploit has been published and may be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:36.187"
+  },
+  {
+    "id": "CVE-2026-102842",
+    "description": "A vulnerability was identified in gedelumbung HospitalManagement up to c2d45543789a3887067d3915f69d44cfc2cf76a8. Affected by this issue is the function app_user_login_model.php::cekUserLogin of the file application/models/app_user_login_model.php of the component KCFinder File Manager. Such manipulation of the argument ADMIN_RS_KCFINDER leads to unrestricted upload. It is possible to launch the attack remotely. The exploit is publicly available and might be used. This product takes the approach of rolling releases to provide continious delivery. Therefore, version details for affected and updated releases are not available. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:36.373"
+  },
+  {
+    "id": "CVE-2026-103053",
+    "description": "AiSOC versions 9.0.0 before 12.0.0 fail to enforce authentication on the response-action API endpoints when AISOC_DEV_MODE is enabled and AISOC_ACTIONS_SERVICE_TOKEN is empty in the default Docker Compose deployment. Unauthenticated attackers can list response-action integrations, submit and approve actions on behalf of arbitrary principals, and dispatch containment actions using vendor credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:36.563"
+  },
+  {
+    "id": "CVE-2026-103054",
+    "description": "AiSOC versions before 12.0.0 contain an authorization bypass vulnerability in the MSSP module that allows authenticated users to add arbitrary tenants to portfolios they own. Attackers can submit tenant UUIDs via the add_tenants_to_portfolio endpoint to claim unclaimed tenants and read their security alerts, incidents, and posture metrics without consent.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:36.727"
+  },
+  {
+    "id": "CVE-2026-103055",
+    "description": "AiSOC versions 7.5.0 before 12.0.0 use a hard-coded constant for JWT verification in the realtime WebSocket and SSE service when the AISOC_REALTIME_JWT_SECRET environment variable is not set. Unauthenticated attackers can forge subscription tickets with arbitrary tenant identifiers to access cross-tenant live alerts, cases, agent events and graph updates through the realtime endpoints.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:36.880"
+  },
+  {
+    "id": "CVE-2026-103056",
+    "description": "AiSOC versions 7.2.0 before 12.0.0 contain a command injection vulnerability in the actions service that builds CrowdStrike Real Time Response command strings by interpolating unescaped action parameters in crowdstrike_rtr.py and endpoint.py. Authenticated users can inject single quotes into file_path, path, script_name, or script_args parameters to break out of quoted arguments and execute arbitrary commands on managed endpoints with SYSTEM or root privileges.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:37.050"
+  },
+  {
+    "id": "CVE-2026-103057",
+    "description": "AiSOC versions 5.1.0 before 12.0.0 contain an authentication bypass vulnerability in the realtime service internal endpoints POST /internal/agent-event and POST /internal/push. Attackers can post arbitrary events with spoofed tenant identifiers to broadcast malicious content over WebSocket and Redis SSE channels or send unauthorized notifications to registered devices.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:37.217"
+  },
+  {
+    "id": "CVE-2026-51936",
+    "description": "Zetetic SQLCipher before 4.15.0 allows SQL injection. The sqlcipher_export convenience function can be used to copy the contents of one attached database into another. It is most often used to convert between plaintext and encrypted databases. It needs to do dynamic schema manipulation, and thus the function temporarily clears defensive restrictions during operation. A vulnerability in the handling of the source database name parameter made it possible for a caller to supply a crafted source name, which could execute statements that defensive mode would otherwise block. This could allow direct modifications to the sqlite_schema table and database corruption. SQLCipher 4.15.0 now strictly validates the source database name and prevents the bypass.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T01:16:37.520"
+  },
+  {
+    "id": "CVE-2026-102843",
+    "description": "A security flaw has been discovered in gedelumbung HospitalManagement up to c2d45543789a3887067d3915f69d44cfc2cf76a8. This affects the function hapus of the file application/modules/admin/controllers/data_galeri.php of the component Endpoint. Performing a manipulation of the argument gbr results in path traversal. The attack can be initiated remotely. The exploit has been released to the public and may be used for attacks. Continious delivery with rolling releases is used by this product. Therefore, no version details of affected nor updated releases are available. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:56.117"
+  },
+  {
+    "id": "CVE-2026-102844",
+    "description": "A weakness has been identified in gedelumbung HospitalManagement up to c2d45543789a3887067d3915f69d44cfc2cf76a8. This vulnerability affects the function detail of the file application/modules/admin/controllers/laporan_data_pasien.php. Executing a manipulation of the argument id_param can lead to authorization bypass. The attack can be launched remotely. The exploit has been made available to the public and could be used for attacks. This product does not use versioning. This is why information about affected and unaffected releases are unavailable. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:56.303"
+  },
+  {
+    "id": "CVE-2026-102845",
+    "description": "A security vulnerability has been detected in gedelumbung HospitalManagement up to c2d45543789a3887067d3915f69d44cfc2cf76a8. This issue affects the function error_reporting of the file index.php of the component HTTP Response. The manipulation leads to information disclosure. The attack may be initiated remotely. The exploit has been disclosed publicly and may be used. This product uses a rolling release model to deliver continuous updates. As a result, specific version information for affected or updated releases is not available. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:56.490"
+  },
+  {
+    "id": "CVE-2026-102846",
+    "description": "A vulnerability was detected in gedelumbung HospitalManagement up to c2d45543789a3887067d3915f69d44cfc2cf76a8. Impacted is the function sistem.php::simpan of the file application/modules/admin/controllers/sistem.php of the component Configuration Handler. The manipulation of the argument tipe/title/content_setting results in improper authorization. The attack may be launched remotely. The exploit is now public and may be used. This product operates on a rolling release basis, ensuring continuous delivery. Consequently, there are no version details for either affected or updated releases. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:56.673"
+  },
+  {
+    "id": "CVE-2026-102847",
+    "description": "A flaw has been found in gedelumbung HospitalManagement up to c2d45543789a3887067d3915f69d44cfc2cf76a8. The affected element is the function kirim of the file application/modules/web/controllers/buku_tamu.php of the component Guest Book. This manipulation of the argument nama/email/pesan causes cross site scripting. Remote exploitation of the attack is possible. The exploit has been published and may be used. This product follows a rolling release approach for continuous delivery, so version details for affected or updated releases are not provided. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:56.857"
+  },
+  {
+    "id": "CVE-2026-103087",
+    "description": "Uncontrolled recursion in the Gosub browser engine (gosub-engine) through 0.1.0 and main before commit 46868b3 allows a remote attacker to cause a Denial of Service (stack exhaustion and application crash) via an SVG document containing an excessive number of deeply nested elements. Because the engine does not limit the nesting depth of processed SVG nodes, rendering such a document overflows the thread stack and terminates the application. The malicious SVG can be embedded through the SRC attribute of an IMG element, and thus exploitation only requires the victim to visit an attacker-controlled web page.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:57.043"
+  },
+  {
+    "id": "CVE-2026-103088",
+    "description": "Handlebars.java before 4.5.5 allows directory traversal. In handlebars-springmvc 4.5.3 and 4.5.4, the path-containment fix for CVE-2026-63490 validates template locations as raw percent-encoded strings, whereas the template file is opened through a URL handler that percent-decodes the path. In a Spring MVC application with a file: template prefix and a request-derived view name, a percent-encoded traversal such as %2e%2e/ bypasses both the view-resolver check and the loader-side containment and reads files outside the configured template base directory.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:57.203"
+  },
+  {
+    "id": "CVE-2026-78229",
+    "description": "Image Scanner Driver for Linux contains an OS command injection vulnerability. An attacker who can log in to a Linux system where the affected product is installed may execute an arbitrary OS command by making certain preparations.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:57.583"
+  },
+  {
+    "id": "CVE-2026-81310",
+    "description": "Image Scanner Driver for Linux contains a link following vulnerability. An attacker who can log in to a Linux system where the product is installed may overwrite arbitrary files by using a special method in advance.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T02:16:57.747"
+  },
+  {
+    "id": "CVE-2026-102874",
+    "description": "A vulnerability was identified in HKUDS AnyTool 0.1.0. Affected is the function subprocess.run of the file anytool/local_server/main.py of the component Execute Endpoint. The manipulation of the argument command/shell leads to os command injection. It is possible to initiate the attack remotely. The exploit is publicly available and might be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:57.503"
+  },
+  {
+    "id": "CVE-2026-102906",
+    "description": "A vulnerability was identified in 0xshariq github-mcp-server up to 52e764a7d66eac1726fce02ca7bb5a638571801a. This issue affects the function child_process.exec of the file src/github.ts of the component Git Remove MCP Tool. Such manipulation of the argument File leads to os command injection. The attack can be executed remotely. The exploit is publicly available and might be used. This product implements a rolling release for ongoing delivery, which means version information for affected or updated releases is unavailable. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:58.150"
+  },
+  {
+    "id": "CVE-2026-102908",
+    "description": "A vulnerability was determined in SourceCodester Online Reviewer Management System 1.0. This issue affects some unknown processing of the file /reviewer_0/admins/assessments/examproper/questions-view.php. Executing a manipulation of the argument ID can lead to sql injection. It is possible to launch the attack remotely. The exploit has been publicly disclosed and may be utilized.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:58.350"
+  },
+  {
+    "id": "CVE-2026-102909",
+    "description": "A vulnerability was identified in SourceCodester Online Reviewer Management System 1.0. Impacted is an unknown function of the file /reviewer_0/admins/assessments/examproper/btn_functions.php. The manipulation of the argument access_code leads to sql injection. The attack can be initiated remotely. The exploit is publicly available and might be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:58.537"
+  },
+  {
+    "id": "CVE-2026-103099",
+    "description": "Pexip Infinity before 41.1 is affected by improper input validation in the media implementation that allows a remote attacker to trigger a software abort resulting in a denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:58.717"
+  },
+  {
+    "id": "CVE-2026-103100",
+    "description": "Pexip Infinity before 40.1 is affected by improper input validation in the signaling implementation that allows a malicious attacker to trigger a software abort resulting in a denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:58.870"
+  },
+  {
+    "id": "CVE-2026-103101",
+    "description": "Pexip Infinity 30.0 through 40.x before 41.0 is affected by improper input validation in the web server that allows a malicious attacker to render a Pexip Infinity node inaccessible.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:59.033"
+  },
+  {
+    "id": "CVE-2026-103102",
+    "description": "Pexip Infinity before 41.0 is affected by improper input validation in the signaling implementation which allows a remote attacker to trigger a software abort resulting in a denial of service. Exploitation of this issue requires accessing a gateway call from a WebRTC/API client.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:59.307"
+  },
+  {
+    "id": "CVE-2026-103104",
+    "description": "Pexip Infinity before 38.2, plus 39.0, 39.1 and 40.0, is affected by improper input validation in the media implementation which allows a remote attacker to trigger a software abort resulting in a denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:59.467"
+  },
+  {
+    "id": "CVE-2026-103105",
+    "description": "Pexip Infinity before 38.2, plus 39.0, 39.1 and 40.0, is affected by improper access control on a product-internal API which allows an attacker with local access to a node within a Pexip Infinity installation to execute arbitrary code as an unprivileged user on another Pexip Infinity node.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:59.623"
+  },
+  {
+    "id": "CVE-2026-103106",
+    "description": "Pexip Infinity before 38.2, plus 39.0, 39.1, and 40.0, is affected by improper input validation within an internal Pexip Infinity service that allows an attacker with local access to escalate privileges to root. Exploitation requires an attacker to be able to run arbitrary code on a node by either achieving remote code execution via some other vulnerability or having administrative access to the operating system.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:59.773"
+  },
+  {
+    "id": "CVE-2026-103108",
+    "description": "Pexip Infinity before 38.2, plus 39.0, 39.1, and 40.0, is affected by improper input validation in the media implementation that allows a remote attacker to trigger a software abort resulting in a denial of service",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:16:59.920"
+  },
+  {
+    "id": "CVE-2026-103109",
+    "description": "Pexip Infinity before 38.2, plus 39.0, 39.1 and 40.0, is affected by improper input validation in the media implementation that allows a remote attacker to trigger memory corruption or a software abort resulting in a denial of service. A crafted media stream may result in a controlled abort during processing, and has the potential to achieve memory corruption.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:17:00.073"
+  },
+  {
+    "id": "CVE-2026-86556",
+    "description": "There is an information disclosure vulnerability in ZTE U30 Air. Due to improper permission control, attackers can exploit the vulnerability to obtain relevant information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:17:00.237"
+  },
+  {
+    "id": "CVE-2026-96649",
+    "description": "The Frontend Post Submission Manager Lite – Frontend Posting WordPress Plugin plugin for WordPress is vulnerable to Stored DOM-Based Cross-Site Scripting via post_content Parameter (data-label DOM Sink) in all versions up to, and including, 1.3.4 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This requires the site operator to have enabled guest post submission via the [fpsm] shortcode, which registers a publicly accessible AJAX handler gated only by a nonce emitted on every page containing the shortcode.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T03:17:00.387"
+  },
+  {
+    "id": "CVE-2026-102910",
+    "description": "A security flaw has been discovered in SourceCodester Online Reviewer Management System 1.0. The affected element is an unknown function of the file /reviewer_0/admins/assessments/examproper/exam-delete.php. The manipulation of the argument test_id results in sql injection. The attack can be launched remotely. The exploit has been released to the public and may be used for attacks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T04:18:27.613"
+  },
+  {
+    "id": "CVE-2026-102911",
+    "description": "A flaw has been found in zosmaai pi-llm-wiki up to 0.11.7. Affected is an unknown function of the file mcp/index.ts of the component wiki_capture_source MCP tool. Executing a manipulation of the argument url can lead to os command injection. The attack can be executed remotely. The exploit has been published and may be used. Upgrading to version 0.11.8 is able to address this issue. This patch is called 360867034e79175b45c8e04a98e4ca712bbaca35. Upgrading the affected component is advised.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-30T04:18:28.580"
+  },
+  {
+    "id": "CVE-2026-102912",
+    "description": "A vulnerability was identified in SourceCodester Online Leave Management System 1.0. This issue affects some unknown processing of the file /admin/?page=reports. The manipulation of the argument date_start/date_end leads to sql injection. Remote exploitation of the attack is possible. The exploit is publicly available and might be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T04:18:28.850"
+  },
+  {
+    "id": "CVE-2026-103110",
+    "description": "Pexip Infinity before 38.2, plus 39.0, 39.1 and 40.0, is affected by improper input validation that allows a remote attacker to execute code remotely as an unprivileged user on a Pexip Infinity Conferencing Node.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-30T04:18:29.077"
+  },
+  {
+    "id": "CVE-2026-86134",
+    "description": "A NULL pointer dereference vulnerability in the WatchGuard Fireware OS authentication process allows a remote, unauthenticated attacker to crash the management daemon by sending a specially request to the login interface, resulting in a denial of service.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T04:18:33.337"
+  },
+  {
+    "id": "CVE-2026-102913",
+    "description": "A security flaw has been discovered in SourceCodester Car Driving School Management System 1.0. Impacted is an unknown function of the file /classes/Master.php?f=save_enrollment. The manipulation results in sql injection. The attack can be executed remotely. The exploit has been released to the public and may be used for attacks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T05:16:44.160"
+  },
+  {
+    "id": "CVE-2026-103111",
+    "description": "PCRE2 before 10.49, when there is an attacker-controlled regular expression and certain JIT API usage, allows an out-of-bounds write with arbitrary data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T05:16:45.863"
+  },
+  {
+    "id": "CVE-2026-100143",
+    "description": "The FluentCart A New Era of eCommerce  WordPress plugin before 1.6.5 does not verify that the person placing a guest checkout controls the email address supplied, allowing unauthenticated attackers who know an existing guest customer's email to obtain a logged-in account bearing that address together with the customer's stored record.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:16:58.743"
+  },
+  {
+    "id": "CVE-2026-75823",
+    "description": "The User Frontend  WordPress plugin before 4.3.12 does not prevent tampering with the role assigned by its registration form, allowing unauthenticated users to register with a higher privileged role, such as Editor.\n\nThis affects installations running a PHP build where the sodium extension is unavailable, and where a registration page has been configured. The administrator role cannot be obtained this way.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:03.783"
+  },
+  {
+    "id": "CVE-2026-75824",
+    "description": "The User Frontend  WordPress plugin before 4.3.12 does not check whether the site allows user registration before creating an account, allowing unauthenticated users to create accounts on sites where registration is disabled.\n\nThe created account receives the site's default role.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:04.360"
+  },
+  {
+    "id": "CVE-2026-75873",
+    "description": "The Zella Theme WordPress theme before 2.6.3 does not perform any capability or nonce check on one of its font upload actions, which is available to unauthenticated users, allowing them to upload arbitrary files, including PHP ones, and achieve remote code execution.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:04.670"
+  },
+  {
+    "id": "CVE-2026-80333",
+    "description": "The Solace Extra WordPress plugin before 1.7.2 does not perform any authorization or post-status checks on its front-end preview routes, allowing unauthenticated visitors to read the rendered content of non-published posts and pages of any type that WordPress would otherwise not serve.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:05.003"
+  },
+  {
+    "id": "CVE-2026-82127",
+    "description": "The Schema & Structured Data for WP & AMP WordPress plugin before 1.67 does not perform a capability check when saving several of its fields, nor escape them when outputting them back, allowing users with the editor role and above to inject arbitrary web scripts that execute when a higher privileged user views the affected screen. This is only exploitable on multisite installs, where editors do not hold the unfiltered_html capability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:05.353"
+  },
+  {
+    "id": "CVE-2026-83560",
+    "description": "The New User Approve WordPress plugin before 3.2.10 does not properly verify authentication on a set of integration REST API routes when the integration is unconfigured, allowing unauthenticated attackers to retrieve personal data (id, username, email address and registration date) of registered users.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:05.673"
+  },
+  {
+    "id": "CVE-2026-85001",
+    "description": "The EmbedPress  WordPress plugin before 4.6.7 does not sanitise and escape one of its Elementor widget settings before outputting it into an HTML attribute, which could allow users with the Contributor role or above to inject arbitrary web scripts that execute when the affected content is viewed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:05.957"
+  },
+  {
+    "id": "CVE-2026-85415",
+    "description": "The Audio Player Block  WordPress plugin before 1.6.3 does not validate the scheme of a user-supplied URL before using it as a link target, allowing users with the Contributor role and above to store malicious JavaScript that executes in the session of any user who later triggers the link (such as an administrator or editor reviewing the post).",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:06.203"
+  },
+  {
+    "id": "CVE-2026-85573",
+    "description": "The All in One Files Upload WordPress plugin before 2.0.17 adds SVG to the site's allowed upload types and does not sanitise uploaded files or verify the authenticity of its public upload requests, allowing unauthenticated users to store files containing active content which run in the site's origin when a victim opens them.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:06.503"
+  },
+  {
+    "id": "CVE-2026-85576",
+    "description": "The All in One Files Upload WordPress plugin before 2.0.17 does not have any capability check, and does not verify the authenticity of the request, when saving its settings, allowing any authenticated user, such as a subscriber, to change them.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:06.793"
+  },
+  {
+    "id": "CVE-2026-86789",
+    "description": "The Connections Business Directory WordPress plugin through 10.4.67 does not apply its visibility and moderation-status restrictions on certain REST API read endpoints, allowing unauthenticated attackers to retrieve directory entries that are marked private or unlisted, or that are still pending moderation, including entry names, organizations, biographies, internal notes and street addresses.\nThe Connections Business Directory WordPress plugin through 10.4.67 has been closed on WordPress.org and no fixed version is available, so site owners should remove it or restrict unauthenticated access to its REST API routes.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:07.067"
+  },
+  {
+    "id": "CVE-2026-87777",
+    "description": "The Hostinger Reach  WordPress plugin before 1.8.3 does not sanitize and escape a widget setting before outputting it in the editor preview, allowing users with contributor-level access and above to inject arbitrary web scripts that will execute in the session of a higher-privileged user who opens the affected content in the editor.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:07.387"
+  },
+  {
+    "id": "CVE-2026-88791",
+    "description": "The Safe Redirect Manager WordPress plugin before 2.3.0 does not properly validate the redirect destination when a wildcard redirect rule to an absolute URL is configured, allowing unauthenticated attackers to redirect visitors to an arbitrary external website via a crafted request path.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:07.690"
+  },
+  {
+    "id": "CVE-2026-88797",
+    "description": "The Vayu X WordPress theme before 1.0.6 does not perform any capability check on one of its AJAX actions and exposes the nonce guarding it to every logged-in user, allowing any authenticated user, such as a subscriber, to install and activate any  hosted on the WordPress.org repository.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:07.977"
+  },
+  {
+    "id": "CVE-2026-89190",
+    "description": "The Robin Image Optimizer  WordPress plugin before 2.0.8 does not check the user's capabilities before dispatching one of its bundled admin framework's request handlers, allowing users with a subscriber-level account to render admin-only Robin Image Optimizer  WordPress plugin before 2.0.8 pages and disclose the Robin Image Optimizer  WordPress plugin before 2.0.8's stored settings.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:08.280"
+  },
+  {
+    "id": "CVE-2026-89193",
+    "description": "The Robin Image Optimizer  WordPress plugin before 2.0.8 does not escape values that its bundled HTML parser re-emits into element attributes when a non-default image delivery mode is enabled, allowing unauthenticated users to submit content that is stored and later executed as Cross-Site Scripting in the browser of any user viewing an affected page, including administrators.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:08.590"
+  },
+  {
+    "id": "CVE-2026-90953",
+    "description": "The Image Optimizer  WordPress plugin before 1.7.7 does not enforce its intended capability check on several of its read REST routes, allowing any authenticated user to read attachment metadata and site-wide statistics that should be restricted to administrators.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:08.883"
+  },
+  {
+    "id": "CVE-2026-91051",
+    "description": "The EWWW Image Optimizer WordPress plugin before 8.8.0 does not prevent authenticated users with author-level permissions from storing a serialized value in a post meta field that is deserialized when the post is rendered, allowing them to perform PHP Object Injection, which can lead to remote code execution when a suitable gadget chain is present via another installed EWWW Image Optimizer WordPress plugin before 8.8.0 or .",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:09.173"
+  },
+  {
+    "id": "CVE-2026-91072",
+    "description": "The EWWW Image Optimizer WordPress plugin before 8.8.0 does not confine a WebP-derivative file migration routine to the current site's own uploads directory, letting an attacker with Administrator-level access rename or delete existing WebP-derivative image files outside that scope, including, on a multisite network, files belonging to a different site they have no access to.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:09.413"
+  },
+  {
+    "id": "CVE-2026-91832",
+    "description": "The WP Mobile Menu  WordPress plugin before 2.9 does not correctly verify the nonce on its settings import, so an attacker can import arbitrary WP Mobile Menu  WordPress plugin before 2.9 settings through a cross-site request in an administrator's session, and the imported values are then output unescaped to every visitor, resulting in Stored Cross-Site Scripting.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:09.593"
+  },
+  {
+    "id": "CVE-2026-92424",
+    "description": "The Content Egg  WordPress plugin before 11.9.0 does not verify that a user running its bulk content-import feature is authorized for the import preset they select, and switches to the preset author's identity before creating the resulting post, allowing users with contributor-level access and above to store arbitrary web scripts unfiltered under a privileged user's account, executing in the context of anyone who later views that content.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:09.793"
+  },
+  {
+    "id": "CVE-2026-92994",
+    "description": "The Verge3D Publishing and E-Commerce WordPress plugin before 4.13.1 does not validate the contents of files uploaded through its file storage feature and serves them back with an attacker-controlled content type, allowing unauthenticated attackers to store a file containing malicious JavaScript that executes in the browser of any user who opens it.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:09.983"
+  },
+  {
+    "id": "CVE-2026-93580",
+    "description": "The InPost PL WordPress plugin before 1.9.8 does not verify the authenticity of incoming shipment webhook requests, relying only on a non-secret identifier and an IP check that is not enforced, allowing unauthenticated attackers who know a target order's parcel tracking number to forge its shipment status and prematurely mark the order completed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:10.160"
+  },
+  {
+    "id": "CVE-2026-94274",
+    "description": "The YayReviews  WordPress plugin before 1.4.1 does not restrict access to an API route that returns individual customer review records, including reviews still pending moderation, allowing unauthenticated attackers to harvest reviewers' email addresses and other non-public review content.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:10.367"
+  },
+  {
+    "id": "CVE-2026-94297",
+    "description": "The Media Library Organizer  WordPress plugin before 2.1.4 does not verify that the requesting user holds the target taxonomy's management capability before creating a new term, allowing users with contributor-level access and above to create publicly visible terms in any taxonomy registered on the site.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:10.593"
+  },
+  {
+    "id": "CVE-2026-96886",
+    "description": "The Course Booking System WordPress plugin before 7.0.9 does not restrict access to its booking export, allowing unauthenticated users to download the name, email address and billing address of every customer who has booked a course.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:10.850"
+  },
+  {
+    "id": "CVE-2026-97316",
+    "description": "The Broken Link Notifier WordPress plugin before 2.0.0.1 does not re-validate the destination of redirects when checking links, allowing unauthenticated attackers to bypass its internal-address filter and make the server send requests to internal services.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T06:17:11.137"
+  },
+  {
+    "id": "CVE-2026-89294",
+    "description": "The Simply Schedule Appointments plugin for WordPress is vulnerable to Local File Inclusion in all versions up to, and including, 1.6.12.27 via the 'ssa_locale' parameter parameter. This makes it possible for authenticated attackers, with subscriber-level access and above, to include and execute arbitrary .php files on the server, allowing the execution of any PHP code in those files. This can be used to bypass access controls, obtain sensitive data, or achieve code execution in cases where .php file types can be uploaded and included. Notably, exploitation does not require authentication in practice, as the locale filter is installed unconditionally on every request during plugins_loaded and the callback performs no nonce or capability check before returning the raw GET parameter value.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T07:16:30.947"
+  },
+  {
+    "id": "CVE-2026-97196",
+    "description": "Improper Validation of Unsafe Equivalence in Input vulnerability in Liquid Web / StellarWP GiveWP allows Authentication Bypass.\n\nThis issue affects GiveWP: from n/a through 4.16.9.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-30T07:16:31.320"
   }
 ]
