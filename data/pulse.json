@@ -1,5 +1,509 @@
 [
   {
+    "id": "CVE-2026-18747",
+    "description": "The MCUmgr SMP-over-console transport decodes a base64 frame, reads a 16-bit packet length from it, verifies a CRC and then unconditionally strips the trailing CRC with rx_ctxt->nb->len -= 2U; in mcumgr_serial_process_frag() (subsys/mgmt/mcumgr/transport/src/serial_util.c). mcumgr_serial_extract_len() accepted any declared length, including 0 and 1, and a packet declaring length 0 passes the checksum test for free because crc16_itu_t() over zero bytes returns the zero seed. Since net_buf::len is a uint16_t, the subtraction underflows and the buffer is handed to SMP claiming roughly 65 KB of payload while its data area is only CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE bytes (default 384).\n\nThe trigger is a single unauthenticated 7-byte line on the management console — the 0x06 0x09 packet marker followed by the base64 group AAA= and a newline — delivered to any transport built on this helper: CONFIG_MCUMGR_TRANSPORT_UART (smp_uart.c) or CONFIG_MCUMGR_TRANSPORT_SHELL (smp_shell.c), both of which select MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE. No prior session state, fragmentation or credentials are required to trigger the underflow, and the malformed frame is mishandled before any command handler or command-level access control runs. The attacker only needs write access to that console, which on many boards is a USB CDC-ACM port rather than a bare UART header.\n\nWith the inflated length, smp_process_request_packet() in subsys/mgmt/mcumgr/smp/src/smp.c loses its bound: cbor_nb_reader_init() gives the CBOR decoder a ~65 KB window into a 384-byte buffer, and each request header's nh_len is checked only against the inflated length. On its own the 7-byte frame re-parses whatever stale bytes the reused pool buffer still holds, typically a replay of the previously received request followed by a parse error, without leaving the buffer. Because the transport is unauthenticated, though, the attacker also controls the frames sent before the trigger, and can stage buffer contents so that a request succeeds with an nh_len larger than the buffer; net_buf_pull(), guarded only by __ASSERT_NO_MSG, then moves the parse cursor out of bounds and the loop reads further headers and CBOR from adjacent memory. The consequence is an out-of-bounds read that can fault the MCUmgr thread (denial of service); memory disclosure is also possible, since the default-enabled os echo handler (CONFIG_MCUMGR_GRP_OS_ECHO) decodes its string inside that window and copies it into its response. There is no integrity gain beyond what the unauthenticated transport already permits.\n\nThe fix rejects any declared packet length of two bytes or fewer in mcumgr_serial_extract_len(), so the CRC-strip subtraction can no longer underflow. The identical pattern remains in the test-only loopback transport subsys/mgmt/mcumgr/transport/src/smp_dummy.c (CONFIG_MCUMGR_TRANSPORT_DUMMY), which has no external input path and therefore carries no practical exposure.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.473"
+  },
+  {
+    "id": "CVE-2026-18746",
+    "description": "parse_write_op() in subsys/net/lib/lwm2m/lwm2m_message_handling.c handles inbound CoAP WRITE/CREATE requests that carry a Block1 option. For the first block of a transfer it called init_block_ctx() and then immediately stored the peer-selected block size with block_ctx->ctx.block_size = block_size before inspecting the return code. init_block_ctx() sets the caller's pointer to NULL and returns -ENOMEM when no entry of the static block1_contexts[] pool is free or timed out, so that store dereferences a NULL pointer.\n\nThe pool holds CONFIG_LWM2M_NUM_BLOCK1_CONTEXT entries (default 3) and an entry is only reclaimed once its transfer completes, fails, or ages past 30 seconds. A peer that reaches the client's LwM2M socket can therefore start three block-wise writes on three distinct object paths with the CoAP More bit set and leave them incomplete, then send the first block of a fourth write on a new path to reach the unguarded dereference. Reachability is gated only by the connected UDP socket's source-address filter unless CONFIG_LWM2M_DTLS_SUPPORT is enabled — which has no default — so in a NoSec deployment an on-path or address-spoofing attacker needs no credentials; the same sequence is also reachable from a bootstrap or lower-trust server, and can be hit accidentally by a legitimate server running four concurrent block transfers.\n\nThe write targets a fixed low address with a value between 0 and 7, so the consequence is a fatal memory fault (BusFault or corrupted low memory leading to a fault) rather than a usable memory-corruption primitive: the device crashes or resets. Confidentiality and integrity are not affected. The fix moves the store below the guard and validates the context pointer itself instead of the return code, so the context is only touched once it is known to be valid.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.347"
+  },
+  {
+    "id": "CVE-2026-18417",
+    "description": "The native BSD-socket layer recorded a pending asynchronous socket error by type-punning it into struct net_context's void user_data field (ctx->user_data = INT_TO_POINTER(-status) in zsock_accepted_cb(), zsock_received_cb(), zsock_connected_cb() and zsock_close_ctx() in subsys/net/lib/sockets/sockets_inet.c), reading it back with POINTER_TO_INT(). That same field is owned by the network stack for listening TCP contexts: net_tcp_accept() stores the parent context pointer there and the TCP core passes it back to the registered accept callback. A failed accept therefore left a small integer (an errno value) where the stack expected a struct net_context .\n\nWhen the network interface carrying a listening TCP socket goes down, close_tcp_conn() in subsys/net/ip/tcp.c invokes the accept callback with -ENETDOWN and the context's user_data. In v4.3.0 the callback was not disarmed afterwards, so a second interface-down event forwarded the previously stored errno to zsock_accepted_cb(), which dereferenced it as the parent context and performed several stores through it (sock_set_error()'s read-modify-write of socket_data, k_fifo_cancel_wait(&parent->recv_q)) — the crash described in the fix's commit message. v4.3.1 and v4.4.x carry a later change clearing conn->accept_cb after the error callback (269cb8823d3 on the v4.3 branch, 913fae5169425550f2364655298fceb79b320066 on main), which closes that repeat path; on those releases the poisoned cookie remains reachable only by a narrower race, a handshake completing alongside the interface-down still passing the stale cookie to k_fifo_put(&parent->accept_q, ...), and by getsockopt(SO_ERROR), which reads the field back unconditionally.\n\nOn v4.3.0 an application that keeps a listening TCP socket open across repeated link-down events is sufficient to reach the defect; the triggering condition is a network-interface state change, not attacker-supplied packet data, so the practical attacker is one able to force the link down repeatedly (for example an adjacent attacker disrupting a wireless link) or one with local/physical access. Because both the faulting address and the stored data are fixed small constants derived from the errno value, the outcome is a wild-pointer access leading to a kernel fatal error — a denial of service (device crash or reset) rather than an attacker-directed memory corruption.\n\nThe fix stores the pending error in a dedicated net_context.sock_error field and converts every producer and consumer to sock_set_error()/sock_get_error(), leaving user_data untouched. As a side effect it also stops getsockopt(SO_ERROR) — which is evaluated unconditionally — from returning the kernel address held in user_data to a userspace application.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.207"
+  },
+  {
+    "id": "CVE-2026-102367",
+    "description": "mall4j through 4.0 contains an insufficient session expiration vulnerability in the token refresh endpoint that fails to validate the enabled flag when issuing new sessions. Disabled user accounts can indefinitely renew their sessions through the POST /token/refresh endpoint, retaining access that account disabling was intended to remove.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:04.060"
+  },
+  {
+    "id": "CVE-2026-102366",
+    "description": "mall4j through 4.0 contains an unrestricted file upload vulnerability in FileController endpoints that lack authorization checks and accept arbitrary file types without validation. Attackers with any authenticated token can upload HTML or SVG files that execute scripts in administrator browsers when accessed from the local storage path, resulting in stored cross-site scripting.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.917"
+  },
+  {
+    "id": "CVE-2026-102365",
+    "description": "mall4j through 4.0 fails to enforce authorization checks on GET endpoints in UserAddrController that retrieve customer address data. Authenticated attackers can call /user/addr/page and /user/addr/info endpoints to harvest all customer addresses including names, phone numbers, and postal information.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.777"
+  },
+  {
+    "id": "CVE-2026-102364",
+    "description": "mall4j through 4.0 fails to validate the sysType field in sa-token sessions, allowing storefront customers to authenticate as back-office users by reusing their session tokens. Attackers can register on the public storefront and use their customer session token to access admin endpoints lacking @PreAuthorize permission checks, including menu listings, file uploads, and configuration endpoints.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.633"
+  },
+  {
+    "id": "CVE-2026-102363",
+    "description": "mall4j through 4.0 contains a missing authentication vulnerability in the DeliveryController checkDelivery endpoint that allows unauthenticated attackers to read shipment tracking information by supplying an order number parameter. Attackers can access carrier names, waybill numbers, and complete logistics trails for any order without authentication or ownership verification.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.483"
+  },
+  {
+    "id": "CVE-2026-102362",
+    "description": "mall4j through 4.0 fails to implement authentication controls on the DELETE /prodComm endpoint in ProdCommController. Unauthenticated attackers can delete arbitrary product reviews by supplying the prodCommId parameter without authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.337"
+  },
+  {
+    "id": "CVE-2026-102361",
+    "description": "mall4j through 4.0 contains a missing authentication vulnerability in the PUT /user/updatePwd endpoint that allows unauthenticated attackers to reset any storefront account password. Attackers can supply a target username in the request body to overwrite passwords without verification, enabling account takeover and access to orders and personal data.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.183"
+  },
+  {
+    "id": "CVE-2026-101277",
+    "description": "A security flaw has been discovered in Trusted Domain Project OpenDKIM up to 2.11.0. The impacted element is the function dkim_process_set of the file dkim.c of the component Tag Tokenizer. Performing a manipulation results in use of less trusted source. The attack may be initiated remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:03.010"
+  },
+  {
+    "id": "CVE-2026-101265",
+    "description": "A vulnerability was identified in Intelbras TIP 125i 4.3.35/4.3.41. The affected element is an unknown function of the component Básico Page. Such manipulation leads to inclusion of sensitive information in source code. The attack can be launched remotely. A high complexity level is associated with this attack. The exploitability is described as difficult. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:02.833"
+  },
+  {
+    "id": "CVE-2026-101264",
+    "description": "A vulnerability was determined in Ziroom ZHOME A0101 1.0.1.0. Impacted is an unknown function of the file /api/ZRnetwork/set_passwd. This manipulation of the argument password1 causes command injection. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:02.663"
+  },
+  {
+    "id": "CVE-2026-101263",
+    "description": "A vulnerability was found in Ziroom ZHOME A0101 1.0.1.0. This issue affects some unknown processing of the file /api/ZRQos/set_online_client. The manipulation of the argument mac results in command injection. It is possible to launch the attack remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-29T00:17:01.540"
+  },
+  {
+    "id": "CVE-2026-102335",
+    "description": "Nginx Proxy Manager through 2.16.0 fails to restrict the advanced_config field to administrators, allowing non-admin users with manage permissions to inject arbitrary nginx directives. Attackers can inject malicious nginx configuration such as alias directives to serve arbitrary files or control routing for their assigned hosts.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T23:17:02.007"
+  },
+  {
+    "id": "CVE-2026-102334",
+    "description": "Nginx Proxy Manager through 2.16.0 lacks rate-limiting on authentication endpoints, allowing unauthenticated attackers to make unlimited password guesses against any account. Attackers can brute-force login credentials via POST /api/tokens and subsequently guess TOTP codes via POST /api/tokens/2fa to gain full session access and administrative control.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T23:17:01.837"
+  },
+  {
+    "id": "CVE-2026-102333",
+    "description": "httpdbg before 2.2.1 fails to validate URL schemes in recorded HTTP request URLs rendered as clickable links in the web interface. Attackers controlling traffic recorded by httpdbg can supply javascript: scheme URLs that execute malicious scripts in the application origin when clicked, allowing access to captured request and response data including headers and tokens.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T23:17:01.677"
+  },
+  {
+    "id": "CVE-2026-102332",
+    "description": "Dozzle versions before 11.1.2 fail to sanitize container display names when building ZIP archive entry names in the log download endpoint. Attackers who can label containers can use path traversal sequences to write files outside the extraction directory when users download and extract logs.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T23:17:01.507"
+  },
+  {
+    "id": "CVE-2026-101262",
+    "description": "A vulnerability has been found in Ziroom ZHOME A0101 1.0.1.0. This vulnerability affects unknown code of the file /api/ZRQos/set_online_client. The manipulation of the argument ip leads to command injection. It is possible to initiate the attack remotely. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-28T23:17:01.187"
+  },
+  {
+    "id": "CVE-2026-101261",
+    "description": "A flaw has been found in Ziroom ZHOME A0101 1.0.1.0. This affects an unknown part of the file /api/ZRnetwork/firstSetup_wifi. Executing a manipulation of the argument login_pwd can lead to command injection. The attack may be performed from remote. The exploit has been published and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-28T23:17:01.003"
+  },
+  {
+    "id": "CVE-2026-101260",
+    "description": "A vulnerability was detected in Ziroom ZHOME A0101 1.0.1.0. Affected by this issue is some unknown functionality of the file /api/ZRnetwork/firstLogin. Performing a manipulation of the argument firstLogin results in command injection. The attack is possible to be carried out remotely. The exploit is now public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-28T23:17:00.300"
+  },
+  {
+    "id": "CVE-2026-102297",
+    "description": "ZoneMinder before 1.38.4 fails to apply per-monitor access restrictions in the FramesController index endpoint. Authenticated users with Events view permission can call the frames API to list frame records from monitors they are denied access to, disclosing event and frame metadata across monitor boundaries.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:32.407"
+  },
+  {
+    "id": "CVE-2026-102296",
+    "description": "ZoneMinder before 1.38.4 contains static buffer overflow vulnerabilities in RemoteCameraHttp::GetResponse() that allow malicious HTTP cameras or intercepting attackers to overflow fixed-size buffers by sending oversized response headers. Attackers can send crafted HTTP responses with oversized status messages, Connection headers, Content-Type values, or multipart boundaries to corrupt parser state and crash the capture process or corrupt memory.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:32.233"
+  },
+  {
+    "id": "CVE-2026-102281",
+    "description": "Nest is a framework for building scalable Node.js server-side applications. Prior to 11.2.4 and 12.0.2, a single message with a deeply nested object in its pattern can terminate a NestJS microservice using the TCP or RabbitMQ transport. ServerTCP#handleMessage and ServerRMQ#handleMessage pass a client-controlled non-string pattern to JSON.stringify to derive the handler lookup key; sufficiently deep nesting throws RangeError: Maximum call stack size exceeded, and the unhandled promise rejection terminates Node.js under its default behavior. An attacker who can reach the TCP port or publish to the consumed RabbitMQ queue or exchange can crash the service on demand; other transports are not affected because their patterns arrive as strings. This issue is fixed in versions 11.2.4 and 12.0.2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:32.050"
+  },
+  {
+    "id": "CVE-2026-101205",
+    "description": "A vulnerability was determined in FastStone Image Viewer up to 8.3. This impacts an unknown function of the component PCX Decoder. This manipulation causes out-of-bounds read. The attack may be initiated remotely. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:31.840"
+  },
+  {
+    "id": "CVE-2026-101204",
+    "description": "A vulnerability was found in FastStone Image Viewer up to 8.3. This affects an unknown function of the file FSViewer.exe of the component TGA Image Handler. The manipulation results in out-of-bounds read. The attack can be launched remotely. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:31.617"
+  },
+  {
+    "id": "CVE-2026-101203",
+    "description": "A vulnerability has been found in FastStone Image Viewer up to 8.3. The impacted element is an unknown function of the component 1bpp RLE Decoder. The manipulation leads to out-of-bounds write. The attack can be initiated remotely. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:31.427"
+  },
+  {
+    "id": "CVE-2026-101202",
+    "description": "A flaw has been found in FastStone Image Viewer up to 8.3. The affected element is an unknown function of the component TGA Image Handler. Executing a manipulation can lead to out-of-bounds write. It is possible to launch the attack remotely. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:31.233"
+  },
+  {
+    "id": "CVE-2026-101188",
+    "description": "A security vulnerability has been detected in Netcore POWER13 2.0.240730.162638. This issue affects the function routerd.passwd_set of the file /ubus. Such manipulation leads to weak password recovery. The attack may be performed from remote. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:31.037"
+  },
+  {
+    "id": "CVE-2026-101093",
+    "description": "Cotonti through 1.0.0 contains a cross-site request forgery vulnerability in admin.users.php that allows attackers to delete user groups without token verification. Attackers can craft malicious links or pages that trick authenticated administrators into deleting custom groups and their associated permissions by riding the administrator's session.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:30.810"
+  },
+  {
+    "id": "CVE-2026-101092",
+    "description": "SiYuan before v3.8.4 fails to enforce publish-access checks in the getCurrentAttrViewImages endpoint, allowing publish readers to retrieve image asset paths from unauthorized databases. Attackers can call the endpoint with an unrendered database identifier obtained through related endpoints to leak detached-row image asset paths and filenames that the rendering endpoint would deny.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:30.603"
+  },
+  {
+    "id": "CVE-2026-101091",
+    "description": "SiYuan versions before v3.8.4 fail to properly validate SQL statements in block query embed blocks executed against siyuan.db. Attackers can craft malicious .sy documents with non-read-only SQL statements that execute automatically during background indexing, rendering, or export operations without authentication.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:30.413"
+  },
+  {
+    "id": "CVE-2024-58386",
+    "description": "ZoneMinder versions 1.37.0 before 1.38.0 contain a path traversal vulnerability in the files view that allows authenticated users to read arbitrary files. The path parameter is not properly validated before being passed to output_file, enabling attackers with Events view permission to access sensitive files like configuration files containing database credentials.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:29.893"
+  },
+  {
+    "id": "CVE-2024-42002",
+    "description": "A code injection vulnerability has been discovered in the Robot Operating System 2 (ROS 2) 'ros2topic' command-line tool, affecting all ROS 2 distributions from Crystal Clemmys up to and including Lyrical Luth and Rolling Ridley. The vulnerability lies in the 'hz' verb, which reports the publishing rate of a topic and accepts a user-provided Python expression via the --filter option. This input is passed directly to the eval() function without sanitization, allowing a local user to craft and execute arbitrary code.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T22:17:28.617"
+  },
+  {
+    "id": "CVE-2026-97027",
+    "description": "Flatpak passes through arbitrary vendor-extension keys unmodified when exporting an application's Desktop Entry (.desktop) and D-Bus Service (.service) files, instead of validating against an allowlist. A malicious Flatpak app can use this to cause denial of service (e.g. forced application restart loops) or to influence host D-Bus/systemd activation behavior beyond what the sandbox is intended to permit.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:20.067"
+  },
+  {
+    "id": "CVE-2026-97026",
+    "description": "Flatpak creates temporary child repository directories under the user cache with world-writable permissions (0777). On multi-user systems with a permissive umask, other local users could read or modify the temporary directory used while installing apps or runtimes, potentially causing installation failures (denial of service); tampered content would fail signature/digest verification rather than being trusted.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:19.907"
+  },
+  {
+    "id": "CVE-2026-97025",
+    "description": "Flatpak writes the OCI repository authentication token with world-readable permissions (0644) in the system-helper's cache directory, allowing other local users on a multi-user system to read the token and impersonate the authenticated user against the OCI repository. Only OCI-based sources (e.g. as used by Fedora) are affected; libostree-based sources such as Flathub are not.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:19.757"
+  },
+  {
+    "id": "CVE-2026-91096",
+    "description": "In proxygen from v2024.10.28.00 until v2026.09.28.00, WebTransportImpl::terminateSessionStreams (WebTransportImpl::destroy in releases before v2025.08.18.00) failed to unregister read callbacks for streams that were no longer open before destroying them. The transport could then invoke a read callback that had been freed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:19.313"
+  },
+  {
+    "id": "CVE-2026-91095",
+    "description": "In proxygen from v2024.10.28.00 until v2026.09.28.00, the HTTPTransaction::onWebTransportUniStream and HTTPTransaction::onWebTransportBidiStream APIs could return stream handles that the stream handler had already freed. HQSession then installed those handles as transport read callbacks, which could lead to use of freed memory.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:19.170"
+  },
+  {
+    "id": "CVE-2026-84895",
+    "description": "In proxygen from v2026.04.06.00 until v2026.09.28.00, QuicWtSession::closeSession accesses its member fields after calling the base QuicWtSessionBase::closeSession method. The base method notifies the session handler, which may release the last reference to the session and destroy it.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:19.027"
+  },
+  {
+    "id": "CVE-2026-18416",
+    "description": "The CoAP link-format helper match_path_uri() in subsys/net/lib/coap/coap_link_format.c compares a registered resource path against the URI carried in a Uri-Query href= option. That URI is not NUL terminated, but the inner character loop advanced its index k once per path character without ever testing it against the option length len. When a registered path segment is longer than the supplied URI and the URI is a prefix of it, the loop reads uri[len] and beyond, past the end of the option value.\n\nThe path is reached from coap_well_known_core_get_len() and coap_well_known_core_get() via match_queries_resource(), i.e. by any unauthenticated GET /.well-known/core?href=/<prefix> request to a device that serves /.well-known/core (for the CoAP server subsystem, CONFIG_COAP_SERVER_WELL_KNOWN_CORE, default y) and has at least one resource that declares struct coap_core_metadata attributes.\n\nThe over-read does not reach the receive buffer. The well-known-core builders parse the query into a stack-local struct coap_option, whose value is a fixed array (value[12], or CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE bytes) that the option bytes are copied into, so uri points into that copy. Reading past len therefore reads the unused, uninitialized tail of the array and, when the option fills it, the bytes just past it in the same stack frame. (In the ZoAP library of v1.8.0 to v1.9.x the option value was instead a pointer into the received packet, and the over-read ran past the option inside the packet buffer.)\n\nThe impact is bounded. The number of bytes read past the end is limited by the length of the resource path segment, and each additional byte is only read if it happens to equal the next path character, so in practice the over-read is one byte. It also cannot influence the response: returning a match requires the final compared index to be len - 1 or len, both in bounds, so out-of-bounds bytes only ever steer the loop to the next candidate resource. The consequence is undefined behaviour, not information disclosure and not a matching error.\n\nThe fix adds a k >= len guard at the top of the inner loop, so every uri[k] dereference is within the option value while still allowing a trailing * wildcard to match a longer path.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:17.560"
+  },
+  {
+    "id": "CVE-2026-18415",
+    "description": "ieee802154_send() in subsys/net/l2/ieee802154/ieee802154.c copies the outgoing packet into a single fixed 125-byte transmit buffer (tx_frame_buf_pool, sized IEEE802154_MTU). In builds with CONFIG_NET_L2_IEEE802154_FRAGMENT enabled (the default whenever CONFIG_NET_6LO is set), the branch taken when 6LoWPAN fragmentation is not required performed an unchecked net_buf_add_mem(frame_buf, pkt_buf->data, pkt_buf->len). The only guard was __ASSERT_NO_MSG() inside net_buf_simple_add(), which is compiled out without CONFIG_ASSERT, so an oversized packet silently overran the frame buffer.\n\nThe defect is not reachable from the radio: for NET_AF_INET6 packets ieee802154_6lo_encode_pkt() compares the whole packet length against IEEE802154_MTU and takes the fragmentation path when it does not fit, so every buffer copied on the unfragmented branch is within bounds. It is reachable through NET_AF_PACKET sockets bound to an 802.15.4 interface: for NET_SOCK_RAW the 6LoWPAN block is skipped entirely and for NET_SOCK_DGRAM it returns early on the address-family test, leaving no length validation anywhere on the transmit path (net_context_sendto() and net_if_tx() apply none, and pkt_buffer_length() does not clamp the allocation for this L2).\n\nAn application — or, in a CONFIG_USERSPACE build, an unprivileged application thread using the zsock_socket()/zsock_sendto() syscalls — can therefore drive a supervisor-mode out-of-bounds write of chosen bytes past the 125-byte pool buffer. With the default CONFIG_NET_BUF_FIXED_DATA_SIZE of 128 bytes the overrun is bounded to roughly ll_hdr_len + 3 bytes; with CONFIG_NET_BUF_VARIABLE_DATA_SIZE a single storage buffer can be as large as CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE, making the overrun far larger. The consequence is corruption of memory adjacent to the pool, with a crash or further compromise of kernel state as the practical impact.\n\nThe fix validates ll_hdr_len + net_pkt_get_len(pkt) + authtag_len against IEEE802154_MTU before any copy and adds a tailroom-checking copy_pkt_to_frame() helper that returns -EMSGSIZE instead of overrunning the buffer. The same change also linearizes the whole net_buf chain into one MAC frame, so packet storage boundaries no longer become frame boundaries on the wire.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:17.403"
+  },
+  {
+    "id": "CVE-2026-18414",
+    "description": "The ADC API requires each driver to reject a sampling sequence whose destination buffer is too small: the buffer_size field of struct adc_sequence in include/zephyr/drivers/adc.h documents that \"the driver must ensure that samples are not written beyond the limit and it must return an error if the buffer turns out to be not large enough\". The ADI MAX32 driver did not honour that contract. start_read() in drivers/adc/adc_max32.c compared buffer_size, a byte count, against a sample count ((1 + extra_samplings)  channels), ignoring sizeof(uint16_t), so it accepted a buffer half the required size. The samples are then stored through the uint16_t  data->buffer by Wrap_MXC_ADC_GetData(), which writes two bytes per sample and advances the pointer by one uint16_t: in adc_max32_start_channel() for synchronous reads, and in adc_max32_isr() for asynchronous ones. A sequence selecting two channels with a two-byte buffer, for example, passes the check and has its second sample written past the end of the buffer.\n\nOn a build with CONFIG_USERSPACE, adc_read() and adc_read_async() are system calls. The handler in drivers/adc/adc_handlers.c copies the sequence in from user memory, verifies only that [buffer, buffer + buffer_size) is writable by the calling thread, and rejects a user-supplied options->callback; it deliberately leaves the size arithmetic to the driver. A user-mode thread that has been granted access to a MAX32 ADC device object therefore fully controls channels, buffer, buffer_size and options->extra_samplings, and can make the driver write twice as many bytes as its buffer holds. Because the check scales with extra_samplings, the overrun equals the length of the buffer itself, up to channels * 65536 bytes past its end, since the sample pointer is only rewound on a repeat sampling, never on the extra samplings of a sequence.\n\nThe resulting stores are performed by the driver in kernel mode (in the system call itself, the ADC context timer, or the ADC interrupt handler for asynchronous reads), where the MPU does not restrict the thread's memory domain, so the write walks linearly out of the user partition and into adjacent memory such as other partitions, kernel data or thread stacks. The impact is kernel-memory corruption of attacker-chosen length at an attacker-chosen offset, a plausible privilege-escalation and denial-of-service primitive from an unprivileged user-mode thread. Builds without CONFIG_USERSPACE are affected only as a caller-side robustness defect, since the application itself supplies the buffer.\n\nThe fix replaces that check in start_read() with a call to the new shared helper adc_sequence_validate_buffer() in drivers/adc/adc_common.c, passing sizeof(uint16_t) as the sample size. The helper computes active_channels  sizeof(uint16_t)  (1 + extra_samplings) and returns -ENOMEM before any sampling is started.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:17.250"
+  },
+  {
+    "id": "CVE-2026-18413",
+    "description": "The ADC API requires each driver to reject a sampling sequence whose destination buffer is too small: the buffer_size field of struct adc_sequence in include/zephyr/drivers/adc.h documents that \"the driver must ensure that samples are not written beyond the limit and it must return an error if the buffer turns out to be not large enough\". The NXP MCUX LPADC driver did not honour that contract. mcux_lpadc_start_read() in drivers/adc/adc_mcux_lpadc.c performed no buffer-size check at all before assigning data->buffer = sequence->buffer. Each completed conversion then stores one 16-bit sample per enabled channel per sampling round through an unbounded *data->buffer++: in mcux_lpadc_isr() for interrupt-driven builds, and in mcux_lpadc_dma_callback() for DMA-driven builds on releases that have the DMA path. A sequence selecting two channels with a two-byte buffer, for example, has its second sample written past the end of the buffer.\n\nOn a build with CONFIG_USERSPACE, adc_read() and adc_read_async() are system calls. The handler in drivers/adc/adc_handlers.c copies the sequence in from user memory, verifies only that [buffer, buffer + buffer_size) is writable by the calling thread, and rejects a user-supplied options->callback; it deliberately leaves the size arithmetic to the driver. A user-mode thread that has been granted access to an LPADC device object therefore fully controls channels, buffer, buffer_size and options->extra_samplings, and can request far more samples than its buffer can hold: up to channels * 65536 samples into a two-byte buffer, since the sample pointer is only rewound on a repeat sampling, never on the extra samplings of a sequence.\n\nThe resulting stores are performed by the driver in kernel mode (in the ADC interrupt handler or the DMA completion callback), where the MPU does not restrict the thread's memory domain, so the write walks linearly out of the user partition and into adjacent memory such as other partitions, kernel data or thread stacks. The impact is kernel-memory corruption of attacker-chosen length at an attacker-chosen offset, a plausible privilege-escalation and denial-of-service primitive from an unprivileged user-mode thread. Builds without CONFIG_USERSPACE are affected only as a caller-side robustness defect, since the application itself supplies the buffer.\n\nThe fix calls the new shared helper adc_sequence_validate_buffer() in drivers/adc/adc_common.c from mcux_lpadc_start_read(). The helper computes active_channels  sizeof(uint16_t)  (1 + extra_samplings) and returns -ENOMEM before any sampling is started.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:17.090"
+  },
+  {
+    "id": "CVE-2026-16513",
+    "description": "The userspace verifier z_vrfy_rtio_sqe_copy_in_get_handles() in subsys/rtio/rtio_syscalls.c (subsys/rtio/rtio_handlers.c before v4.3.0) validated the RTIO object handle and the sqes input array, but not the handle out-parameter. On the first loop iteration it executed *handle = sqe, storing the kernel address of the newly acquired submission-queue entry through a pointer taken verbatim from user mode, with no K_SYSCALL_MEMORY_WRITE check in front of it.\n\nAny user-mode thread that has been granted a struct rtio kernel object can invoke the syscall with an arbitrary address in handle. That is the ordinary way an unprivileged thread uses the RTIO API, for example via sensor_read_async_mempool() or the async ADC helpers, which call rtio_sqe_copy_in_get_handles() internally. The store happens in supervisor mode before any submission-entry validation, so it fires regardless of whether the SQE contents are subsequently rejected. Only builds with CONFIG_USERSPACE and CONFIG_RTIO are affected; without CONFIG_USERSPACE the verifier is not compiled and the caller is already privileged.\n\nThe write address is fully attacker-chosen and the written value is a pointer into the caller's own RTIO ring, whose contents the caller controls (the following *sqe = sqes[i] copies an attacker-supplied struct rtio_sqe into that slot). This yields a write-what-where primitive placing a pointer to attacker-controlled data at any kernel address, sufficient to corrupt kernel function pointers, thread structures, or memory-domain partition tables, and thus to escalate from user mode to kernel mode, defeating the isolation boundary CONFIG_USERSPACE is meant to enforce. At minimum it is a reliable kernel memory-corruption and crash primitive. The reporter reproduced the write on qemu_x86: a K_USER thread changed a supervisor global from NULL to a live kernel SQE pointer.\n\nThe fix adds K_SYSCALL_MEMORY_WRITE(handle, sizeof(*handle)) (guarded by the existing optional-NULL semantics) before the loop, so the destination must lie in the calling thread's writable memory domain or the thread is terminated by K_OOPS. The neighbouring verifier z_vrfy_rtio_cqe_get_mempool_buffer(), which checked its buff/buff_len out-parameters only for read although the implementation writes through them, was hardened separately by bea93400138 (\"rtio: syscalls: validate output params as writable\"); that residual was materially weaker, since a read check still confines the target to the caller's own memory domain.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:16.910"
+  },
+  {
+    "id": "CVE-2026-102279",
+    "description": "Laravel is a web application framework. Prior to 12.69.0 and 13.30.0, Laravel exception debug pages with APP_DEBUG=true pass attacker-controlled input to a Tippy.js tooltip configured with allowHTML true, enabling DOM-based cross-site scripting when a user hovers over the tooltip. This issue is fixed in versions 12.69.0 and 13.30.0.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:16.710"
+  },
+  {
+    "id": "CVE-2026-102278",
+    "description": "The brace-expansion library generates arbitrary strings containing a common prefix and suffix. Prior to 1.1.20, 2.1.6, 3.0.8, and 5.0.11, deeply nested brace groups cause expand_() to recurse once per nesting level at comma-member and single-set expansion sites, exhausting the native stack before output limits can apply and potentially terminating the Node.js process. expand_ performs uncontrolled recursion for nested brace alternatives and single-part sets. deeply nested brace groups supplied as an untrusted pattern. expand_ is affected. expand is affected. Comma members is affected. Single set is affected. native stack exhaustion during nested sub-expansion. process-terminating denial of service. This issue is fixed in versions 1.1.20, 2.1.6, 3.0.8, and 5.0.11.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:16.517"
+  },
+  {
+    "id": "CVE-2026-102277",
+    "description": "The brace-expansion library generates arbitrary strings containing a common prefix and suffix. Prior to 1.1.21, 2.1.7, 3.0.9, and 5.0.12, the expand function handles untrusted {a},b}-shaped patterns with many trailing closing braces by restarting its scan once for each trailing closing brace. The successive full-input rescans with linear working-string growth cause quadratic CPU time and memory pressure that can block the Node.js event loop. The process eventually recovers, making the impact a recoverable CPU denial of service. This issue is fixed in versions 1.1.21, 2.1.7, 3.0.9, and 5.0.12.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:16.300"
+  },
+  {
+    "id": "CVE-2026-102276",
+    "description": "The brace-expansion library generates arbitrary strings containing a common prefix and suffix. Prior to 1.1.19, 2.1.5, 3.0.7, and 5.0.10, crafted brace patterns can exhaust the native stack in parseCommaParts because parseCommaParts recursively processes the remainder once per brace group and uses push.apply to pass every element of a very large comma-part array as a function argument. Patterns containing many comma-separated brace groups trigger the recursive path, while the large array triggers the argument-array path without deep recursion. These paths cause recursive and argument-array native stack exhaustion before max or maxLength can limit output, potentially terminating the Node.js process in a process-terminating denial of service. This issue is fixed in versions 1.1.19, 2.1.5, 3.0.7, and 5.0.10.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:16.033"
+  },
+  {
+    "id": "CVE-2026-102275",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.1.0 until 2.15.0, PyJWT OKPAlgorithm.from_jwk in  jwt/algorithms.py is affected because private-JWK import path does not compare the public key derived from d with x. This occurs when an OKP private JWK supplies non-corresponding x and d components. As a result, identity derived from x can differ from operations performed with d. Consequently, if an integration also accepts private key parameters from a proof header without rejecting them, an attacker may use a stolen sender-constrained token without the legitimate private key. This issue is fixed in version 2.15.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:15.857"
+  },
+  {
+    "id": "CVE-2026-102274",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.9.0 until 2.14.0, PyJWKSet does not catch the plain ValueError raised for malformed RSA JWK components by RSAAlgorithm.from_jwk in  jwt/api_jwk.py. This occurs when a JWK Set contains a malformed RSA key alongside otherwise usable keys. As a result, one malformed member aborts construction of the entire PyJWKSet. Consequently, applications can experience authentication failures or request-level denial of service. This issue is fixed in version 2.14.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:15.677"
+  },
+  {
+    "id": "CVE-2026-102273",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.13.0 until 2.14.0, PyJWT HMACAlgorithm.prepare_key is affected because HMAC key guard only recognizes top-level public JWK forms and misses container representations. This occurs when an application allows HMAC and asymmetric algorithms and passes a public JWK container as the raw key. As a result, public asymmetric key material is accepted as the HMAC secret. Consequently, an attacker who knows the public key can forge a token with arbitrary authenticated claims. This issue is fixed in version 2.14.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:15.497"
+  },
+  {
+    "id": "CVE-2026-102272",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.13.0 until 2.14.0, HMACAlgorithm.prepare_key in jwt/algorithms.py is affected because raw-JWK detector does not normalize accepted Unicode byte-order marks before checking for JSON. This occurs when a public JWK is prefixed with a UTF-8 BOM and used in a mixed-algorithm verification path. As a result, public JWK bypasses asymmetric-key detection and becomes the HMAC secret. Consequently, an attacker who knows the public key can forge authenticated tokens. This issue is fixed in version 2.14.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:15.280"
+  },
+  {
+    "id": "CVE-2026-102271",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.4.0 until 2.14.0, PyJWT HMACAlgorithm.prepare_key is affected because asymmetric-key guard relies on textual markers that are absent from DER encoding. This occurs when an application mixes HMAC and asymmetric algorithms and supplies a DER public key as the shared verification key. As a result, PyJWT uses public DER bytes as an HMAC secret. Consequently, an attacker who knows the public key can forge authenticated HMAC tokens. This issue is fixed in version 2.14.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:15.110"
+  },
+  {
+    "id": "CVE-2026-102270",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. Prior to 2.14.0, PyJWT is_pem_format is affected because lazy PEM regular expression backtracks extensively. This occurs when a certificate-like input contains repeated BEGIN markers without a matching END marker. As a result, is_pem_format performs unbounded backtracking while searching for a PEM end marker. Consequently, an attacker can cause intensive CPU consumption. This issue is fixed in version 2.14.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:14.943"
+  },
+  {
+    "id": "CVE-2026-102269",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. Prior to 2.14.0, PyJWT signature segment is affected because signature segment decoding accepts characters outside the canonical Base64URL representation. This occurs when non-Base64URL characters are appended to a valid compact JWS signature segment. As a result, base64url_decode produces the same signature bytes for different serialized segments. Consequently, raw-token revocation checks can fail to recognize an equivalent modified token. This issue is fixed in version 2.14.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:14.773"
+  },
+  {
+    "id": "CVE-2026-102268",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. Prior to 2.14.0, is_pem_format in jwt/utils.py is affected because is_pem_format does not recognize every PEM representation accepted by the cryptography loader. This occurs when an application mixes HMAC and asymmetric algorithms and supplies a mutated public-key PEM as raw key bytes. As a result, HMACAlgorithm.prepare_key treats the unrecognized asymmetric public key as an HMAC secret. Consequently, an attacker who knows the public key can forge authenticated HMAC tokens. This issue is fixed in version 2.14.0.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:14.600"
+  },
+  {
+    "id": "CVE-2026-102267",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. Prior to 2.14.0, PyJWT PyJWKClient is affected because redirect destinations are not revalidated against the JWKS trust boundary. This occurs when a configured trusted JWKS endpoint returns an attacker-influenced redirect. As a result, PyJWKClient follows the redirect and consumes the redirected response as key material. Consequently, forwarded credentials may be disclosed or verification keys may be substituted. This issue is fixed in version 2.14.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:14.430"
+  },
+  {
+    "id": "CVE-2026-102266",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.13.0 until 2.14.0, HMACAlgorithm.from_jwk is affected because PyJWK verification path used the decoded key without applying prepare_key validation. This occurs when a trusted JWK Set contains an oct entry with an empty k value. As a result, an attacker signs an HMAC token with the same zero-length key accepted by PyJWT. Consequently, forged token can carry arbitrary authenticated claims. This issue is fixed in version 2.14.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:14.257"
+  },
+  {
+    "id": "CVE-2026-102265",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.13.0 until 2.14.0, PyJWS._load in jwt/api_jws.py is affected because parser catches ValueError but not RecursionError. This occurs when a deeply nested token header reaches json.loads. As a result, RecursionError escapes the documented PyJWT error hierarchy. Consequently, an unauthenticated malformed token can cause a request-level failure and HTTP 500. This issue is fixed in version 2.14.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:14.077"
+  },
+  {
+    "id": "CVE-2026-102006",
+    "description": "In Wind River VxWorks 7 prior to 26.09, specific system call arguments can result in the process management subsystem failing to properly release allocated kernel memory before terminating the calling application. Fixed in Version 26.09",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:13.740"
+  },
+  {
+    "id": "CVE-2026-102005",
+    "description": "Wind River VxWorks 7 24.03 through 26.03, a memory leak occurs under specific, non-default configuration states when processing specific service routines, causing the system to terminate operations before releasing allocated memory pools. Fixed in VxWorks 7 26.09",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:13.587"
+  },
+  {
+    "id": "CVE-2026-101918",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.0.0a1 until 2.15.0, PyJWT PyJWKClient.get_signing_key_from_jwt is affected because payload parser catches ValueError but not RecursionError. This occurs when an attacker-controlled recursively nested payload reaches json.loads. As a result, documented PyJWT exception handling does not contain the failure. Consequently, an unauthenticated request can raise an exception that may produce an HTTP 500 response. The advisory-defined affected implementation also includes jwt/api_jwt.py, verify_signature=False. This issue is fixed in version 2.15.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:13.410"
+  },
+  {
+    "id": "CVE-2026-101917",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. Prior to 2.14.0, PyJWT get_signing_key_from_jwt is affected because unknown kid misses force refreshes without a negative cache or minimum refresh interval. This occurs when unauthenticated tokens repeatedly use the same unknown kid or varying kid values absent from the cached JWKS. As a result, each cache miss causes PyJWKClient to refresh the JWKS. Consequently, attacker traffic can amplify outbound requests to the configured JWKS endpoint. This issue is fixed in version 2.14.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:13.210"
+  },
+  {
+    "id": "CVE-2026-101916",
+    "description": "@grpc/grpc-js implements the core functionality of gRPC purely in JavaScript, without a C++ addon. Prior to 1.13.6 and 1.14.5, getAuthContext does not distinguish authorized from unauthorized peer certificates when server credentials set requireClientCertificate to false. When applications use the returned authentication context, they can treat an unauthorized certificate as authorized, causing improper authentication. @grpc/grpc-js-xds can reach this condition when RBAC authentication is enabled in affected configurations. This issue is fixed in version 1.14.5 and 1.13.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:13.030"
+  },
+  {
+    "id": "CVE-2026-101187",
+    "description": "A weakness has been identified in Ziroom ZHOME A0101 1.0.1.0. This vulnerability affects the function pop_usb_device of the file usr/lib/lua/luci/controller/api/zrUsb.lua of the component USB Device Management API. This manipulation of the argument path causes command injection. The attack is possible to be carried out remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:12.810"
+  },
+  {
+    "id": "CVE-2026-101146",
+    "description": "A security flaw has been discovered in Eleveo Quality Management 9.7.0. This issue affects the function UtilsService.createAndSaveAudit of the file /qm/cz.zoom.scorecard.webui.Scorecard/QMUtilsService of the component GWT RPC Handler. Performing a manipulation results in information disclosure. The attack is possible to be carried out remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:12.600"
+  },
+  {
+    "id": "CVE-2026-101145",
+    "description": "A vulnerability was identified in Eleveo Call Recording Software 9.7.0. This vulnerability affects unknown code of the file /callrec/userAddAction.do of the component User Management. Such manipulation of the argument Username leads to ldap injection. The attack can be executed remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:12.370"
+  },
+  {
+    "id": "CVE-2026-101144",
+    "description": "A vulnerability was determined in Eleveo Call Recording Software 9.7.0. This affects an unknown part of the file /callrec/searchAction.do of the component Query Builder. This manipulation causes improper access controls. Remote exploitation of the attack is possible. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:12.153"
+  },
+  {
+    "id": "CVE-2026-100392",
+    "description": "InvoicePlane is a self-hosted open source application for managing invoices, clients, and payments. In version 1.7.2, Users::form() performs no object-level authorization check on user_id = 1. A Secondary Administrator (user_type = 1, user_id != 1) can rewrite the Primary Administrator's user_type to 2 (Guest / read-only), destroying the root account's privilege and locking the legitimate owner out of the instance. At time of publication, there are no publicly available patches.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:11.827"
+  },
+  {
+    "id": "CVE-2026-100371",
+    "description": "InvoicePlane is a self-hosted open source application for managing invoices, clients, and payments. In version 1.7.2, an authorization guard to Users::change_password(), was added to address a previous authorization flaw that allowed a secondary administrator (user_type=1, user_id != 1) to directly change the password of the primary administrator (user_id=1) through users/change_password/{id}. That remediation, however, protects only the direct password-change operation. It does not protect the identity attribute that password recovery actually trusts: user_email. Users::form() applies no equivalent object-level authorization check when editing the primary administrator's account, and user_email is not included in PROTECTED_FIELDS. A secondary administrator can therefore rewrite the primary administrator's email address, then drive the public password-recovery flow — which resolves the account by user_email — to receive the reset token and take over user_id=1. The result is an alternate attack path that achieves the same impact PR #1638 was intended to prevent: cross-administrator full account takeover of the primary administrator. This issue has been patched via commit 8616fa4.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:11.653"
+  },
+  {
+    "id": "CVE-2026-100370",
+    "description": "DOMSanitizer is a DOM/SVG/MathML Sanitizer for PHP 7.3+. Prior to version 1.0.15, the isDangerousUrl() method is responsible for rejecting dangerous URL values in the href and xlink:href attributes. The weakness is that \"javascript:\" is rejected as a scheme, while \"data:\" is rejected only when the literal substring onload appears in the URL value (/^data:.*onload/i). Because data: payloads are routinely Base64-encoded, the dangerous content (<script>, event handlers, etc.) is invisible to that substring test. A URL such as data:text/html;base64,… therefore survives in href / xlink:href, even though the decoded payload is active markup. This is an incomplete input-validation / sanitization defect in the sanitizer itself. This issue has been patched in version 1.0.15.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-28T21:17:10.280"
+  },
+  {
     "id": "CVE-2026-96760",
     "description": "Authlib (v1.7.2 and below) contains a signature verification bypass vulnerability. The JsonWebSignature.deserialize_json() method accepts a JSON Serialization JWS object and returns the payload as successfully verified without checking for a signature and without requiring a cryptographic key.",
     "severity": "Unknown",
@@ -1045,7 +1549,7 @@
   {
     "id": "CVE-2026-91006",
     "description": "Apache Karaf's instance-management service (InstanceServiceImpl) builds the command line used to launch a child Karaf JVM by string concatenation, then executes it through /bin/sh (Unix) or cscript (Windows). The caller-supplied javaOpts value is spliced into that string unquoted. A javaOpts value containing shell metacharacters (;, |, `, $(...)) is interpreted by the shell instead of being passed to the JVM as an option, giving arbitrary OS command execution as the Karaf process user.\n\n\nReachable via the shell commands instance:create, instance:start, instance:restart, instance:change-opts, and the equivalent InstanceMBean JMX operations (createInstance, startInstance, changeJavaOpts, cloneInstance).\n\nMitigation   *  Set karaf.secured.command.compulsory.roles=admin in etc/system.properties to close the fail-open gap for all unconfigured command scopes.\n  *  Restrict which principals can reach instance:* commands and InstancesMBean via etc/users.properties role assignments.\n  *  Treat javaOpts passed to instance:create/instance:start/instance:change-opts/InstancesMBean as untrusted input only from fully-trusted operators.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-09-28T11:16:48.200"
   },
@@ -4499,411 +5003,5 @@
     "severity": "Low",
     "tech": "Unknown",
     "published": "2026-09-26T01:16:59.880"
-  },
-  {
-    "id": "CVE-2026-96795",
-    "description": "Horilla is an HR and CRM software. Prior to 2.0.0, HorillaListView.export_data in horilla_views/generic/cbv/views.py accepts an authenticated user's columns POST parameter, takes field_tuple[1], interpolates it into dynamic_fn_str as Python source, and passes the generated function definition to exec(). A crafted string that remains valid under ast.literal_eval can inject Python syntax into a default argument evaluated during function definition, allowing arbitrary operating-system commands to execute with the application process privileges, including root privileges in the shipped Docker image. This issue is fixed in version 2.0.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T23:16:55.020"
-  },
-  {
-    "id": "CVE-2026-86066",
-    "description": "Horilla is an HR and CRM software. Prior to 2.0.0, approve_validate_attendance_request at /attendance/approve-validate-attendance-request/ changes attendance_validated, is_validate_request_approved, approved_by, and related pending-request state through an HTTP GET before calling attendance.save(), so Django does not require CSRF validation for the action. An unauthenticated attacker can cause a logged-in manager with attendance.change_attendance to make a top-level request that carries the manager's SameSite=Lax session cookie, silently approving attendance with the victim's privileges and attributing the approval to the victim in the audit trail. This issue is fixed in version 2.0.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T23:16:54.167"
-  },
-  {
-    "id": "CVE-2026-57449",
-    "description": "Actual is a local-first personal finance tool. Prior to 26.7.0, Actual Sync Server's CORS proxy is intended to let authenticated users fetch resources only from repositories listed in the official plugin allowlist. When `ACTUAL_GITHUB_TOKEN` is configured, the proxy automatically attaches the server's GitHub token to GitHub requests. The GitHub API allowlist check uses a raw `startsWith()` prefix test for `/repos/{owner}/{repo}` without requiring a path boundary after the repository name. If an allowlisted public plugin repository is `https://github.com/acme/plugin`, the proxy also accepts GitHub API URLs. Those URLs are outside the allowlisted repository but still pass because their API path starts with `/repos/acme/plugin`. The proxy then forwards the request with the server's `ACTUAL_GITHUB_TOKEN`, allowing any authenticated Actual user to read private GitHub resources reachable by that token. Version 26.7.0 fixes the issue.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T23:16:53.990"
-  },
-  {
-    "id": "CVE-2026-9655",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:50.130"
-  },
-  {
-    "id": "CVE-2026-9652",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:50.070"
-  },
-  {
-    "id": "CVE-2026-92842",
-    "description": "The convert.base64-encode, convert.quoted-printable-encode and convert.quoted-printable-decode stream filters accept a line-break-chars option whose length is tracked separately from the string itself. The filter constructors duplicate the value with pestrdup(), which stops at the first NUL byte, while keeping the original length. When the filter later emits a line break it copies the recorded length out of the truncated allocation, reading past its end and placing adjacent heap bytes into the filter output.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:49.943"
-  },
-  {
-    "id": "CVE-2026-91768",
-    "description": "The IPv6 branch of the FastCGI client access check compares only the first 12 bytes of a 16-byte IPv6 address, so listen.allowed_clients matches on a /96 prefix instead of the exact address. An attacker who can source an address sharing the first 96 bits with an allowed one passes the check and reaches the FastCGI endpoint.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:49.807"
-  },
-  {
-    "id": "CVE-2026-88003",
-    "description": "InvoicePlane is a self-hosted open source application for managing invoices, clients, and payments. Prior to 1.7.2, InvoicePlane fails to revoke administrative privileges after a role downgrade because Admin_Controller trusts the user_type snapshot stored in an existing session instead of revalidating ip_users.user_type. When one administrator downgrades another account, the target's active session continues to authorize administrative requests. The downgraded user can use Users::form() to set user_type back to 1, restoring the database role and making the privilege escalation persistent. This vulnerability is fixed in 1.7.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:49.580"
-  },
-  {
-    "id": "CVE-2026-7800",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:38.327"
-  },
-  {
-    "id": "CVE-2026-7799",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:38.263"
-  },
-  {
-    "id": "CVE-2026-71483",
-    "description": "Horilla is an HR and CRM software. Prior to 1.6.0, the search parameter at /employee/employee-filter-view is reflected by jQuery .html() in employee/templates/employee_nav.html without HTML neutralization. An external attacker can craft and deliver a link that causes JavaScript to execute when an authenticated employee or administrator reaches the employee filter, allowing access to browser-visible session data and actions with the victim's application privileges. This issue is fixed in version 1.6.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:18:20.173"
-  },
-  {
-    "id": "CVE-2026-63432",
-    "description": "Horilla is an HR and CRM software. From 1.0.0 until 1.6.0 and 2.0.0, the get_mail_preview handlers in recruitment/views/actions.py and employee/not_in_out_dashboard.py render a user-controlled body at /recruitment/get-mail-preview/ and /employee/get-employee-mail-preview with the full request object in the Django template context. An authenticated user with a valid CSRF token can use template attribute traversal to read request.user.password, request.META, and related-user attributes, exposing password hashes, personal data, and server request metadata. Django template restrictions prevent arbitrary code execution through this primitive, so the demonstrated impact is information disclosure and possible offline password cracking or account compromise. This issue is fixed in versions 1.6.0 and 2.0.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:14.320"
-  },
-  {
-    "id": "CVE-2026-63431",
-    "description": "Horilla is an HR and CRM software. In 1.5.0-85 and earlier, payroll/views/component_views.py does not consistently authorize access in allowances_deductions_tab, view_single_allowance, and view_single_deduction before loading records selected by emp_id, allowance_id, or deduction_id. An authenticated employee can substitute those identifiers to read another employee's salary structure, allowance and deduction amounts, personal loan disbursements, and repayment schedules without owning the record or holding payroll-view permissions. No complete fixed version is available as of this review.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:14.167"
-  },
-  {
-    "id": "CVE-2026-53973",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:12.007"
-  },
-  {
-    "id": "CVE-2026-53972",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.957"
-  },
-  {
-    "id": "CVE-2026-53971",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.897"
-  },
-  {
-    "id": "CVE-2026-49118",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.720"
-  },
-  {
-    "id": "CVE-2026-49117",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.657"
-  },
-  {
-    "id": "CVE-2026-45241",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.520"
-  },
-  {
-    "id": "CVE-2026-45240",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.470"
-  },
-  {
-    "id": "CVE-2026-45239",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.407"
-  },
-  {
-    "id": "CVE-2026-45238",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.350"
-  },
-  {
-    "id": "CVE-2026-45237",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.290"
-  },
-  {
-    "id": "CVE-2026-45236",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.227"
-  },
-  {
-    "id": "CVE-2026-45235",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.170"
-  },
-  {
-    "id": "CVE-2026-45234",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:11.103"
-  },
-  {
-    "id": "CVE-2026-100502",
-    "description": "Flame through 2.4.0 contains an insufficient session expiration vulnerability in the login endpoint that allows attackers with former admin access to obtain tokens with arbitrary lifespans by supplying unvalidated duration parameters. Attackers can mint near-permanent administrator tokens that survive password changes, retaining full control of the dashboard since tokens are verified only against a static JWT secret that is never rotated.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:10.947"
-  },
-  {
-    "id": "CVE-2026-100501",
-    "description": "Flame through 2.4.0 contains an improper restriction of excessive authentication attempts vulnerability in the POST /api/auth login endpoint that allows unauthenticated attackers to brute-force the admin password. Attackers can submit unlimited password guesses without rate limiting, attempt counters, lockouts, or delays to gain full administrator access and modify application configuration.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:10.793"
-  },
-  {
-    "id": "CVE-2026-100419",
-    "description": "gitoxide gix-fs before 0.23.0 contains a path validation bypass vulnerability in the worktree checkout mechanism that allows attackers to escape the worktree directory via symlink manipulation. During forced checkout with overwrite_existing enabled, attackers can craft malicious repository trees where symlink entries replace validated directories, causing subsequent files to be written outside the worktree through the symlink for code execution or file manipulation.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:10.613"
-  },
-  {
-    "id": "CVE-2026-100418",
-    "description": "Flame through 2.4.0 contains an information exposure vulnerability in the unauthenticated GET /api/config endpoint that returns the entire configuration object without field redaction. Attackers can retrieve the stored weather API key and internal operational settings by sending a single unauthenticated request to consume provider quota or access sensitive configuration data.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:10.447"
-  },
-  {
-    "id": "CVE-2026-100383",
-    "description": "Improper Neutralization of Input During Web Page Generation (XSS or 'Cross-site Scripting') vulnerability in Wikimedia Foundation Mediawiki - WikiLambda Extension allows Cross-Site Scripting (XSS).\n\nThis issue affects Mediawiki - WikiLambda Extension: 1.47.0-alpha. The issue has been remediated on the `master` branch.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:10.303"
-  },
-  {
-    "id": "CVE-2026-100382",
-    "description": "Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') vulnerability in Wikimedia Foundation Mediawiki - ExternalData Extension allows OS Command Injection.\n\nThis issue affects Mediawiki - ExternalData Extension: from * before 3.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:10.150"
-  },
-  {
-    "id": "CVE-2026-100381",
-    "description": "Improper Neutralization of Input During Web Page Generation (XSS or 'Cross-site Scripting') vulnerability in Wikimedia Foundation Mediawiki - UploadWizard Extension allows Cross-Site Scripting (XSS).\n\nThis issue affects Mediawiki - UploadWizard Extension: from * before 1.46.1, 1.45.5, 1.43.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T22:17:09.027"
-  },
-  {
-    "id": "CVE-2026-9313",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:25.757"
-  },
-  {
-    "id": "CVE-2026-96879",
-    "description": "Improper removal of sensitive information before storage or transfer vulnerability in Wikimedia Foundation's Mediawiki - FlaggedRevs extension through 1.46.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:25.613"
-  },
-  {
-    "id": "CVE-2026-91769",
-    "description": "PHP's OpenSSL stream peer verification checks the certificate's subjectAltName entries first and, whenever no entry matches, falls back to the Common Name. RFC 6125 requires the CN to be ignored once the certificate presents any service identity, so a certificate carrying a non-matching DNS SAN was still accepted when its CN matched the requested peer_name. A certificate trusted by the client for one name can therefore be used to impersonate another.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:24.913"
-  },
-  {
-    "id": "CVE-2026-91767",
-    "description": "php_openssl_matches_wildcard_name() in ext/openssl/xp_ssl.c underflows the length argument passed to memchr() when a TLS server certificate presents a wildcard name whose literal characters are together longer than the hostname being verified. A malicious server presenting such a certificate makes the PHP client read up to SIZE_MAX bytes past the end of a heap allocation. The path is reachable from any default client stream, because verify_peer_name is enabled by default.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:24.793"
-  },
-  {
-    "id": "CVE-2026-91766",
-    "description": "When the http:// stream wrapper follows a redirect it forwards the user-supplied Authorization, Cookie and Proxy-Authorization headers unchanged, even when the redirect target is a different host, a different port, or a downgrade from HTTPS to HTTP. A server that can steer a redirect therefore receives credentials that were only meant for the original origin. This is the same class of issue that libcurl fixed in 7.58.0 ( CVE-2018-1000007 https://github.com/advisories/GHSA-g7x2-hrfp-pv5f ).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:24.673"
-  },
-  {
-    "id": "CVE-2026-91765",
-    "description": "cleanup_xml_node() in the SOAP XML parser recurses once per XML nesting level with no depth limit. An unauthenticated attacker can post a SOAP request containing tens of thousands of nested elements to any SoapServer endpoint, exhaust the stack and crash the process. The same unbounded recursion exists in the SOAP value decoder and in the WSDL node search helper.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:24.550"
-  },
-  {
-    "id": "CVE-2026-6103",
-    "description": "phar_tar_number() parses the octal size field of a TAR header into a uint32_t with no overflow check. The field is 11 octal digits wide and holds values up to 0x1FFFFFFFF, so a size above 0xFFFFFFFF silently wraps. The parser then skips the wrong number of data blocks and interprets attacker-controlled file content as the next TAR header, which lets a crafted archive inject entries that PharData reports and extracts as if they were genuine.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:23.790"
-  },
-  {
-    "id": "CVE-2026-57864",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:23.560"
-  },
-  {
-    "id": "CVE-2026-57443",
-    "description": "SCBE-AETHERMOORE is a geometric AI governance and evaluation framework. Starting in version 4.0.2 and prior to version 4.2.1, the AetherBrowser API server (`scripts/aetherbrowser/api_server.py`) exposes the `POST /api/ops/check-email` endpoint without any authentication. Any remote attacker can call this endpoint and trigger execution of the `email_reader.py` subprocess, which connects to configured ProtonMail or Gmail accounts via IMAP and returns email metadata (sender, subject, body snippet) in the JSON response. The server binds to `0.0.0.0:8100` by default with CORS set to `allow_origins=[\"*\"]`, making it reachable from any network or browser origin. Version 4.2.1 patches the issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:23.413"
-  },
-  {
-    "id": "CVE-2026-17545",
-    "description": "On Windows, PHP's filesystem and stream APIs do not reject reserved device names such as CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9, CONIN$ and CONOUT$ when they appear as a component of a path. An attacker-controlled filename therefore reaches CreateFileW() and opens a device instead of the regular file the application expected, which can block or hang the request and exhaust worker processes.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:23.253"
-  },
-  {
-    "id": "CVE-2026-10758",
-    "description": "Esri LERC is an open-source image or raster format which supports rapid encoding and decoding for any pixel type. A Heap based Out-of-Bounds Write via Integer Overflow in LERC versions 4.1.0 and earlier may allow a remote, unauthenticated attacker who can pass specifically crafted attacker controlled imagery to an application that uses LERC to crash the application, leading to a denial of service.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:23.117"
-  },
-  {
-    "id": "CVE-2026-100417",
-    "description": "RustDesk before 1.5.0 on Windows fails to enforce the one-way file transfer option against peer clipboard file requests, allowing authenticated peers to read files from the host clipboard. Attackers can send FormatDataRequest and FileContentsRequest messages to retrieve copied files by guessing the FileGroupDescriptorW format identifier.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:22.957"
-  },
-  {
-    "id": "CVE-2026-100391",
-    "description": "MediaFlow Proxy through 2.4.9 contains a server-side request forgery vulnerability in the /proxy routes due to missing and incomplete destination validation in the d query parameter. Remote attackers can supply arbitrary internal URLs including loopback and cloud metadata endpoints to read full responses from the proxy server.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:22.800"
-  },
-  {
-    "id": "CVE-2026-100390",
-    "description": "Zoraxy versions 3.2.3 through 3.3.4 fail to properly parse IPv6 addresses in the RemoteAddr field when setting forwarded headers. Unauthenticated attackers connecting over IPv6 can supply arbitrary X-Forwarded-For values to spoof their source IP and bypass authorization provider IP-based access controls.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:22.637"
-  },
-  {
-    "id": "CVE-2026-100389",
-    "description": "GestSup versions before 3.2.61 contain a remote code execution vulnerability in the basic IMAP connector's attachment handling that fails to skip blocked file extensions. Unauthenticated attackers can send emails with PHP attachments to monitored mailboxes, which are written to the web-accessible upload/ticket directory and executed when accessed.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:22.483"
-  },
-  {
-    "id": "CVE-2026-100388",
-    "description": "RustDesk versions before 1.5.0 fail to properly validate file transfer permissions on incoming file clipboard messages in the Cliprdr message handler on Linux and macOS. Authenticated remote peers with disabled file transfer permissions can place files onto the host clipboard and retrieve copied files and contents from the process-wide clipboard cache.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:22.317"
-  },
-  {
-    "id": "CVE-2026-100387",
-    "description": "pgPointcloud through 1.2.5 contains a heap out-of-bounds read vulnerability in dimensional patch WKB deserialization that allows authenticated database users to read adjacent heap memory. Attackers can supply crafted pcpatch values with attacker-controlled size fields to copy heap memory into stored patches for exfiltration or crash the PostgreSQL backend.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:22.163"
-  },
-  {
-    "id": "CVE-2026-100380",
-    "description": "Improper Neutralization of Input During Web Page Generation (XSS or 'Cross-site Scripting') vulnerability in Wikimedia Foundation Mediawiki - Wikibase Extension allows Cross-Site Scripting (XSS).\n\nThis issue affects Mediawiki - Wikibase Extension: from * before 1.46.1, 1.45.5, 1.43.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:22.037"
-  },
-  {
-    "id": "CVE-2026-100379",
-    "description": "Exposure of Sensitive Information to an Unauthorized Actor vulnerability in Wikimedia Foundation Wikipedia Android App allows Accessing/Intercepting/Modifying HTTP Cookies.\n\nThis issue affects Wikipedia Android App: main.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:21.910"
-  },
-  {
-    "id": "CVE-2026-100378",
-    "description": "Missing Authorization vulnerability in Wikimedia Foundation Mediawiki - Translate Extension allows Accessing Functionality Not Properly Constrained by ACLs.\n\nThis issue affects Mediawiki - Translate Extension: from * before 1.46.1, 1.45.5, 1.43.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:21.780"
-  },
-  {
-    "id": "CVE-2026-100377",
-    "description": "Exposure of Sensitive Information to an Unauthorized Actor vulnerability in Wikimedia Foundation Mediawiki - WikiLambda Extension allows Excavation.\n\nThis issue affects Mediawiki - WikiLambda Extension: 1.47.0-alpha. The issue has been remediated on the `master` branch.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:21.650"
-  },
-  {
-    "id": "CVE-2026-100376",
-    "description": "Improper Neutralization of Input During Web Page Generation (XSS or 'Cross-site Scripting') vulnerability in Wikimedia Foundation Mediawiki - TemplateSandbox Extension allows Cross-Site Scripting (XSS).\n\nThis issue affects Mediawiki - TemplateSandbox Extension: from * before 1.46.1, 1.45.5, 1.43.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:21.517"
-  },
-  {
-    "id": "CVE-2026-100369",
-    "description": "CliInvoke and its formerly named `AlastairLundy.CliInvoke` package are .NET libraries for invoking command-line programs and wrapping executable processes. `CliInvoke` versions 2.0.0 through 2.8.4, 2.9.0 through 2.9.3, 2.10.0 through 2.10.4, and 3.0.0-alpha.1 through 3.0.0-beta.1, as well as `AlastairLundy.CliInvoke` versions 2.0.0-alpha.1 through 2.0.0, contain an argument-injection vulnerability in `RunnerProcessFactory` on the 2.x line and `RunnerConfigurationFactory` on the 3.x line. These factories combine runner arguments, a caller-controlled target, and caller-controlled arguments into one `ProcessStartInfo.Arguments` string, allowing a double quote in the target or an argument to terminate an operating-system-level quoted region and inject unintended elements into the runner’s argument vector, potentially resulting in arbitrary command execution when a shell runner is used. The vulnerability is patched in `CliInvoke` versions 2.8.5, 2.9.4, 2.10.5, and 3.0.0-beta.2, and in `AlastairLundy.CliInvoke` version 2.0.2. No complete workaround is available; users unable to upgrade can partially mitigate the issue by removing double quotes from targets and arguments, additionally removing shell metacharacters when using shell runners, or bypassing the vulnerable factory and constructing a `ProcessConfiguration` with an explicit `ArgumentList`.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:21.247"
-  },
-  {
-    "id": "CVE-2025-1218",
-    "description": "The mysqlnd wire protocol parser reads fields out of server packets before checking that the packet still holds enough bytes for them. A malicious or compromised MySQL server can send a truncated packet and make the client read past the end of the packet buffer, which is undefined behaviour and can crash the process.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:20.993"
-  },
-  {
-    "id": "CVE-2025-14181",
-    "description": "The SOAP HTTP client guards its response buffer growth with a check that relies on signed integer overflow, which is undefined behaviour and is not guaranteed to trigger. When the check is optimised away, a malicious SOAP server can make the client allocate a buffer far smaller than the data it then writes into it, producing a heap buffer overflow.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-25T21:17:19.840"
   }
 ]
