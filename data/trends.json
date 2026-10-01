@@ -1,131 +1,5 @@
 [
   {
-    "id": "CVE-2026-77348",
-    "description": "Wallos is an open-source, self-hostable personal subscription tracker. Prior to version 5.0.0, the fix for CVE-2026-33407 (GHSA-hhjq-82f8-m6rc, \"SSRF via HTTP Proxy Environment Variable\") hardened endpoints/logos/search.php by disabling cURL proxying (CURLOPT_PROXY = '' + CURLOPT_NOPROXY = '*'). However, Wallos ships a second, near-identical, unauthenticated logo-image search endpoint — endpoints/payments/search.php — that was not given the same hardening. It still passes the HTTP_PROXY/HTTPS_PROXY environment variable straight into CURLOPT_PROXY. This issue has been patched in version 5.0.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:20.317"
-  },
-  {
-    "id": "CVE-2026-77351",
-    "description": "Wallos is an open-source, self-hostable personal subscription tracker. Prior to version 5.0.0, Wallos lets any authenticated user store an arbitrary SMTP host — including private and cloud-metadata IP addresses — in their personal email notification settings, with no server-side SSRF validation. When the scheduled notification cron job runs, it passes the stored host directly to PHPMailer, causing the Wallos server to open an outbound TCP connection to whatever address the attacker specified. This gives a low-privileged attacker a reliable mechanism to probe internal network services from the server's perspective. This issue has been patched in version 5.0.0.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:20.467"
-  },
-  {
-    "id": "CVE-2026-77352",
-    "description": "Wallos is an open-source, self-hostable personal subscription tracker. From version 2.0.0 to before version 5.0.0, any authenticated Wallos user (no admin rights required) can make the server open arbitrary outbound SMTP connections to internal/link-local addresses, by setting the SMTP host of their personal email notifications to an internal IP. The per-user notification settings endpoint (endpoints/notifications/saveemailnotifications.php) performs no SSRF validation, and the notification cron (endpoints/cronjobs/sendnotifications.php) feeds that user-controlled host straight into PHPMailer ($mail->Host = $email['smtpAddress']). When the user's subscription notification fires, the server connects to the chosen host:port. This issue has been patched in version 5.0.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:20.607"
-  },
-  {
-    "id": "CVE-2026-77353",
-    "description": "Wallos is an open-source, self-hostable personal subscription tracker. Prior to version 5.0.0, Wallos allows authenticated users to inject arbitrary iCalendar properties and events into their exported .ics feed by embedding raw CRLF sequences in subscription names or notes. Because the input validation layer only encodes HTML metacharacters but never strips newlines, and the export layer decodes those entities back before writing iCal output, an attacker with any valid account can craft a subscription whose name breaks out of the current VEVENT block and inserts fully attacker-controlled calendar events — including spoofed organizers, arbitrary email addresses in ATTENDEE properties, and misleading event content — into any calendar application subscribed to that feed. This issue has been patched in version 5.0.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:20.743"
-  },
-  {
-    "id": "CVE-2026-82393",
-    "description": "pnpm is a package manager. Prior to 10.34.5 and 11.11.0, pnpm accepts a scoped path traversal in a tarball dependency's package.json manifest name because pnpm11/resolving/npm-resolver/src/pickPackage.ts rejects slash characters only for unscoped names. During pnpm install, the unvalidated name reaches raw path joins in pnpm11/installing/deps-resolver/src/resolvePeers.ts, pnpm11/installing/deps-resolver/src/index.ts, and pnpm11/deps/graph-builder/src/lockfileToDepGraph.ts, causing package extraction outside node_modules and allowing attacker-controlled files to overwrite arbitrary filesystem paths even when --ignore-scripts is used. The overwrite can replace shell startup files, Git hooks, or installed package code and lead to code execution. This issue is fixed in versions 10.34.5, and 11.11.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:22.353"
-  },
-  {
-    "id": "CVE-2026-82394",
-    "description": "Sulu is an open-source PHP content management system based on the Symfony framework. Prior to versions 2.6.25 and 3.0.8, the preview-link endpoint and src/Sulu/Bundle/PreviewBundle/Application/Manager/PreviewLinkManager.php do not enforce VIEW permission for the target resource in PreviewLinkManager::generate() or PreviewLinkManager::revoke(). An authenticated administration user who knows a target resource identifier can create or revoke a preview link for any page, article, or snippet, including content in a webspace or area the user cannot view. A generated preview URL is public and resolves content by an opaque token, allowing the user or anyone receiving the link to read restricted content without authentication. This issue is fixed in versions 2.6.25 and 3.0.8.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:22.497"
-  },
-  {
-    "id": "CVE-2026-82395",
-    "description": "Sulu is an open-source PHP content management system based on the Symfony framework. Prior to versions 2.6.25 and 3.0.8, the media move endpoint derives its permission check from the client-supplied collection value instead of the media item's actual source collection, and src/Sulu/Bundle/MediaBundle/Media/Manager/MediaManager.php allows MediaManager::move() to reassign the item without checking that source. An authenticated backend user with edit permission on one collection and knowledge of a target media identifier can name the allowed collection in the request, move an item out of a restricted collection, and then view or download content the user was not permitted to access. This issue is fixed in versions 2.6.25 and 3.0.8.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:22.647"
-  },
-  {
-    "id": "CVE-2026-82396",
-    "description": "Sulu is an open-source PHP content management system based on the Symfony framework. Prior to versions 2.6.25 and 3.0.8, src/Sulu/Bundle/MediaBundle/Controller/MediaStreamController.php allows the /media/{id}/download/{slug} route and its administration variant to honor the inline query parameter for scriptable MIME types. The vulnerable stored Content-Type values include text/html, application/xhtml+xml, text/xml, and application/xml. An attacker with media upload permission can store an HTML, XHTML, or XML document and create a link using inline=1, causing the application to return the file on the Sulu origin instead of forcing Content-Disposition attachment. When an authenticated victim opens the link, attacker-controlled JavaScript can execute with the victim's Sulu-origin session and can read data or perform actions as that victim. This issue is fixed in versions 2.6.25 and 3.0.8.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:22.780"
-  },
-  {
-    "id": "CVE-2026-82397",
-    "description": "Tornado is a Python web framework and asynchronous networking library. Prior to 6.5.8, Tornado parses application/x-www-form-urlencoded request bodies with urllib.parse.parse_qs in tornado/escape.py without passing max_num_fields. RequestHandler._execute in tornado/web.py parses the body before handler dispatch through HTTPServerRequest._parse_body and parse_body_arguments in tornado/httputil.py, so an unauthenticated request body containing millions of separator-delimited fields can synchronously stall the single-threaded event loop and delay every connection. The body is bounded only by max_buffer_size, which defaults to 104857600 bytes. This issue is fixed in version 6.5.8.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:22.920"
-  },
-  {
-    "id": "CVE-2026-82398",
-    "description": "pypdf is a free and open-source pure-python PDF library. Prior to 6.15.0, an attacker can craft a PDF that causes long runtimes when the pypdf/_utils.py function read_until_whitespace reads a stream containing a long run of bytes without whitespace. The function repeatedly performs immutable bytes concatenation in a one-byte loop, causing quadratic processing cost for the long non-whitespace input. This issue is fixed in version 6.15.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:23.083"
-  },
-  {
-    "id": "CVE-2026-82882",
-    "description": "Devtron through 2.2.0 fails to enforce authorization checks on the GET /orchestrator/api-token/webhook endpoint, allowing authenticated users to retrieve admin API tokens. Attackers with any authenticated account can query the endpoint with arbitrary project, environment, and application parameters to retrieve plaintext super-admin JWT tokens for full platform control.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:31.940"
-  },
-  {
-    "id": "CVE-2026-82921",
-    "description": "A weakness has been identified in ShopEx ECShop up to 2.5.1. This affects the function check_img_type of the file admin/pack.php. Executing a manipulation of the argument pack_img can lead to unrestricted upload. It is possible to launch the attack remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:33.740"
-  },
-  {
-    "id": "CVE-2026-82922",
-    "description": "A security vulnerability has been detected in ShopEx ECShop up to 2.5.1. This vulnerability affects the function flow_update_cart of the file /flow.php?step=update_cart. The manipulation of the argument rec_id leads to sql injection. The attack can be initiated remotely. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:33.907"
-  },
-  {
-    "id": "CVE-2026-82954",
-    "description": "A vulnerability was detected in Dokploy up to 0.29.7. This issue affects the function writeTraefikConfigInPath of the file packages/server/src/utils/traefik/application.ts of the component Settings. The manipulation of the argument path results in path traversal. The attack can be launched remotely. The exploit is now public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:34.080"
-  },
-  {
-    "id": "CVE-2026-82957",
-    "description": "A vulnerability was found in hyperledger-firefly firefly up to 1.4.0. The impacted element is the function ValidateOptions of the file internal/events/webhooks/webhooks.go of the component Webhook Subscription. Performing a manipulation of the argument url results in server-side request forgery. Remote exploitation of the attack is possible. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-08-31T22:17:34.250"
-  },
-  {
-    "id": "CVE-2026-4560",
-    "description": "Rejected reason: ** REJECT ** DO NOT USE THIS CANDIDATE NUMBER. Reason: This candidate was issued in error. Notes: All references and descriptions in this candidate have been removed to prevent accidental usage.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-08-31T23:16:35.360"
-  },
-  {
-    "id": "CVE-2026-82971",
-    "description": "A vulnerability was determined in QVidium Opera11 3.3.2a26-Ax4x-opera11. This affects an unknown part of the file /cgi-bin/net_tr.cgi of the component CGI Script. This manipulation of the argument ipaddr causes command injection. The attack may be initiated remotely. The exploit has been publicly disclosed and may be utilized. The vendor explains: \"QVidium has now closed its doors and no longer will be able to sell products or provide support.\" This vulnerability only affects products that are no longer supported by the maintainer.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-31T23:16:35.460"
-  },
-  {
-    "id": "CVE-2026-83524",
-    "description": "A security vulnerability has been detected in RedPort Optimizer wXa-203, Optimizer wXa-213 and Optimizer wXa-223 up to 20260704. This impacts the function exec of the file /xgatev1/system/datetime.php of the component System Clock. The manipulation leads to command injection. The attack may be initiated remotely. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-08-31T23:16:35.650"
-  },
-  {
     "id": "CVE-2026-19820",
     "description": "A vulnerability in the Backblaze Client allows a local user to make the system not bootable by creating a link from Backblaze's folder to Windows OS system files during a backup. Successful exploitation requires an administrator-level system change that results in the absence of specific Windows OS security controls. This vulnerability is due to improper link resolution.",
     "severity": "Unknown",
@@ -102385,7 +102259,7 @@
     "id": "CVE-2026-76504",
     "description": "A vulnerability in the API session-based authentication management of Cisco Catalyst SD-WAN Manager could allow an unauthenticated, remote attacker to access an affected system with privileges of the admin user.\r\n\r\nThis vulnerability is due to improper handling of URI encoding in an HTTP request, which allows the request to bypass an authentication rule that is intended to restrict access to a specific API endpoint. An attacker could exploit this vulnerability by sending a crafted HTTP request to the API of the affected system. A successful exploit could allow the attacker to bypass authentication and gain access to the API as the admin user.",
     "severity": "Critical",
-    "tech": "Unknown",
+    "tech": "Catalyst sd-wan manager",
     "published": "2026-09-30T13:17:20.247"
   },
   {
@@ -105565,5 +105439,89 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-09-30T21:17:17.207"
+  },
+  {
+    "id": "CVE-2026-101283",
+    "description": "iperf3 3.20–3.21 (esnet/iperf) has a pre-auth heap buffer overflow in decrypt_rsa_message(): a 256-byte RSA buffer is BIO_read with the attacker-controlled ciphertext length (guard warns only), so an unauthenticated client overflows the heap via an oversized authtoken; fixed in 3.22",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T22:16:33.317"
+  },
+  {
+    "id": "CVE-2026-103001",
+    "description": "PyJWT is a Python implementation of JSON Web Token standards. From 2.11.0 through 2.13.0, PyJWT's PyJWT._merge_options() method can modify a caller-supplied mutable options mapping when verify_signature is false. If an application reuses that same mapping for a later decode() or decode_complete() call and changes verify_signature to true, the mapping can retain false values for expiration, not-before, issued-at, audience, issuer, subject, and JWT ID checks. A signed token with invalid registered claims can then be accepted without disabling signature verification, but applications that create a fresh options mapping for each call are not affected.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T22:16:33.537"
+  },
+  {
+    "id": "CVE-2026-47096",
+    "description": "AJA HELO Plus firmware before 2.1.7 contains a stored cross-site scripting vulnerability that allows unauthenticated attackers with network access to inject malicious JavaScript by setting an unsanitized eParamID_SystemName value through the /config?action=set web configuration API. Attackers can exploit this flaw when device authentication is disabled to persistently execute arbitrary script in the browser of any administrator who opens the web management interface, enabling theft of stored secrets such as web UI credentials, RTMP stream keys, publish URLs, and NFS/SMB share credentials, as well as hijacking of the authenticated session.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T22:16:33.720"
+  },
+  {
+    "id": "CVE-2026-103584",
+    "description": "Improper neutralization of Script-Related HTML tags in a web page (basic XSS) vulnerability in The Wikimedia Foundation MediaWiki CommonsMetadata extension allows Cross-Site Scripting (XSS).\n\nThis issue affects MediaWiki CommonsMetadata extension: 1.46, 1.45, and 1.43.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:57.737"
+  },
+  {
+    "id": "CVE-2026-103585",
+    "description": "Improper neutralization of Script-Related HTML tags in a web page (basic XSS) vulnerability in The Wikimedia Foundation MediaWiki MediaSearch extension allows Cross-Site Scripting (XSS).\n\nThis issue affects MediaWiki MediaSearch extension: 1.46, 1.45, and 1.43.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:57.890"
+  },
+  {
+    "id": "CVE-2026-103587",
+    "description": "QloApps through 1.7.0 contains a reflected cross-site scripting vulnerability in the back-office Hotel Reservation System Book Now search, where date_to and id_room_type parameters are copied into template variables without validation. Attackers can craft a malicious link containing JavaScript payload in these parameters that executes in an authenticated administrator's session when the victim follows the link.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:58.027"
+  },
+  {
+    "id": "CVE-2026-103588",
+    "description": "QloApps through 1.7.0 contains a reflected cross-site scripting vulnerability in the exceptions field of the back-office Transplant a module form. Attackers can craft a malicious link containing JavaScript payload in the exceptions parameter that executes in an authenticated administrator's session when the victim follows the link.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:58.257"
+  },
+  {
+    "id": "CVE-2026-103589",
+    "description": "QloApps through 1.7.0 contains a reflected cross-site scripting vulnerability in the back-office room type editor that fails to escape room_num, floor, and comment field values in input attributes. Attackers can induce authenticated back-office users to submit crafted POST requests with malicious payloads to execute arbitrary JavaScript in the victim's administrative session.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:58.430"
+  },
+  {
+    "id": "CVE-2026-103590",
+    "description": "QloApps through 1.7.0 contains a reflected cross-site scripting vulnerability in the back-office room type editor's length of stay fields. Attackers can induce authenticated administrators to submit crafted POST requests with malicious payloads in restriction_min_los and restriction_max_los parameters, executing arbitrary JavaScript in the victim's administrative session.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:58.600"
+  },
+  {
+    "id": "CVE-2026-103591",
+    "description": "DeepWiki-Open through commit d92819a contains an unauthenticated arbitrary file read vulnerability in the GET /codemap/file endpoint via the repo_url parameter. Attackers can supply a non-URL repo_url value to bypass path containment checks and read any file accessible to the API process by specifying absolute file paths.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:58.773"
+  },
+  {
+    "id": "CVE-2026-103592",
+    "description": "simple-php-router through 5.4.1.7 contains an IP restriction bypass vulnerability in the IpRestrictAccess middleware that allows remote unauthenticated attackers to bypass IP whitelist and blacklist protections. Attackers can spoof X-Forwarded-For, CF-Connecting-IP, or Client-IP headers to impersonate whitelisted addresses or evade blacklists, gaining access to IP-restricted routes.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-09-30T23:16:58.963"
+  },
+  {
+    "id": "CVE-2026-103530",
+    "description": "A vulnerability was detected in decolua 9Router up to 0.5.55. The affected element is the function fetch of the file src/shared/utils/ssrfGuard.js of the component Search Endpoint. Performing a manipulation of the argument provider_options.baseUrl results in server-side request forgery. The attack can be initiated remotely. Applying a patch is the recommended action to fix this issue.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-01T00:16:43.287"
   }
 ]
