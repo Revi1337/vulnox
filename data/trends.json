@@ -1,334 +1,5 @@
 [
   {
-    "id": "CVE-2026-15891",
-    "description": "The MQTT-SN client keepalive handler process_ping() in subsys/net/lib/mqtt_sn/mqtt_sn.c removes the gateway record after PINGREQ retries are exhausted. It invoked SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateways, gw, next) but discarded the result. That macro is a pure expression that does not assign to gw, so gw retained its NULL initializer regardless of the list contents.\n\nThe code then dereferences the NULL gw (gw->gw_id) and passes it to mqtt_sn_gw_destroy(), reaching k_mem_slab_free(&gateways, NULL). With CONFIG_MEM_SLAB_POINTER_VALIDATE enabled this triggers k_panic(); in the default configuration it performs a write through the NULL pointer ((char )mem = slab->free_list;) and corrupts the slab free list. The outcome is a crash/kernel panic or, on targets where address 0 is writable, silent memory-allocator corruption.\n\nThe vulnerable branch runs whenever the connected MQTT-SN gateway fails to answer keepalive PINGREQs for the configured number of retries. This condition is controlled by the remote peer: a malicious or compromised gateway, or an on-path/adjacent attacker that advertises itself as a gateway and then stops responding (or blackholes the real gateway's PINGRESPs), forces the client into the defect. MQTT-SN runs over UDP and no authentication is required.\n\nThe impact is a remotely triggerable denial of service (availability) of the affected MQTT-SN client; there is no attacker-controlled data written. The sibling remover process_advertise() uses SYS_SLIST_FOR_EACH_CONTAINER_SAFE and is not affected. The fix assigns the macro's return value to gw.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:27.870"
-  },
-  {
-    "id": "CVE-2026-15892",
-    "description": "The mcumgr SMP settings-management group handlers settings_mgmt_read(), settings_mgmt_write(), and settings_mgmt_delete() in subsys/mgmt/mcumgr/grp/settings_mgmt/src/settings_mgmt.c allocate a key_name buffer (and, for read, a data buffer) via k_malloc() when CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP is enabled, relying on the end: label to k_free() them. When CONFIG_MCUMGR_GRP_SETTINGS_ACCESS_HOOK is also enabled and the application access hook rejects a request by returning status MGMT_CB_ERROR_RC, the handler executed return ret_rc; directly, bypassing end: and leaking the heap allocation on every rejected request.\n\nThe settings handlers are reachable over the unauthenticated SMP transport (Bluetooth LE, UART, or UDP, depending on product configuration). The access hook is the mechanism applications use to deny unauthorized settings access, and MGMT_CB_ERROR_RC is a common rejection style, so an attacker who can send settings read/write/delete commands that the hook rejects triggers a heap leak on each attempt.\n\nBecause the leaked memory is never reclaimed until reboot, a sustained stream of rejected requests monotonically exhausts the kernel heap until k_malloc() fails, denying mcumgr service and impacting any other heap consumer on the device — a denial of service. The impact is availability-only; there is no memory corruption or information disclosure. Only configurations that select the heap buffer type, enable the access hook, and register a hook that returns MGMT_CB_ERROR_RC are affected (the default stack buffer type cannot leak).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.023"
-  },
-  {
-    "id": "CVE-2026-90600",
-    "description": "A vulnerability has been found in itsourcecode Sales and Inventory System 1.0. This impacts an unknown function of the file /pages/inv_edit1.php. The manipulation of the argument ID leads to sql injection. The attack can be initiated remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.173"
-  },
-  {
-    "id": "CVE-2026-90601",
-    "description": "A vulnerability was found in getzep graphiti up to 0.30.2. Affected is an unknown function of the file server/graph_service/main.py of the component REST API. The manipulation results in improper authentication. The attack can be launched remotely. The pull request to fix this issue awaits acceptance.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.343"
-  },
-  {
-    "id": "CVE-2026-90602",
-    "description": "A vulnerability was determined in Anil-matcha Open-Generative-AI up to 1.0.11/2.0.0. Affected by this vulnerability is the function renderHistory of the file ImageStudio.js of the component Studio Components. This manipulation causes cross site scripting. The attack may be initiated remotely. The pull request to fix this issue awaits acceptance.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.520"
-  },
-  {
-    "id": "CVE-2026-90603",
-    "description": "A vulnerability was identified in Anil-matcha Open-Generative-AI up to 1.0.11/2.0.0. Affected by this issue is some unknown functionality of the file /api/upload-binary of the component S3 Upload. Such manipulation of the argument x-proxy-target-url leads to unrestricted upload. The attack may be launched remotely. The name of the patch is f013270957f75e439eaf97eb2a93decb32a4543e. Applying a patch is advised to resolve this issue.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-13T23:16:28.703"
-  },
-  {
-    "id": "CVE-2022-42917",
-    "description": "In FRRouting FRR before 8.5, the service user (usually frr) can escalate its privileges to root by monitoring the configuration directory (/etc/frr) and replacing config files upon creation with, for example, symlinks to change the ownership of arbitrary files. This is a TOCTOU Race Condition caused by a combination of touch and chown.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T00:16:55.700"
-  },
-  {
-    "id": "CVE-2024-53922",
-    "description": "An issue was discovered in the buffer queue driver in Samsung Automotive Processor Exynos Auto 8890, V7, V9, and V920. Lack of a length check leads to a Denial of Service in the kernel.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T00:16:55.880"
-  },
-  {
-    "id": "CVE-2025-63842",
-    "description": "A Cross-Site Scripting (XSS) vulnerability in the web backend for the Repetico app 1.9.7.31 for Android allows a remote authenticated user to execute arbitrary JavaScript code in the app's context via crafted input in the multiple-choice question text field.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T00:16:56.040"
-  },
-  {
-    "id": "CVE-2026-90604",
-    "description": "A security flaw has been discovered in Totolink A3002MU Hh-B20211125.1046. This affects an unknown part of the component Anchor Tag Handler. Performing a manipulation results in cross site scripting. Remote exploitation of the attack is possible. The exploit has been released to the public and may be used for attacks.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T00:16:57.280"
-  },
-  {
-    "id": "CVE-2026-90605",
-    "description": "A weakness has been identified in Totolink A3002MU Hh-B20211125.1046. This vulnerability affects the function formFilter of the file /boafrm/formFilter of the component boa. Executing a manipulation of the argument ip6addr can lead to buffer overflow. The attack can be executed remotely. The exploit has been made available to the public and could be used for attacks.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-14T00:16:57.447"
-  },
-  {
-    "id": "CVE-2026-90606",
-    "description": "A security vulnerability has been detected in Totolink A3002MU Hh-B20211125.1046. This issue affects the function formIpv6Setup of the file /boafrm/formIpv6Setup of the component boa. The manipulation of the argument static_ipv6 leads to buffer overflow. The attack is possible to be carried out remotely. The exploit has been disclosed publicly and may be used.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-14T00:16:57.617"
-  },
-  {
-    "id": "CVE-2025-64031",
-    "description": "libarchive 3.8.x before 3.8.2 has a strcpy heap-based buffer overflow in the gzip writer via the original-filename field to archive_compressor_gzip_open in archive_write_add_filter_gzip.c, aka GHSA-92wx-p669-8gr9. This relates to bsdtar. Exploitation envisions a marginally plausible scenario in which original-filename is obtained from an untrusted party. (original-filename is not derived from the input data.)",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T01:16:26.190"
-  },
-  {
-    "id": "CVE-2025-68624",
-    "description": "N-able Mail Assure through April 2026 contains a design-level authorization flaw that allows an authenticated SMTP user to send outbound email using MAIL FROM addresses belonging to other tenants. When connecting to the SMTP TCP port and performing SMTP AUTH with valid credentials, the server accepts arbitrary sender domains without enforcing any domain-to-account binding. As a result, an attacker from any tenant can impersonate other tenant domains, producing messages that pass SPF and DMARC validation. NOTE: N-able's position is that the behavior is intended functionality of its shared SMTP relay architecture and that the service does not represent that it enforces per-tenant sender-domain binding.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T01:16:27.220"
-  },
-  {
-    "id": "CVE-2026-23786",
-    "description": "An issue was discovered in DPU in Samsung Mobile Processor Exynos 1280, 2200, 1380, 1480, 2400, 1580, 2500, 1680, and 2600. A TOCTOU race condition in the Exynos DRM HDR Driver leads to a heap overflow, causing a kernel crash.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T01:16:27.473"
-  },
-  {
-    "id": "CVE-2026-23787",
-    "description": "An issue was discovered in DPU in Samsung Mobile Processor Exynos 1280, 2200, 1380, 1480, 2400, 1580, 2500, 1680, and 2600. A Use-After-Free in the Exynos DRM HDR driver (due to improper cleanup upon vmap failure) leads to a kernel crash.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T01:16:27.677"
-  },
-  {
-    "id": "CVE-2026-90607",
-    "description": "A vulnerability was detected in Totolink A3002MU Hh-B20211125.1046. Impacted is the function formNewSchedule of the file /boafrm/formNewSchedule of the component boa. The manipulation of the argument submit-url results in buffer overflow. The attack may be performed from remote. The exploit is now public and may be used.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-14T01:16:27.870"
-  },
-  {
-    "id": "CVE-2026-90608",
-    "description": "A flaw has been found in Totolink A3002MU Hh-B20211125.1046. The affected element is the function formPortFw of the file /boafrm/formPortFw of the component boa. This manipulation of the argument service_type causes buffer overflow. It is possible to initiate the attack remotely. The exploit has been published and may be used.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-09-14T01:16:28.130"
-  },
-  {
-    "id": "CVE-2026-90609",
-    "description": "A vulnerability has been found in GPAC up to f1219cde. The impacted element is an unknown function of the file scenegraph/vrml_tools.c of the component MP4Box. Such manipulation leads to null pointer dereference. The attack can only be performed from a local environment. The exploit has been disclosed to the public and may be used. Upgrading to version abi-16.23 is sufficient to resolve this issue. The name of the patch is 49dee5cad329cfed310c1682703df7daa47df31a. It is suggested to upgrade the affected component.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T01:16:28.360"
-  },
-  {
-    "id": "CVE-2026-23788",
-    "description": "An issue was discovered in DPU in Samsung Mobile Processor Exynos 1280, 2200, and 1380. A heap overflow in the Exynos DRM HDR driver (due to improper buffer size validation) leads to kernel memory corruption and a system crash.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:13.267"
-  },
-  {
-    "id": "CVE-2026-23789",
-    "description": "An issue was discovered in MFC in Samsung Mobile Processor and Wearable Processor Exynos 850, 1080, 2100, 1280, 2200, 1330, 1380, 1480, 2400, 1580, 2500, 2600, 1680, W920, W930, and W1000. A double-free vulnerability in the Exynos MFC encoder driver (due to improper cleanup of dma_buf references during error handling) leads to kernel memory corruption and potential arbitrary code execution.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:13.397"
-  },
-  {
-    "id": "CVE-2026-23790",
-    "description": "An issue was discovered in DPU in Samsung Mobile Processor Exynos 1280, 2200, 1380, 1480, 2400, 1580, 2500, 1680, and 2600. A double-free vulnerability in the Samsung Exynos DPU driver (due to improper pointer management during DMA buffer reallocation) leads to kernel memory corruption and a potential use-after-free.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:13.537"
-  },
-  {
-    "id": "CVE-2026-23791",
-    "description": "An issue was discovered in DPU in Samsung Mobile Processor Exynos 1280, 2200, 1380, 1480, 2400, 1580, 2500, 1680, and 2600. An out-of-bounds write vulnerability in the Exynos DPU driver (due to missing input length validation in color mode LUT parsing) leads to kernel memory corruption and potential privilege escalation.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:13.673"
-  },
-  {
-    "id": "CVE-2026-23792",
-    "description": "An issue was discovered in NR RRC in Samsung Mobile Processor and Modem Exynos 1080, 2100, 1280, 2200, 1330, 1380, 1480, 2400, 1580, 2500, W1000, Modem 5300, Modem 5400, and Modem 5410. Incorrect handling of unauthenticated downlink RRC Setup messages can cause the baseband to crash.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:13.807"
-  },
-  {
-    "id": "CVE-2026-23793",
-    "description": "An issue was discovered in Samsung Mobile Processor Exynos 1330, 1380, 1480, and 2400. An out-of-bounds memory access vulnerability in the camera GDC driver may lead to kernel memory corruption under certain conditions.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:13.947"
-  },
-  {
-    "id": "CVE-2026-31278",
-    "description": "An issue in the /api/v2/setting/adserversetting endpoint of Suprema BioStar 2 before 2.9.12 and and BioStar X before 1.0.2 allows attackers to obtain Active Directory service account credentials in cleartext by supplying a crafted GET request.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:14.080"
-  },
-  {
-    "id": "CVE-2026-33956",
-    "description": "An issue was discovered in camera in Samsung Mobile Processor Exynos 1330, 1380, 1480, 2400, 1580, and 2500. Sending a malformed message to the test_msg sysfs entry causes an out-of-bounds write, leading to denial of service.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:14.230"
-  },
-  {
-    "id": "CVE-2026-33957",
-    "description": "An issue was discovered in CustOS Driver in Samsung Mobile Processor Exynos 1580. Requesting oversized shared memory from the custos_iwc device enables out-of-bounds read and write, potentially leading to memory corruption or information leakage.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:14.390"
-  },
-  {
-    "id": "CVE-2026-33960",
-    "description": "An issue was discovered in Samsung Mobile Processor and Wearable Processor Exynos 1330, 1380, 1480, 1580, 1680, W920, W930, and W1000. . A malformed ioctl command to the Wi-Fi interface device can lead to improper buffer size allocation, resulting in an out-of-bounds write and causing a denial of service (DoS).",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:14.547"
-  },
-  {
-    "id": "CVE-2026-33962",
-    "description": "An issue was discovered in Wi-Fi in Samsung Mobile Processor Exynos 850, 1280, 1330, 1380, 1480, 2400, W920, and W930. A malformed Netlink command can trigger an out-of-bounds read, potentially leading to information leakage.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:14.703"
-  },
-  {
-    "id": "CVE-2026-33963",
-    "description": "An issue was discovered in camera in Samsung Mobile Processor Exynos 1330, 1380, 1480, 2400, 1580, 2500, 2600, and 1680. A stack-based buffer overflow occurs when a malformed message is sent to the camera driver, causing a denial of service.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:14.850"
-  },
-  {
-    "id": "CVE-2026-33964",
-    "description": "An issue was discovered in camera in Samsung Mobile Processor Exynos 1580 and 2500. An untrusted pointer dereference occurs when a malformed message is sent to the camera driver, causing limited information disclosure or denial of service.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:14.987"
-  },
-  {
-    "id": "CVE-2026-90610",
-    "description": "A vulnerability was found in GPAC up to f1219cde. This affects the function gf_svg_attributes_copy of the file scenegraph/svg_attributes.c of the component MP4Box. Performing a manipulation results in buffer over-read. The attack is only possible with local access. The exploit has been made public and could be used. Upgrading to version abi-16.23 mitigates this issue. The patch is named afca1f1181668d85941d51ed1adf647807d5d975. Upgrading the affected component is recommended.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:15.150"
-  },
-  {
-    "id": "CVE-2026-90611",
-    "description": "A vulnerability was determined in GPAC up to f1219cde. This impacts the function xmt_parse_element of the file scene_manager/loader_xmt.c of the component MP4Box. Executing a manipulation can lead to reachable assertion. The attack is restricted to local execution. The exploit has been publicly disclosed and may be utilized. Upgrading to version abi-16.23 will fix this issue. This patch is called afca1f1181668d85941d51ed1adf647807d5d975. It is recommended to upgrade the affected component.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:15.357"
-  },
-  {
-    "id": "CVE-2026-90612",
-    "description": "A vulnerability was identified in GPAC up to f1219cde. Affected is the function gf_sm_dump_command_list of the file scene_manager/scene_dump.c of the component MP4Box. The manipulation leads to reachable assertion. The attack must be carried out locally. The exploit is publicly available and might be used. Upgrading to version abi-16.23 is able to address this issue. The identifier of the patch is afca1f1181668d85941d51ed1adf647807d5d975. Upgrading the affected component is advised.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:15.533"
-  },
-  {
-    "id": "CVE-2026-90613",
-    "description": "A security flaw has been discovered in GPAC up to f1219cde. Affected by this vulnerability is the function stbl_GetSampleInfos of the file isomedia/stbl_read.c of the component MP4Box. The manipulation results in reachable assertion. The attack must be initiated from a local position. The exploit has been released to the public and may be used for attacks. Upgrading to version abi-16.23 addresses this issue. The patch is identified as 49dee5cad329cfed310c1682703df7daa47df31a. It is advisable to upgrade the affected component.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:15.690"
-  },
-  {
-    "id": "CVE-2026-90614",
-    "description": "A weakness has been identified in FedML-AI FedML up to 0.9.6. Affected by this issue is the function S3Storage.read_model of the file fedml/core/distributed/communication/s3/remote_storage.py of the component MQTT+S3 Communication Backend. This manipulation of the argument s3_key_str causes deserialization. Remote exploitation of the attack is possible. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:15.857"
-  },
-  {
-    "id": "CVE-2026-90615",
-    "description": "A security vulnerability has been detected in SourceCodester Class and Exam Timetabling System 1.0. This affects an unknown part of the file /subject1.php. Such manipulation of the argument subject leads to cross site scripting. The attack can be executed remotely. The exploit has been disclosed publicly and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-14T02:17:16.030"
-  },
-  {
-    "id": "CVE-2026-33966",
-    "description": "An issue was discovered in camera in Samsung Mobile Processor Exynos 1330, 1380, 1480, 2400, 1580, 2500, 2600, and 1680. An information Leak occurs in the camera driver due to Insertion of Sensitive Information Into Debugging Code.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:36.313"
-  },
-  {
-    "id": "CVE-2026-33967",
-    "description": "An issue was discovered in camera in Samsung Mobile Processor Exynos 1330, 1380, 1480, 2400, 1580, 2500, 2600, and 1680. In the camera driver, an out-of-bounds array access vulnerability in the error-handling path leads to memory corruption.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:36.463"
-  },
-  {
-    "id": "CVE-2026-33968",
-    "description": "An issue was discovered in camera in Samsung Mobile Processor Exynos 1330, 1380, 1480, 2400, 1580, 2500, 2600, and 1680. In the camera driver, a Time-of-Check Time-of-Use (TOCTOU) race condition leads to out-of-bounds access.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:36.607"
-  },
-  {
-    "id": "CVE-2026-33970",
-    "description": "An issue was discovered in NR RRC and L2 in Samsung Mobile Processor, Wearable Processor, and Modem Exynos 850, 1080, 2100, 1280, 2200, 1330, 1380, 1480, 2400, 1580, 2500, 1680, W920, W930, W1000, and Modem 5410. In the 5G baseband, a NULL Pointer Dereference occurs when processing a malformed RRC Reconfiguration message.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:36.750"
-  },
-  {
-    "id": "CVE-2026-38924",
-    "description": "In Oraios AI Serena before 1.0.0, the listen address of the MCP server in HTTP mode is 0.0.0.0. NOTE: the Supplier observed that 0.0.0.0 was a \"potential security hazard\" but the Serena documentation, at the time of the issue report proposing 127.0.0.1 instead of 0.0.0.0, recommended \"use a sandboxed environment for running Serena.\"",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:36.893"
-  },
-  {
-    "id": "CVE-2026-90617",
-    "description": "A vulnerability was detected in GH05TCREW PentestAgent up to cf882dabea3ed91cef016cdd115e5426315665a2. This vulnerability affects the function run_task of the file interface/main.py of the component MCP HTTP Server. Performing a manipulation results in os command injection. The attack is possible to be carried out remotely. The exploit is now public and may be used. This product adopts a rolling release strategy to maintain continuous delivery. Therefore, version details for affected or updated releases cannot be specified. The pull request to fix this issue awaits acceptance.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:37.083"
-  },
-  {
-    "id": "CVE-2026-90618",
-    "description": "A flaw has been found in GH05TCREW PentestAgent up to cf882dabea3ed91cef016cdd115e5426315665a2. This issue affects the function LocalRuntime.execute_command of the file runtime/runtime.py of the component LocalRuntime. Executing a manipulation can lead to os command injection. The attack may be performed from remote. The exploit has been published and may be used. The pull request to fix this issue awaits acceptance.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:37.263"
-  },
-  {
-    "id": "CVE-2026-90619",
-    "description": "A vulnerability has been found in 0x4m4 HexStrike AI up to d689933ff579d839c676c82b231f8e98326c5f04. Impacted is an unknown function of the file hexstrike_server.py of the component Execute Endpoint. The manipulation of the argument code/script leads to os command injection. It is possible to initiate the attack remotely. The exploit has been disclosed to the public and may be used. This product is using a rolling release to provide continious delivery. Therefore, no version details for affected nor updated releases are available. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:37.427"
-  },
-  {
-    "id": "CVE-2026-90620",
-    "description": "A vulnerability was determined in 0x4m4 HexStrike AI up to d689933ff579d839c676c82b231f8e98326c5f04. The impacted element is an unknown function of the file hexstrike_server.py of the component API Command Endpoint. This manipulation causes missing authentication. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized. Continious delivery with rolling releases is used by this product. Therefore, no version details of affected nor updated releases are available. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-14T03:16:37.603"
-  },
-  {
     "id": "CVE-2023-22631",
     "description": "PRTG Network Monitor before 23.1.82 allows remote attackers to write to files via the HTTP XML/REST Sensor.",
     "severity": "Low",
@@ -90162,7 +89833,7 @@
   {
     "id": "CVE-2026-78797",
     "description": "An issue in iStoreOS istoreos-24.10.7 and before allows a remote attacker to execute arbitrary code via the task_id in tasks-lib.lua.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-10-09T20:17:11.117"
   },
@@ -115638,5 +115309,320 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-10-13T22:17:37.817"
+  },
+  {
+    "id": "CVE-2026-77205",
+    "description": "Libreswan in FIPS mode has a vulnerability where badly formed received certificates are rejected, but not deleted from the NSS cache. As a result, any real certificates with the same serial number are rejected as well. This can be abused to lock out legitimate peers from connecting. The add_decoded_cert() function missed a call to CERT_DestroyCertificate() due to an incorrect fix for CVE-2026-14957. Sending bogus certificates with new serial numbers could prevent the real certificates with those serial numbers from connecting until the service has restarted.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:18:24.577"
+  },
+  {
+    "id": "CVE-2026-77206",
+    "description": "Libreswan's IKEv2 state machine has a null pointer dereference bug in the EAP handling code for authentication. As a result of inconsistency within the IKEv2 state machine code, this bug can be triggered by any IKEv2 connection, even if EAP is not configured at all. The error is caused by a fall-through where it incorrectly dereferences ike->sa.st_eap which is NULL. A malicious IKE_AUTH packet can trigger this bug, meaning the peer does not need to be authenticated. The bug results in a crash and restart of the pluto daemon. No remote code execution is possible. Continued exploitation can cause a denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:18:24.727"
+  },
+  {
+    "id": "CVE-2026-77207",
+    "description": "Libreswan has a null pointer dereference bug in the PKCS#7 handling code for IKE certificate authentication. When libreswan decodes an IKE CERT payload of type CERT_PKCS7_WRAPPED_X509, it guards the PKCS#7 blob with SEC_PKCS7ContainsCertsOrCrls() and then iterates the certificate list with SEC_PKCS7GetCertificateList(). The two NSS APIs disagree on a SignedData that carries a CRL but no certificates: ContainsCertsOrCrls() returns PR_TRUE (there is a CRL), so the guard passes, but GetCertificateList() returns NULL (there are no certificates). This causes libreswan to dereference a null pointer leading to a crash and restart. A malicious IKE_AUTH packet can trigger this bug, meaning the peer does not need to be authenticated. No remote code execution is possible. Continued exploitation can cause a denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:18:26.040"
+  },
+  {
+    "id": "CVE-2026-84419",
+    "description": "Out-of-bounds write vulnerability in Citrix Workspace app for Windows.\n\nThis issue affects Workspace app for Windows: before 2603.20 CR, before LTSR 2607 Hotfix 1, and before LTSR 2507 CU3 Hotfix 1.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:18:58.643"
+  },
+  {
+    "id": "CVE-2026-84420",
+    "description": "Out-of-bounds read vulnerability in Citirx Citrix Workspace app for Windows.\n\nThis issue affects Citrix Workspace app for Windows: before 2603.20 CR, before LTSR 2607, and before LTSR 2507 CU3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:18:58.800"
+  },
+  {
+    "id": "CVE-2026-84790",
+    "description": "OpenVPN 2.7_alpha1 through 2.7.7 allows remote authenticated users to impersonate others via a crafted certificate subject field",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:18:58.937"
+  },
+  {
+    "id": "CVE-2026-94453",
+    "description": "Libreswan's pluto daemon has a use-after-free vulnerability when a client connecting using IKE over TCP closes the connection and another packet (retransmit or malicious) is received for the same tuple. IKE state is retained in memory after the client closes the connection, storing a pointer to iface_endpoint inside ike_sa.sa->st_iface_endpoint. Once this invalid pointer is used, the daemon crashes and restarts. This vulnerability can be triggered before the remote peer has authenticated itself. Continued exploitation can lead to a denial of service. Remote code execution could be possible. The IKE over TCP option is not enabled by default; only configurations that contain listen-tcp=yes are affected.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:19:30.253"
+  },
+  {
+    "id": "CVE-2026-95632",
+    "description": "CAI Content Credentials is affected by an Improper Verification of Cryptographic Signature vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized write access. Exploitation of this issue does not require user interaction.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:19:30.610"
+  },
+  {
+    "id": "CVE-2026-95633",
+    "description": "CAI Content Credentials is affected by an Improper Verification of Cryptographic Signature vulnerability that could result in a Security feature bypass. An attacker could leverage this vulnerability to bypass security measures and gain unauthorized write access. Exploitation of this issue does not require user interaction.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:19:30.733"
+  },
+  {
+    "id": "CVE-2026-95634",
+    "description": "CAI Content Credentials is affected by a Server-Side Request Forgery (SSRF) vulnerability that could result in privilege escalation. Exploitation of this issue does not require user interaction. Scope is changed.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:19:30.853"
+  },
+  {
+    "id": "CVE-2026-97381",
+    "description": "Legacy Update is a tool for activating and installing updates on legacy Windows PCs. Legacy Update 1.12.0 through 1.13.1 contains an origin validation error in the IsPermitted method of its ActiveX control. After successfully reading the hosting document's hostname, a hostname that is not on the permitted list falls through without setting E_ACCESSDENIED, causing IsPermitted to return S_OK. An attacker who induces a user to visit a malicious webpage in Internet Explorer can invoke the control to enumerate update and system information, install updates without consent, display dialogs, or restart the computer when a reboot is pending. This issue was fixed in Legacy Update 1.13.2.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-13T22:19:45.427"
+  },
+  {
+    "id": "CVE-2026-104922",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:17:25.113"
+  },
+  {
+    "id": "CVE-2026-105142",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:17:26.337"
+  },
+  {
+    "id": "CVE-2026-105151",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:17:26.400"
+  },
+  {
+    "id": "CVE-2026-105390",
+    "description": "Improper synchronization in the OpenVPN ovpn-dco-win for Windows versions 0.6.5 through 1.3.5 and 2.4.0 through 2.8.7 allows local attackers to trigger a deadlock via a crafted write to the ovpn-dco device, causing the host to become unresponsive.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:17:26.470"
+  },
+  {
+    "id": "CVE-2026-15468",
+    "description": "Authorization bypass through User-Controlled key vulnerability in HYPR Passwordless on Windows allows Privilege Escalation.\n\nThis issue affects HYPR Passwordless: before 11.3.3.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:17:32.437"
+  },
+  {
+    "id": "CVE-2026-53563",
+    "description": "Vulnerability in Citrix UniconOS leading to Persistent Command Execution\n\nThis issue affects UniconOS: before 2607.2 CR and before 2603 LTSR CU2.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:17:32.883"
+  },
+  {
+    "id": "CVE-2026-53564",
+    "description": "Vulnerability in Citrix UniconOS leading to Arbitrary file read and write\n\nThis issue affects UniconOS: before 2607.2 CR and before 2603 LTSR CU2.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:17:33.007"
+  },
+  {
+    "id": "CVE-2026-88964",
+    "description": "An integer underflow in OpenVPN version 2.7_alpha3 through 2.7.7 on Windows and Android allows remote authenticated servers to cause a denial of service or memory disclosure via crafted domain search options",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-13T23:19:13.687"
+  },
+  {
+    "id": "CVE-2026-92817",
+    "description": "The Ignition Perspective module does not properly validate session privileges when determining Designer-level access. An authenticated user with access to a Vision project could provide their valid Vision session identifier and gain Designer-level privileges. An attacker could exploit these elevated privileges to execute arbitrary code in the context of the Ignition Gateway process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T00:17:13.290"
+  },
+  {
+    "id": "CVE-2026-108473",
+    "description": "Multiple\nKasa devices contain an improper authentication vulnerability in the local\ndevice-management protocol. An unauthenticated adjacent attacker may send\nmanagement instructions to an affected device without adequate authentication\nor authorization, allowing modification of the device state or management\nsettings. Under certain usage conditions involving interaction between the\nuser, mobile application, and device-cloud service, insufficient protection of\naccount-related communications may also expose account information.\n\n\n\n\n\n\n\n\n\nSuccessful\nexploitation may allow an unauthenticated adjacent-network attacker to perform\nunauthorized device-management actions and disrupt legitimate user control.\nUnder certain conditions, account-related information may also be exposed,\npotentially leading to compromise of the associated cloud account.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T01:17:06.030"
+  },
+  {
+    "id": "CVE-2026-110359",
+    "description": "Hyland Desktop Host for Windows before 25.1.1 is vulnerable to local privilege escalation. This is caused by a privileged service running from the %PROGRAMDATA%\\Hyland\\DesktopHost\\bin folder with weak permissions. A local user can exploit this to escalate privileges.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T01:17:06.203"
+  },
+  {
+    "id": "CVE-2026-110385",
+    "description": "A remote code execution vulnerability in ONLYOFFICE Document Server versions before10.0.0 allows an authenticated attacker with a valid Inbox-compatible JWT to execute arbitrary operating system commands as the ds service account. The Document Builder API improperly processes user-controlled converter XML supplied through the optional third argument of builder.SaveFile(). By injecting a duplicate m_sFileTo element, an attacker can override the server-generated output path and write arbitrary content outside the designated job directory. This allows the attacker to overwrite the runtime.json configuration file, modify the Document Builder executable path and arguments, and execute arbitrary commands when a subsequent Document Builder job is processed.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T01:17:06.337"
+  },
+  {
+    "id": "CVE-2026-103423",
+    "description": "The Booking Package plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 1.7.29 This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to retrieve personally identifiable information for every booked customer stored in the booking_package_booked_customers table, including names, email addresses, phone numbers, physical addresses, and cancellation tokens. The nonce nominally protecting the endpoint is a public CSRF token emitted in the localized booking_package JavaScript object on any page rendering the [booking_package] shortcode or widget, making it trivially harvestable by unauthenticated visitors and providing no effective authentication barrier.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:54.710"
+  },
+  {
+    "id": "CVE-2026-103425",
+    "description": "The Booking Package plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'id' parameter in all versions up to, and including, 1.7.29 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:55.793"
+  },
+  {
+    "id": "CVE-2026-104749",
+    "description": "The Bit integrations – Form Integration, Webhook, Spreadsheets, CRM, LMS & Email Automation plugin for WordPress is vulnerable to Privilege Escalation via Log Re-execution in all versions up to, and including, 2.10.6 The vulnerability exists because `IntegrationHandler::executeWithCapture()` stores raw, attacker-controlled field values — including `user_pass` and `user_email` — verbatim into `wp_btcbi_log.field_data` on anonymous front-end requests with no capability check, and `LogHandler::reexecute()` feeds that stored payload back through `Flow::execute()` inside the replaying administrator's session without validating the identity that originally produced the data, causing `RegistrationController::updateUser()` to resolve the target user ID to the administrator and write the attacker-supplied password via `wp_update_user()`. This makes it possible for unauthenticated attackers to overwrite the administrator's password and fully take over the administrator account. Exploitation requires that an administrator has configured a flow mapping a user-supplied form field to the `user_pass` parameter of the WP User Registration \"Update User\" action, and that the administrator subsequently clicks \"Re-execute\" on the failure log row produced by the anonymous submission from the plugin's log screen.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:56.223"
+  },
+  {
+    "id": "CVE-2026-104767",
+    "description": "The Membership & User Roles for WooCommerce (Automatic Role Changer) plugin for WordPress is vulnerable to Privilege Escalation in versions up to, and including, 20260828. This is due to the `maybe_add_role_to_user()` function unconditionally re-assigning every role stored in the `dfxwcrc_foreign_roles` user meta cache without verifying that each cached role is still actively assigned by the external provider — a condition made permanent by `remember_foreign_roles()`, which merges new foreign roles into the cache but never evicts roles that have since been revoked. This makes it possible for authenticated attackers with subscriber-level access and above to restore a previously revoked Administrator role to their own account, gaining full administrative control of the site, by triggering any role-assignment event such as completing a purchase for a role-mapped product. Exploitation requires Replace Roles mode to be enabled and the attacker's account to have previously received Administrator legitimately through a separate role-management mechanism while the plugin was active, so that `administrator` was written into the `dfxwcrc_foreign_roles` user meta cache before the external provider revoked it.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:56.360"
+  },
+  {
+    "id": "CVE-2026-104995",
+    "description": "The BP Profile Search plugin for WordPress is vulnerable to Local File Inclusion in versions up to, and including, 5.9 via the 'ajax_template' value parsed from the client-controlled 'bps_directory' cookie during BuddyPress AJAX directory requests. The bps_directory_ajax() filter (hooked onto bp_legacy_object_template_path and bp_nouveau_object_template_path) reads the cookie, applies only a referer-derived 'page' comparison in bps_get_directory_data() (where bps_current_page() uses HTTP_REFERER during AJAX and is therefore also attacker-controlled), and then suffixes the attacker-controlled template value with '.php' and passes it to bp_locate_template() with no basename restriction, no whitelist, and no path-traversal check. This makes it possible for unauthenticated attackers to include arbitrary PHP files on the server, which can lead to remote code execution when PHP files can be uploaded or when images such as the default wordpress:php8.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:56.500"
+  },
+  {
+    "id": "CVE-2026-107652",
+    "description": "The Database Addon for Contact Form 7 – CFDB7 plugin for WordPress is vulnerable to Arbitrary File Deletion in versions up to, and including, 1.4.1. This is due to the plugin storing arbitrary (non-form-tag) submission fields in its db7_forms row and the process_bulk_action() delete handler then matching any stored key whose name contains the substring 'cfdb7_file' and passing the stored value directly to unlink() without validating that the file actually belongs to the submission being deleted or constraining the filename with basename()/realpath(). This makes it possible for unauthenticated attackers to inject a crafted multipart field.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:57.297"
+  },
+  {
+    "id": "CVE-2026-110392",
+    "description": "Improper neutralization of special elements used in an OS command ('OS command injection') vulnerability in Samsung Open Source QA-Board allows : OS Command Injection.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:59.653"
+  },
+  {
+    "id": "CVE-2026-17092",
+    "description": "The Directorist: AI-Powered Business Directory, Listings & Classified Ads plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 8.10.2.1. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with subscriber-level access and above, to delete arbitrary business directory listings, including those owned by other users and posts in publish, draft, or private status. The nonces guarding the endpoint do not constitute an authorization barrier because both directorist_nonce and atbdp_nonce_js are exposed to all logged-in users via wp_localize_script.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:16:59.783"
+  },
+  {
+    "id": "CVE-2026-82715",
+    "description": "Insecure Temporary File vulnerability in Hitachi Disk Array Driver for AIX and Hitachi Disk Array Driver for Virtual I/O Server.\n\nThis issue affects Hitachi Disk Array Driver for AIX: from 01-00 before 01-23-/A; Hitachi Disk Array Driver for Virtual I/O Server: from 01-04 before 01-23-/A.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:17:00.863"
+  },
+  {
+    "id": "CVE-2026-86573",
+    "description": "Out-of-bounds write vulnerability in Hitachi Disk Array Driver for AIX and Hitachi Disk Array Driver for Virtual I/O Server.\n\nThis issue affects Hitachi Disk Array Driver for AIX: from 01-00 before 01-23-/A; Hitachi Disk Array Driver for Virtual I/O Server: from 01-04 before 01-23-/A.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:17:01.147"
+  },
+  {
+    "id": "CVE-2026-86607",
+    "description": "Internal Application Information Exposure Vulnerability in Hitachi Ops Center Administrator.\n\n\nThis issue affects Hitachi Ops Center Administrator: before 11.0.9-01.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:17:01.270"
+  },
+  {
+    "id": "CVE-2026-92097",
+    "description": "The Click to Chat for WhatsApp plugin for WordPress is vulnerable to Arbitrary Shortcode Execution in versions up to, and including, 4.44 This is due to the greetings_dialog() function building the {url} template placeholder from a sanitize_text_field()-filtered $_SERVER['REQUEST_URI'] on archive pages and then passing the substituted greeting content to do_shortcode() in the greetings-1 and greetings-2 templates, without stripping shortcode delimiters. Because wp_kses() runs against main_content BEFORE the {url} substitution, the attacker-controlled URL bytes reach do_shortcode() unfiltered. This makes it possible for unauthenticated attackers to execute arbitrary shortcodes registered by WordPress core, the active theme, or any other plugin (e.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:17:01.397"
+  },
+  {
+    "id": "CVE-2026-93388",
+    "description": "The Printcart Store (PCDesigner / NB Designer) plugin for WooCommerce is vulnerable to unauthenticated arbitrary file upload leading to remote code execution in all versions up to, and including, 2.9.1 The nbdesigner_copy_image_from_url AJAX action is registered for logged-out callers (wp_ajax_nopriv_), and its Google Drive branch rebuilds the destination filename from the raw, attacker-supplied gapi[name] parameter — bypassing the jpg/jpeg/png/gif allow-list applied on the other branch — and writes the fetched bytes to a web-accessible directory (wp-content/uploads/nbdesigner/temp/). This makes it possible for unauthenticated attackers to write a .php file to a web-served, PHP-executing location and, by supplying their own Google Drive file and OAuth token as the content source, execute arbitrary code on the server. The required save-design nonce is handed to anonymous callers by the nbd_check_use_logged_in endpoint, so it presents no barrier.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T02:17:01.720"
+  },
+  {
+    "id": "CVE-2026-102251",
+    "description": "The Abandoned Cart Pro for WooCommerce plugin for WordPress is vulnerable to generic SQL Injection via the 'validate' parameter in all versions up to, and including, 10.8.0 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for unauthenticated attackers to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. AES-CTR is a malleable stream cipher, so an attacker who obtains one legitimate token by abandoning a cart with an email address they control can recover the keystream and forge a ciphertext carrying arbitrary SQL. The HMAC check added in 10.4.1 is enforced only when the wcap_nonce parameter is present, so omitting the parameter skips it entirely.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:12.513"
+  },
+  {
+    "id": "CVE-2026-103422",
+    "description": "The AnyComment plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'email' parameter in versions up to, and including, 0.3.6. This is due to insufficient input sanitization on the public /wp-json/anycomment/v1/subscribe REST endpoint and missing output escaping in AnyCommentSubscriptionsTable::column_default(), which returns the stored email verbatim into an HTML <td> when the subscription's user_ID does not resolve to an existing WP_User. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever an administrator accesses the AnyComment → Subscriptions admin page.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:14.037"
+  },
+  {
+    "id": "CVE-2026-110002",
+    "description": "The Snazzy Social Media Feed plugin for WordPress is vulnerable to Arbitrary File Upload in all versions up to, and including, 2.5 via the (file scope) function. This is due to missing WordPress bootstrap, authentication, capability, and nonce checks in the standalone save-to-cache.php script, combined with insufficient sanitization of the pluginURL parameter before it is written to a web-executable PHP file. This makes it possible for authenticated attackers, with subscriber-level access and above, to upload files that may be executable, which makes remote code execution possible. The save-to-cache.php script is directly reachable without loading WordPress; FILTER_SANITIZE_URL — the only filter applied to the pluginURL value — preserves the characters required to craft a valid PHP payload, which is then written verbatim into cached-content/cached-feed.php and immediately executable via a single GET request.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:20.220"
+  },
+  {
+    "id": "CVE-2026-110444",
+    "description": "TeamPlus Messenger developed by Teamplus Technology has a Code Injection vulnerability. Unauthenticated remote attackers can trick users into opening a crafted link to inject and execute arbitrary JavaScript. After the user confirms a Windows security warning, attackers can execute arbitrary code with the privileges of the current user.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:20.363"
+  },
+  {
+    "id": "CVE-2026-110445",
+    "description": "TeamPlus Messenger developed by Teamplus Technology has a Code Injection vulnerability. Unauthenticated remote attackers can trick users into interacting with crafted content to inject and execute arbitrary JavaScript. After the user confirms a Windows security warning, attackers can execute arbitrary code with the privileges of the current user.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:20.527"
+  },
+  {
+    "id": "CVE-2026-110447",
+    "description": "Collabora Online Built-in CODE Server before 26.4.303 (richdocumentscode), a Nextcloud app, allows remote code execution, as exploited in the wild in September and October 2026, a different vulnerability than CVE-2025-66208. This is an OS command injection in proxy.php when the CODE server isn't running (e.g., the product was recently restarted). The vulnerability is not present in standalone Collabora Online servers; only this deployment with CODE Server is affected.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:20.683"
+  },
+  {
+    "id": "CVE-2026-14765",
+    "description": "Epic Games Unreal Engine versions up to and including 5.8.0 ship with an insecure default configuration for the LaunchURL Blueprint node (UKismetSystemLibrary::LaunchURL). The URL scheme filter (FURLRequestFilter) is empty by default, which permits all URL schemes. On Windows, this results in a call to ShellExecuteW() with the open verb, so a supplied file:/// URI causes the referenced file to be executed. Any Unreal Engine game that loads user-generated content containing Blueprints is vulnerable to command execution via a malicious local file or a remote file on a WebDAV share. This is an instance of CWE-1188 (Initialization of a Resource with an Insecure Default).",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:21.927"
+  },
+  {
+    "id": "CVE-2026-97657",
+    "description": "The Abandoned Cart Pro for WooCommerce plugin for WordPress is vulnerable to Authentication Bypass via Malleable Encryption and Bypassable HMAC in all versions up to, and including, 10.8.0. This is due to the use of MAC-free AES-CTR encryption for cart-recovery link tokens — where the 8-byte CTR nonce is carried inside the ciphertext blob and the encryption key is looked up using the attacker-supplied `user_email` GET parameter — combined with an HMAC nonce check in `wcap_email_track_links()` that is only enforced when the `wcap_nonce` parameter is non-empty, allowing complete bypass by omission, and an insecure direct object reference on the decrypted `abandoned_id` with no ownership verification confirming the cart belongs to the email used for decryption. This makes it possible for unauthenticated attackers who possess a single legitimate cart-recovery link (obtained from their own reminder email) to recover the keystream, forge a ciphertext that decrypts to any victim's cart ID, and trigger a call to `wp_set_auth_cookie()` for the victim user — achieving full account takeover of any user who has ever abandoned a cart, including administrators. The auto-login feature defaults to enabled and is forced on during plugin upgrades, meaning all affected installations are exploitable without any additional configuration.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:37.657"
+  },
+  {
+    "id": "CVE-2026-97668",
+    "description": "The Abandoned Cart Pro for WooCommerce plugin for WordPress is vulnerable to SQL Injection via the guest cart persistent meta_value in all versions up to, and including, 10.8.0 due to insufficient escaping on user supplied data and lack of sufficient preparation on the existing SQL query in the update_guest_persistent_cart() function. The abandoned_cart_info value, populated from attacker-controlled checkout fields such as the SMS consent field, is passed through stripslashes() and concatenated directly into an UPDATE statement while the adjacent SELECT and INSERT use prepared statements. This makes it possible for unauthenticated attackers to append additional SQL to the query. Because the sink is an UPDATE ... SET on the wp_usermeta table, the injection can both extract sensitive information from the database via time-based blind techniques and modify usermeta rows; it has been demonstrated to escalate an arbitrary account to administrator by writing a wp_capabilities row that shadows the legitimate one.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T03:17:37.797"
   }
 ]
