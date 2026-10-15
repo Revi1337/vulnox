@@ -1,5 +1,502 @@
 [
   {
+    "id": "CVE-2026-110816",
+    "description": "### Summary\n\n\n\n`qs.stringify` with `arrayFormat: 'comma'` throws `TypeError: Cannot convert object to primitive value` when an array element cannot be coerced to a string, such as an object with an own non-callable `toString` (`{ \"toString\": \"x\" }`) or a null-prototype object. The comma format joins array elements with `Array.prototype.join` and, under `encodeValuesOnly`, first passes each element through `String()` in `utils.encode`; neither guards against an element whose string coercion fails.\n\n\n\n### Details\n\n\n\nIn `lib/stringify.js`, the comma branch collapses the array with `obj.join(',')`. For an element whose own `toString` is not callable, `ToPrimitive` skips it, falls through to `Object.prototype.valueOf` (which returns the object itself), and throws. Under `encodeValuesOnly: true`, the same element first reaches `String(str)` in `utils.encode` (`lib/utils.js`) and throws there. Nested arrays (`{ \"a\": [[{ \"toString\": \"x\" }]] }`) throw the same way, through `Array.prototype.toString`. The `indices`, `brackets`, and `repeat` formats walk into object elements instead of coercing them, and are not affected.\n\n\n\nSuch elements can come from untrusted input. `JSON.parse` produces `{ \"a\": [{ \"toString\": \"x\" }] }` with no qs option involved. `qs.parse(\"a[0][toString]=x\", { allowPrototypes: true })` keeps the `toString` key, and `qs.parse(\"a[][b]=c\", { plainObjects: true })` produces a null-prototype element; the default parse options drop `toString` and produce ordinary objects, which do not throw. Express 4's default `query parser`, Express 5's `extended` query parser, and body-parser's `urlencoded({ extended: true })` all call `qs.parse` with `allowPrototypes: true`.\n\n\n\n#### PoC\n\n\n\n```js\n\n\n\nvar qs = require(\"qs\");\n\n\n\nqs.stringify(JSON.parse(\"{\\\"a\\\":[{\\\"toString\\\":\\\"x\\\"}]}\"), { arrayFormat: \"comma\" });\n\n\n\nqs.stringify(qs.parse(\"a[0][toString]=x\", { allowPrototypes: true }), { arrayFormat: \"comma\" });\n\n\n\nqs.stringify(qs.parse(\"a[][b]=c\", { plainObjects: true }), { arrayFormat: \"comma\", encodeValuesOnly: true });\n\n\n\n// TypeError: Cannot convert object to primitive value\n\n\n\n```\n\n\n\n#### Fix\n\n\n\nApplied in a952e75 on `main` and released as v6.16.1: an element whose string coercion would fail is coerced to its primitive `valueOf`, if any, or else to `Object.prototype.toString`, so it renders as `[object Object]`, the same as any other object element already does under the comma format. Nested arrays are walked the way `join` walks them. Every input that did not previously throw serializes exactly as before, and a `toString` or `valueOf` that itself throws still propagates.\n\n\n\n### Affected versions\n\n\n\n`>=6.7.0 <6.16.1`, fixed in v6.16.1.\n\n\n\nThe `join` path was introduced with the comma format in b84acba and first shipped in v6.7.0; v6.6.x and earlier ignore `arrayFormat: 'comma'` and are not affected. The `encodeValuesOnly` `String()` site was introduced in 4c4b23d (v6.11.1); before that, the same input throws at `join`. Every release from v6.7.0 through v6.16.0 is affected.\n\n\n\n### Impact\n\n\n\nAn unauthenticated request can make any code path that re-serializes attacker-influenced data with `qs.stringify` and `arrayFormat: 'comma'` (for example, rebuilding a query string from `req.query` for a redirect or an upstream request, or serializing a parsed JSON body) throw synchronously. In a typical Node.js HTTP framework the throw is caught by the framework error boundary and the affected request returns a 500; the process survives and other requests are unaffected. Where the call runs outside an error boundary, such as an `async` Express 4 handler (where the throw becomes an unhandled promise rejection) or a bare `http` request handler, the process exits, so the impact in that case depends on the application error handling rather than on qs. The default `arrayFormat` (`indices`) is not affected.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:23.230"
+  },
+  {
+    "id": "CVE-2026-110698",
+    "description": "A security vulnerability has been detected in Praat up to 7.0.02. Affected is the function whisper_model_load of the file external/whispercpp/whisper.cpp of the component Model Loader. The manipulation of the argument n_dims leads to out-of-bounds write. The attack can be initiated remotely. The exploit has been disclosed publicly and may be used. The identifier of the patch is a910d21a2705ef4cd16d91f29cdc8da1ab1a7221. To fix this issue, it is recommended to deploy a patch. The project maintainer confirms: \"We did a quick fix (suggested fix 1) for Praat version 7.0.03, and scheduled a better fix (suggested fix 2).\"",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:23.050"
+  },
+  {
+    "id": "CVE-2026-110696",
+    "description": "A weakness has been identified in itsmeravitejak Online-Examination-System up to e6208e630b14657999bbfe4c9912302d2a1e2449. The affected element is an unknown function of the file dbtables.sql. Executing a manipulation can lead to information disclosure. The attack may be launched remotely. The exploit has been made available to the public and could be used for attacks. This product operates on a rolling release basis, ensuring continuous delivery. Consequently, there are no version details for either affected or updated releases. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:22.870"
+  },
+  {
+    "id": "CVE-2026-110695",
+    "description": "A vulnerability was detected in turboderp ExLlamaV2 up to 0.3.2. Affected is the function STFile.get_tensor of the file exllamav2/stloader.py of the component Safetensors Tensor Loader. Performing a manipulation of the argument data_offsets results in buffer overflow. The attack is possible to be carried out remotely. The exploit is now public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:22.697"
+  },
+  {
+    "id": "CVE-2026-108337",
+    "description": "An administrator could retrieve the password reset code for any user and take over the account.\n\n\n\nThe password reset codes were included in the output of an API and could be used to reset the password of any account. The API is limited to use by administrator accounts only.\n\n\n\nAn attacker who already has administrative access to the application could compromise the credentials of other accounts on the application. Device credentials and customer data cannot be accessed with this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:22.563"
+  },
+  {
+    "id": "CVE-2026-108336",
+    "description": "When the default self-signed certificate is used, an attacker could gain administrative access to the application.\n\n\n\nThe SSL certificate for the web interface is used to sign JWT access tokens that are used to validate that the user is logged in. When the default SSL certificate is used, an attacker could have the capability to sign JWT access tokens and bypass login.\n\n\n\nAn attacker could gain administrative access to the application and perform actions like configuring the service or requesting log collection. Device credentials and customer data cannot be accessed with this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:22.433"
+  },
+  {
+    "id": "CVE-2026-108335",
+    "description": "When the password reset functionality is enabled, and email is configured, an attacker could take over any account using a brute-force attack.\n\n\n\nThere is no rate limiting on the attempts to enter the reset code, leading to the possibility of a brute force solution to the password reset challenge.\n\n\n\nAn attacker could gain administrative access to the application and perform actions like configuring the service or requesting log collection. Device credentials and customer data cannot be accessed with this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:22.290"
+  },
+  {
+    "id": "CVE-2026-102298",
+    "description": "In Omada Controller MSP mode, the user-confirmation endpoint fails to enforce the required permission check. An authenticated user can supply a caller-controlled Identifier parameter to validate credentials for another account and receive responses that distinguish nonexistent users, invalid passwords, and successful authentication. \n\nSuccessful exploitation may allow user enumeration, credential verification, and unauthorized access to MSP resources or compromise of targeted accounts.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T22:17:22.150"
+  },
+  {
+    "id": "CVE-2026-96540",
+    "description": "An improper access control vulnerability has been identified in the SonicWall Network Security Manager (NSM) on-prem in export settings, potentially allowing a remote authenticated attacker to obtain sensitive information. This may allow the attacker to escalate privileges to an administrator or to intercept communications of other users of the NSM instance.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:39.603"
+  },
+  {
+    "id": "CVE-2026-77427",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. From 3.9.0 until 3.22.0, pristine manual FileRise installations without PERSISTENT_TOKENS_KEY or metadata/persistent_tokens.key can activate a published legacy compatibility key. If an attacker separately obtains ciphertext-bearing account or configuration files, the known fallback key can enable decryption of TOTP secrets or credentials. Docker installations already generated a unique persistent key, and existing installations are not automatically rotated because doing so could make encrypted state unreadable. This issue is fixed in version 3.22.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:39.447"
+  },
+  {
+    "id": "CVE-2026-71854",
+    "description": "OpenAEV is an open source platform allowing organizations to plan, schedule and conduct cyber adversary simulation campaign and tests. Prior to version 2.260622.0, on a default installation, the `/api/player/**` lessons endpoints can be called without authentication, and they trust a client-supplied `userId` query parameter without verifying that the caller is that user or a member of the exercise. An unauthenticated client that knows an exercise UUID can read lessons-learned questions and answers (including each answer's author identity) and create or overwrite answers attributed to an arbitrary user. Version 2.260622.0 contains a patch.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:39.177"
+  },
+  {
+    "id": "CVE-2026-69194",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.21.0, FileRise returns the stored branding.footerHtml value through the unauthenticated public site configuration API without server-side sanitization. The FileRise frontend already sanitizes this value before rendering it into the page, using an allowlist of simple footer tags and safe link handling. The unauthenticated public config API exposed raw admin-provided footer HTML to clients, which is still undesirable and could be unsafe for alternate clients or future render paths. An administrator must first store the malicious footer value. This issue is fixed in version 3.21.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:39.023"
+  },
+  {
+    "id": "CVE-2026-69193",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.21.0, FileRise tracks failed logins only by the combination of source IP address and username. A remote unauthenticated attacker can rotate usernames to obtain a fresh per-account attempt budget for each name, enabling password spraying from one source beyond the intended limit. Per-user limits still apply and can also produce distinguishable throttling behavior for targeted accounts. The affected surface is AuthModel::getFailedLoginKey(). This issue is fixed in version 3.21.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:38.870"
+  },
+  {
+    "id": "CVE-2026-69191",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.21.0, FileRise enforces disableFormLogin, disableBasicAuth, and disableOIDCLogin in the client interface but not consistently in the corresponding server-side authentication flows. A user with otherwise valid credentials for a disabled method can call its backend endpoint directly and authenticate despite the administrator's login-method policy. The flaw does not permit credential-free authentication. This issue is fixed in version 3.21.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:38.723"
+  },
+  {
+    "id": "CVE-2026-64856",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.20.0, FileRise /api/file/snippet.php does not apply the standard authenticated-session guard before processing short text preview requests. The endpoint still performs FileRise ACL checks, so normal installations do not expose an unauthenticated arbitrary file read, but unauthenticated requests can reach ACL evaluation instead of receiving an immediate 401 response. Only additional unusual proxy-header or ACL misconfiguration is documented as allowing requests to proceed into path and file-content handling. This issue is fixed in version 3.20.0.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:38.560"
+  },
+  {
+    "id": "CVE-2026-62664",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.19.0, FileRise validates the complete folderName string but does not reject dot-dot path segments before FolderModel::createFolder() constructs and creates the destination. An authenticated low-privileged user with a valid CSRF token and create or owner permission on the parent can submit traversal segments to POST /api/folder/createFolder.php and create directories outside UPLOAD_DIR wherever the web-server account can write. This issue is fixed in version 3.19.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:38.400"
+  },
+  {
+    "id": "CVE-2026-61844",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.18.0, FileRise flattens logical folder paths into metadata filenames by replacing separators and spaces with hyphens, so distinct folders such as team/docs and team-docs can share one metadata file. Because uploader metadata is used to authorize read_own and ownership-restricted edits, a low-privileged user who controls one colliding folder, knows the target basename, and already has read_own access to the target folder can alter the metadata used by that folder, make the victim file appear attacker-owned, read it, and modify it when edit-own permission is also available. This issue is fixed in version 3.18.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:38.137"
+  },
+  {
+    "id": "CVE-2026-61843",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.18.0, FileRise upload-enabled shared-folder and upload-only links do not reject a destination filename that already exists. An unauthenticated visitor with a valid share token and any configured share password can upload a file with the same name as an existing file and silently replace its content while the original uploader metadata remains. The same replacement gap affects ordinary authenticated uploads through /api/upload/upload.php and authenticated upload-only users who lack edit authority over the existing file. This issue is fixed in version 3.18.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:37.947"
+  },
+  {
+    "id": "CVE-2026-57493",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.16.0, FileRise stores the isAdmin flag in remember-me tokens and restores that stale value during automatic login instead of resolving the account's current role from users.txt. A user who was issued a token while an administrator can retain administrator access after demotion, and token rotation copies the stale privilege into each replacement token. Exploitation requires possession of the pre-demotion remember-me token. This issue is fixed in version 3.16.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:37.800"
+  },
+  {
+    "id": "CVE-2026-57492",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.16.0, FileRise treats an empty or missing users.txt file as a fresh installation even after setup previously completed. If storage loss, truncation, or another failure empties the user store, an unauthenticated remote caller can detect that setup mode reopened and create the next initial administrator account through the setup flow. The application lacked a durable setup-complete marker independent of the mutable user store. This issue is fixed in version 3.16.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:37.650"
+  },
+  {
+    "id": "CVE-2026-57491",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.16.0, FileRise archive extraction does not apply UploadNamePolicy::isAllowedForWrite() before ZipArchive::extractTo() writes entries into the destination directory. An authenticated user with upload and extract permissions can place a blocked extension such as a PHP-family file inside a ZIP and cause it to be written to disk even when normal uploads reject that filename. Post-extraction metadata pruning does not remove the blocked file, so deployments that execute uploaded content may permit code execution. This issue is fixed in version 3.16.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:37.507"
+  },
+  {
+    "id": "CVE-2026-57490",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.16.0, when an administrator has enabled WebDAV, FileRise WebDAV Basic authentication validates only the account username and password through AuthModel::authenticate() and does not enforce the account's configured TOTP factor. An attacker who knows valid primary credentials for a TOTP-enabled account can authenticate to the enabled WebDAV service without supplying the second factor and exercise the account's WebDAV file permissions. The browser login path enforces TOTP, but the separate public/webdav.php authentication callback did not. This issue is fixed in version 3.16.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:37.357"
+  },
+  {
+    "id": "CVE-2026-57489",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.16.0, FileRise deployments with AUTH_BYPASS enabled trust the configured reverse-proxy identity header without verifying that the request originated from FR_TRUSTED_PROXIES. When the backend application port is reachable directly, an unauthenticated attacker can supply X-Remote-User and obtain a session for the asserted account, including an administrator account, without a password or MFA. The flaw is limited to deployments that enable proxy-header authentication and expose an untrusted path to the backend. This issue is fixed in version 3.16.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:37.200"
+  },
+  {
+    "id": "CVE-2026-110694",
+    "description": "A vulnerability has been found in OAID Tengine up to 1.12.0. This vulnerability affects the function get_tm_file_model of the file source/serializer/tmfile/tm2_serializer.c of the component tmfile Model Loader. Such manipulation of the argument offset_root leads to out-of-bounds read. It is possible to launch the attack remotely. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:36.617"
+  },
+  {
+    "id": "CVE-2026-110689",
+    "description": "A security flaw has been discovered in OpenClaw ClawScan up to 0.1.6. This impacts the function shouldSkipTargetPath of the file internal/runner/runner.go of the component Static Scanner. Performing a manipulation results in protection mechanism failure. Attacking locally is a requirement. The exploit has been released to the public and may be used for attacks. Upgrading to version 0.1.7 will fix this issue. The patch is named 9f6a6fbb9f1137345566d0ab44c73893dfe112fa. The affected component should be upgraded.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:36.433"
+  },
+  {
+    "id": "CVE-2026-110679",
+    "description": "A vulnerability was determined in OpenSIPS up to 3.6.8/4.0.1. The impacted element is the function rtpproxy_offer/rtpproxy_answer of the component rtpproxy. This manipulation causes out-of-bounds read. The attack may be initiated remotely. Upgrading to version 3.6.9 and 4.0.2 is sufficient to resolve this issue. It is advisable to upgrade the affected component.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:36.253"
+  },
+  {
+    "id": "CVE-2026-110670",
+    "description": "A vulnerability was found in cemtan sar2html 4.0.0. The affected element is the function updateDb of the file sar2html.py of the component Archive Processing. The manipulation of the argument s2host results in sql injection. The attack can be launched remotely. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:36.077"
+  },
+  {
+    "id": "CVE-2026-104110",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.24.0, FileRise Pro /api/pro/portals/get.php returns a configured client portal's full internal record to an unauthenticated caller who knows or guesses the portal slug. The response includes the internal storage folder path, client contact email, form settings, and upload-policy details, while the separate publicMeta.php endpoint intentionally exposes only curated branding data. Exploitation requires the Pro add-on and at least one configured portal. This issue is fixed in version 3.24.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:35.173"
+  },
+  {
+    "id": "CVE-2026-104109",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.23.0, FileRise validates archive entry names but extracts them directly into the authorized live destination before validating resolved paths. If that destination already contains a symlink to a directory outside the storage root, an authenticated non-administrator with extract permission who can upload or otherwise place an attacker-controlled ZIP in that folder can place an ordinary archive entry beneath the link. ZipArchive::extractTo() can then overwrite an external file, and post-extraction cleanup can delete that target through the same linked parent, only where the FileRise process has the required filesystem write or removal permission. The advisory does not establish that the attacker can create the prerequisite symlink through FileRise. This issue is fixed in version 3.23.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:35.030"
+  },
+  {
+    "id": "CVE-2026-104108",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.23.0, FileRise maps an authenticated OIDC identity to a local account using mutable preferred_username or email claims and does not require email_verified for email-based naming. An attacker who can obtain provider-issued claims colliding with an existing local username can be logged in as that account, including the built-in administrator, even when automatic provisioning is disabled. Exploitability depends on the configured identity provider allowing the colliding claim. This issue is fixed in version 3.23.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:34.880"
+  },
+  {
+    "id": "CVE-2026-104107",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. In FileRise 3.22.0, the /api/file/saveFile.php operation accepts dot and dot-dot segments in its attacker-controlled folder input before ACL inheritance evaluates the uncanonicalized string. With an authenticated non-administrator session, a valid CSRF token, and inherited edit permission on a legitimate ancestor, the local filesystem or WebDAV adapter later resolves those segments as path navigation, permitting attacker-controlled file creation outside the authorized folder and, where backend credentials permit, outside the configured WebDAV root. Local storage also created directories before final containment validation and used a prefix comparison that accepted similarly named sibling roots. This issue is fixed in version 3.23.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:34.727"
+  },
+  {
+    "id": "CVE-2026-104106",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.23.0, FileRise permits an authenticated session with a valid CSRF token to disable TOTP without recent full reauthentication or to begin enrollment when the account currently has no TOTP secret. The enrollment endpoint returns 409 rather than directly overwriting an already configured secret, but it persists and activates a newly generated secret before a TOTP code verifies possession. An attacker controlling an existing authenticated session can therefore disable an existing second factor or enroll one after the account has no configured secret; this is not a direct overwrite of an active authenticator. This issue is fixed in version 3.23.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:34.583"
+  },
+  {
+    "id": "CVE-2026-104105",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.23.0, FileRise verifies that a TOTP code is valid for the accepted time window but does not record that the same account and time step already succeeded. An attacker who has the target account's valid primary credential and captures a TOTP code after its successful use can replay that code from another pending-login session before the window closes. The issue does not by itself disclose the primary credential or TOTP code. This issue is fixed in version 3.23.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:34.430"
+  },
+  {
+    "id": "CVE-2026-103988",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.23.0, FileRise /api/folder/renameFolder.php authorizes an authenticated, non-folder-scoped, non-administrator with a valid CSRF token against the source folder but does not independently authorize a changed destination parent. A qualifying user who owns a source folder can move that tree beneath another user's existing folder or into the root namespace, and the operation rekeys the moved ownership and ACL records to the new path. The destination must be unused and existing victim files cannot be overwritten. Distinct pre-fix errors reveal whether a specifically guessed destination path exists, but disclose no directory listing or file contents. This issue is fixed in version 3.23.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:34.000"
+  },
+  {
+    "id": "CVE-2026-103977",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.23.0, FileRise stores failed TOTP verification attempts in $_SESSION. An attacker who already possesses a target account's valid primary credential can restart the login workflow in a new session and restore the second-factor attempt allowance, permitting continued online TOTP guessing beyond the intended five-attempt limit. The pending-login TOTP handlers did not share a durable account-wide limit. This issue is fixed in version 3.23.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:33.850"
+  },
+  {
+    "id": "CVE-2026-100232",
+    "description": "Post-authentication Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') vulnerability has been identified in the SonicWall Network Security Manager (NSM) on-prem which in specific conditions could potentially enable a remote authenticated attacker to execute arbitrary OS commands, resulting in remote code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:20.577"
+  },
+  {
+    "id": "CVE-2026-0320",
+    "description": "A command injection vulnerability in Palo Alto Networks PAN-OS® software enables an authenticated administrator to bypass system restrictions and run arbitrary commands as a root user. To be able to exploit this issue, the user must have access to the PAN-OS management interface.\n\n\n\n\nThe security risk posed by this issue is significantly minimized by restricting access to the management interface to only trusted internal IP addresses according to our recommended  best practice deployment guidelines https://live.paloaltonetworks.com/t5/community-blogs/tips-amp-tricks-how-to-secure-the-management-access-of-your-palo/ba-p/464431 .\n\n\n\nThis issue is applicable to PAN-OS software on PA-Series and VM-Series firewalls and on Panorama (virtual and M-Series).\n\n\n\nCloud NGFW and Prisma® Access are not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:20.053"
+  },
+  {
+    "id": "CVE-2026-0319",
+    "description": "An improper input handling vulnerability in the GlobalProtect™ gateway of Palo Alto Networks PAN-OS software enables an authenticated user to establish a GlobalProtect session using the identity of another user. \n\nCloud NGFW and Panorama are not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:19.550"
+  },
+  {
+    "id": "CVE-2026-0318",
+    "description": "A stack-based buffer overflow vulnerability in the log processing functionality of Palo Alto Networks PAN-OS® software on Panorama enables an attacker to cause a denial of service (DoS) condition. Repeated attempts to trigger this condition result in the Panorama entering maintenance mode.\n\nCloud NGFW, Prisma® Access, and standalone PAN-OS firewalls are not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:19.180"
+  },
+  {
+    "id": "CVE-2026-0317",
+    "description": "A denial of service vulnerability in Palo Alto Networks PAN-OS software enables an authenticated user with a read-only administrator role to cause a denial of service (DoS) condition by sending a specially crafted API request.\n\nThe security risk posed by this issue is significantly minimized by restricting access to the management web interface to only trusted internal IP addresses according to our recommended  best practice deployment guidelines https://live.paloaltonetworks.com/t5/community-blogs/tips-amp-tricks-how-to-secure-the-management-access-of-your-palo/ba-p/464431 .\n\nCloud NGFW, Panorama, and Prisma® Access are not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:18.940"
+  },
+  {
+    "id": "CVE-2026-0316",
+    "description": "A stored cross-site scripting (XSS) vulnerability in Palo Alto Networks PAN-OS® software enables a malicious authenticated administrator to store or execute a JavaScript payload using the web interface.\n\n\n\nThe security risk posed by this issue is minimized when the management interface is restricted to only trusted internal IP addresses according to our recommended  best practice deployment guidelines https://live.paloaltonetworks.com/t5/community-blogs/tips-amp-tricks-how-to-secure-the-management-access-of-your-palo/ba-p/464431 . \n\n\n\n\nThis issue is applicable to PAN-OS® software on PA-Series and VM-Series firewalls and on Panorama (virtual and M-Series).\n\n\n\nCloud NGFW and Prisma® Access are not affected by these vulnerabilities.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:18.687"
+  },
+  {
+    "id": "CVE-2026-0315",
+    "description": "A local privilege escalation vulnerability in the Palo Alto Networks GlobalProtect™ app enables a local user to escalate their privileges to root on macOS. This enables a non-administrative user to execute arbitrary commands with administrative privileges.\n\nThe GlobalProtect app on Linux, Windows, iOS, Android and Chrome OS is not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:18.517"
+  },
+  {
+    "id": "CVE-2026-0314",
+    "description": "A type confusion vulnerability in Palo Alto Networks GlobalProtect™ app on Windows enables a local user with low privileges to cause a denial of service (DoS) condition.\n\nThe GlobalProtect™ app on Linux, macOS, iOS, Android, and Chrome OS is not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:18.323"
+  },
+  {
+    "id": "CVE-2026-0313",
+    "description": "A command injection vulnerability in Palo Alto Networks Cortex XSOAR and Cortex XSIAM OS Query content pack enables an authenticated administrator to execute arbitrary OS commands on remote endpoints.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:18.173"
+  },
+  {
+    "id": "CVE-2026-0312",
+    "description": "Path traversal vulnerabilities in Palo Alto Networks Checkov by Prisma® Cloud enable an unauthenticated local user to write files to arbitrary locations on the scanning filesystem.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:18.013"
+  },
+  {
+    "id": "CVE-2026-0311",
+    "description": "A server-side request forgery vulnerability in Palo Alto Networks Checkov by Prisma® Cloud enables a local unauthenticated user to make unauthorized network requests from host to internal services.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T21:17:17.687"
+  },
+  {
+    "id": "CVE-2026-55684",
+    "description": "WeGIA is a web manager for charitable institutions. Prior to 3.8.6, the unauthenticated web/html/socio/sistema/cadastro_cobrancas_geracao.php endpoint accepts form-encoded POST data through extract($_REQUEST) and interpolates codigo, descricao, data_emissao, data_vencimento, data_pagamento, valor, valor_pago, status, link_cobranca, link_boleto, linha_digitavel, and id_socio into a raw INSERT statement. Numeric parameters are unquoted and unvalidated, while string parameters can break out of their single-quoted SQL context. A remote attacker can execute arbitrary SQL to read or modify billing, member, employee, permission, and credential data or to delete database tables. This issue is fixed in version 3.8.6.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:50.783"
+  },
+  {
+    "id": "CVE-2026-55683",
+    "description": "WeGIA is a web manager for charitable institutions. Prior to 3.8.6, the unauthenticated web/html/socio/sistema/cadastro_cobranca.php endpoint accepts POST input through extract($_REQUEST) and directly incorporates valor, valor_pago, id_pessoa, id_socio, and id_sociotipo into UPDATE, INSERT, and SELECT statements without prepared statements. A remote attacker can use the affected parameters to execute arbitrary SQL that reads or modifies WeGIA database content, including billing records and credential data. The same SQL access can delete or truncate tables, causing loss of application data. This issue is fixed in version 3.8.6.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:50.640"
+  },
+  {
+    "id": "CVE-2026-55682",
+    "description": "WeGIA is a web manager for charitable institutions. Prior to 3.8.6, the auto-prepended web/html/seguranca/sessionStart.php reflects an attacker-supplied PHPSESSID cookie in a Set-Cookie response and uses DB_HOST as the cookie domain. If a victim authenticates while using the attacker-selected identifier, the attacker can reuse that identifier to hijack the authenticated session. The response also discloses the internal database host name through the cookie Domain attribute, and the vulnerable session handler affects all PHP pages. This issue is fixed in version 3.8.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:50.487"
+  },
+  {
+    "id": "CVE-2026-55681",
+    "description": "WeGIA is a web manager for charitable institutions. Prior to 3.8.6, an authenticated user with access to the Material & Patrimônio module can submit id_produto to web/html/matPat/restaurar_produto_desocultar.php, where a second extract($_REQUEST) overwrites the value previously sanitized by intval(). The raw value is interpolated into UPDATE statements for the produto, isaida, and ientrada tables. An attacker can execute arbitrary SQL to extract sensitive database records or modify institutional and inventory data. This issue is fixed in version 3.8.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:50.343"
+  },
+  {
+    "id": "CVE-2026-55680",
+    "description": "WeGIA is a web manager for charitable institutions. Prior to 3.8.6, unauthenticated POST requests to web/html/socio/sistema/cadastro_cobranca.php can place a quoted SQL expression in the codigo parameter, which extract($_REQUEST) passes into the WHERE codigo= clause of an UPDATE statement without validation or parameter binding. Quoting the value bypasses MariaDB type conversion for the VARCHAR column and permits arbitrary SQL execution without a session. An attacker can read or modify database content, including user credential hashes and billing records in the cobrancas table. This issue is fixed in version 3.8.6.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:50.193"
+  },
+  {
+    "id": "CVE-2026-55679",
+    "description": "WeGIA is a web manager for charitable institutions. Prior to 3.8.6, the pre-installation web/instalador/instalador.php endpoint is reachable before config.php exists and processes unauthenticated installation POST data. In the Linux reinstall flow, a crafted usuario value reaches a command executed by shell_exec(). The installer also writes attacker-controlled values into executable config.php and concatenates the database name nomebd into a CREATE DATABASE statement. Successful exploitation can execute commands as the web-server user, persist attacker-controlled PHP configuration, and alter or disrupt the application and its data. This issue is fixed in version 3.8.6.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:50.030"
+  },
+  {
+    "id": "CVE-2026-55498",
+    "description": "FileRise is a self-hosted web-based file manager with multi-file upload, editing, and batch operations. Prior to 3.15.0, FileRise public shared-folder links with subfolder browsing enabled can follow a symbolic link inside the shared folder to a sibling directory under the upload root. An unauthenticated holder of a valid share token can use shared-folder listing, direct download, or ZIP creation to access files outside the folder that was actually shared. The flaw occurs because the affected shared-folder paths resolve symlinks without enforcing the original shared folder as the real-path boundary. This issue is fixed in version 3.15.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:49.050"
+  },
+  {
+    "id": "CVE-2026-55387",
+    "description": "InvoiceShelf is an open-source web & mobile app that helps track expenses, payments and create professional invoices and estimates. In version 2.3.3 and earlier, InvoiceShelf bulk-delete request validation accepts record identifiers without consistently binding them to the authenticated user's company_id. The affected DeleteCustomersRequest, DeleteEstimatesRequest, DeleteExpensesRequest, DeleteInvoiceRequest, DeleteItemsRequest, DeletePaymentsRequest, and DeleteUserRequest validators check that identifiers exist but do not consistently check tenant ownership. An authenticated user can submit another company's identifier and delete cross-company records. This vulnerability is fixed in 2.4.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:48.917"
+  },
+  {
+    "id": "CVE-2026-55386",
+    "description": "InvoiceShelf is an open-source web & mobile app that helps track expenses, payments and create professional invoices and estimates. Prior to version 2.4.0, InvoiceShelf passes the authenticated user's orderByField query parameter into Laravel orderBy calls in Invoice::scopeApplyFilters without restricting the value to column identifiers. A crafted SQL expression can therefore enter the ORDER BY clause across invoice and other list endpoints, enabling boolean-based blind extraction of database information. This issue is fixed in version 2.4.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:48.773"
+  },
+  {
+    "id": "CVE-2026-55385",
+    "description": "InvoiceShelf is an open-source web & mobile app that helps track expenses, payments and create professional invoices and estimates. Prior to version 2.4.0, InvoiceShelf's PDFConfigurationRequest.php validates the owner-controlled gotenberg_host setting only as a syntactically valid URL. GotenbergPDFDriver::loadView later sends a multipart HTTP request containing rendered invoice, estimate, or payment HTML as document.html to that host without rejecting private, loopback, link-local, or reserved addresses. An owner can use PDF generation to reach internal services or cloud metadata endpoints, and a configured external host receives customer names, addresses, line items, totals, and company identifiers from subsequent PDF renders. This issue is fixed in version 2.4.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:48.633"
+  },
+  {
+    "id": "CVE-2026-55384",
+    "description": "InvoiceShelf is an open-source web & mobile app that helps track expenses, payments and create professional invoices and estimates. Prior to version 2.4.0, InvoiceShelf invoice, estimate, and recurring-invoice creation paths accept client-supplied total, sub_total, tax, discount_val, and due_amount values without verifying that they match the submitted line items. An authenticated user can persist manipulated financial totals through InvoicesRequest::getInvoicePayload and the corresponding EstimatesRequest and RecurringInvoiceRequest handlers, causing stored document totals to disagree with their item prices and quantities. This issue is fixed in version 2.4.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:48.500"
+  },
+  {
+    "id": "CVE-2026-55383",
+    "description": "InvoiceShelf is an open-source web & mobile app that helps track expenses, payments and create professional invoices and estimates. Prior to version 2.4.0, InvoiceShelf public customer invoice, estimate, and payment routes use an EmailLog token's numeric mailable_id without verifying mailable_type, and the JSON handlers do not enforce EmailLog::isExpired. A token issued for one document type can therefore disclose a different company's document when numeric identifiers collide, and an expired token can remain usable on the JSON routes GET /customer/invoices/{email_log:token}, GET /customer/estimates/{email_log:token}, and GET /customer/payments/{email_log:token}. View handlers can also mark a mismatched invoice or estimate as viewed and send a notification. This issue is fixed in version 2.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:48.350"
+  },
+  {
+    "id": "CVE-2026-55382",
+    "description": "InvoiceShelf is an open-source web & mobile app that helps track expenses, payments and create professional invoices and estimates. Prior to version 2.4.0, InvoiceShelf NotesController::show, NotesController::update, and NotesController::destroy authorize only the generic view notes or manage notes ability and do not pass the route-bound Note to NotePolicy::viewNotes or NotePolicy::manageNotes, so neither method checks the target note's company_id. Because the Note model has no global company scope, an authenticated staff user with ordinary note abilities can select another company's sequential note identifier and read, modify, or delete its reusable invoice, estimate, and payment note templates. This issue is fixed in version 2.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:48.200"
+  },
+  {
+    "id": "CVE-2026-55381",
+    "description": "InvoiceShelf is an open-source web & mobile app that helps track expenses, payments and create professional invoices and estimates. Prior to version 2.4.0, POST /api/v1/estimates/{estimate}/convert-to-invoice in ConvertEstimateController authorizes only the caller's create-invoice ability and does not authorize access to the route-bound Estimate. Because route-model binding can resolve an estimate from any company, an authenticated user with create-invoice ability can copy another company's line items, prices, totals, taxes, notes, currency, and customer data into an invoice in the attacker's company. The victim company's configured conversion action reaches checkForEstimateConvertAction and can also change or delete the original estimate. This issue is fixed in version 2.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:48.057"
+  },
+  {
+    "id": "CVE-2026-54703",
+    "description": "Markdown Preview Enhanced is a Markdown preview extension for Visual Studio Code. Prior to 0.8.30, the _crossnote.updateMarkdown command in Markdown Preview Enhanced accepts an arbitrary URI and attacker-controlled content, then passes them to vscode.workspace.fs.writeFile without validating that the target is the Markdown file represented by the current preview. JavaScript already executing in the preview webview can invoke this command through the extension message bridge and write any file permitted by the VS Code user's operating-system privileges, including user configuration, startup, source, and build files. This file-write vulnerability requires a separate webview JavaScript execution path, such as the independently tracked head.html injection and blind command-dispatch weaknesses. This issue is fixed in version 0.8.30.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:47.913"
+  },
+  {
+    "id": "CVE-2026-54702",
+    "description": "Markdown Preview Enhanced is a Markdown preview extension for Visual Studio Code. Prior to 0.8.30, the webview message handler in src/preview-provider.ts accepts an attacker-controlled command value and attacker-controlled args, constructs a command in the _crossnote namespace, and invokes vscode.commands.executeCommand without an allowlist or type validation. JavaScript already executing in the preview webview can use this bridge to invoke privileged extension commands, including file modification, code-chunk execution, export-tool execution, and arbitrary URL opening, with attacker-selected arguments. Exploitation requires a separate webview JavaScript execution path, such as the independently tracked .crossnote/head.html injection, but no further authorization check protects the extension-host command boundary. This issue is fixed in version 0.8.30.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:47.737"
+  },
+  {
+    "id": "CVE-2026-54701",
+    "description": "Markdown Preview Enhanced is a Markdown preview extension for Visual Studio Code. Prior to 0.8.30, Markdown Preview Enhanced reads repository-controlled .crossnote/head.html content and passes it through resolvePathsInHeader before inserting it into the head of the preview webview document without removing executable content. Script-capable markup executes while the document loads, before the React application and DOMPurify initialize, and can access acquireVsCodeApi to send messages from the webview to the extension host. Opening a Markdown preview in a malicious repository is sufficient to trigger the injected content, and no additional click within the notification or preview is required. This issue is fixed in version 0.8.30.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:47.580"
+  },
+  {
+    "id": "CVE-2026-54566",
+    "description": "Markdown Preview Enhanced is a Markdown preview extension for Visual Studio Code. Prior to 0.8.29, Markdown Preview Enhanced evaluates repository-controlled .crossnote/config.js and .crossnote/parser.js files with vm.runInNewContext, which does not provide a security boundary from the Node.js host realm. Opening a Markdown file in a malicious repository automatically loads these files, and prototype-chain traversal can reach the host Function constructor and process object, allowing operating-system commands to execute as the victim account without further interaction. Both configuration evaluation and parser-hook evaluation are affected, and the attack does not depend on module-scoped require being available. This issue is fixed in version 0.8.29.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:47.403"
+  },
+  {
+    "id": "CVE-2026-110669",
+    "description": "A security vulnerability has been detected in cemtan sar2html 4.0.0. This affects the function deleteHost/deleteRange/deleteAll of the file sar2html.py. Such manipulation leads to missing authentication. The attack may be performed from remote. The exploit has been disclosed publicly and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:31.190"
+  },
+  {
+    "id": "CVE-2026-110668",
+    "description": "A weakness has been identified in cemtan sar2html 4.0.0. Affected by this issue is the function index of the file sar2html.py. This manipulation of the argument sort causes sql injection. The attack is possible to be carried out remotely. The exploit has been made available to the public and could be used for attacks. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:30.997"
+  },
+  {
+    "id": "CVE-2026-110310",
+    "description": "A remote user who can read encrypted objects in the S3 bucket can force a padding downgrade by altering the padding scheme recorded in an object's metadata to legacy PKCS#1 v1.5. Since this padding scheme is susceptible to the well-known Bleichenbacher attack, the user can use a PKCS#1 v1.5 padding oracle to recover the RSA-wrapped envelope key and decrypt the object.\n\n\n\nTo remediate this issue, we recommend that users upgrade to version 3.2.2 or 4.0.3. The 1.x and 2.x lines will not be patched, users of those lines need to migrate to 3.2.2 or 4.0.3.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:30.547"
+  },
+  {
+    "id": "CVE-2026-102986",
+    "description": "Plane is an open-source project management tool. In 1.3.1 and earlier, EntityAssetEndpoint at the public project asset endpoint /api/public/assets/v2/anchor/{anchor}/ requires authentication for write operations but does not verify workspace or project membership. An authenticated user who knows a published project's public DeployBoard.anchor can create FileAsset records in that project and soft-delete existing assets by identifier, allowing cross-workspace file injection, storage abuse, and data loss. The issue is fixed in version 1.4.0.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:28.907"
+  },
+  {
+    "id": "CVE-2026-102985",
+    "description": "Plane is an open-source project management tool. In 1.3.1 and earlier, ProjectMemberViewSet.partial_update places its authorization checks inside the role update branch, so a guest or member can omit role and change another ProjectMember record's is_active field, including deactivating a project administrator. ProjectMemberPreferenceEndpoint.patch separately trusts the member_id path value and lets a project member overwrite another member's preferences. These missing object-level authorization checks permit membership disruption and cross-member preference tampering. The vulnerability is fixed in 1.4.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:28.750"
+  },
+  {
+    "id": "CVE-2026-102980",
+    "description": "Plane is an open-source project management tool. Prior to 1.4.0, PageVersionEndpoint in apps/api/plane/app/views/page/version.py scopes page-version lookups by workspace and page identifiers but not by the project_id from the URL. ProjectPagePermission likewise derives the caller's role from the URL project while resolving the requested page workspace-wide, so a member of one project can use that project's identifier to read description_html for a public page in another project in the same workspace. The affected path is read-only and does not enable cross-project page modification. This issue is fixed in version 1.4.0.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:28.600"
+  },
+  {
+    "id": "CVE-2026-0321",
+    "description": "Denial of service vulnerabilities in Palo Alto Networks PAN-OS® software allow an unauthenticated attacker with network access to cause a denial of service (DoS) condition by sending specially crafted network traffic to or through a dataplane interface. Repeated attempts to trigger this condition result in the firewall entering maintenance mode.\n\n\n\nCloud NGFW and Panorama are not affected by this vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-14T20:17:26.887"
+  },
+  {
     "id": "CVE-2026-85714",
     "description": "Stirling-PDF is a locally hosted web application that facilitates various operations on PDF files. Prior to 2.13.2, an authenticated administrator using the default H2 database and security mode can upload a crafted SQL file to POST /api/v1/database/import-database. DatabaseService.validateSqlContent() splits normalized input on semicolons and accepts a statement when it contains any allowed keyword, allowing dangerous H2 functions such as FILE_READ and CSVWRITE, plus CREATE ALIAS, to bypass the insufficient whitelist and execute side effects when RUNSCRIPT processes the file. This permits arbitrary file access. The demonstrated operating-system command execution chain writes attacker-controlled startup files to a user-site location and then triggers an application Python interpreter configured to load those startup files, resulting in command execution as the JVM service account. This issue is fixed in version 2.13.2.",
     "severity": "Critical",
@@ -19259,7 +19756,7 @@
   {
     "id": "CVE-2026-109776",
     "description": "Race condition in the XPCOM component. This vulnerability was fixed in Firefox 158, Firefox ESR 153.5, Thunderbird 158, and Thunderbird 153.5.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:28.507"
   },
@@ -19385,7 +19882,7 @@
   {
     "id": "CVE-2026-109757",
     "description": "Sandbox escape due to race condition in the Networking component. This vulnerability was fixed in Firefox 158, Firefox ESR 153.5, Thunderbird 158, and Thunderbird 153.5.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:26.630"
   },
@@ -19399,7 +19896,7 @@
   {
     "id": "CVE-2026-109755",
     "description": "Sandbox escape in the DOM: Content Processes component. This vulnerability was fixed in Firefox 158 and Thunderbird 158.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:26.417"
   },
@@ -19413,7 +19910,7 @@
   {
     "id": "CVE-2026-109753",
     "description": "Incorrect boundary conditions in the Layout component. This vulnerability was fixed in Firefox 158, Firefox ESR 115.43, Firefox ESR 153.5, Thunderbird 158, and Thunderbird 153.5.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:26.207"
   },
@@ -19553,7 +20050,7 @@
   {
     "id": "CVE-2026-109733",
     "description": "JIT miscompilation in the JavaScript Engine: JIT component. This vulnerability was fixed in Firefox 158, Firefox ESR 115.43, Firefox ESR 153.5, Thunderbird 158, and Thunderbird 153.5.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:23.840"
   },
@@ -19574,7 +20071,7 @@
   {
     "id": "CVE-2026-109730",
     "description": "Integer overflow in the Graphics component. This vulnerability was fixed in Firefox 158, Firefox ESR 115.43, Firefox ESR 153.5, Thunderbird 158, and Thunderbird 153.5.",
-    "severity": "Unknown",
+    "severity": "High",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:23.527"
   },
@@ -19623,7 +20120,7 @@
   {
     "id": "CVE-2026-109723",
     "description": "Integer overflow in the Layout: Text and Fonts component. This vulnerability was fixed in Firefox 158, Firefox ESR 153.5, Thunderbird 158, and Thunderbird 153.5.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:22.800"
   },
@@ -19686,7 +20183,7 @@
   {
     "id": "CVE-2026-109714",
     "description": "Incorrect boundary conditions in the Layout component. This vulnerability was fixed in Firefox 158 and Thunderbird 158.",
-    "severity": "Unknown",
+    "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:21.537"
   },
@@ -19728,7 +20225,7 @@
   {
     "id": "CVE-2026-109708",
     "description": "Sandbox escape due to incorrect boundary conditions in the Networking component. This vulnerability was fixed in Firefox 158, Firefox ESR 153.5, Thunderbird 158, and Thunderbird 153.5.",
-    "severity": "Unknown",
+    "severity": "Critical",
     "tech": "Unknown",
     "published": "2026-10-13T13:17:20.910"
   },
@@ -25891,33 +26388,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-10-11T23:16:56.447"
-  },
-  {
-    "id": "CVE-2026-108978",
-    "description": "Heap-based buffer overflow vulnerability in Samsung Opensource rlottie allows Buffer Overflow via Environment Variables.\n\nThis issue affects rlottie: e57b094f03c39a751a1fded6f7d6c13f1ed95ec9.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-11T22:16:50.787"
-  },
-  {
-    "id": "CVE-2026-108769",
-    "description": "A security flaw has been discovered in zhayujie CowAgent up to 2.2.0. This affects an unknown part of the file Markdown.tsx of the component Markdown Rendering. The manipulation results in denial of service. It is possible to launch the attack remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-11T22:16:50.617"
-  },
-  {
-    "id": "CVE-2026-108976",
-    "description": "GNU Emacs before 31.2 (and TRAMP through 2.8.2) allows OS command injection via a filename because tramp-user-regexp has an incomplete list of disallowed inputs. NOTE: this issue exists because of an incomplete fix for CVE-2026-79992.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-11T21:16:43.580"
-  },
-  {
-    "id": "CVE-2026-108963",
-    "description": "databasement before 1.8.2 allows remote code execution because it runs certain commands (e.g., mariadb-dump) with a database name that can be specified by any authenticated user. For example, --result-file=/app/public/index.php can write to index.php. In other words, quoting prevents OS command injection in mariadb-dump, but the argument injection alone is sufficient for code execution indirectly. NOTE: the project's composer.json file does not indicate an independently published databasement Composer package.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-11T20:16:32.853"
   }
 ]
