@@ -1,61 +1,5 @@
 [
   {
-    "id": "CVE-2026-61588",
-    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, when a Django `Model` instance is assigned to a public view attribute, djust serialized it to the client with no sensitive-field denylist — sending fields such as `password` (the hash), privilege flags (e.g. `is_staff` / `is_superuser`), tokens, and other PII to the browser. Because exposing model objects to templates is a normal djust pattern, this could leak credentials/PII without the developer realizing the full object crossed the wire. This is fixed in djust 1.0.7. Model serialization applies a secure-by-default sensitive-field denylist (password/hash/token/secret-style fields and known privilege flags are withheld) with an identity-subset fallback. As a workaround, keep `Model` instances on `_private` attributes and expose only the specific fields needed, until patched.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-16T23:16:52.630"
-  },
-  {
-    "id": "CVE-2026-61589",
-    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, the WebSocket `handle_mount` and `ViewRuntime._build_request` rebuild an `HttpRequest` via `RequestFactory().get(...)` with no `HTTP_HOST`, so `request.get_host()` defaulted to `\"testserver\"` on the live path. Host/subdomain/domain `TenantResolver`s then misresolved the tenant — `None` on the live path while the HTTP path resolved correctly. With `STRICT_MODE=False` the tenant-scoped managers returned unscoped rows (cross-tenant disclosure); with the default they returned an empty queryset (broken tenancy). This is fixed in djust 1.0.7. The handshake Host is extracted from the ASGI scope, validated against `ALLOWED_HOSTS` (the same logic as the CSWSH Origin gate, parsed with Django's `split_domain_port` so malformed Hosts are rejected at the boundary), and propagated — with the TLS scheme — into the reconstructed request, so live-path tenant resolution matches HTTP exactly. There is no known workaround on the live path short of upgrading. Users are most exposed when combined with `STRICT_MODE=False`.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-09-16T23:16:53.717"
-  },
-  {
-    "id": "CVE-2026-61596",
-    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, djust's per-object authorization (`get_object` + `has_object_permission`, ADR-017) was enforced on the WebSocket mount and event paths but not on three other render entry points: (a) the initial HTTP GET render, (b) SPA `url_change` navigation, and (c) `{% live_render %}` embedded child views. An authenticated user could therefore view (and on some paths act on) an object they are not authorized for by loading the page directly, navigating to it via SPA url-change, or composing it as an embedded child — a classic IDOR / broken object-level access control on object-scoped views. This is fixed in djust 1.0.7. All render entry points now route through a shared `enforce_object_permission` chokepoint: HTTP GET returns 403, `url_change` emits a `permission_denied` frame and skips the render, and `{% live_render %}` (eager + lazy) refuses the embed. Views without a custom `get_object` are unaffected (no-op). No reliable workaround short of upgrading. Do not expose object-scoped views through the HTTP-GET / url_change / live_render paths until patched.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-16T23:16:53.860"
-  },
-  {
-    "id": "CVE-2026-61599",
-    "description": "djust provides Phoenix LiveView-style reactive server-side rendering for Django with Rust-powered performance. Prior to version 1.0.7, the djust live transport resolves the LiveView to mount from a client-supplied dotted path by calling `__import__(module_path, ...)`. The module is imported — running its top-level code (import side effects) — before the framework checks that the resolved object is a `LiveView` subclass and before any per-view authentication. The `LIVEVIEW_ALLOWED_MODULES` allowlist that should contain this is fail-open (`if allowed_modules:` — skipped when the setting is unset, the framework default) and uses loose `startswith` matching. An unauthenticated WebSocket client (the WS handshake does not require auth; per-view auth runs only after import + instantiate) can therefore send a `mount` / `live_redirect_mount` / `url_change` frame (or an SSE mount) with `view = \"<any.importable.module>.AnyName\"` and cause the server to import — and execute the top-level code of — any importable Python module by name. Version 1.0.7 fixes the issue with a fail-closed resolution gate (`djust._view_resolution.is_view_import_allowed`): a client view path resolves only if (a) its module is already loaded (`sys.modules` — so resolving runs no new code; URL-routed views loaded by URLconf at startup keep working with zero config) or (b) it matches `LIVEVIEW_ALLOWED_MODULES` on a module-segment boundary (explicit opt-in for lazily-imported views). The gate runs before `__import__` at all three sinks (+ defense-in-depth inside `_instantiate_view`). As a workaround, set `LIVEVIEW_ALLOWED_MODULES` to the narrow list of modules that contain your mountable LiveView classes. (Note: pre-patch the allowlist is `startswith`-matched and the import still precedes the subclass check, so this is mitigation, not a complete fix.)",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-16T23:16:54.010"
-  },
-  {
-    "id": "CVE-2026-65388",
-    "description": "A remote attacker who controls a container registry may be able to direct a client's token request to a host of the attacker's choice, and disclose the victim's registry credentials to that host. This vulnerability is addressed in containerization version 0.41.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-16T23:16:54.147"
-  },
-  {
-    "id": "CVE-2026-85789",
-    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-09-16T23:16:54.250"
-  },
-  {
-    "id": "CVE-2026-81546",
-    "description": "The Affinity by Canva application before 3.3.0 (September 2026 release) did not perform adequate bounds checking when parsing Affinity document files leading to a stack-based buffer overflow. A threat actor could craft a Affinity document that when opened by a user in Affinity could result in arbitrary code execution.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-17T02:16:27.537"
-  },
-  {
-    "id": "CVE-2026-92838",
-    "description": "A DLL hijacking\nvulnerability exists in the GeoVision GV-Remote E-Map desktop\napplication. The application loads one or more dynamic-link libraries (DLLs)\nfrom an unsafe search path, allowing a local attacker to place a malicious DLL\nin a location searched before the legitimate library location. If\nsuccessfully exploited, an attacker with local write access to the affected\ndirectory could achieve arbitrary code execution in the security context of\nthe GV-Remote E-Map process.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-09-17T02:16:28.610"
-  },
-  {
     "id": "CVE-2026-89064",
     "description": "The All-in-One WP Migration and Backup plugin for WordPress is vulnerable to Insufficient Credential Protection in versions up to, and including, 7.110. This is due to the `Ai1wm_Main_Controller::init()` method — registered on the `admin_init` hook, which fires unauthenticated on `admin-ajax.php` and `admin-post.php` requests — reading `$_SERVER['PHP_AUTH_USER']` and `$_SERVER['PHP_AUTH_PW']` from any incoming request and writing them to the `ai1wm_auth_header` option via `update_option()` as a reversible base64-encoded string, with no capability check, nonce verification, `is_user_logged_in()` check, or confirmation that Basic authentication actually succeeded. This makes it possible for unauthenticated attackers to capture into the database, in reversible base64 form, any WordPress Application Password or HTTP Basic credential presented to `/wp-admin/` by a legitimate integration, or to overwrite the stored credential with an attacker-chosen value by sending an anonymous request carrying a crafted `Authorization: Basic` header. This is particularly impactful in environments using WordPress Application Passwords for REST API or third-party integrations, as those credentials are transmitted as HTTP Basic auth to `/wp-admin/` and will be silently harvested via this unauthenticated write path.",
     "severity": "Medium",
@@ -107000,5 +106944,138 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-10-16T22:18:58.367"
+  },
+  {
+    "id": "CVE-2026-106549",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:16:58.293"
+  },
+  {
+    "id": "CVE-2026-107346",
+    "description": "Rejected reason: This CVE ID has been rejected or withdrawn by its CVE Numbering Authority.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:16:58.350"
+  },
+  {
+    "id": "CVE-2026-110752",
+    "description": "Text::CSV_XS versions before 1.65 for Perl allow memory exhaustion by allocating one entry per index of an RFC 7111 selector in fragment.\n\nfragment expands a row= or col= selector into an array with one element per selected index before it reads any data, and it does not clamp an explicit end column in a cell= selector to the row. Only the syntax and order of the ranges are checked, so row=1-400000000 on a two-line file allocates 400 million elements.\n\nAn application that passes a request-supplied fragment to fragment or csv can be made to exhaust memory, which ends the process with an Out of memory error that eval cannot catch.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:00.410"
+  },
+  {
+    "id": "CVE-2026-110753",
+    "description": "Text::CSV_XS versions from 1.46 before 1.65 for Perl have a use-after-free of bind_columns variables when skip_empty_rows skips an empty line in getline.\n\nWith bind_columns, the parser writes each field into the caller's own scalar without taking a reference to it. When skip_empty_rows skips an empty last line, the parser frees the current field scalar without checking whether it is bound, dropping one reference from the application's variable. The \"eof\" mode does the same on any empty line.\n\nThe variable is then freed while the application still references it, so later code uses freed memory and can crash the process.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:00.530"
+  },
+  {
+    "id": "CVE-2026-110754",
+    "description": "Text::CSV_XS versions before 1.65 for Perl leak the parsed fields of a record that fails to parse in getline.\n\ngetline collects the fields of a record into a new array and returns a reference to it only when the parse succeeds. When the record has a syntax error, getline returns undef and never frees the array or the fields parsed before the error.\n\nA long-running process parsing untrusted CSV retains every malformed record it is sent, so repeated malformed input exhausts its memory.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:00.637"
+  },
+  {
+    "id": "CVE-2026-110755",
+    "description": "Text::CSV_XS versions before 1.65 for Perl allow quadratic CPU use by copying the unparsed remainder per record of CR-only input in getline.\n\nWith eol unset, the default, getline reads with Perl's default line separator, so input with CR-only line endings arrives as one chunk. After each record the parser copies the whole unparsed remainder into a new buffer, which the next call parses and copies again, so the work grows with the square of the input size.\n\nA reader with default options that is sent CSV with classic Mac line endings spends seconds of CPU time on a megabyte of input.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:00.740"
+  },
+  {
+    "id": "CVE-2026-110756",
+    "description": "Text::CSV_XS versions before 1.65 for Perl drop the end of a record and its line ending when a UTF-8 flagged field precedes invalid UTF-8 bytes in print.\n\nWhen a record contains a UTF-8 flagged field, print holds back trailing bytes that are not valid UTF-8 at each buffer flush, so that a character split across two flushes can be completed. Nothing writes the held-back bytes after the record's final flush. A record whose last field ends in such a byte loses it, any closing quote and the line ending, while print still returns true. combine is not affected.\n\nThe next record is written onto the same line, or, when the last field was quoted, the missing closing quote makes a reader take every following record as part of that field.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:00.847"
+  },
+  {
+    "id": "CVE-2026-110757",
+    "description": "Text::CSV_XS versions before 1.65 for Perl allow record splitting by writing strings used as numbers without quotes in combine.\n\ncombine and print do not check whether a field needs quotes when its value has Perl's integer or numeric flag set. Perl sets these flags on a string used in a numeric operation when it parses as a number, which allows leading and trailing whitespace. With binary set, as csv does by default, \"12\\n\" passes a check such as $qty > 0 and is then written unquoted with its newline.\n\nA value validated as a number can end the record early and turn the fields after it into a separate row.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:00.953"
+  },
+  {
+    "id": "CVE-2026-110758",
+    "description": "Text::CSV_XS versions before 1.65 for Perl read before the start of an all-blank field under allow_whitespace in strip_trail_whitespace.\n\nUnder allow_whitespace, strip_trail_whitespace removes trailing spaces and tabs from each unquoted field without stopping at the start of the field. For a field of only blanks it reads the byte before the field's heap buffer. If that byte is also a space or tab, it may be zeroed and the walk continue backwards, depending on what the allocator placed there.\n\nLeading blanks are normally skipped before a field is stored, but an all-blank field still arrives after a leading escape_char that differs from quote_char, or as a quoted field in getline when its line ends in two CRs.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:01.057"
+  },
+  {
+    "id": "CVE-2026-110759",
+    "description": "Text::CSV_XS versions before 1.65 for Perl return a 0xFF byte that is not in the input for an empty last field followed by a lone CR in parse.\n\nWhen the input to parse ends in a separator and a lone CR, the parser treats the end of the input as the next character and stores the end-of-file marker in the field as the byte 0xFF. With binary set, parse(\"a,\\r\") returns the fields \"a\" and \"\\xFF\". On UTF-8 flagged input the last field is a UTF-8 flagged string holding that lone byte, which is malformed UTF-8. The same input with a non-empty last field is rejected as an error.\n\nA CRLF file read line by line and chomped ends this way when its last column is empty, so the application receives a byte that is not in its input.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:01.170"
+  },
+  {
+    "id": "CVE-2026-111802",
+    "description": "A flaw was found in Nautilus. When a removable drive or disk image is unmounted or ejected, Nautilus prompts the user to empty the trash without verifying whether the trash directory paths are symbolic links. An attacker can exploit this flaw by tricking a user into mounting a crafted storage volume and confirming the prompt to empty the trash, leading to the arbitrary deletion of files accessible to that user.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:01.277"
+  },
+  {
+    "id": "CVE-2026-17591",
+    "description": "A flaw was found in libarchive. An attacker can cause a Denial of Service (DoS) or potential information disclosure due to a use-after-free vulnerability, which occurs when a program reads memory that has already been released. This issue arises when the archive_entry_copy_mac_metadata() function deallocates an internal buffer before completing a data copy. An attacker who can supply input to an application utilizing this function can trigger the flaw to crash the application or read uninitialized memory data.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:01.420"
+  },
+  {
+    "id": "CVE-2026-89085",
+    "description": "A flaw was found in parted. A heap-based buffer overflow can occur when processing a specially crafted FAT32 filesystem due to an integer calculation error during buffer allocation. A local attacker could exploit this by enticing a user or automated service to open a malicious filesystem image, resulting in an application crash leading to a Denial of Service (DoS) or potential memory corruption.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:02.553"
+  },
+  {
+    "id": "CVE-2026-89088",
+    "description": "A flaw was found in parted. A heap-based buffer overflow exists in libparted's file system resizing logic when handling FAT16 volumes. By convincing a user or administrator to resize a specially crafted FAT16 file system image with malformed directory metadata, an attacker can trigger an oversized read into a fixed-size memory buffer. This issue causes memory corruption, resulting in an application crash and a denial of service (DoS).",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:02.680"
+  },
+  {
+    "id": "CVE-2026-89096",
+    "description": "A flaw was found in nfs-utils. An unauthenticated remote attacker can trigger a Denial of Service (DoS) by sending repeated state notification requests to an exposed rpc.statd service. The service fails to properly release memory allocated during callback processing, leading to continuous memory growth. Sustained requests can exhaust system resources, eventually causing the service to degrade or crash.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-16T23:17:02.810"
+  },
+  {
+    "id": "CVE-2026-111823",
+    "description": "Mage OSS through 0.9.80 before 76c4f46 can proceed with session creation upon encountering an unknown OAuth provider.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-17T02:17:18.470"
+  },
+  {
+    "id": "CVE-2026-111853",
+    "description": "An issue was discovered on Tektronix 3 Series MDO devices before 1.21.1. An OS command injection vulnerability exists in the FILESystem:MOUNT:DRIve SCPI command handler. Insufficient neutralization of user-supplied input allows remote attackers to execute arbitrary operating system commands with elevated privileges.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-17T02:17:18.610"
+  },
+  {
+    "id": "CVE-2026-111854",
+    "description": "An issue was discovered on Tektronix 3 Series MDO devices before 1.21.1. A path traversal vulnerability in the SCPI FILESystem command interface allows remote attackers to read or modify arbitrary files on the device through insufficient validation of file paths supplied to filesystem access commands.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-17T02:17:18.750"
+  },
+  {
+    "id": "CVE-2026-111855",
+    "description": "An issue was discovered on Tektronix 3 Series MDO devices before 1.21.1. A path traversal vulnerability exists in the web management interface of the device. Insufficient validation of user-supplied file paths allows remote attackers to read arbitrary files accessible to the application. Depending on configuration, exploitation may be possible without authentication.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-17T02:17:18.877"
   }
 ]
