@@ -1,5 +1,257 @@
 [
   {
+    "id": "CVE-2026-75891",
+    "description": "The Kirki plugin for WordPress is vulnerable to Privilege Escalation via PHP Object Injection in all versions up to, and including, 6.2.5 via deserialization of untrusted input through the 'get-single-symbol' branch of the kirki_post_apis() AJAX dispatcher due to a missing capability check. This makes it possible for authenticated attackers, with Subscriber-level access and above, to inject a PHP Object. The additional presence of a POP chain allows attackers to overwrite an administrator's password and gain administrative access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T07:16:32.500"
+  },
+  {
+    "id": "CVE-2026-110910",
+    "description": "### Summary\n\n\n\n`qs.stringify` with `allowEmptyArrays: true` writes the key of an empty array without encoding it, even though keys are encoded by default. A key that contains `&` (or the configured `delimiter`), `=`, or `#` therefore becomes query string syntax instead of data, so a caller-supplied key name can add parameters to the serialized query string, or cut it short.\n\n\n\n### Details\n\n\n\nIn `lib/stringify.js`, the `allowEmptyArrays` branch returns `adjustedPrefix + '[]'` early, before the code that passes every other key through `encoder` and `formatter`. So `{ \"x&k=v\": [\"1\"] }` serializes as `x%26k%3Dv%5B0%5D=1`, but `{ \"x&k=v\": [] }` serializes as `x&k=v[]`. The early return applies at any depth (`{ \"a\": { \"b&k=v\": [] } }` gives `a[b&k=v][]`), under every `arrayFormat`, with `allowDots`, and with a custom `encoder`, which is never called for that key. With `encode: false` or `encodeValuesOnly: true`, keys are intentionally left unencoded on every path; those configurations are not affected.\n\n\n\n#### PoC\n\n\n\n```js\n\n\n\nvar qs = require(\"qs\");\n\n\n\nvar query = qs.stringify({ q: \"hi\", \"x&apiKey=evil&y\": [] }, { allowEmptyArrays: true });\n\n\n\n// \"q=hi&x&apiKey=evil&y[]\"\n\n\n\nqs.parse(query);\n\n\n\n// { q: \"hi\", x: \"\", apiKey: \"evil\", y: [\"\"] }\n\n\n\nqs.stringify({ \"x#\": [], z: \"1\" }, { allowEmptyArrays: true });\n\n\n\n// \"x#[]&z=1\": in a URL, everything after \"#\" becomes the fragment\n\n\n\n```\n\n\n\n#### Fix\n\n\n\nApplied in 234d505 on `main` and released as v6.17.0, and backported to v6.16.2, v6.15.4, v6.14.3, v6.13.4, and v6.12.6: the key of an empty array goes through `encoder` and `formatter` exactly as the key of any other value does, so `{ \"x&apiKey=evil&y\": [] }` now serializes as `x%26apiKey%3Devil%26y[]`. Keys that need no encoding serialize as before, with two exceptions that match every other path: the brackets of a nested key are now encoded (`a[b][]` becomes `a%5Bb%5D[]`, which `qs.parse` reads identically), and with `encodeDotInKeys`, a dot in the key becomes `%252E` instead of `%2E` (which `decodeDotInKeys` previously misread as nesting).\n\n\n\n### Affected versions\n\n\n\n- `>=6.12.0 <6.12.6`, fixed in v6.12.6\n\n\n\n- `>=6.13.0 <6.13.4`, fixed in v6.13.4\n\n\n\n- `>=6.14.0 <6.14.3`, fixed in v6.14.3\n\n\n\n- `>=6.15.0 <6.15.4`, fixed in v6.15.4\n\n\n\n- `>=6.16.0 <6.16.2`, fixed in v6.16.2\n\n\n\nv6.17.0 and later are not affected.\n\n\n\n`allowEmptyArrays` was introduced in f22b2bc and first shipped in v6.12.0, with this early return. Earlier versions have no `allowEmptyArrays` option and are not affected.\n\n\n\n### Impact\n\n\n\nAn application that passes an object whose key names come from untrusted input to `qs.stringify` with `allowEmptyArrays: true` (for example, to forward a parsed JSON body or user-selected fields to an upstream service) can have parameters injected into the resulting query string. The injected parameters are not keys of the object, so deleting or overwriting a key on the object (such as setting a trusted `apiKey` after copying the user's fields) does not remove them; whether the attacker's value or the application's wins depends on how the receiving side handles a duplicate parameter. A `#` in such a key ends the query string early when the result is placed in a URL. `allowEmptyArrays` is off by default, and only keys whose value (after any `filter`) is an empty array are affected.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-27T07:16:32.263"
+  },
+  {
+    "id": "CVE-2026-106174",
+    "description": "A improper locking vulnerability in Fortinet FortiOS 8.0.0, FortiOS 7.6.4 through 7.6.6 may allow an unauthenticated attacker with network access to the device to cause a denial of service of the HTTPS management interface via crafted HTTP requests.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T07:16:32.040"
+  },
+  {
+    "id": "CVE-2026-105946",
+    "description": "Out-of-bounds read in the QAuthenticator NTLM authentication handling in the Qt Network module in Qt Group Qt allows remote attackers to obtain sensitive information (heap memory contents) or cause a denial of service (application crash) via a crafted NTLM challenge sent by a malicious server or proxy, when an application using QNetworkAccessManager or QTcpSocket authenticates with NTLM.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-27T07:16:31.860"
+  },
+  {
+    "id": "CVE-2026-103359",
+    "description": "The PayDunya WooCommerce Payment Gateway WordPress plugin through 1.1.6 does not verify the authenticity of incoming payment notifications and, until the gateway is configured, authenticates them with a value derived from an empty secret that anyone can compute, allowing unauthenticated attackers to mark arbitrary WooCommerce orders as paid and completed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T07:16:31.737"
+  },
+  {
+    "id": "CVE-2026-103325",
+    "description": "The TiendaCrypto para WooCommerce WordPress plugin through 1.2.1 does not correctly verify the authenticity of its payment webhook, validating the request signature against a key that is always empty, which allows unauthenticated attackers to forge webhook notifications and mark arbitrary WooCommerce orders as paid on web servers that preserve request header case.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-27T07:16:31.453"
+  },
+  {
+    "id": "CVE-2026-117472",
+    "description": "Psono Server CE && EE versions 4.0.33 through 7.2.3 compared the request path for the bulk-secret-read endpoint with a hard-coded unprefixed path. In deployments configured with URL_PREFIX, the comparison failed and the POST request was authorized using write scope instead of read scope. An authenticated remote attacker with an unusual read-disabled, write-enabled API key could therefore retrieve encrypted secret data and nonces through the prefixed bulk-secret-read endpoint despite lacking read permission. The default configuration without URL_PREFIX was not affected.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:25.153"
+  },
+  {
+    "id": "CVE-2026-117471",
+    "description": "Psono Server CE && EE versions 0.1.0 through 7.2.3 accepted a user-controlled host when configuring a personal Duo device and passed it to the Duo client without an allowlist or explicit timeout. An authenticated remote attacker could cause the server to connect to selected hosts over HTTPS on port 443 and distinguish failure modes, providing an internal DNS and service-reachability oracle. Connections still required TLS certificate validation, and the flaw did not provide arbitrary protocol or port access. Unresponsive targets could also occupy a server worker until the operating-system timeout.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:25.020"
+  },
+  {
+    "id": "CVE-2026-117470",
+    "description": "Psono Server CE & EE versions 3.1.0 through 7.2.3 did not consume a stored WebAuthn challenge after assertion verification. An unauthenticated remote attacker who possessed the user's password and one captured valid WebAuthn assertion could replay that assertion with separate login tokens while the stored challenge remained unchanged, bypassing the WebAuthn second factor. The attack required capture of a valid assertion and did not itself disclose plaintext secrets.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:24.867"
+  },
+  {
+    "id": "CVE-2026-117469",
+    "description": "Psono Server (CE & EE) versions 1.0.0 through 7.2.3 did not enforce the direction of file-transfer credentials on file-repository operations. An authenticated remote attacker with read-only access to a file could present a download transfer to the upload endpoint, obtain a signed upload URL for an attacker-selected object key, and append a chunk to the owner's file. Exploitation could upload or overwrite repository objects and consume storage, subject to transfer size, chunk-count, and lifetime limits.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:24.683"
+  },
+  {
+    "id": "CVE-2026-117468",
+    "description": "Psono Server versions 5.3.5 through 7.2.3 used a permission class that did not enforce token write scope when claiming a device code. An authenticated remote attacker holding a restricted API key-derived session could claim an attacker-controlled device code and obtain a full read-write session valid for up to 365 days, bypassing the original token's scope and lifetime restrictions. This did not bypass two-factor authentication or directly disclose plaintext secrets.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:24.527"
+  },
+  {
+    "id": "CVE-2026-111820",
+    "description": "The Analytics Insights – Google Analytics Dashboard for WordPress plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the Page Title in all versions up to, and including, 6.3.12 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:23.437"
+  },
+  {
+    "id": "CVE-2026-103332",
+    "description": "The Payex Payment Gateway for Woocommerce WordPress plugin through 1.2.10 does not properly verify the authenticity of incoming payment notifications, relying on a validation secret that is empty by default, allowing unauthenticated attackers to forge a valid payment confirmation and mark any order as paid.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:23.287"
+  },
+  {
+    "id": "CVE-2026-103312",
+    "description": "The Payment Integration Wompi WordPress plugin through 4.0.1 does not verify the authenticity of incoming payment notifications on a stock install, because the callback's checksum is keyed on a merchant secret that is empty until it is manually configured, allowing an unauthenticated attacker to forge a notification and mark an arbitrary order as paid.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-27T06:17:23.120"
+  },
+  {
+    "id": "CVE-2026-88781",
+    "description": "Untrusted Pointer Dereference in ASUS certain motherboards firmware allows a kernel-level privileges user can supply an arbitrary memory address via an I/O command, leading to subsequent system information being tampered with or causing a system crash.\nRefer to the 'Security Update for Multiple ASUS Motherboards' section on the ASUS Security Advisory for more information.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-27T03:16:26.663"
+  },
+  {
+    "id": "CVE-2026-116640",
+    "description": "A flaw has been found in Saruf-Ratul HR-Payroll-Management-System e7cd81477001afdee95b843fd4137894d9418c9f/3fd6f45ead9f8197510c0910f759e06ee67251e5. Affected by this vulnerability is an unknown functionality of the file chat.php. Executing a manipulation of the argument ID can lead to cross site scripting. It is possible to launch the attack remotely. The exploit has been published and may be used. This product takes the approach of rolling releases to provide continious delivery. Therefore, version details for affected and updated releases are not available. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-27T02:16:45.343"
+  },
+  {
+    "id": "CVE-2026-116639",
+    "description": "A vulnerability was detected in MD-MAFUJUL-HASAN Online-Payroll-Management-System up to a8902bf64575e325f6d6bf93a55f7bd273ec58cd. Affected is an unknown function of the file chat.php. Performing a manipulation of the argument ID results in cross site scripting. It is possible to initiate the attack remotely. The exploit is now public and may be used. This product is using a rolling release to provide continious delivery. Therefore, no version details for affected nor updated releases are available. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-27T02:16:45.170"
+  },
+  {
+    "id": "CVE-2026-97028",
+    "description": "Rejected reason: Maintainers determined it is not a vulnerability.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:09.083"
+  },
+  {
+    "id": "CVE-2026-116844",
+    "description": "Fclairamb ftpserverlib through 0.32.4 contains a cleartext transmission vulnerability because TransferOpen checks only the transferTLS flag set by PROT, not whether the prepared data connection uses TLS. When a client sends PROT P after PASV or PORT, file contents and directory listings cross the network unencrypted, even with mandatory encryption, letting on-path attackers read or modify them.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:07.887"
+  },
+  {
+    "id": "CVE-2026-116843",
+    "description": "Mistral Vibe before 3.0.3 contains a remote code execution vulnerability that allows attackers to run commands by defining git filter drivers in an untrusted repository's .git/config. When started with --worktree, git worktree add applies .gitattributes and runs filter smudge, clean, or process commands before the trusted-folder check, executing attacker commands with user privileges.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:07.730"
+  },
+  {
+    "id": "CVE-2026-116842",
+    "description": "DevilutionX 1.4.0 through 1.5.5 contains a heap buffer overflow vulnerability in the bundled libmpq libmpq__archive_dup routine when opening crafted MPQ archives. Attackers can supply an MPQ archive whose block table count exceeds its hash table count, causing memcpy to overflow the heap during startup and crash the game.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:07.573"
+  },
+  {
+    "id": "CVE-2026-116841",
+    "description": "DevilutionX 1.4.0 through 1.5.5 contains an out-of-bounds read vulnerability in the bundled libmpq libmpq__file_number_from_hash function that allows attackers to read heap memory via unchecked block_table_index values. Attackers can place a crafted .mpq archive in the game's data path, such as a mod, to trigger reads past mpq_map and crash the game.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:07.393"
+  },
+  {
+    "id": "CVE-2026-116840",
+    "description": "llama.cpp b5854 before b11275 contains an integer overflow vulnerability in gguf_init_from_reader that bypasses the CVE-2025-53630 size check when padding near-SIZE_MAX tensor sizes. Attackers can supply a crafted GGUF file whose tensor size pads to zero, causing an undersized data blob and out-of-bounds reads by consumers.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:07.217"
+  },
+  {
+    "id": "CVE-2026-116839",
+    "description": "A malicious actor who lures an authenticated user to a malicious page could exploit a Cross-Site Request Forgery (CSRF) vulnerability found in airMAX M devices to make unauthorized changes and execute a Denial of Service (DoS) attack on the device.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:07.093"
+  },
+  {
+    "id": "CVE-2026-116838",
+    "description": "A malicious actor who lures an authenticated user to a malicious page could exploit a Cross-Site Request Forgery (CSRF) vulnerability found in airMAX M devices to execute a Command Injection on the device.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:06.973"
+  },
+  {
+    "id": "CVE-2026-116837",
+    "description": "A malicious actor with access to the adjacent network could exploit a Heap-based Buffer Overflow vulnerability found in airMAX M, LTU, SolarPoint, and SolarSwitch devices to execute arbitrary code on the device.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:06.860"
+  },
+  {
+    "id": "CVE-2026-116836",
+    "description": "A malicious actor with access to the adjacent network and under certain conditions could exploit a Stored Cross-Site Scripting (XSS) vulnerability found in airMAX M devices to escalate privileges on the device.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:06.733"
+  },
+  {
+    "id": "CVE-2026-116829",
+    "description": "llama.cpp b10398 before b11301 contains an integer overflow vulnerability in gguf_init_from_reader that allows attackers to bypass tensor element-count validation by supplying shapes whose product wraps to zero. Attackers can craft GGUF files with enormous tensor extents that overflow ggml_nbytes() and strides, causing out-of-bounds memory access when buffers are sized from wrapped byte counts.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:06.583"
+  },
+  {
+    "id": "CVE-2026-116816",
+    "description": "llama.cpp b5899 before b10261 contains a heap out-of-bounds write vulnerability in llm_tokenizer_plamo2::build that allows attackers to corrupt heap memory via crafted GGUF models. Attackers can supply BYTE-typed token text like <0x-1> whose negative parsed value writes token ids before the bytes_ buffer during model loading, causing crashes or potential code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:06.437"
+  },
+  {
+    "id": "CVE-2026-116623",
+    "description": "A vulnerability was detected in code-projects Simple Content Management System 1.0. Impacted is an unknown function of the file /web/admin/welcome.php of the component Admin Interface. The manipulation of the argument addnews results in missing authorization. The attack can be launched remotely. The exploit is now public and may be used.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:06.250"
+  },
+  {
+    "id": "CVE-2026-116620",
+    "description": "A security vulnerability has been detected in Tencent RapidJSON up to 1.1.0. This issue affects the function GenericStringStream<UTF8<char>>::Take in the library include/rapidjson/stream.h of the component Regex Parser. The manipulation leads to out-of-bounds read. The attack can be initiated remotely. The exploit has been disclosed publicly and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:06.080"
+  },
+  {
+    "id": "CVE-2026-116608",
+    "description": "A security vulnerability has been detected in DAMO Academy VideoLLaMA2 up to 1.1. Affected by this issue is the function load_pretrained_model of the file videollama2/model/__init__.py of the component Model Loading. The manipulation of the argument _name_or_path leads to improper validation of integrity check value. Remote exploitation of the attack is possible. The exploit has been disclosed publicly and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:05.897"
+  },
+  {
+    "id": "CVE-2026-116605",
+    "description": "A vulnerability was found in SourceCodester Online Food Ordering System 1.0. The impacted element is an unknown function of the file order.php. The manipulation of the argument price/title results in client-side enforcement of server-side security. It is possible to launch the attack remotely. The exploit has been made public and could be used.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:05.713"
+  },
+  {
+    "id": "CVE-2025-71439",
+    "description": "llama.cpp before b5649 contains a heap out-of-bounds read vulnerability in llama_vocab::impl::print_info() that allows attackers to crash model loading via oversized special token IDs. Attackers can supply a crafted GGUF model with a short tokenizer.ggml.tokens array, causing llama-cli or llama-server to read past id_to_token and crash.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:03.470"
+  },
+  {
+    "id": "CVE-2024-58400",
+    "description": "llama.cpp before b3701 contains an out-of-bounds read vulnerability in llama_decode_internal and llama_encode_internal that allows remote unauthenticated attackers to read memory by supplying unvalidated token IDs. Attackers can send integer-array prompts to the llama-server /completion endpoint with IDs outside 0 to n_vocab to read embedding memory out of bounds or crash the process.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:03.080"
+  },
+  {
+    "id": "CVE-2024-58399",
+    "description": "llama.cpp before b2731 contains an out-of-bounds read vulnerability in llama_model_loader that allows attackers to read memory outside the mapped model file via crafted GGUF tensor offsets. Attackers can supply a crafted or truncated GGUF model file with arbitrary 64-bit tensor offsets to crash the process or load adjacent process memory as model weights.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-27T01:19:02.810"
+  },
+  {
     "id": "CVE-2026-116828",
     "description": "YesWiki before 4.7.0 contains a sql injection vulnerability in despam.php where the from parameter is escaped but placed in an unquoted INTERVAL position. Authenticated administrators can inject SQL via the from POST parameter to perform blind reads of the database including user password hashes.",
     "severity": "Medium",
@@ -6823,159 +7075,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-10-24T08:16:49.753"
-  },
-  {
-    "id": "CVE-2026-115803",
-    "description": "A flaw has been found in Scada-LTS 2.8.0. Affected by this vulnerability is the function HttpServletRequest.getParameter of the file AmChartValuesAPI.java of the component AmCharts Data API. Executing a manipulation of the argument ids can lead to authorization bypass. The attack can be executed remotely. The exploit has been published and may be used. The vendor announces: \"At this moment we are working on new release with security enhancements which will be introduced to the community soon.\"",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T07:16:46.637"
-  },
-  {
-    "id": "CVE-2026-115802",
-    "description": "A weakness has been identified in InternScience InternAgent 1.5.0. This affects the function train of the file tasks/AutoChem/code/experiment.py of the component LoRA Loading. This manipulation of the argument base_model_name_or_path causes inclusion of functionality from untrusted control sphere. The attack may be initiated remotely. The exploit has been made available to the public and could be used for attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T07:16:46.273"
-  },
-  {
-    "id": "CVE-2026-108013",
-    "description": "BigFix Platform uses Mozilla CA certificate bundle (PEM). Versions of the bundle dated before 2026/10/20 still trust certificates whose private keys have been compromised. When BigFix Platform validates servers using such a bundle, an on-path attacker can impersonate remote servers and tamper with files downloaded by the application. The issue is resolved by using bundle version 2026/10/20 or later. The fixed bundle is available starting from BES Support v1520.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T07:16:44.990"
-  },
-  {
-    "id": "CVE-2026-97353",
-    "description": "The News Kit Addons For Elementor WordPress plugin through 1.4.7 does not perform capability or ownership checks before updating post metadata in one of its authenticated AJAX actions, allowing users with subscriber-level access and above to write arbitrary post meta, under attacker-chosen keys, to any post including those owned by other users. This can be used to overwrite protected core metadata and tamper with content created by higher-privileged users.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:37.610"
-  },
-  {
-    "id": "CVE-2026-97352",
-    "description": "The News Kit Addons For Elementor WordPress plugin before 1.4.9 does not perform a capability check on one of its AJAX actions, allowing authenticated users with subscriber-level access and above to install and activate a specific News Kit Addons For Elementor WordPress plugin before 1.4.9 from the WordPress.org repository.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:37.443"
-  },
-  {
-    "id": "CVE-2026-87835",
-    "description": "The Front End Users WordPress plugin through 3.2.35 does not restrict which account attributes a visitor may set when registering through its front-end forms, allowing unauthenticated users to assign themselves an arbitrary membership level and to mark their own account as approved, confirmed and paid, bypassing the Front End Users WordPress plugin through 3.2.35's content restrictions and its registration gating.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:37.320"
-  },
-  {
-    "id": "CVE-2026-114429",
-    "description": "The WPVR  WordPress plugin before 9.0.3 does not properly sanitise and escape some of its tour hotspot content before storing it and outputting it on the front end, which could allow users with the Contributor role and above to perform Stored Cross-Site Scripting attacks that execute in the browser of any user viewing the affected tour.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:37.173"
-  },
-  {
-    "id": "CVE-2026-113674",
-    "description": "The GeoDirectory  WordPress plugin before 2.8.194 does not correctly verify ownership of listings submitted by logged-out users before allowing them to be edited, allowing unauthenticated attackers to modify, unpublish, attach images to, or reassign any guest-submitted listing when guest posting is enabled.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:37.027"
-  },
-  {
-    "id": "CVE-2026-113673",
-    "description": "The GeoDirectory  WordPress plugin before 2.8.194 does not properly escape administrator-defined text before writing it into a generated PHP file in its own folder, allowing high privilege users such as a subsite administrator on a multisite network, who cannot otherwise run code, to achieve Remote Code Execution that any unauthenticated visitor can trigger.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.907"
-  },
-  {
-    "id": "CVE-2026-113493",
-    "description": "The GeoDirectory  WordPress plugin before 2.8.194 does not sanitise and escape some of its map shortcode attributes before outputting them within a style attribute, allowing users with the Contributor role and above to perform Stored Cross-Site Scripting attacks that execute in the context of any user viewing the affected content.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.773"
-  },
-  {
-    "id": "CVE-2026-113492",
-    "description": "The GeoDirectory  WordPress plugin before 2.8.194 does not perform status, ownership or password checks when loading listings for one of its unauthenticated AJAX handlers, allowing unauthenticated users to disclose the content of non-public (draft, pending and private) listings by supplying their IDs.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.617"
-  },
-  {
-    "id": "CVE-2026-113491",
-    "description": "The GeoDirectory  WordPress plugin before 2.8.194 does not validate a user-supplied image URL before using it as a local file path when saving a front-end listing, allowing users with Subscriber-level access and above to read files from outside the web root and to delete files on the server, limited to file names that carry an allowed media extension. A disclosed file is re-published at a public URL and its original is deleted as a side effect.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.503"
-  },
-  {
-    "id": "CVE-2026-113490",
-    "description": "The GeoDirectory  WordPress plugin before 2.8.194 does not perform any status or ownership check when rendering a listing's map-popup through one of its single-item REST routes, allowing unauthenticated users to read the title, permalink and card fields of non-public (draft, pending, private and trashed) listings by supplying the listing ID.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.383"
-  },
-  {
-    "id": "CVE-2026-113489",
-    "description": "The GeoDirectory  WordPress plugin before 2.8.194 does not verify that a referenced attachment belongs to the listing being saved, allowing users with Subscriber-level access and above to modify the title, caption, moderation status and featured flag of images belonging to other users' listings, and to claim another user's image as their own featured image.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.260"
-  },
-  {
-    "id": "CVE-2026-112207",
-    "description": "The Download Monitor WordPress plugin before 5.3.4 does not properly validate that a clicked link belongs to the site before fetching it client-side and rendering part of the response in the page, which allows unauthenticated attackers to execute arbitrary JavaScript in the browser of any user who is tricked into clicking a crafted link.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.143"
-  },
-  {
-    "id": "CVE-2026-110956",
-    "description": "The asVereinbase  WordPress plugin before 1.1.8 does not require a valid password or a genuine second factor before authenticating a user, treating an empty stored value as a match, so an unauthenticated attacker can log in as any user, including an administrator.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:36.010"
-  },
-  {
-    "id": "CVE-2026-107907",
-    "description": "The MAS Videos WordPress plugin through 1.3.4 does not perform any capability or ownership check when handling its front-end video and playlist deletion requests, and the nonce it verifies is tied only to a static action rather than to the targeted object, allowing any authenticated user with a minimal role to permanently delete arbitrary posts, pages, attachments and other content belonging to other users.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:35.877"
-  },
-  {
-    "id": "CVE-2026-107887",
-    "description": "The Advanced Twenty Seventeen WordPress plugin through 1.3.1 does not perform any capability or nonce check on the action that creates and activates its bundled child , allowing any authenticated user such as a subscriber to switch the site's active  site-wide, and allowing the same action to be triggered against any logged-in user including an administrator via CSRF.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:35.727"
-  },
-  {
-    "id": "CVE-2026-105199",
-    "description": "The Pixel Tag Manager for WooCommerce  WordPress plugin before 2.2.3 does not perform a capability check in one of its AJAX actions, and exposes the nonce protecting it to any user able to access the admin dashboard, allowing users with a role as low as Contributor to overwrite the Pixel Tag Manager for WooCommerce  WordPress plugin before 2.2.3's tracking configuration and have arbitrary JavaScript executed in the browsers of all visitors, including administrators.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T06:16:34.453"
-  },
-  {
-    "id": "CVE-2026-115807",
-    "description": "The User Profile Builder – Beautiful User Registration Forms, User Profiles & User Role Editor plugin for WordPress is vulnerable to Limited Privilege Escalation in all versions up to, and including, 4.0.3. This is due to the Gutenberg Register block passing the attacker-controlled Assigned Role attribute directly into the `[wppb-register]` shortcode without server-side authorization. The role guard in the form builder only downgrades roles that carry the manage_options or remove_users capability, leaving the Editor role and other privileged non-Administrator roles completely unrestricted. This makes it possible for authenticated attackers with Author-level access and above to create new WordPress accounts bearing the Editor role (or any other role that lacks the two guarded capabilities).",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-24T05:17:06.500"
-  },
-  {
-    "id": "CVE-2026-115806",
-    "description": "The Prime Mover – Backup and Migration plugin for WordPress is vulnerable to PHP Object Injection in all versions up to, and including, 2.2.1 via deserialization of untrusted input in the migration search-and-replace routine (recursiveUnserializeReplace()). An unauthenticated attacker can store a crafted, base64-encoded serialized object in wp_comments.comment_content through the standard comment-submission endpoint (wp-comments-post.php). When an administrator subsequently performs a routine Prime Mover export or restore, the plugin base64-decodes that stored value and passes it to unserialize() with no allowed_classes restriction. A Property-Oriented Programming (POP) chain is present in the plugin's own bundled Freemius library (FS_Clone_Manager::__set → FS_Option_Manager::set_option → store() → update_option()), so no additional plugin or theme is required — the plugin ships the gadget itself.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-24T05:17:04.900"
-  },
-  {
-    "id": "CVE-2026-115929",
-    "description": "MongoDB Compass relies on Electron, a third-party runtime that carries its own TLS root certificate store. This root certificate store has the recoverable eMudhra intermediate CA certificates. Issue is resolved by updating to Compass 1.53.1, which includes Electron 44.9.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-24T01:17:08.250"
   }
 ]
