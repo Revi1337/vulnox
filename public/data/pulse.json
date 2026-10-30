@@ -1,5 +1,579 @@
 [
   {
+    "id": "CVE-2026-71569",
+    "description": "Server-Side Request Forgery (SSRF) vulnerability in Apache Camel A2A component.\n\n\n\nThis issue affects Apache Camel: from 4.21.0 before 4.22.2.\n\n\n\nWebhookUrlValidator classified a push notification webhook host in two places that did not agree. A host written as an IP literal was matched against a list of string prefixes that named the IPv6 unique local range fc00::/7, while a host reached through a name was resolved and the resulting address classified with the InetAddress predicates isLoopbackAddress, isAnyLocalAddress, isLinkLocalAddress and isSiteLocalAddress. Those predicates do not cover the same ground as the prefix list: isSiteLocalAddress reports the deprecated fec0::/10 block and not the fc00::/7 unique local addresses that replaced it, and the JDK carries no predicate for them at all. The same address was therefore accepted or rejected depending on how it was written, and a webhook URL whose host name resolved into fc00::/7 passed a guard that refused the identical address given as a literal. PushNotificationDispatcher then sent the push notification to that address, together with any Authorization header carried in the same configuration, whose scheme and credentials the registering caller supplies. The webhook URL arrives as TaskPushNotificationConfig.url from the caller registering the push notification, so it is attacker-controlled, and allowLocalWebhookUrls is false by default, which is the configuration in which the guard is expected to hold. The response is not relayed back to the caller who registered the configuration, so what the gap yields is a blind outbound HTTPS request from the Camel process to an internal address the guard was written to refuse; reaching a service that way additionally requires that the name resolve into fc00::/7 in the target environment, that an HTTPS service be listening on that address, and that the TLS handshake succeed for the name being requested, which is why the severity is assessed medium. The same string pre-check was also wrong in the other direction: it matched the raw host string without first establishing that the host was an IP literal, so any name merely beginning with fc or fd, such as fcm.googleapis.com, was refused outright.\n\n\n\nUsers are recommended to upgrade to version 4.23.0, which fixes the issue. If users are on the 4.22.x releases stream, then they are suggested to upgrade to 4.22.2. The 4.21.x release line reached end of life before this issue was resolved and will not receive a fix, so deployments on it must move to a supported release. Both the literal and the resolved path now classify the address from its raw bytes with one shared classifier, which recognises fc00::/7 and the shared address space 100.64.0.0/10, as well as IPv4-compatible, NAT64 (64:ff9b::/96) and 6to4 (2002::/16) addresses whose embedded IPv4 address is not globally routable. For deployments that cannot upgrade immediately, place authentication in front of the A2A push notification configuration path so that the webhook URL does not arrive from an untrusted caller, and deny egress from the Camel process to fc00::/7 at the network level; where the deployment has no need of IPv6, starting the JVM with -Djava.net.preferIPv4Stack=true removes the address class the gap turns on. Note that allowLocalWebhookUrls=false is already the default and does not by itself close the gap.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:34.093"
+  },
+  {
+    "id": "CVE-2026-33924",
+    "description": "Two OS command injection vulnerabilities were discovered in the update installation functionality due to insufficient validation of the update bundle contents. An attacker with administrative privileges can remotely supply a crafted update bundle that, when installed, causes arbitrary commands to be executed with root privileges, allowing the attacker to read or modify sensitive data, change the appliance configuration, or shut down the appliance.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:33.010"
+  },
+  {
+    "id": "CVE-2026-33923",
+    "description": "A signature verification vulnerability was discovered in the update installation functionality due to inconsistent validation of the update bundle contents. An attacker with administrative privileges can remotely supply a crafted update bundle that passes signature verification but runs an unsigned script when the bundle is installed. The script runs with root privileges, allowing the attacker to read or modify sensitive data, change the appliance configuration, or shut down the appliance.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:32.847"
+  },
+  {
+    "id": "CVE-2026-118989",
+    "description": "WebToffee Product Import Export for WooCommerce 2.5.1 before 2.6.8 contains a server-side request forgery vulnerability in download_remote_file that allows shop_manager users to reach internal services via redirects. Attackers can submit a .csv URL that returns an HTTP 302 redirect to an internal address, causing the server to fetch internal responses and return them as import data.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:32.447"
+  },
+  {
+    "id": "CVE-2026-118984",
+    "description": "OmniRoute 3.8.0 before 3.8.52 contains an unverified password change vulnerability that allows holders of manage- or admin-scoped API keys or oma_ access tokens to change the management password without the current password. Attackers can send POST requests to /api/settings/require-login to lock out the operator, take over dashboard login, or disable the login requirement entirely.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:32.257"
+  },
+  {
+    "id": "CVE-2026-116409",
+    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in WP Swings Upsell Order Bump Offer for WooCommerce upsell-order-bump-offer-for-woocommerce allows Reflected XSS.This issue affects Upsell Order Bump Offer for WooCommerce: from n/a through 3.1.6.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:31.630"
+  },
+  {
+    "id": "CVE-2026-115967",
+    "description": "Weak Authentication vulnerability in Hamid Alinia Login with phone number login-with-phone-number allows Authentication Abuse.This issue affects Login with phone number: from n/a through 1.8.78.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:31.493"
+  },
+  {
+    "id": "CVE-2026-115965",
+    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in BuddyPress BuddyPress buddypress allows Blind SQL Injection.This issue affects BuddyPress: from n/a through 14.5.2.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:31.357"
+  },
+  {
+    "id": "CVE-2026-115964",
+    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in StylemixThemes Motors motors-car-dealership-classified-listings allows Blind SQL Injection.This issue affects Motors: from n/a through 1.4.126.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:31.220"
+  },
+  {
+    "id": "CVE-2026-115963",
+    "description": "Missing Authorization vulnerability in VideoWhisper.com Broadcast Live Video videowhisper-live-streaming-integration allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects Broadcast Live Video: from n/a through 7.3.9.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:31.097"
+  },
+  {
+    "id": "CVE-2026-115962",
+    "description": "Authentication Bypass by Spoofing vulnerability in myCred myCred mycred allows Identity Spoofing.This issue affects myCred: from n/a through 4.0.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:30.967"
+  },
+  {
+    "id": "CVE-2026-115942",
+    "description": "A misconfigured wildcard TLS certificate causes a stack read overflow.\n\n\n\nThis issue does not affect any wildcard certificate issued to the RFC9525 standard - the fix only accepts certificates that comply to this standard.\n\n\n\nThis issue affects Apache Qpid Proton C: through 0.40.0.\n\n\n\nUsers are recommended to upgrade to version 0.41.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:30.837"
+  },
+  {
+    "id": "CVE-2026-115611",
+    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in PluginUs.Net TableOn posts-table-filterable allows Reflected XSS.This issue affects TableOn: from n/a through 1.0.7.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:30.207"
+  },
+  {
+    "id": "CVE-2026-115599",
+    "description": "Missing Authorization vulnerability in ThimPress LearnPress learnpress allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects LearnPress: from n/a through 4.4.11.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:30.070"
+  },
+  {
+    "id": "CVE-2026-115592",
+    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in OceanWP OceanWP oceanwp allows Reflected XSS.This issue affects OceanWP: from n/a through 4.2.7.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:29.937"
+  },
+  {
+    "id": "CVE-2026-114230",
+    "description": "When dispatching SASL frames to authenticate the peer, Proton will also dispatch AMQP frames if they claim to be SASL frames. This allows authentication bypass. However there will be no user name set so the effects depend on how the application deals with this condition - which otherwise means that authentication has not completed yet.\n\n\n\nThis issue affects Apache Qpid Proton C: through 0.40.0.\n\n\n\nUsers are recommended to upgrade to version 0.41.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:28.210"
+  },
+  {
+    "id": "CVE-2026-114193",
+    "description": "Missing Authorization vulnerability in Eyal Fitoussi GEO my WordPress geo-my-wp allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects GEO my WordPress: from n/a through 4.5.5.5.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:28.080"
+  },
+  {
+    "id": "CVE-2026-112827",
+    "description": "Missing Authorization vulnerability in VillaTheme HANDMADE – Dropshipping for Etsy and WooCommerce handmade-dropshipping-for-etsy-and-woo allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects HANDMADE – Dropshipping for Etsy and WooCommerce: from n/a through 1.0.10.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:27.473"
+  },
+  {
+    "id": "CVE-2026-105042",
+    "description": "A message body that is deeply nested and decoded by pn_message_body() could overflow the stack and cause a crash.\n\n\n\nThis issue affects Apache Qpid Proton C: through 0.40.0.\n\n\n\nUsers are recommended to upgrade to version 0.41.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:24.410"
+  },
+  {
+    "id": "CVE-2026-105031",
+    "description": "When using the OpenSSL TLS implementation, both the pn_ssl_domain_set_trusted_ca_db() & pn_tls_config_set_trusted_certs() APIs added to rather than replaced the default system trust anchors. Leading to potentially trusting unexpected peer certificates.\n\n\n\nThis can be worked around by setting the SSL_CERT_FILE environment variable for the application to /dev/null.\n\n\n\nThis issue does not affect the Win32 SChannel TLS implementation.\n\n\n\nThis issue affects Apache Qpid Proton C: through 0.40.0.\n\n\n\nUsers are recommended to upgrade to version 0.41.1, which fixes the issue.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T11:17:24.290"
+  },
+  {
+    "id": "CVE-2026-91153",
+    "description": "The Everest Forms – Contact Form, Payment Form, Quiz, Survey & Custom Form Builder with AI plugin for WordPress is vulnerable to Sensitive Information Exposure in all versions up to, and including, 3.6.2 via the process. This makes it possible for unauthenticated attackers to extract arbitrary WordPress post meta values — including license keys, API tokens, SMTP credentials, and Stripe or AWS secrets stored on any post type — via form submission notification emails or stored entries. The submission nonce is publicly rendered in every embedded form and can additionally be minted anonymously via the nopriv everest_forms_get_form_update_nonce action, meaning no account or prior authentication of any kind is required to complete the exploit.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:06.840"
+  },
+  {
+    "id": "CVE-2026-91152",
+    "description": "The Everest Forms – Contact Form, Payment Form, Quiz, Survey & Custom Form Builder with AI plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'evf_toast_type' parameter in all versions up to, and including, 3.6.2 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link. Exploitation requires the sibling evf_toast parameter to decode successfully via atob(), but this is a trivially attacker-controlled prerequisite.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:06.693"
+  },
+  {
+    "id": "CVE-2026-88941",
+    "description": "Kaspersky has fixed a vulnerability in the Network Agent for Windows module of Kaspersky Security Center. The vulnerability could potentially cause the Network Agent module of Kaspersky Security Center to malfunction. There are no evidence of the vulnerability exploitation in-the-wild.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:06.520"
+  },
+  {
+    "id": "CVE-2026-118192",
+    "description": "The JoomSport – for Sports: Team & League, Football, Hockey & more plugin for WordPress is vulnerable to generic SQL Injection via the 'team_id' parameter in all versions up to, and including, 5.7.11 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with contributor-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. The vulnerable code path is reached when the season has no associated joomsport_tournament term, which is the default state for newly created seasons.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:03.997"
+  },
+  {
+    "id": "CVE-2026-117611",
+    "description": "Improper certificate validation in Checkmk <2.5.0p18, <2.4.0p39, <2.3.0p52 and 2.2.0 (EOL): the Certificate Authority stores bundled with \"certifi\" and \"webpki-roots\" include a root CA that trusts eMudhra (emSign) intermediate certificates whose private keys are public.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:03.730"
+  },
+  {
+    "id": "CVE-2026-116763",
+    "description": "The LiteSpeed Cache plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'comment' parameter in all versions up to, and including, 7.9.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This vulnerability is only exploitable when the HTML Minify option (O_OPTM_HTML_MIN) is enabled and a companion plugin renders stored comment content into a raw-text context such as a JSON-LD script block on the same page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:03.590"
+  },
+  {
+    "id": "CVE-2026-111419",
+    "description": "A sensitive information exposure vulnerability exists on the Foxit official website because JavaScript code contains third-party authorization information. This may allow unauthorized parties to obtain or misuse the exposed credentials.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:03.440"
+  },
+  {
+    "id": "CVE-2026-111418",
+    "description": "A server-side request forgery (SSRF) vulnerability exists in the Foxit official website’s HTML-to-PDF conversion service. Support for ZIP-formatted input can bypass restrictions on requests to internal IP addresses, potentially allowing discovery of internal network resources.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:03.313"
+  },
+  {
+    "id": "CVE-2026-111417",
+    "description": "A broken access control vulnerability exists in the Foxit official website’s HTML-to-PDF conversion service due to the use of a shared token for submitted conversion documents. This may allow unauthorized users to access documents submitted by other users.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:03.160"
+  },
+  {
+    "id": "CVE-2026-111318",
+    "description": "The HT Mega Addons for Elementor – Elementor Widgets & Template Builder plugin for WordPress is vulnerable to Stored DOM-Based Cross-Site Scripting via the 'href attribute of <a> inside .htmega-tab-nav' parameter in all versions up to, and including, 3.2.7 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Successful exploitation requires a co-installed plugin such as wpDiscuz with its rich editor enabled whose markup allowlist permits span[class] and a[href] storage, an HT Mega Tabs widget present on the same page as the comment section, and a victim user click on the injected anchor link.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:03.017"
+  },
+  {
+    "id": "CVE-2026-110707",
+    "description": "The RSS Aggregator by Feedzy – Feed to Post, Autoblogging, News & YouTube Video Feeds Aggregator plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'media:group/media:description (XML element in the imported feed)' parameter in all versions up to, and including, 5.2.12 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires an administrator to configure a Feed-to-Post import pointing at an attacker-controlled feed URL and trigger the import via the Run Now action or setup wizard, which is the plugin's standard configuration flow.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:02.877"
+  },
+  {
+    "id": "CVE-2026-109215",
+    "description": "The LiteSpeed Cache plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'bbp_reply_content' parameter in all versions up to, and including, 7.9.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with subscriber-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires that an administrator has enabled Viewport Images (VPI) and configured a VPI filename that matches an image the attacker can embed in user-generated content — such as a bbPress topic where Subscriber-level Participants are permitted to post replies containing raw img tags.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:02.727"
+  },
+  {
+    "id": "CVE-2026-107743",
+    "description": "The Mapster WP Maps plugin for WordPress is vulnerable to Stored Cross-Site Scripting in versions up to, and including, 2.0.5. This is due to the /wp-json/mapster-wp-maps/save-mapmaker REST route being registered with a permission_callback that unconditionally returns true (no capability check, no nonce), together with the mapster_write_config_to_acf() helper only sanitizing string config values with sanitize_text_field() — which strips HTML tags but leaves quote characters intact — and the mapster_wp_map shortcode renderer in mapster_wordpress_maps_shortcode_display() concatenating the stored loading_background_color value into a single-quoted inline style attribute without esc_attr(). This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:02.580"
+  },
+  {
+    "id": "CVE-2026-107629",
+    "description": "The Greenshift – animation and page builder blocks plugin for WordPress is vulnerable to Stored DOM-Based Cross-Site Scripting via the 'comment' parameter in all versions up to, and including, 13.2.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires the affected post page to include an Advanced HTML Element block with Split Text animation enabled wrapping a Latest Comments block that displays comment excerpts, as this configuration causes splittext.js to be enqueued and to process the comment content container.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:02.440"
+  },
+  {
+    "id": "CVE-2026-107627",
+    "description": "The Greenshift – animation and page builder blocks plugin for WordPress is vulnerable to Stored DOM-Based Cross-Site Scripting via the 'comment' parameter in all versions up to, and including, 13.2.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires an administrator to have published a page containing a Text Animated block with Content set to Blocks, a Latest Comments block with excerpts enabled nested inside it, and at least one Animated Texts value configured — conditions that cause the gs-textanimate script to be enqueued and process the comment excerpts.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:02.293"
+  },
+  {
+    "id": "CVE-2026-104727",
+    "description": "The Sequential Order Numbers for WooCommerce plugin for WordPress is vulnerable to Stored Cross-Site Scripting via 'condition' Post Meta Array Keys in all versions up to, and including, 3.6.5 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:02.133"
+  },
+  {
+    "id": "CVE-2026-103875",
+    "description": "The Media Library Assistant plugin for WordPress is vulnerable to Reflected Cross-Site Scripting via the 'search-string' parameter in all versions up to, and including, 3.42 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that execute if they can successfully trick a user into performing an action such as clicking on a link. Exploitation requires the targeted site to have a publicly accessible page containing an [mla_gallery] shortcode configured with a pagination output mode and an mla_link_href template that reflects a {+request:...+} token, along with enough attachments to trigger pagination.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:01.977"
+  },
+  {
+    "id": "CVE-2026-103485",
+    "description": "The Extensions for Leaflet Map plugin for WordPress is vulnerable to Stored DOM-Based Cross-Site Scripting via the 'feature.properties[<template-token>]' parameter in all versions up to, and including, 5.4 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires that a site administrator has previously configured a public map using the [leaflet-map]+[leaflet-geojson]+[choropleth] shortcode combination whose GeoJSON src URL is one the attacker controls — for example, through compromise of an external data host, a subdomain takeover, or a site intentionally pointing at an attacker-hosted feed.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T10:17:00.737"
+  },
+  {
+    "id": "CVE-2026-85498",
+    "description": "A flaw was found in polkit. When processing input that begins with a null byte, an arithmetic error in the authentication agent helper causes an integer underflow during buffer length calculation, resulting in an out-of-bounds memory read. An attacker capable of supplying crafted input can trigger this flaw, potentially causing an application crash and resulting in a Denial of Service (DoS).",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-29T09:17:08.400"
+  },
+  {
+    "id": "CVE-2026-7190",
+    "description": "A cross-site scripting (XSS) vulnerability in the ICTBroadcast software, which affects the demo environment. The vulnerability is found in the ‘login.php’ endpoint, where the ‘editForm[extension_username]’ parameter is reflected in the response without proper filtering. Successful exploitation of this vulnerability could allow an attacker to execute arbitrary JavaScript code in the victim’s browser once the victim accesses the malicious URL.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T09:17:08.250"
+  },
+  {
+    "id": "CVE-2026-115303",
+    "description": "The Contact Form by Supsystic WordPress plugin before 1.11.1 does not strip CR/LF characters or re-validate submitted field values before concatenating them into outgoing email headers when a form is configured to map a submitted field into its Reply-To, From or Cc header, allowing unauthenticated users to inject arbitrary email headers such as additional Bcc or Cc recipients into the notification email.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-29T09:17:08.097"
+  },
+  {
+    "id": "CVE-2026-114358",
+    "description": "This\nvulnerability exists in the Radius\nXenia M2M Platform due to insufficient validation of user supplied input in\nthe password recovery functionality in the web management interface. An\nunauthenticated remote attacker could exploit this vulnerability by supplying\ncrafted SQL query through input fields to the targeted system. \n\n\n\nSuccessful exploitation of this vulnerability\ncould allow the attacker to gain unauthorized access to sensitive information,\nenumerate database structure or modify database records on the targeted system.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T09:17:07.910"
+  },
+  {
+    "id": "CVE-2026-117174",
+    "description": "Rejected reason: VUL-2026-008368 為先回報之相同問題",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T08:17:00.210"
+  },
+  {
+    "id": "CVE-2025-62841",
+    "description": "An use of hard-coded cryptographic key vulnerability has been reported to affect HBS 3 Hybrid Backup Sync and Hybrid Backup Sync. If exploited, the vulnerability could allow remote attackers to compromise the security of the system.\n\nWe have already fixed the vulnerability in the following version:\nHBS 3 Hybrid Backup Sync 26.4.0.521 and later\nHybrid Backup Sync 26.4.0.521 and later\nHybrid Backup Sync 26.4.1.563 and later",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T08:17:00.057"
+  },
+  {
+    "id": "CVE-2025-62839",
+    "description": "An use of hard-coded cryptographic key vulnerability has been reported to affect HBS 3 Hybrid Backup Sync and Hybrid Backup Sync. If exploited, the vulnerability could allow remote attackers to compromise the security of the system.\n\nWe have already fixed the vulnerability in the following version:\nHBS 3 Hybrid Backup Sync 26.4.0.521 and later\nHybrid Backup Sync 26.4.0.521 and later\nHybrid Backup Sync 26.4.1.563 and later",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-10-29T08:16:59.863"
+  },
+  {
+    "id": "CVE-2026-118030",
+    "description": "A flaw was found in the HOTP authentication mechanism of the keycloak-services component, which provides identity and access management services. The issue occurs because the system validates a one-time password and updates its internal counter in two separate steps without proper locking. An attacker with a users password could exploit this timing gap to use a single one-time code to log in multiple times simultaneously.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T07:16:44.990"
+  },
+  {
+    "id": "CVE-2026-117859",
+    "description": "A flaw was found in the Pushed Authorization Request PAR implementation of the keycloak-services component. The issue occurs when an authentication flow is restarted, which incorrectly clears the internal markers used to track PAR consumption while leaving the request active. This allows an attacker to reuse the same authorization request to obtain multiple access tokens, bypassing security requirements for single-use requests.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T07:16:44.840"
+  },
+  {
+    "id": "CVE-2026-117688",
+    "description": "A flaw was found in the client registration component of Keycloak, an open-source identity and access management solution. When a vault provider is used to store sensitive information, an authenticated client owner can use a specially crafted reference to trick the system into revealing secrets. By updating a client secret to point to a vault entry and then requesting the client configuration, the owner can see the secret value in plain text. This could lead to the exposure of sensitive credentials that the user should not be able to access.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T07:16:44.690"
+  },
+  {
+    "id": "CVE-2026-117627",
+    "description": "A flaw was found in the JWT Authorization Grant implementation of the keycloak-services component. When an OIDC or Google identity provider is configured with specific login restrictions, such as claim filtering, these checks are correctly applied during standard browser logins but are skipped during the JWT-based grant flow. This allows an authenticated client to obtain access tokens for a user even if their identity provider claims should have blocked the login.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T07:16:44.533"
+  },
+  {
+    "id": "CVE-2026-117548",
+    "description": "A NULL pointer dereference flaw was found in 389-ds-base. This flaw occurs when a ModifyDN (rename) operation uses an attribute's schema alias name (such as \"commonName\") instead of its canonical name (such as \"cn\") as the new relative distinguished name. An authenticated attacker with the ModifyDN (rename) permission on the affected entry can use this flaw to crash the directory server, causing a denial of service.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T07:16:44.363"
+  },
+  {
+    "id": "CVE-2026-93293",
+    "description": "The Password Protected plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the bundled Freemius SDK's purchase-completion handler in all versions up to, and including, 2.8.4 due to insufficient input sanitization and output escaping. Once the site's Freemius opt-in is complete (the normal state after an administrator clicks \"Allow & Continue\"), the handler processes the 'purchased_plan' request parameter on any wp-admin request from an authenticated user without any capability, nonce, or purchase validation, and stores it in a persistent, site-wide administrative notice. This makes it possible for authenticated attackers, with subscriber-level access and above, to inject arbitrary web scripts that execute automatically when an administrator views a standard admin page such as their Profile page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:24.940"
+  },
+  {
+    "id": "CVE-2026-89216",
+    "description": "The vTables  WordPress plugin before 0.3 does not properly sanitise and escape a parameter before using it in a SQL statement, which allows unauthenticated attackers to perform SQL injection attacks and extract data from the database.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:24.800"
+  },
+  {
+    "id": "CVE-2026-88928",
+    "description": "The PAYCOMET for WooCommerce WordPress plugin before 5.46 does not verify the cryptographic signature on its payment notification endpoint when the request references a tokenisation operation, allowing unauthenticated attackers to overwrite the stored payment token associated with existing orders and delete saved card records.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:24.647"
+  },
+  {
+    "id": "CVE-2026-86794",
+    "description": "The Community Events WordPress plugin before 1.6.0 does not have authorisation or nonce checks when processing public event submissions, and does not escape several of the submitted values before outputting them in the administration dashboard and on the public calendar, allowing unauthenticated users to inject arbitrary web scripts that will execute in the browser of an administrator reviewing the submission.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:24.350"
+  },
+  {
+    "id": "CVE-2026-85007",
+    "description": "The Video Player for YouTube  WordPress plugin before 2.1.4 does not perform a capability check on its player-preset AJAX handler, allowing users with the Contributor role and above to read the site-wide player-preset configuration, and in versions before 2.1.1 to modify and delete it as well.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:24.230"
+  },
+  {
+    "id": "CVE-2026-78396",
+    "description": "The Link Library WordPress plugin before 7.10.0 does not verify that a requested link belongs to the settings set whose display template is used to render it, allowing unauthenticated users to disclose the telephone number, e-mail address and submitter name stored with links that the settings set is configured not to display.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:24.123"
+  },
+  {
+    "id": "CVE-2026-78395",
+    "description": "The Link Library WordPress plugin before 7.10.0 does not re-check the selected library's own login requirement when processing its front-end link submission, allowing unauthenticated users to submit links to a library configured to require login by reusing a form token obtained from another library that does not.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:24.000"
+  },
+  {
+    "id": "CVE-2026-19610",
+    "description": "A flaw was found in the platform-mbean component of JBoss EAP, which provides management access to JVM-level metrics and configurations. The issue occurs because the handler for the read-resource operation on the runtime management resource fails to perform required Role-Based Access Control (RBAC) checks. This allows an authenticated user with low-privileged access, such as the Monitor role, to view sensitive system properties and JVM configuration details that should be restricted.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:20.797"
+  },
+  {
+    "id": "CVE-2026-15564",
+    "description": "Wildfly's IIOP listener may permit deserialization of input streams before authentication is performed. An attacker who can gain access to the IIOP port may be able to construct and send malicious objects and achieve deserialization, if the target EJB allows untyped method parameters, and depending on the potential gadget chains available in the running classpath.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:20.590"
+  },
+  {
+    "id": "CVE-2026-118905",
+    "description": "Node Version Manager (nvm) is a POSIX-compliant shell function for managing multiple node.js versions. In versions 0.31.2 through 0.40.5, `nvm_ls` filters installed versions with a sed program that embeds the requested version pattern in a `\\#...#` address, escaping `.` (and, since 0.40.4, `#`) but not backslash. A version string containing `#` (or `\\#`) therefore closes the address early, and the rest of it is parsed as sed commands: with GNU sed, the `e` command runs a shell command as the user; with BSD sed, the `w` and `r` commands write and read files. This is reachable whenever an attacker-influenced version string is passed to `nvm use`, `nvm which`, `nvm ls`, `nvm version`, `nvm run`, or `nvm exec`, or to `nvm-exec` via `NODE_VERSION`, and at least one version is installed. nvm's own `.nvmrc` parser strips comments, so a bare `nvm use` is not affected; however, the bash `cdnvm` and zsh `load-nvmrc` auto-switch hooks documented in the README read `.nvmrc` as-is and pass it to `nvm ls` and `nvm version`, so a user with one of those hooks installed runs the attacker's command just by changing into a directory under a malicious `.nvmrc`; scripts that run `nvm use \"$(cat .nvmrc)\"` are affected the same way. Version 0.40.6 passes any version pattern containing `#` or a newline through the `.nvmrc` content parser first, so no `#` reaches the sed program.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:20.343"
+  },
+  {
+    "id": "CVE-2026-115302",
+    "description": "The Contact Form by Supsystic  WordPress plugin before 1.11.1 does not restrict access to an AJAX action that deletes stored form statistics records, allowing unauthenticated attackers to delete arbitrary statistics entries.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:20.217"
+  },
+  {
+    "id": "CVE-2026-115301",
+    "description": "The Contact Form by Supsystic  WordPress plugin before 1.11.1 does not sandbox the template engine used to render its forms and allows stored form-editor content to reach that engine as executable template code, enabling an administrator to perform server-side template injection and execute arbitrary code on the server. The injected template is compiled and executed whenever any visitor loads a page containing the form, so the stored payload also lets an unauthenticated visitor read server-side secrets such as authentication salts and database credentials.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:20.080"
+  },
+  {
+    "id": "CVE-2026-115300",
+    "description": "The Contact Form by Supsystic  WordPress plugin before 1.11.1 does not validate a CSRF token or request origin on two administrator-only actions that bulk-delete captured form submissions and wipe a form's statistics, allowing attackers to permanently destroy a site's stored contact leads and analytics by tricking a logged-in administrator into sending a forged request.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:19.947"
+  },
+  {
+    "id": "CVE-2026-115299",
+    "description": "The Contact Form by Supsystic  WordPress plugin before 1.11.1 does not verify a CSRF nonce before saving its mail settings, allowing an attacker to overwrite the site's outbound mail configuration, including the SMTP server, its credentials and the notification recipient, by tricking a logged-in administrator into visiting a crafted page, which can route the Contact Form by Supsystic  WordPress plugin before 1.11.1's contact-form notifications through infrastructure the attacker controls.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:19.810"
+  },
+  {
+    "id": "CVE-2026-115282",
+    "description": "The Recipe Card Blocks Lite WordPress plugin before 3.6.4 does not perform an authorization check before rendering posts through its recipe print feature, allowing unauthenticated users to disclose the title, ID and recipe content of unpublished posts, including drafts, pending, private and password-protected posts, that contain a recipe card block. Its optional \"print only published posts\" protection does not prevent this, because the status check is applied to a different post than the one ultimately rendered.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:19.680"
+  },
+  {
+    "id": "CVE-2026-115259",
+    "description": "The Photo Engine (Media Organizer & Lightroom) WordPress plugin before 6.6.0 does not have proper authorization checks when updating post data through one of its REST API routes in all versions up to, and including, 6.5.8. This makes it possible for authenticated attackers, with Author-level access and above, to modify the title, content, excerpt and other fields of arbitrary posts, pages and attachments, including those belonging to other users.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:19.557"
+  },
+  {
+    "id": "CVE-2026-115245",
+    "description": "The Chat AI with Dispatcher WordPress plugin before 2.4 does not properly validate uploaded files, relying only on a spoofable client-supplied content type, allowing unauthenticated attackers to upload arbitrary files, including PHP, which can lead to remote code execution.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:19.407"
+  },
+  {
+    "id": "CVE-2026-114488",
+    "description": "A flaw was found in Wildfly. A remote attacker can bypass authentication on IIOP EJB invocations as the CSIv2 security interceptor accepts ITTPrincipalName identity assertions in the service context without verifying transport-level authentication, allowing a pre-auth attacker on the port 3528 to impersonate any principal on every IIOP-exposed @Remote EJB.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:19.103"
+  },
+  {
+    "id": "CVE-2026-114270",
+    "description": "The GeoDirectory  WordPress plugin before 2.8.197 does not honour post password protection when rendering a listing, allowing unauthenticated users to disclose the content and custom fields of published listings that are protected by a post password.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.980"
+  },
+  {
+    "id": "CVE-2026-113617",
+    "description": "The Automated Import Products to Cart WordPress plugin before 1.0.4 does not sanitize a user-supplied file path before using it to read and delete files, allowing users with minimal permissions, such as subscribers, to read arbitrary files (including ones containing the database credentials) and delete arbitrary files on the server.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.857"
+  },
+  {
+    "id": "CVE-2026-113616",
+    "description": "The LogixFast Auth WordPress plugin before 1.0.4 does not deliver its password-reset one-time code to the resolved account's own email address, mailing it to the address supplied in the request instead, allowing unauthenticated attackers to reset any user's password, including an administrator's, and take over the account.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.740"
+  },
+  {
+    "id": "CVE-2026-111739",
+    "description": "The Two Factor Authentication WordPress plugin before 1.17.0, All-In-One Security (AIOS)  WordPress plugin before 5.5.0 do not bind the account whose two-factor code is verified to the account being authenticated, allowing an attacker who knows a victim's password and holds their own two-factor-enabled account to satisfy the victim's second-factor check with their own code and obtain the victim's session.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.627"
+  },
+  {
+    "id": "CVE-2026-110983",
+    "description": "The WP Photo Album Plus WordPress plugin before 9.3.04.004 does not verify the origin or a security token for one of its comment-management requests, allowing attackers to delete photo comments by tricking a logged-in user who holds comment-moderation rights into loading a crafted page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.513"
+  },
+  {
+    "id": "CVE-2026-110505",
+    "description": "The Enable SVG, WebP, and ICO Upload WordPress plugin before 1.1.6 does not prevent animation elements in uploaded SVG files from changing a link's target to a javascript: URI, which could allow users with the author role and above to bypass its SVG sanitization and perform Stored Cross-Site Scripting attacks that execute in WebKit-based browsers such as Safari.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.397"
+  },
+  {
+    "id": "CVE-2026-110504",
+    "description": "The Enable SVG, WebP, and ICO Upload WordPress plugin before 1.1.6 does not sanitize uploaded SVG files whose content is not detected as SVG, while still storing and serving them as SVG images, which could allow users with the author role and above to perform Stored Cross-Site Scripting attacks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.283"
+  },
+  {
+    "id": "CVE-2026-110030",
+    "description": "The Hide Price Until Login WordPress plugin before 1.1.2 does not restrict a guest-registration handler and does not honour the site's user-registration setting, allowing anyone to create a WordPress account and obtain a logged-in session even when registration is disabled.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:18.167"
+  },
+  {
+    "id": "CVE-2026-108763",
+    "description": "The Wallet System for WooCommerce  WordPress plugin before 2.8.2 does not restrict its KYC document submission handler to the current user's own account, taking the target user ID from a client-supplied request field with no ownership or capability check, allowing authenticated users with minimal privileges such as Subscriber or Customer to overwrite the KYC documents and verification status of any other user, including an administrator.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:17.697"
+  },
+  {
+    "id": "CVE-2026-108686",
+    "description": "The WP Post Author  WordPress plugin before 4.2.0 does not restrict the integration settings it returns to visitors, allowing unauthenticated users to read the reCAPTCHA secret key when one has been saved.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:17.583"
+  },
+  {
+    "id": "CVE-2026-108685",
+    "description": "The WP Post Author  WordPress plugin before 4.2.0 does not check that the account was created before updating its profile during front-end registration, allowing unauthenticated users to overwrite the display name, nickname and website of the first user account, which is normally the administrator, when a registration form declares one of those fields.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:17.443"
+  },
+  {
+    "id": "CVE-2026-105258",
+    "description": "The Appointment Booking Plugin  WordPress plugin before 5.7.6 does not escape several booking-form step content settings before rendering them on the public booking form, allowing high-privilege users such as administrators to inject JavaScript that executes in the browser of any visitor who loads the form; on multisite, where administrators do not hold the unfiltered_html capability, this crosses a privilege boundary to unauthenticated visitors.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:17.317"
+  },
+  {
+    "id": "CVE-2026-103693",
+    "description": "The Frontend Dashboard WordPress plugin before 3.0.5, ProfileGrid  WordPress plugin before 6.0.0.5 do not prevent an unauthenticated user from storing a serialized PHP object in user metadata that is deserialized when a public profile is viewed, allowing PHP object injection that can lead to arbitrary file write and potential remote code execution.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:17.197"
+  },
+  {
+    "id": "CVE-2024-3586",
+    "description": "The LetterPress  WordPress plugin before 2.4.0 does not sanitise and escape some of its settings, which could allow high privilege users such as admin to perform Stored Cross-Site Scripting attacks even when the unfiltered_html capability is disallowed (for example in multisite setup)",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-10-29T06:17:16.020"
+  },
+  {
     "id": "CVE-2026-96741",
     "description": "The DSGVO All in one for WP plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Comment Content via Output Buffer Regex Corruption in all versions up to, and including, 5.0 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This is only exploitable when the administrator has enabled both the 'Google Tag Manager' integration and the 'Replace integration automatically [Beta]' option, and requires the crafted comment to be approved by an administrator.",
     "severity": "High",
@@ -584,7 +1158,7 @@
     "id": "CVE-2026-76418",
     "description": "A vulnerability in the Remote Access SSL VPN service of Cisco Secure Firewall Adaptive Security Appliance (ASA) Software and Cisco Secure Firewall Threat Defense (FTD) Software could allow an unauthenticated, remote attacker to cause the device to reload unexpectedly, resulting in a denial of service (DoS) condition. This vulnerability is due to logic errors when secondary authentication is configured on a tunnel group. An attacker could exploit this vulnerability by sending a crafted request when connecting to the SSL remote access VPN. A successful exploit could allow the attacker to cause the affected device to reload, resulting in a DoS condition.",
     "severity": "High",
-    "tech": "Unknown",
+    "tech": "Adaptive security appliance software",
     "published": "2026-10-28T20:18:47.063"
   },
   {
@@ -14894,649 +15468,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-10-26T12:17:01.153"
-  },
-  {
-    "id": "CVE-2026-89209",
-    "description": "A vulnerability has been identified in Mendix SAML (Mendix 10 compatible) (All versions < V4.2.4), Mendix SAML (Mendix 11 compatible) (All versions < V4.2.4), Mendix SAML (Mendix 9 compatible) (All versions < V3.6.29). Affected versions of the module do not properly protect against SAML assertion replay in IdP-initiated authentication flows. This could allow unauthenticated remote attackers to gain unauthorized access to the application by replaying a valid SAML response.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:38.583"
-  },
-  {
-    "id": "CVE-2026-116469",
-    "description": "MISP Guard, a proxy-based security filter for MISP feed distribution, contains a case-sensitivity flaw in multiple policy enforcement checks. The functions check_required_taxonomy_exists, check_required_taxonomy_tags_allowed, check_blocked_attribute_categories, and check_blocked_analyst_data_sharing_groups_uuids performed case-sensitive string comparisons when matching event tags, attribute categories, and sharing-group UUIDs against configured allow/block lists.\n\nAn attacker with the ability to create or modify events in a MISP instance (or a connected instance that pushes events through the guard) could craft events using different letter case in taxonomy tag names, attribute categories, or sharing-group UUIDs to bypass the configured security policies. For example, if the policy requires the 'tlp' taxonomy with only 'tlp:clear' allowed, an event tagged 'TLP:AMBER' would not be recognized as belonging to the 'tlp' taxonomy and would therefore not be checked against the allowed-tags list, resulting in the event being forwarded to feed consumers. Similarly, a blocked attribute category such as 'Person' would not match a configured block entry of 'person', allowing the attribute to pass through the filter.\n\nThe security impact is unauthorized disclosure of threat-intelligence data that the operator intended to restrict. Events carrying non-allowed TLP (Traffic Light Protocol) markings, blocked attribute categories, or blocked sharing-group associations are forwarded to downstream feed consumers in violation of the configured distribution policy. This undermines the confidentiality controls that MISP Guard is designed to enforce.\n\nThe vulnerability is trivially exploitable: the attacker only needs to alter the letter case of a tag, category, or UUID string. No authentication beyond normal MISP event-creation privileges is required, and no user interaction is needed.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:37.840"
-  },
-  {
-    "id": "CVE-2026-116259",
-    "description": "A security flaw has been discovered in libimobiledevice up to 1.4.0. This vulnerability affects the function afc_get_device_info_key of the file src/afc.c of the component Device Info Handler. Performing a manipulation of the argument Value results in memory corruption. The attack requires a local approach. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:37.670"
-  },
-  {
-    "id": "CVE-2026-116258",
-    "description": "A vulnerability was identified in libimobiledevice up to 1.4.0. This affects an unknown part of the file src/afc.c of the component AFC. Such manipulation leads to heap-based buffer overflow. The attack can be executed remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:37.500"
-  },
-  {
-    "id": "CVE-2026-116257",
-    "description": "A vulnerability was determined in BillaBear up to 2025.01.03. Affected by this issue is the function processInstall of the file src/BillaBear/Controller/InstallController.php of the component Installation Handler. This manipulation causes missing authentication. Remote exploitation of the attack is possible. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:37.327"
-  },
-  {
-    "id": "CVE-2026-116256",
-    "description": "A vulnerability was found in geesondog RhaPHP up to 7ae639ccf8dcb627faace096d030bd4cb4cfb905. Affected by this vulnerability is the function image of the file application/mp/controller/Show.php of the component Mp Module Media Proxy. The manipulation of the argument url results in server-side request forgery. The attack may be launched remotely. The exploit has been made public and could be used. This product operates on a rolling release basis, ensuring continuous delivery. Consequently, there are no version details for either affected or updated releases. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:37.130"
-  },
-  {
-    "id": "CVE-2026-115961",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in bPlugins B Slider b-slider allows Stored XSS.This issue affects B Slider: from n/a through 2.2.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:36.987"
-  },
-  {
-    "id": "CVE-2026-115960",
-    "description": "Missing Authorization vulnerability in WPExperts APIExperts Square for WooCommerce woosquare allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects APIExperts Square for WooCommerce: from n/a through 4.7.5.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:36.857"
-  },
-  {
-    "id": "CVE-2026-115959",
-    "description": "Missing Authorization vulnerability in WPExperts APIExperts Square for WooCommerce woosquare allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects APIExperts Square for WooCommerce: from n/a through 4.7.5.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:36.720"
-  },
-  {
-    "id": "CVE-2026-115956",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in bPlugins Panorama Viewer – 360 Degree Image + Video Viewer panorama allows Stored XSS.This issue affects Panorama Viewer – 360 Degree Image + Video Viewer: from n/a through 1.8.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:36.477"
-  },
-  {
-    "id": "CVE-2026-115955",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in bPlugins Advanced Post Block - Post Grid for WordPress block editor advanced-post-block allows Stored XSS.This issue affects Advanced Post Block - Post Grid for WordPress block editor: from n/a through 2.5.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:36.343"
-  },
-  {
-    "id": "CVE-2026-115954",
-    "description": "Missing Authorization vulnerability in Dylan Kuhn  Geo Mashup geo-mashup allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects  Geo Mashup: from n/a through 1.13.22.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:36.210"
-  },
-  {
-    "id": "CVE-2026-115953",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Dylan Kuhn  Geo Mashup geo-mashup allows Stored XSS.This issue affects  Geo Mashup: from n/a through 1.13.22.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:36.070"
-  },
-  {
-    "id": "CVE-2026-115951",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Kevin Weber Lazy Load for Videos lazy-load-for-videos allows Stored XSS.This issue affects Lazy Load for Videos: from n/a through 2.18.11.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:35.937"
-  },
-  {
-    "id": "CVE-2026-115950",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in WP Smart Widgets Better Post & Filter Widgets for Elementor better-post-filter-widgets-for-elementor allows Stored XSS.This issue affects Better Post & Filter Widgets for Elementor: from n/a through 1.9.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:35.797"
-  },
-  {
-    "id": "CVE-2026-115948",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in David Lingren Media LIbrary Assistant media-library-assistant allows Blind SQL Injection.This issue affects Media LIbrary Assistant: from n/a through 3.42.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:35.550"
-  },
-  {
-    "id": "CVE-2026-115608",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection') vulnerability in Crocoblock JetEngine jet-engine allows SQL Injection.This issue affects JetEngine: from n/a through 3.9.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:35.190"
-  },
-  {
-    "id": "CVE-2026-115595",
-    "description": "Missing Authorization vulnerability in Supsystic Contact Form by Supsystic contact-form-by-supsystic allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects Contact Form by Supsystic: from n/a through 1.10.7.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:34.923"
-  },
-  {
-    "id": "CVE-2026-115594",
-    "description": "Insertion of Sensitive Information Into Sent Data vulnerability in David Lingren Media LIbrary Assistant media-library-assistant allows Retrieve Embedded Sensitive Data.This issue affects Media LIbrary Assistant: from n/a through 3.42.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:34.783"
-  },
-  {
-    "id": "CVE-2026-114708",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Crocoblock JetSmartFilters jet-smart-filters allows Stored XSS.This issue affects JetSmartFilters: from n/a through 3.8.6.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:33.273"
-  },
-  {
-    "id": "CVE-2026-114707",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Crocoblock JetElements For Elementor jet-elements allows Stored XSS.This issue affects JetElements For Elementor: from n/a through 2.9.2.5.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T11:16:33.133"
-  },
-  {
-    "id": "CVE-2026-97295",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in David Lingren Media LIbrary Assistant media-library-assistant allows Cross Site Request Forgery.This issue affects Media LIbrary Assistant: from n/a through 3.42.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:53.963"
-  },
-  {
-    "id": "CVE-2026-97255",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in WProyal Royal Elementor Addons royal-elementor-addons allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects Royal Elementor Addons: from n/a through 1.7.1069.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:53.813"
-  },
-  {
-    "id": "CVE-2026-97254",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in WProyal Royal Elementor Addons royal-elementor-addons allows Stored XSS.This issue affects Royal Elementor Addons: from n/a through 1.7.1069.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:53.657"
-  },
-  {
-    "id": "CVE-2026-4316",
-    "description": "Reflected Cross-Site Scripting (XSS) in Gym Management Software IsMyGym by Zuinq Studio affecting the reservation endpoint where the 'ret' parameter is reflected in the HTTP response without any proper sanitization. Successfull explotation of this vulnerability could allow an attacker to inject arbitrary JavaScript code executed in the context of the victim’s browser.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:53.250"
-  },
-  {
-    "id": "CVE-2026-116255",
-    "description": "A vulnerability has been found in PGYER codefever up to 0c35e60f006f9d558cc33a159baf110659351990. Affected is the function _detail of the file application/controllers/doc.php of the component URI Sanitizer. The manipulation of the argument uri_string leads to path traversal. The attack may be initiated remotely. The exploit has been disclosed to the public and may be used. This product uses a rolling release model to deliver continuous updates. As a result, specific version information for affected or updated releases is not available. The identifier of the patch is e4433eee96883a222403854e8ac38b3146774a07. Applying a patch is the recommended action to fix this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:53.040"
-  },
-  {
-    "id": "CVE-2026-116254",
-    "description": "A vulnerability was identified in rathena FluxCP up to 98cd4b8fd83228c11b36fb3d097b8e0f7c105a8d. This issue affects the function verifyiprange of the file lib/Flux/PaymentNotifyRequest.php of the component PayPal IPN Handler. The manipulation of the argument X-Real-IP leads to origin validation error. The attack is possible to be carried out remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:52.867"
-  },
-  {
-    "id": "CVE-2026-116253",
-    "description": "A vulnerability was determined in DedeCMS 5.7.118. This vulnerability affects the function common.inc.php::_RunMagicQuotes of the file plus/ad_js.php of the component Advertisement Rendering. Executing a manipulation of the argument aid can lead to code injection. The attack can be executed remotely.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:52.693"
-  },
-  {
-    "id": "CVE-2026-116237",
-    "description": "A vulnerability was found in Oray Pugongying X5 Pro 7.6.1. This affects an unknown part of the component Dnsmasq. Performing a manipulation results in crlf injection. Remote exploitation of the attack is possible. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:52.477"
-  },
-  {
-    "id": "CVE-2026-115958",
-    "description": "Missing Authorization vulnerability in WP Discussion Board WP Discussion Board wp-discussion-board allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects WP Discussion Board: from n/a through 2.6.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:52.337"
-  },
-  {
-    "id": "CVE-2026-115949",
-    "description": "Missing Authorization vulnerability in WP Smart Widgets Better Post & Filter Widgets for Elementor better-post-filter-widgets-for-elementor allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects Better Post & Filter Widgets for Elementor: from n/a through 1.9.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:52.200"
-  },
-  {
-    "id": "CVE-2026-115614",
-    "description": "Missing Authorization vulnerability in Magepeople inc. Booking and Rental Manager booking-and-rental-manager-for-woocommerce allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects Booking and Rental Manager: from n/a through 2.8.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:52.060"
-  },
-  {
-    "id": "CVE-2026-115613",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in bPlugins Image Gallery block – Create and display photo gallery/photo album. 3d-image-gallery allows Stored XSS.This issue affects Image Gallery block – Create and display photo gallery/photo album.: from n/a through 2.4.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:51.923"
-  },
-  {
-    "id": "CVE-2026-115602",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Liquid Web / StellarWP Gutenberg Blocks by Kadence Blocks kadence-blocks allows Stored XSS.This issue affects Gutenberg Blocks by Kadence Blocks: from n/a through 3.8.0.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:51.790"
-  },
-  {
-    "id": "CVE-2026-114709",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Igor Funa Ad Inserter ad-inserter allows Reflected XSS.This issue affects Ad Inserter: from n/a through 2.8.18.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:51.653"
-  },
-  {
-    "id": "CVE-2026-112865",
-    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in WProyal Royal Elementor Addons royal-elementor-addons allows DOM-Based XSS.This issue affects Royal Elementor Addons: from n/a through 1.7.1069.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:51.480"
-  },
-  {
-    "id": "CVE-2026-112250",
-    "description": "A vulnerability has been identified in\nBRAIN2 versions up to and including version 3.09. Under specific installation\nconditions, the password of a Windows service account may be written in\ncleartext to a setup log file. The issue occurs when Microsoft SQL Server\naccess is configured using Integrated Security and the Windows account intended\nto run the BRAIN2 MainService is specified during execution of the BRAIN2\ninstallation wizard. The setup log file is stored in the\ntemporary directory of the Windows administrator performing the installation.\nThis directory is not accessible to standard Windows users and can generally\nonly be accessed by users with administrative privileges. Successful exploitation could result in the\ndisclosure of credentials belonging to the configured BRAIN2 service account.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:51.337"
-  },
-  {
-    "id": "CVE-2026-110377",
-    "description": "Missing Authorization vulnerability in VillaTheme Bopo – WooCommerce Product Bundle Builder bopo-woo-product-bundle-builder allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects Bopo – WooCommerce Product Bundle Builder: from n/a through 1.2.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:51.060"
-  },
-  {
-    "id": "CVE-2026-103377",
-    "description": "A reflected Cross-Site Scripting (XSS) vulnerability has been identified in the web application of the Castile-La Mancha Regional Parliament’s video library. The application embeds user-supplied content into the page without properly sanitising it before it is rendered by the browser. Exploitation of this vulnerability could allow a remote attacker to execute arbitrary JavaScript code in the browser of a victim who interacts with the content crafted for the attack.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-26T10:16:50.867"
-  },
-  {
-    "id": "CVE-2026-95664",
-    "description": "Improper Neutralization of Special Elements used in an Expression Language Statement ('Expression Language Injection') vulnerability in Apache Camel AWS2-s3 component.\n\n\n\nThis issue affects Apache Camel: from 4.8.0 before 4.18.5, from 4.19.0 before 4.22.2.\n\n\n\nFor the object it uploads, reads or deletes, the camel-aws2-s3 producer takes the key from the CamelAwsS3Key message header and falls back to the keyName option configured on the endpoint only when that header is absent. Since 4.8.0, AWS2S3Utils.determineKey() also passed the resulting value to the Simple language whenever it contained ${ or $simple{, so that a route could use a dynamic key, and the evaluation applied to a value taken from the header as well as to the configured option. The header is not route configuration, however: the aws2-s3 consumer sets CamelAwsS3Key on the exchanges it creates to the key of the object it read, that is, the name of the object in the bucket. In a route that does nothing more than consume from one aws2-s3 endpoint and produce to another, the name of each consumed object therefore reached the producer, and a name containing either marker was evaluated as an expression, although the route author never asked for any evaluation, and configuring keyName on the producer did not prevent it, because the header took precedence. A key that a route copied into the header from other message content was evaluated in the same way. Anyone able to choose the name of an object in a bucket that such a route consumes, typically a principal allowed to upload to that bucket, could therefore have Simple expressions of their choosing evaluated in the Camel process. The Simple language can read JVM system properties, environment variables and configuration properties, which commonly carry credentials, and, where camel-bean is on the classpath, invoke methods on beans in the registry. The evaluated result became the key the producer used, so reading a value back additionally required the ability to see object names in the destination bucket, while a method invocation took effect without it; together with the need to name an object in a consumed bucket, this is why the severity is assessed medium. The bucket name went through the same evaluation, but the consumer only ever places the bucket configured on its own endpoint in a bucket header, never a value derived from a remote object, so the bucket name was not reachable in this way. Releases before 4.8.0 used the key from the header as given and are not affected.\n\n\n\nUsers are recommended to upgrade to version 4.23.0, which fixes the issue. If users are on the 4.22.x releases stream, then they are suggested to upgrade to 4.22.2. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.5. The 4.8.x to 4.17.x and 4.19.x to 4.21.x release lines reached end of life before this issue was resolved and will not receive a fix, so deployments on them must move to a supported release. After upgrading, a key or bucket name supplied through a message header is used literally, so a route that put an unevaluated Simple expression in the CamelAwsS3Key or CamelAwsS3OverrideBucketName header must evaluate it in the route instead, for example with setHeader and simple(), or configure it as the keyName or bucketName option of the endpoint. For deployments that cannot upgrade immediately, do not let a key derived from an object name or from other untrusted message content reach an aws2-s3 producer unchecked: in routes that pass exchanges from an aws2-s3 consumer to an aws2-s3 producer, either remove the CamelAwsS3Key header before the producer with removeHeader(“CamelAwsS3Key”), so that the keyName configured on the endpoint is used, or reject exchanges whose CamelAwsS3Key header contains ${ or $simple{. Configuring keyName alone is not a workaround, because the header takes precedence over it. As defence in depth, allow only trusted principals to write to buckets that Camel routes consume.",
-    "severity": "Medium",
-    "tech": "Camel",
-    "published": "2026-10-26T09:16:37.220"
-  },
-  {
-    "id": "CVE-2026-95663",
-    "description": "Insufficient Session Expiration vulnerability in Apache Camel Keycloak component.\n\n\n\nThis issue affects Apache Camel: from 4.16.0 before 4.18.5, from 4.19.0 before 4.22.2.\n\n\n\nWhen token introspection is enabled on the camel-keycloak KeycloakSecurityPolicy (useTokenIntrospection=true), the security processor validates the access token of a request by sending it to Keycloak's OAuth 2.0 token introspection endpoint, and accepts the token while the response reports it as active. The introspection endpoint reports a token as inactive once its exp (expiration) time has passed, so on this path the active flag is what enforces token expiry. Introspection results are cached by default (introspectionCacheEnabled=true, introspectionCacheTtl=60 seconds), and both cache implementations shipped with the component, ConcurrentMapTokenCache and CaffeineTokenCache, expired an entry a fixed time after it was inserted, without bounding that lifetime by the exp claim that the cached response already carried. KeycloakSecurityProcessor in turn checked only the active flag of the result, on every path that uses introspection, and never compared exp with the current time. A response cached shortly before the token expired was therefore served to later requests carrying the same token for up to the configured time-to-live after the token's expiry, and those requests were admitted with the roles and permissions the expired token had carried, although RFC 7662, which defines token introspection, states that a response containing exp must not be cached beyond that time. The access token is supplied by the caller with each request, typically as a bearer token in the Authorization header, so a caller holding a token that was valid moments earlier could keep using it after it expired, for as long as the cached entry lived. The window is bounded by introspectionCacheTtl, which is 60 seconds by default and 300 to 600 seconds where the documentation's recommendation for internal services was followed, and it opens only for a token that the same Camel process introspected and cached while the token was still active. The issue grants nothing beyond what the token already carried: it allows no token forgery and no privilege escalation, and token introspection is not enabled by default, which is why the severity is assessed medium. The local JWT verification path, used when introspection is disabled, is not affected by this issue.\n\n\n\nUsers are recommended to upgrade to version 4.23.0, which fixes the issue. If users are on the 4.22.x releases stream, then they are suggested to upgrade to 4.22.2. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.5. The 4.16.x, 4.17.x and 4.19.x to 4.21.x release lines reached end of life before this issue was resolved and will not receive a fix, so deployments on them must move to a supported release. For deployments that cannot upgrade immediately, set introspectionCacheEnabled=false on the KeycloakSecurityPolicy, so that every request is checked against the introspection endpoint, which reports an expired token as inactive, at the cost of one introspection call per request. Lowering introspectionCacheTtl only narrows the window and does not close it.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:37.003"
-  },
-  {
-    "id": "CVE-2026-95629",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Apache Camel Docling component.\n\n\n\nThis issue affects Apache Camel: from 4.15.0 before 4.18.5, from 4.19.0 before 4.22.2.\n\n\n\nDoclingProducer runs the external docling tool in CLI mode, the default, and tells it where to write the converted document through the --output flag. When the CamelDoclingOutputFilePath header was set, addOutputDirectoryArguments handed its value to that flag verbatim: the value was not normalized, an absolute path or a path containing .. segments was accepted as given, and no endpoint option could confine it to a directory. The custom-argument validation added by the fix for CVE-2026-40047 refuses the --output and -o flags in the CamelDoclingCustomArguments header and tells callers to choose the output directory with this header instead, so the one value that decides where docling writes reached the command line without any of the checks applied to custom arguments. Docling writes the conversion result, as Markdown, HTML, JSON or text, into that directory, naming the file after the input file, and the producer afterwards removes only its own temporary directory, so the file is left in place. A party able to set the header could therefore have conversion output created in any directory the Camel process can write to. The content of such a file is the conversion of the document carried by the message, so it is shaped by whoever supplies that document without being written byte for byte, and when the document content arrives in the message body the producer stores it under a random temporary name, which the output file then carries. The header belongs to the Camel header namespace, which consumers applying Camel's default header filtering, such as the JMS and Kafka consumers, remove from incoming messages, so the issue is reached where a route forwards externally influenced values into the header or where a consumer maps incoming headers without that filtering. The docling-serve mode does not use the header.\n\n\n\nUsers are recommended to upgrade to version 4.23.0, which fixes the issue. If users are on the 4.22.x releases stream, then they are suggested to upgrade to 4.22.2. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.5. The fix adds an outputBaseDirectory endpoint option that is unset by default, so after upgrading, set it on every docling endpoint whose CamelDoclingOutputFilePath header can carry a value influenced from outside the deployment; without it the header is normalized but can still name any directory. The 4.15.x to 4.17.x and 4.19.x to 4.21.x release lines reached end of life before this issue was resolved and will not receive a fix, so deployments on them must move to a supported release. For deployments that cannot upgrade immediately, do not build the CamelDoclingOutputFilePath header from values that originate outside the deployment, remove that header from messages that arrive from outside before they reach a docling endpoint, and make sure that consumers which map incoming message headers drop the Camel header namespace, so that only the route itself chooses the output directory.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:36.800"
-  },
-  {
-    "id": "CVE-2026-95628",
-    "description": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') vulnerability in Apache Camel Docling component.\n\n\n\nThis issue affects Apache Camel: from 4.15.0 before 4.18.5, from 4.19.0 before 4.22.2.\n\n\n\nDoclingProducer builds the command line of the external docling tool and appends to it the custom arguments supplied in the CamelDoclingCustomArguments header, a list of strings whose flags the fix for CVE-2026-40047 restricted to an allowlist. That fix also introduced validatePathSafety to keep path-like argument values inside the intended directory, but the method only looked for relative traversal: it rejected a value containing a traversal sequence such as ../ and a value whose normalized form still held a .. element. It never checked whether a value was an absolute path, and an absolute path without traversal segments contains neither, so it passed unchanged. Every path-like value went through this check, whether it was a separate list element following its flag or was attached to the flag after an equals sign, so an absolute path was accepted in either form, for example as the directory given to the allowlisted --artifacts-path flag, which tells docling where to find its model artifacts. Such a value reached the docling command line as given, so a party able to choose the custom arguments could point the docling process at any directory the Camel process can access, outside the working directory that the check was meant to keep path values in, which is the outcome the CVE-2026-40047 fix set out to prevent. Only the CLI mode, which is the default, passes custom arguments to docling. The header belongs to the Camel header namespace, which consumers applying Camel's default header filtering, such as the JMS and Kafka consumers, remove from incoming messages, so the issue is reached where a route forwards externally influenced values into the header or where a consumer maps incoming headers without that filtering.\n\n\n\nUsers are recommended to upgrade to version 4.23.0, which fixes the issue. If users are on the 4.22.x releases stream, then they are suggested to upgrade to 4.22.2. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.5. The 4.15.x to 4.17.x and 4.19.x to 4.21.x release lines reached end of life before this issue was resolved and will not receive a fix, so deployments on them must move to a supported release. For deployments that cannot upgrade immediately, do not build the CamelDoclingCustomArguments header from values that originate outside the deployment, remove that header from messages that arrive from outside before they reach a docling endpoint, and make sure that consumers which map incoming message headers drop the Camel header namespace, so that only the route itself chooses the custom arguments.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:36.587"
-  },
-  {
-    "id": "CVE-2026-82947",
-    "description": "SOEM version 2.0.0 and earlier contains multiple vulnerabilities in frame processing where a malicious device can cause the master to read data outside allocated buffers. The software uses length and offset values from device messages without validating them against buffer sizes. This can cause the master to access invalid memory locations, potentially disclosing sensitive information or causing crashes.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:36.473"
-  },
-  {
-    "id": "CVE-2026-82946",
-    "description": "SOEM version 2.0.0 and earlier contains a vulnerability where a malicious device can crash the master system. When the software receives an error response, it clears an internal pointer but continues processing. If another message arrives before timeout, the software attempts to use the cleared pointer, causing a crash. An attacker can trigger this with a simple sequence of two messages.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:36.363"
-  },
-  {
-    "id": "CVE-2026-82945",
-    "description": "SOEM version 2.0.0 and earlier contains a vulnerability during device configuration where a malicious device can cause memory corruption. The software writes configuration data to a fixed-size array without checking if the array index exceeds its maximum size of EC_MAXFMMU entries. A device presenting more than EC_MAXFMMU configuration blocks can force writes beyond the array boundary, corrupting adjacent memory structures and potentially disrupting subsequent operations.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:36.257"
-  },
-  {
-    "id": "CVE-2026-82944",
-    "description": "SOEM version 2.0.0 and earlier contains a vulnerability in multi-segment data transfers where a malicious device can overflow memory buffers. The software checks the total size only once at the beginning, but doesn't track the cumulative size as multiple segments arrive. An attacker can declare a small initial size to pass validation, then send additional segments that exceed the allocated buffer. This allows the attacker to write controlled data beyond buffer boundaries, potentially enabling code execution.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:36.140"
-  },
-  {
-    "id": "CVE-2026-82943",
-    "description": "SOEM version 2.0.0 and earlier contains vulnerabilities where a malicious device can send messages that cause the master to read data from memory locations beyond the intended buffer. The software uses length values from device responses without validating them against actual buffer sizes. An attacker can exploit this to extract up to 64KB of data from the master's memory.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:36.023"
-  },
-  {
-    "id": "CVE-2026-70388",
-    "description": "SOEM version 2.0.0 and earlier contains vulnerabilities where a malicious device on the network can send specially crafted messages that cause the master to write data outside allocated memory boundaries. The software performs arithmetic on message length values without proper validation, allowing negative or extremely large values to bypass safety checks. This can corrupt memory and potentially allow an attacker to execute arbitrary code on the master system.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:35.860"
-  },
-  {
-    "id": "CVE-2026-116372",
-    "description": "MISP mispguard is a security filtering proxy that inspects and blocks MISP feed responses based on configured rules. The process_feed_response method in src/mispguard.py was responsible for evaluating feed responses before they reached the MISP instance. The original logic only explicitly handled the case where the HTTP status code was not 200 by passing the response through without filtering, on the assumption that non-200 responses would not carry ingestible event data. However, HTTP 2xx status codes other than 200 (such as 201 Created, 203 Non-Authoritative Information, and 206 Partial Content) were also passed through unfiltered. Because MISP may still ingest content from these responses, a malicious or compromised feed host could return a 203 or 206 status code with arbitrary content, effectively bypassing all of mispguard's filtering rules. This allowed unfiltered or malicious feed data to be ingested into the MISP instance, undermining the security controls that mispguard is designed to enforce. The vulnerability requires the attacker to control or compromise a feed endpoint configured in the MISP instance. No authentication or user interaction is required beyond the feed polling mechanism already in place.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:35.580"
-  },
-  {
-    "id": "CVE-2026-116236",
-    "description": "A vulnerability has been found in Oray Pugongying X5 Pro 7.6.1. Affected by this issue is the function plugin_init of the file /tmp/upload_files of the component PPPoE WAN Setting Handler. Such manipulation of the argument pppd_options leads to unrestricted upload. The attack may be launched remotely. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:35.370"
-  },
-  {
-    "id": "CVE-2026-116235",
-    "description": "A flaw has been found in Oray Pugongying X5 Pro 7.6.1. Affected by this vulnerability is an unknown functionality of the component L2TP Authentication. This manipulation of the argument Username causes crlf injection. The attack may be initiated remotely. The exploit has been published and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:35.163"
-  },
-  {
-    "id": "CVE-2026-116234",
-    "description": "A vulnerability was detected in Oray Pugongying X5 Pro 7.6.1. Affected is an unknown function of the file /etc/ipsec.conf of the component IPsec Policy Handler. The manipulation of the argument secproto results in crlf injection. The attack can be launched remotely. The exploit is now public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:34.953"
-  },
-  {
-    "id": "CVE-2026-116233",
-    "description": "A security vulnerability has been detected in Oray Pugongying X5 Pro 7.6.1. This impacts an unknown function of the component Dnsmasq. The manipulation of the argument rent_time leads to crlf injection. The attack can be initiated remotely. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:34.787"
-  },
-  {
-    "id": "CVE-2026-115425",
-    "description": "Multiple cross site scripting (XSS) vulnerabilities affect OPNsense firewall vesrion 26.7.1_1 and earlier allows low privileged attacker to execute Javascript in the context of another user visiting a specific page or clicking on a specifically crafted link.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:34.620"
-  },
-  {
-    "id": "CVE-2026-113438",
-    "description": "Pleasanter provided fails to properly verify passwords in LDAP authentication when processing specially crafted requests under certain configurations.  If exploited, an attacker may bypass LDAP authentication by providing only a valid Login ID, without a password. As a result, an attacker may view, alter or delete information stored in the product with the privilege of the account used to log in.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:34.473"
-  },
-  {
-    "id": "CVE-2026-112828",
-    "description": "Missing Authorization vulnerability in Meow Apps AI Engine ai-engine allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects AI Engine: from n/a through 3.8.6.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:34.340"
-  },
-  {
-    "id": "CVE-2026-111841",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in Aman FunnelKit Automations wp-marketing-automations allows Cross Site Request Forgery.This issue affects FunnelKit Automations: from n/a through 3.8.5.2.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:34.207"
-  },
-  {
-    "id": "CVE-2026-110376",
-    "description": "Missing Authorization vulnerability in VillaTheme DEPART depart-deposit-and-part-payment-for-woo allows Exploiting Incorrectly Configured Access Control Security Levels.This issue affects DEPART: from n/a through 1.0.10.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:34.077"
-  },
-  {
-    "id": "CVE-2026-101259",
-    "description": "Generation of Error Message Containing Sensitive Information vulnerability in Apache Camel CoAP component.\n\n\n\nThis issue affects Apache Camel: from 4.0.0 before 4.18.5, from 4.19.0 before 4.22.2.\n\n\n\nWhen the CoAP consumer could not build its response once the route had completed, CamelCoapResource caught the resulting exception and sent its message back to the CoAP client as the payload of a 5.00 Internal Server Error response. The typical case is a type conversion failure: the consumer converts the final message body to the byte[] payload, and the CamelCoapMaxAge and CamelCoapETag headers to their types, after the route has returned, and therefore outside the route's error handler. On the affected releases the message of such a failure names the class of the value being converted, carries the value's string form, and ends with the class name and message of the underlying cause, so a remote CoAP client could read internal detail about the deployment: class and package names, the string form of the value, such as the path of a file body, and whatever the cause carries, which in practice can include paths, host names and connection detail of a backend. The consumer had no option to suppress this, unlike the HTTP consumers, which offer a muteException option for that purpose. The exception raised by a failing route was not sent: the consumer did not check whether the exchange had failed, and answered a route failure with 2.05 Content and whatever body the message held at that point. Reaching the disclosure therefore requires a route whose completed response a remote client can make unconvertible, which depends on how the route is written.\n\n\n\nUsers are recommended to upgrade to version 4.23.0, which fixes the issue. If users are on the 4.22.x releases stream, then they are suggested to upgrade to 4.22.2. If users are on the 4.18.x releases stream, then they are suggested to upgrade to 4.18.5. The 4.14.x releases stream and earlier, and the 4.15.x to 4.17.x and 4.19.x to 4.21.x release lines, reached end of life before this issue was resolved and will not receive a fix, so deployments on them must move to a supported release. The upgrade is enough on its own: the new muteException consumer option defaults to true on all three fixed release lines, so the error response carries no payload without any configuration change. For deployments that cannot upgrade immediately, make sure the response can always be built once the route has completed: convert the body to byte[] or String as the last step of each route that consumes from a coap endpoint, for example with convertBodyTo, give the CamelCoapMaxAge and CamelCoapETag headers only values of their own types, and add an onException handler that marks the failure as handled and sets the response body explicitly, so that a conversion failure is raised and replaced inside the route rather than in the consumer.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T09:16:33.513"
-  },
-  {
-    "id": "CVE-2026-96581",
-    "description": "Authorization Bypass Through User-Controlled Key vulnerability in ash-project ash allows a user of one tenant to read, overwrite and take over another tenant's records via an upserting create action.\n\nUnder attribute multitenancy, Ash.Actions.Create (lib/ash/actions/create/create.ex) and Ash.Actions.Create.Bulk (lib/ash/actions/create/bulk.ex) upserted on the primary key, or on an all_tenants? identity, without scoping the conflicting record to the request's tenant. A caller of a create action with upsert? true that accepts the primary key, supplying a record id from another tenant, updated that record's upsert fields and received all of its attributes in the result. With the default upsert fields the tenant attribute was written too, moving the record into the caller's tenant. Read and update policies do not run for upserts, and tenant-scoped create policies pass because the tenant is the caller's own.\n\nThis issue affects ash: from 1.22.0 before 3.37.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-26T08:17:20.423"
-  },
-  {
-    "id": "CVE-2026-116232",
-    "description": "A weakness has been identified in Oray Pugongying X5 Pro 7.6.1. This affects the function snmp_set of the component SNMP Handler. Executing a manipulation of the argument info.community can lead to crlf injection. It is possible to launch the attack remotely. The exploit has been made available to the public and could be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-26T08:17:17.837"
-  },
-  {
-    "id": "CVE-2026-116231",
-    "description": "A security flaw has been discovered in Oray Pugongying X5 Pro 7.6.1. The impacted element is an unknown function of the component Ser2net. Performing a manipulation of the argument regmsg results in crlf injection. It is possible to initiate the attack remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-26T08:17:17.620"
-  },
-  {
-    "id": "CVE-2026-116230",
-    "description": "A vulnerability was identified in Ndemic Creations Plague Inc Evolved up to 1.24.0.3. The affected element is an unknown function of the component Workshop Scenario Loader. Such manipulation leads to deserialization. The attack may be performed from remote. Upgrading to version 1.24.0.4 is sufficient to fix this issue. It is recommended to upgrade the affected component.",
-    "severity": "Medium",
-    "tech": "Plague inc evolved",
-    "published": "2026-10-26T08:17:17.427"
-  },
-  {
-    "id": "CVE-2026-116229",
-    "description": "A vulnerability was determined in ffxiv-teamcraft FFXIV Teamcraft up to 11.4.31. Impacted is the function clipboard.readText of the file apps/electron/src/preload.ts of the component Renderer-Process IPC Bridge. This manipulation causes cross site scripting. The attack is possible to be carried out remotely. The exploit has been publicly disclosed and may be utilized. Upgrading to version 11.4.32 is recommended to address this issue. Patch name: def118fdf36f8f3b615966893a132dd81d9cc3dc. Upgrading the affected component is recommended.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-26T08:17:17.227"
-  },
-  {
-    "id": "CVE-2026-116228",
-    "description": "A vulnerability was found in 777genius agent-teams-ai up to 2.17.10. This issue affects the function doStart of the file src/main/services/infrastructure/HttpServer.ts of the component Local HTTP Service. The manipulation results in missing authentication. The attack is only possible with local access. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:09.973"
-  },
-  {
-    "id": "CVE-2026-116227",
-    "description": "A vulnerability has been found in Edimax BR-6208AC 1.32. This vulnerability affects unknown code of the component Virtual Server Page. The manipulation leads to cross site scripting. Remote exploitation of the attack is possible. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:09.787"
-  },
-  {
-    "id": "CVE-2026-116224",
-    "description": "A vulnerability has been found in fr0tt benotes up to 2.8.1. This affects the function getUrlInfo of the file app/Http/Controllers/PostController.php of the component Bookmark Metadata Endpoint. The manipulation of the argument url leads to server-side request forgery. The attack may be initiated remotely. The exploit has been disclosed to the public and may be used. The project was informed of the problem early through an issue report but has not responded yet.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:09.590"
-  },
-  {
-    "id": "CVE-2026-116223",
-    "description": "A flaw has been found in icret EasyImage up to 2.8.7. The impacted element is an unknown function of the file app/del.php. Executing a manipulation of the argument hash can lead to improper privilege management. The attack can be launched remotely. The exploit has been published and may be used. This patch is called b12cb67d447bcbb67e21c8f011d0f5638229760c. A patch should be applied to remediate this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:09.407"
-  },
-  {
-    "id": "CVE-2026-116124",
-    "description": "A security vulnerability has been detected in GNOME libgsf up to 1.14.60. The impacted element is the function ole_info_read_metabat of the file gsf/gsf-infile-msole.c of the component OLE2 Parser. The manipulation leads to heap-based buffer overflow. The attack can be initiated remotely. The identifier of the patch is a8e25560b74f84c3f86df6ca0ac59195fa5af68a. It is recommended to apply a patch to fix this issue.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:09.197"
-  },
-  {
-    "id": "CVE-2026-111974",
-    "description": "The GiveWP WordPress plugin before 4.19.0.1 does not restrict the currency of a donation to the one the site or form accepts, while comparing its amount limits as bare numbers, allowing unauthenticated users to make donations below a form's configured minimum or fixed amount.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:08.497"
-  },
-  {
-    "id": "CVE-2026-107900",
-    "description": "V-SFT provided by FUJI ELECTRIC CO., LTD. contains an out-of-bounds read vulnerability in VS6ComFile!CCheck::ItemCheck. Opening a crafted V7 file may lead to information exposure or arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:08.360"
-  },
-  {
-    "id": "CVE-2026-107899",
-    "description": "V-SFT provided by FUJI ELECTRIC CO., LTD. contains an out-of-bounds read vulnerability in VS6EditData!CDataRomErrorCheck::CheckSymbolMacroParam. Opening a crafted V7 file may lead to information exposure or arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:08.223"
-  },
-  {
-    "id": "CVE-2026-107898",
-    "description": "V-SFT provided by FUJI ELECTRIC CO., LTD. contains an out-of-bounds read vulnerability in VS6EditData!CDataRomErrorCheck::MacroCommandCheck. Opening a crafted V7 file may lead to information exposure or arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.950"
-  },
-  {
-    "id": "CVE-2026-107897",
-    "description": "V-SFT provided by FUJI ELECTRIC CO., LTD. contains an out-of-bounds read vulnerability in VS6MemInIF!set_temp_type_default. Opening a crafted V7 file may lead to information exposure or arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.827"
-  },
-  {
-    "id": "CVE-2026-107896",
-    "description": "V-SFT provided by FUJI ELECTRIC CO., LTD. contains an out-of-bounds read vulnerability in VS6ComFile!load_gr_item. Opening a crafted V7 file may lead to information exposure or arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.700"
-  },
-  {
-    "id": "CVE-2026-107895",
-    "description": "V-SFT provided by FUJI ELECTRIC CO., LTD. contains an out-of-bounds write vulnerability. Opening a crafted V7 file may lead to information exposure or arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.570"
-  },
-  {
-    "id": "CVE-2026-107894",
-    "description": "V-SFT provided by FUJI ELECTRIC CO., LTD. contains a stack-based buffer overflow vulnerability. Opening a crafted V7 file may lead to information exposure or arbitrary code execution on the affected product.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.397"
-  },
-  {
-    "id": "CVE-2026-103381",
-    "description": "The Mintpay for WooCommerce WordPress plugin through 2.2.3 does not verify the authenticity of the payment callback it processes, allowing unauthenticated attackers to mark arbitrary orders as paid, to cancel arbitrary orders, and to disclose order details including customer contact information.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.290"
-  },
-  {
-    "id": "CVE-2026-103319",
-    "description": "The OPay Payment Gateway for WooCommerce WordPress plugin through 2.5.5 does not properly verify that payment notifications originate from the payment provider, as the secret used to validate their signature is empty by default, allowing unauthenticated attackers to forge a valid notification and mark arbitrary orders as paid, cancelled or failed.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.193"
-  },
-  {
-    "id": "CVE-2026-103306",
-    "description": "The Online Payments with iK Pay Gateway WordPress plugin before 3.0.4 does not properly verify the authenticity of its payment gateway callback on a default installation, allowing unauthenticated attackers to forge a successful payment notification and mark arbitrary orders as paid without any payment being made, and to mark arbitrary unprocessed orders as failed.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:07.093"
-  },
-  {
-    "id": "CVE-2026-103300",
-    "description": "The Eurobank WooCommerce Payment Gateway WordPress plugin through 2.1.1 does not verify that a payment-confirmation request genuinely originates from the payment provider, and ships with the secret that would authenticate it empty by default, allowing unauthenticated attackers to mark any pending order as paid, and to force any order into a failed status without any secret at all.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:06.970"
-  },
-  {
-    "id": "CVE-2026-103299",
-    "description": "The Payment Gateway  WordPress plugin through 2.2.0 does not ensure a shared secret is configured before using it to authenticate the bank's payment-notification callback, allowing unauthenticated attackers to forge a valid notification and mark any WooCommerce order as paid on installs where the secret has not been set, and the same callback lets them move any pending order to a failed state whether or not the secret is configured.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:06.870"
-  },
-  {
-    "id": "CVE-2026-103298",
-    "description": "The CCAvenue Payment Gateway for WooCommerce WordPress plugin through 3.1 does not verify that a payment-confirmation request genuinely originates from the payment provider, and derives its verification key from a value that is empty on a default install, allowing unauthenticated attackers to forge a confirmation and mark any WooCommerce order as paid without payment.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T07:17:06.743"
-  },
-  {
-    "id": "CVE-2026-116123",
-    "description": "A weakness has been identified in NocoDB up to 2026.07.0. The affected element is the function validatePassword of the file /auth/user/signup. Executing a manipulation can lead to improper restriction of excessive authentication attempts. It is possible to launch the attack remotely. This attack is characterized by high complexity. The exploitability is described as difficult. The vendor documents this as intentional. The vendor deleted the GitHub issue for this vulnerability without any explanation. Afterwards the vendor was contacted early about this disclosure via email but did not respond in any way.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-26T06:17:41.753"
-  },
-  {
-    "id": "CVE-2026-116122",
-    "description": "A security flaw has been discovered in NocoDB up to 2026.07.0. Impacted is the function AuthService.validateUser of the component Sign-in Endpoint. Performing a manipulation of the argument salt results in information disclosure. It is possible to initiate the attack remotely. The attack's complexity is rated as high. The exploitability is considered difficult. The vendor deleted the GitHub issue for this vulnerability without any explanation. Afterwards the vendor was contacted early about this disclosure via email but did not respond in any way.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-26T06:17:41.483"
-  },
-  {
-    "id": "CVE-2026-116121",
-    "description": "A vulnerability was identified in NocoDB up to 2026.08.0. This issue affects some unknown processing of the file users.service.ts of the component Registration. Such manipulation leads to race condition. The attack may be performed from remote. The attack requires a high level of complexity. The exploitability is assessed as difficult. The vendor deleted the GitHub issue for this vulnerability without any explanation. Afterwards the vendor was contacted early about this disclosure via email but did not respond in any way.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-26T06:17:41.277"
-  },
-  {
-    "id": "CVE-2026-116120",
-    "description": "A vulnerability was determined in NocoDB up to 2026.07.0. This vulnerability affects the function UserRefreshToken.deleteAllUserToken of the file /auth/user/signup of the component PublicApiLimiterGuard. This manipulation causes allocation of resources. The attack is possible to be carried out remotely. The attack is considered to have high complexity. It is stated that the exploitability is difficult. Code-verified absence of in-app rate limiting on the unauthenticated signup and password-forgot endpoints and per-request refresh/OAuth token invalidation, but the vendor documents the pass-through limiter as intentional design. The vendor deleted the GitHub issue for this vulnerability without any explanation. Afterwards the vendor was contacted early about this disclosure via email but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T06:17:38.053"
-  },
-  {
-    "id": "CVE-2026-116119",
-    "description": "A vulnerability was found in NocoDB up to 2026.08.0. This affects an unknown part of the file packages/nocodb/src/services/users/users.service.ts of the component Password-Reset Flow. The manipulation results in race condition. The attack can be executed remotely. The vendor deleted the GitHub issue for this vulnerability without any explanation. Afterwards the vendor was contacted early about this disclosure via email but did not respond in any way.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T05:17:54.550"
-  },
-  {
-    "id": "CVE-2026-116118",
-    "description": "A vulnerability has been found in Z.ai Zcode up to 3.14.3/3.15.1. Affected by this issue is some unknown functionality of the component Sed Command Filter. The manipulation leads to os command injection. Remote exploitation of the attack is possible. The exploit has been disclosed to the public and may be used.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-26T05:17:54.370"
-  },
-  {
-    "id": "CVE-2026-116117",
-    "description": "A flaw has been found in halo-dev halo up to 2.27.0-beta.1. Affected by this vulnerability is the function run.halo.app.theme.DefaultViewNameResolver.resolveViewNameOrDefault of the file application/src/main/java/run/halo/app/theme/DefaultViewNameResolver.java of the component View Name Resolver. Executing a manipulation of the argument template can lead to path traversal. The attack may be launched remotely. The exploit has been published and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T05:17:54.180"
-  },
-  {
-    "id": "CVE-2026-113345",
-    "description": "Electronic delivery item Inspection Support System provided by Japan's Ministry of Land, Infrastructure, Transport and Tourism contains an improper file access permission vulnerability. Files in the installation folder of the application may be tampered with, resulting in arbitrary code execution.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-26T05:17:54.020"
   }
 ]
