@@ -1,5 +1,859 @@
 [
   {
+    "id": "CVE-2026-8923",
+    "description": "Zohocorp ManageEngine Eventlog Analyzer and ManageEngine Log360 versions before 13062 are vulnerable to Authenticated Remote Code Execution in Log Forward option.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:33.380"
+  },
+  {
+    "id": "CVE-2026-2613",
+    "description": "The Admin REST API accepts user-supplied input without adequately sanitizing it, allowing it to be included in the structure of SQL statements.\n\nA user with administrator privileges can exploit this by influencing the structure of executed SQL statements, enabling blind SQL injection to infer database information and potentially impact the availability of the database service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:31.963"
+  },
+  {
+    "id": "CVE-2026-120216",
+    "description": "fastify is a web framework for Node.js. In versions 5.8.0 through 5.12.7, when the server is configured with a nonzero handlerTimeout and a route returns a streaming response, a request whose stream has already sent its headers but stays open past the timeout crashes the server. When the timeout fires, Fastify tries to send a new error response on a response that has already started, raising an uncaught ERR_HTTP_HEADERS_SENT that terminates the Node.js process and interrupts any other in-flight requests. An unauthenticated remote client can trigger this with a single request to an affected streaming endpoint, so the impact is availability only, and exploitation requires the non-default handlerTimeout to be set. The default handlerTimeout of 0 is not affected. The issue is fixed in fastify 5.12.8, and users should upgrade to 5.12.8 or later. As a workaround, set handlerTimeout to 0, which disables the affected timeout path.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:31.553"
+  },
+  {
+    "id": "CVE-2026-120215",
+    "description": "@fastify/cors is the CORS plugin for the Fastify web framework. In versions 8.2.0 through 11.3.x, an application that registers the plugin with the non-default onSend hook option crashes on a CORS preflight. On an OPTIONS request that carries the Origin and Access-Control-Request-Method headers, the plugin calls reply.send from inside the onSend hook and re-enters the send pipeline, so a second write of the response headers throws an uncaught ERR_HTTP_HEADERS_SENT that can terminate the Node.js process when no process-level handler is installed. An unauthenticated remote client can trigger this with a single preflight request, so the impact is availability only, and exploitation requires the non-default onSend configuration. The issue is fixed in @fastify/cors 11.4.0, where onSend is no longer an accepted hook value and registration fails with a clear error instead of crashing at request time, and users should upgrade to 11.4.0 or later. As a workaround, use any other hook such as the default onRequest, or set preflight to false.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:31.413"
+  },
+  {
+    "id": "CVE-2026-120214",
+    "description": "@fastify/http-proxy is a Fastify plugin that proxies HTTP requests to an upstream server under a configured prefix. In versions 11.6.0 through 11.6.2, the destination validation normalizes literal backslashes before it percent-decodes the request path, so a path that encodes its backslashes and dot-segments survives the dot-segment check and is only turned into backslash and double-dot sequences after that check has passed. When the upstream resolves on a platform that treats a backslash as a path separator, the forwarded request walks out of the configured proxy prefix and reaches a sibling location on the upstream. An unauthenticated remote attacker can use this to retrieve upstream resources outside the intended prefix, so the impact is confidentiality only, and exploitation depends on the upstream's path handling. The issue is fixed in @fastify/http-proxy 11.6.3, and users should upgrade to 11.6.3 or later. This is a follow-up to the earlier prefix-escape fix, which did not account for the encoded-backslash form.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:31.277"
+  },
+  {
+    "id": "CVE-2026-120213",
+    "description": "@fastify/http-proxy is a Fastify plugin that proxies HTTP requests to an upstream server under a configured prefix. In versions 9.0.0 through 11.6.5, when an application uses parameterized prefix and rewritePrefix options to pin clients to a fixed upstream path, the plugin substitutes URL-decoded route parameters into rewritePrefix without re-encoding them. A parameter value that encodes a path separator together with a fragment or query delimiter therefore decodes into real separators and delimiters that inject extra upstream path segments and strip the mandatory suffix the rewritePrefix was meant to enforce, without using any dot-dot traversal. An unauthenticated remote attacker can use this to reach upstream locations outside the intended prefix, leading to path-restriction bypass and, depending on the upstream, server-side request forgery or authorization bypass in the proxied service. The issue is fixed in @fastify/http-proxy 11.6.6, and users should upgrade to 11.6.6 or later. There is no workaround other than upgrading.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:31.137"
+  },
+  {
+    "id": "CVE-2026-117549",
+    "description": "@fastify/secure-session is a session plugin for Fastify that stores an encrypted session in a cookie. In versions 7.5.0 through 8.4.1, when the plugin is configured with the signed cookie option, it calls the cookie unsign routine but, when the signature check reports the value as invalid, still passes the original cookie value to the session decoder, so a session whose signature did not validate is decrypted anyway. The practical effect appears when an application supplies the cookie signing secret independently of the session encryption key and rotates only the signing secret to retire existing sessions while keeping the encryption key active, because a holder of an old session cookie can strip the now obsolete signature and keep using the session. The attacker must already possess an unexpired encrypted session cookie and needs neither secret, and cannot forge session data, extend expiry, or survive rotation of the encryption key. The issue is fixed in @fastify/secure-session 8.4.2, which no longer decodes the session when the signed cookie option is set and the signature check fails, and users should upgrade to 8.4.2 or later. As a workaround, rotate the session encryption key rather than relying on rotation of the cookie signing secret alone.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:30.997"
+  },
+  {
+    "id": "CVE-2026-117531",
+    "description": "@fastify/multipart is the multipart form-data and file upload plugin for the Fastify web framework. In versions 5.3.0 through 10.1.6, the plugin does not propagate a parser error to the file stream when a request body ends inside a file part with no closing boundary, even though the Content-Length is complete, the client does not abort, and no file size limit is exceeded. The plugin destroys the in-progress file stream without an error, so a handler that iterates the request parts and performs asynchronous work before consuming the file attaches to a stream that never emits an error or end event, and the request never responds while the connection stays open. An unauthenticated remote client can repeat these malformed uploads against such a route to accumulate pending connections and exhaust server resources, so the impact is availability only and exploitation depends on the application using a delayed file consumer. The issue is fixed in @fastify/multipart 10.1.7, where the parser error is propagated to the file stream so a delayed consumer settles with an error instead of hanging, and users should upgrade to 10.1.7 or later. There is no workaround other than upgrading.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:30.853"
+  },
+  {
+    "id": "CVE-2026-117518",
+    "description": "@fastify/reply-from is a Fastify plugin that forwards requests to an upstream HTTP server. In versions up to and including 12.8.0, the plugin validated proxy paths against forward-slash dot-segments only and then built the target with the WHATWG URL parser, which normalizes a backslash and its percent-encoded form to a forward slash on the http, https, ws, and wss schemes. A path that uses backslash dot-segments therefore bypasses the traversal check and resolves to a different upstream path, so an application that scopes proxying to an upstream prefix, or relies on route guards in front of the forwarding call, can have an unauthenticated request escape the intended prefix and reach other upstream endpoints. The resulting access to unintended upstream resources is primarily a confidentiality impact with limited integrity impact. The issue is fixed in @fastify/reply-from 12.8.1, where the path is normalized and any segment resolving to a single or double dot, along with control characters and ambiguous whitespace, is rejected before the URL is constructed, and users should upgrade to 12.8.1 or later. There is no workaround other than upgrading.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:30.660"
+  },
+  {
+    "id": "CVE-2025-12544",
+    "description": "The Publisher portal fails to enforce proper validation on uploaded SVG files, allowing users with the Publisher role to inject malicious scripts. This weakness can be exploited by uploading a crafted SVG file, which is then stored and rendered by the application.\n\nThe security consequences include the ability for a malicious actor to redirect the victim's browser to an arbitrary website, modify the web page's UI, or retrieve information from the browser. However, the impact is mitigated as session-related sensitive cookies are protected with the httpOnly flag, preventing session hijacking.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:30.477"
+  },
+  {
+    "id": "CVE-2024-2372",
+    "description": "The affected components accept user-supplied input for constructing redirection URLs without enforcing expected validation constraints. This allows an attacker to provide a crafted URL that can redirect users to an arbitrary external domain.\n\nBy leveraging this open redirection vulnerability, an attacker can craft a malicious link that, when clicked by a user, redirects them to an attacker-controlled page. This can be used in conjunction with social engineering techniques to execute phishing attacks, aiming to obtain sensitive information or cause other harm.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T11:17:28.460"
+  },
+  {
+    "id": "CVE-2026-18800",
+    "description": "When an Event Publisher output adapter is configured with properties that are irrelevant to its function, the affected products log these irrelevant properties. This can inadvertently include sensitive user credentials or other confidential information depending on the nature of the misconfigured property.\n\nA malicious actor with access to the 'wso2carbon' log files could retrieve sensitive information logged by the system. This may potentially lead to unauthorized access if the logged data contains credentials or other critical secrets.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T10:17:11.293"
+  },
+  {
+    "id": "CVE-2026-118871",
+    "description": "SQL injection vulnerability classified as an internal threat level.Attackers can steal database information via SQL injection while logged in.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T10:17:11.123"
+  },
+  {
+    "id": "CVE-2025-13647",
+    "description": "The affected component fails to enforce expected validation constraints on the `content-type` header when processing certain requests. This allows an attacker to submit a crafted request with a manipulated `content-type` header.\n\nSuccessful exploitation can lead to the unintended exposure of the file paths for certificate files. This information disclosure could potentially be leveraged in subsequent attacks or compromise the confidentiality of the system.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T10:17:10.707"
+  },
+  {
+    "id": "CVE-2024-7075",
+    "description": "The user search function within the management console fails to properly encode user-supplied input before rendering it in the browser. This allows an attacker to inject malicious scripts that are then executed by the user's browser in the context of the management console.\n\nSuccessful exploitation enables an attacker to redirect the user's browser to a malicious website, modify the web page's user interface, or extract information from the browser. However, due to the use of the httpOnly flag on sensitive session cookies, session hijacking or similar attacks are prevented.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T10:17:10.470"
+  },
+  {
+    "id": "CVE-2026-107457",
+    "description": "A memory corruption vulnerability in the QMqttClient class of the Qt MQTT module. Under certain MQTT 5 connection settings between client and server, QMqttClient may corrupt memory, which can cause the application to crash.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-11-02T09:17:36.430"
+  },
+  {
+    "id": "CVE-2026-18199",
+    "description": "Zohocorp ManageEngine Password Manager Pro versions before 13236 and PAM360 versions before 8601 are vulnerable to an authenticated Remote Code Execution vulnerability.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T08:17:36.083"
+  },
+  {
+    "id": "CVE-2026-103310",
+    "description": "The PayHere Payment Gateway WordPress plugin from 2.4.0 through 2.4.5 does not verify the authenticity of payment notifications when the merchant secret is unset, which is the default state, allowing unauthenticated attackers to forge a payment confirmation and mark any order as paid without payment.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T08:17:35.927"
+  },
+  {
+    "id": "CVE-2026-101184",
+    "description": "Permission control vulnerability in the Bluetooth module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T08:17:35.800"
+  },
+  {
+    "id": "CVE-2026-101178",
+    "description": "Permission control vulnerability in the autofill service module.\nImpact: Successful exploitation of this vulnerability may affect service confidentiality.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T08:17:34.237"
+  },
+  {
+    "id": "CVE-2026-120349",
+    "description": "A security flaw has been discovered in dayrui XunRuiCMS up to 4.7.4. Affected by this issue is the function str_replace of the file /var/www/html/zzmob/index.php of the component Mobile Site Directory. The manipulation of the argument dirname results in code injection. The attack can be launched remotely. The exploit has been released to the public and may be used for attacks. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:03.843"
+  },
+  {
+    "id": "CVE-2026-101186",
+    "description": "DoS vulnerability in the window module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:03.617"
+  },
+  {
+    "id": "CVE-2026-101185",
+    "description": "OOB read vulnerability in the peripheral module.\nImpact: Successful exploitation of this vulnerability may affect service confidentiality.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:03.483"
+  },
+  {
+    "id": "CVE-2026-101183",
+    "description": "UAF vulnerability in the location service module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:03.360"
+  },
+  {
+    "id": "CVE-2026-101182",
+    "description": "Race condition vulnerability in the location service module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:03.220"
+  },
+  {
+    "id": "CVE-2026-101181",
+    "description": "Permission control vulnerability in the WLAN module. \nImpact: Successful exploitation of this vulnerability may affect service confidentiality.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:03.097"
+  },
+  {
+    "id": "CVE-2026-101180",
+    "description": "DoS vulnerability in the file parsing module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:02.970"
+  },
+  {
+    "id": "CVE-2026-101179",
+    "description": "Buffer overflow vulnerability in the file preview module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:02.830"
+  },
+  {
+    "id": "CVE-2026-101177",
+    "description": "Permission control vulnerability in the Optimizer module.\nImpact: Successful exploitation of this vulnerability may affect service confidentiality.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:02.700"
+  },
+  {
+    "id": "CVE-2026-101176",
+    "description": "Permission control vulnerability in the event notification management module.\nImpact: Successful exploitation of this vulnerability may affect service confidentiality.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:02.577"
+  },
+  {
+    "id": "CVE-2026-101175",
+    "description": "Null pointer dereference vulnerability in the ArkWeb module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:02.420"
+  },
+  {
+    "id": "CVE-2026-101174",
+    "description": "DoS vulnerability in the DSoftBus module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:02.273"
+  },
+  {
+    "id": "CVE-2026-101173",
+    "description": "DoS vulnerability in the DSoftBus module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:02.137"
+  },
+  {
+    "id": "CVE-2026-101172",
+    "description": "Permission control vulnerability in the graphics module. Impact: Successful exploitation of this vulnerability may affect confidentiality.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:01.973"
+  },
+  {
+    "id": "CVE-2026-101171",
+    "description": "Permission control vulnerability in the background task management module.\nImpact: Successful exploitation of this vulnerability may affect service integrity.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:01.777"
+  },
+  {
+    "id": "CVE-2026-101170",
+    "description": "DoS vulnerability in the file parsing module.\nImpact: Successful exploitation of this vulnerability may affect availability.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T07:18:01.477"
+  },
+  {
+    "id": "CVE-2026-120348",
+    "description": "A vulnerability was identified in dayrui XunRuiCMS up to 4.7.4. Affected by this vulnerability is the function _get_tpl_content of the file dayrui/Fcms/Library/Notice.php of the component Email Template Rendering. The manipulation leads to code injection. The attack can be initiated remotely. The exploit is publicly available and might be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T06:17:43.787"
+  },
+  {
+    "id": "CVE-2026-120347",
+    "description": "A vulnerability was determined in dayrui XunRuiCMS up to 4.7.4. Affected is the function View of the file dayrui/Fcms/Core/View.php of the component Member Module. Executing a manipulation of the argument catid can lead to sql injection. It is possible to launch the attack remotely. The exploit has been publicly disclosed and may be utilized. This patch is called 9b6ea0cf9c6e8cdc9a5260c38b95da5fed4c4231. The affected component should be upgraded.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T06:17:43.600"
+  },
+  {
+    "id": "CVE-2026-120345",
+    "description": "A vulnerability was found in WAVLINK WN551X3-A M51X3_V251020-WO-182e965. This impacts the function sub_41a430 of the file /bin/ioos of the component DNS Resolution Handler. Performing a manipulation of the argument data results in os command injection. It is possible to initiate the attack remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-11-02T06:17:43.410"
+  },
+  {
+    "id": "CVE-2025-11969",
+    "description": "The System REST APIs do not correctly enforce access control mechanisms, allowing users with lower privilege roles to execute administrative actions that should be restricted. This weakness permits unauthorized operations on the affected product.\n\nSuccessful exploitation could enable a malicious actor to perform unauthorized administrative operations, including executing administrative functions. APIs exposed through the WSO2 API Manager's API Gateway are not affected by this vulnerability.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-11-02T06:17:42.087"
+  },
+  {
+    "id": "CVE-2024-5617",
+    "description": "The account lock feature fails to correctly enforce account lockouts on the primary user store when users with identical usernames exist in both primary and secondary user stores. This occurs because the lock condition is only applied to the secondary user store account in such scenarios, allowing continued authentication attempts against the primary user store account.\n\nThis functional flaw enables brute force attacks. By systematically attempting different passwords against the primary user store account, an attacker can potentially gain unauthorized access to sensitive information or accounts, as the intended account lockout mechanism does not prevent repeated login attempts.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T06:17:41.933"
+  },
+  {
+    "id": "CVE-2026-120344",
+    "description": "A vulnerability has been found in WAVLINK WN551X3-A M51X3_V251020-WO-182e965. This affects the function system of the file /bin/ioos of the component WireGuard CLI Group Handler. Such manipulation of the argument group_name leads to os command injection. The attack may be performed from remote. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-11-02T05:18:25.450"
+  },
+  {
+    "id": "CVE-2026-120343",
+    "description": "A flaw has been found in mathurvishal CloudClassroom-PHP-Project. The impacted element is an unknown function of the file manageassessment2.php. This manipulation of the argument ExamName/Q1/Q2/Q3/Q4/Q5 causes cross site scripting. The attack is possible to be carried out remotely. The exploit has been published and may be used. This product adopts a rolling release strategy to maintain continuous delivery. Therefore, version details for affected or updated releases cannot be specified. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T05:18:24.860"
+  },
+  {
+    "id": "CVE-2026-120342",
+    "description": "A vulnerability was detected in mathurvishal CloudClassroom-PHP-Project. The affected element is an unknown function of the file viewquery.php. The manipulation of the argument eid results in sql injection. The attack can be executed remotely. The exploit is now public and may be used. This product implements a rolling release for ongoing delivery, which means version information for affected or updated releases is unavailable. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T05:18:24.310"
+  },
+  {
+    "id": "CVE-2026-120341",
+    "description": "A security vulnerability has been detected in mathurvishal CloudClassroom-PHP-Project. Impacted is an unknown function of the file studentdetails.php. The manipulation leads to execution after redirect. Remote exploitation of the attack is possible. The exploit has been disclosed publicly and may be used. This product follows a rolling release approach for continuous delivery, so version details for affected or updated releases are not provided. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T05:18:23.700"
+  },
+  {
+    "id": "CVE-2026-120340",
+    "description": "A weakness has been identified in mathurvishal CloudClassroom-PHP-Project. This issue affects some unknown processing of the component Global Session Handler. Executing a manipulation can lead to session expiration. The attack may be launched remotely. A high complexity level is associated with this attack. The exploitability is assessed as difficult. The exploit has been made available to the public and could be used for attacks. This product operates on a rolling release basis, ensuring continuous delivery. Consequently, there are no version details for either affected or updated releases. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-02T05:18:22.723"
+  },
+  {
+    "id": "CVE-2026-120339",
+    "description": "A security flaw has been discovered in mathurvishal CloudClassroom-PHP-Project. This vulnerability affects unknown code of the file updatedetailsfromfaculty.php. Performing a manipulation of the argument fname results in cross site scripting. The attack may be initiated remotely. The exploit has been released to the public and may be used for attacks. This product uses a rolling release model to deliver continuous updates. As a result, specific version information for affected or updated releases is not available. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T04:16:53.440"
+  },
+  {
+    "id": "CVE-2026-120337",
+    "description": "A vulnerability was determined in VStarcam O-KAM SuperIPCam 1.3.3.32. Affected by this issue is the function FUN_005a2d44 of the file SuperIPCam.exe of the component P2P Session Teardown. This manipulation causes use after free. The attack can be initiated remotely. The exploit has been publicly disclosed and may be utilized. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T04:16:53.237"
+  },
+  {
+    "id": "CVE-2026-120336",
+    "description": "A vulnerability was found in VStarcam O-KAM Client 1.3.3.32. Affected by this vulnerability is the function FUN_10003EA0 in the library DevDll_925.dll. The manipulation results in stack-based buffer overflow. It is possible to launch the attack remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T04:16:53.033"
+  },
+  {
+    "id": "CVE-2026-68591",
+    "description": "In Modem, there is a possible escalation of privilege due to a permissions bypass. This could lead to local escalation of privilege (EoP) if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS09608864 / ALPS09327759; Issue ID: MSV-2958.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:38.343"
+  },
+  {
+    "id": "CVE-2026-68590",
+    "description": "In ip_stack, there is a possible out of bounds read due to improper input validation. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01387180; Issue ID: MSV-5152.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:38.213"
+  },
+  {
+    "id": "CVE-2026-68589",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: MOLY01320076; Issue ID: MSV-6889.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:38.087"
+  },
+  {
+    "id": "CVE-2026-68588",
+    "description": "In Modem, there is a possible way (for XXX) to XXXXX due to an integer overflow. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01334054 / MOLY01312486; Issue ID: MSV-7920.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:37.950"
+  },
+  {
+    "id": "CVE-2026-20600",
+    "description": "In Modem, there is a possible application crash due to a logic error. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01416152; Issue ID: MSV-7924.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:37.790"
+  },
+  {
+    "id": "CVE-2026-20599",
+    "description": "In Modem, there is a possible escalation of privilege due to a missing permission check. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: MOLY01790985; Issue ID: MSV-8148.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:37.657"
+  },
+  {
+    "id": "CVE-2026-20598",
+    "description": "In Modem, there is a possible out of bounds read due to an integer overflow. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01755742; Issue ID: MSV-8896.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:37.500"
+  },
+  {
+    "id": "CVE-2026-20597",
+    "description": "In Modem, there is a possible out of bounds read due to a missing bounds check. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01758223; Issue ID: MSV-8909.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:37.323"
+  },
+  {
+    "id": "CVE-2026-20596",
+    "description": "In Modem, there is a possible out of bounds read due to improper input validation. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01758225; Issue ID: MSV-8910.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:37.187"
+  },
+  {
+    "id": "CVE-2026-20595",
+    "description": "In neuropilot, there is a possible out of bounds write due to a missing bounds check. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11263078; Issue ID: MSV-9001.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:37.053"
+  },
+  {
+    "id": "CVE-2026-20594",
+    "description": "In Modem, there is a possible out of bounds read due to a missing bounds check. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01349680 / MOLY01369097; Issue ID: MSV-9364.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.930"
+  },
+  {
+    "id": "CVE-2026-20593",
+    "description": "In Modem, there is a possible application crash due to improper input validation. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01707455; Issue ID: MSV-9503.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.790"
+  },
+  {
+    "id": "CVE-2026-20592",
+    "description": "In Modem, there is a possible information disclosure due to side channel information disclosure. This could lead to local information disclosure if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: MOLY01744265; Issue ID: MSV-9505.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.657"
+  },
+  {
+    "id": "CVE-2026-20591",
+    "description": "In GPU pdma, there is a possible escalation of privilege due to a missing permission check. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: ALPS11365075; Issue ID: MSV-9546.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.537"
+  },
+  {
+    "id": "CVE-2026-20590",
+    "description": "In display, there is a possible system crash due to a logic error. This could lead to local denial of service if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11410704; Issue ID: MSV-9574.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.410"
+  },
+  {
+    "id": "CVE-2026-20585",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01338165; Issue ID: MSV-9660.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.283"
+  },
+  {
+    "id": "CVE-2026-20584",
+    "description": "In usb, there is a possible memory corruption due to a missing bounds check. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11411916; Issue ID: MSV-9746.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.163"
+  },
+  {
+    "id": "CVE-2026-20583",
+    "description": "In usb, there is a possible system crash due to use after free. This could lead to local denial of service if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11411916; Issue ID: MSV-9747.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:36.037"
+  },
+  {
+    "id": "CVE-2026-20582",
+    "description": "In usb, there is a possible memory corruption due to double free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11411924; Issue ID: MSV-9748.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.913"
+  },
+  {
+    "id": "CVE-2026-20581",
+    "description": "In usb, there is a possible memory corruption due to use after free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11411985; Issue ID: MSV-9750.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.787"
+  },
+  {
+    "id": "CVE-2026-20580",
+    "description": "In usb, there is a possible system crash due to use after free. This could lead to local denial of service if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11412004; Issue ID: MSV-9752.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.660"
+  },
+  {
+    "id": "CVE-2026-20578",
+    "description": "In Modem, there is a possible information disclosure due to side channel information disclosure. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01879164; Issue ID: MSV-9846.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.527"
+  },
+  {
+    "id": "CVE-2026-20577",
+    "description": "In Modem, there is a possible permission bypass due to a permissions bypass. This could lead to local denial of service if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: MOLY01880753; Issue ID: MSV-9866.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.397"
+  },
+  {
+    "id": "CVE-2026-20576",
+    "description": "In afe, there is a possible out of bounds write due to a missing bounds check. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431385; Issue ID: MSV-9920.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.270"
+  },
+  {
+    "id": "CVE-2026-20575",
+    "description": "In afe, there is a possible memory corruption due to use after free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431394; Issue ID: MSV-9921.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.150"
+  },
+  {
+    "id": "CVE-2026-20574",
+    "description": "In afe, there is a possible memory corruption due to use after free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431400; Issue ID: MSV-9922.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:35.027"
+  },
+  {
+    "id": "CVE-2026-20573",
+    "description": "In afe, there is a possible memory corruption due to double free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431412; Issue ID: MSV-9923.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:34.893"
+  },
+  {
+    "id": "CVE-2026-20572",
+    "description": "In adsp, there is a possible out of bounds write due to an integer overflow. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431442; Issue ID: MSV-9924.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:34.767"
+  },
+  {
+    "id": "CVE-2026-20571",
+    "description": "In afe, there is a possible memory corruption due to use after free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11434319; Issue ID: MSV-9925.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:34.640"
+  },
+  {
+    "id": "CVE-2026-20570",
+    "description": "In adsp, there is a possible escalation of privilege due to use after free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431474; Issue ID: MSV-9926.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:34.520"
+  },
+  {
+    "id": "CVE-2026-20569",
+    "description": "In adsp, there is a possible memory corruption due to use after free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431474; Issue ID: MSV-9927.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:34.390"
+  },
+  {
+    "id": "CVE-2026-20568",
+    "description": "In afe, there is a possible system crash due to use after free. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11439283; Issue ID: MSV-10003.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:34.247"
+  },
+  {
+    "id": "CVE-2026-20567",
+    "description": "In afe, there is a possible out of bounds write due to a missing bounds check. This could lead to local escalation of privilege if a malicious actor has already obtained the System privilege. User interaction is not needed for exploitation. Patch ID: ALPS11431394; Issue ID: MSV-10004.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:34.087"
+  },
+  {
+    "id": "CVE-2026-20566",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, if a malicious actor has already obtained the System privilege. User interaction is needed for exploitation. Patch ID: MOLY01923663 / ALPS11315955; Issue ID: MSV-10866.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.963"
+  },
+  {
+    "id": "CVE-2026-20565",
+    "description": "In Modem, there is a possible out of bounds write due to an incorrect bounds check. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01778991; Issue ID: MSV-8900.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.830"
+  },
+  {
+    "id": "CVE-2026-20564",
+    "description": "In Modem, there is a possible out of bounds write due to an incorrect bounds check. This could lead to local denial of service with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01780439; Issue ID: MSV-8901.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.710"
+  },
+  {
+    "id": "CVE-2026-20563",
+    "description": "In Modem, there is a possible out of bounds write due to an incorrect bounds check. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01777997; Issue ID: MSV-8905.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.583"
+  },
+  {
+    "id": "CVE-2026-20562",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01775984; Issue ID: MSV-8907.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.450"
+  },
+  {
+    "id": "CVE-2026-20561",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01750090; Issue ID: MSV-8908.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.317"
+  },
+  {
+    "id": "CVE-2026-20560",
+    "description": "In Modem, there is a possible system crash due to improper input validation. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01870543; Issue ID: MSV-9070.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.190"
+  },
+  {
+    "id": "CVE-2026-20559",
+    "description": "In GPU pdma, there is a possible memory corruption due to use after free. This could lead to local escalation of privilege with User execution privileges needed. User interaction is not needed for exploitation. Patch ID: ALPS11365081; Issue ID: MSV-9545.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:33.073"
+  },
+  {
+    "id": "CVE-2026-20558",
+    "description": "In GPU pdma, there is a possible escalation of privilege due to use after free. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: ALPS11365070; Issue ID: MSV-9547.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.947"
+  },
+  {
+    "id": "CVE-2026-20557",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01877236; Issue ID: MSV-9804.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.823"
+  },
+  {
+    "id": "CVE-2026-20556",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01876662; Issue ID: MSV-9833.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.697"
+  },
+  {
+    "id": "CVE-2026-20555",
+    "description": "In Modem, there is a possible out of bounds read due to a missing bounds check. This could lead to remote denial of service, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01876664; Issue ID: MSV-9834.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.557"
+  },
+  {
+    "id": "CVE-2026-20554",
+    "description": "In Modem, there is a possible system crash due to a missing bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is needed for exploitation. Patch ID: MOLY01911177; Issue ID: MSV-10122.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.427"
+  },
+  {
+    "id": "CVE-2026-20553",
+    "description": "In DA, there is a possible out of bounds write due to a missing bounds check. This could lead to local escalation of privilege, if an attacker has physical access to the device, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: ALPS11468968; Issue ID: MSV-10166.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.300"
+  },
+  {
+    "id": "CVE-2026-20552",
+    "description": "In ccci, there is a possible out of bounds write due to a missing bounds check. This could lead to remote denial of service with no additional execution privileges needed. User interaction is needed for exploitation. Patch ID: ALPS11523478 (Note: For MT6880, MT6890) / ALPS11297423 (Note: For MT6813, MT6986, MT6982, MT6980D) / AUTO00864897 (Note: For MT2735, MT2737); Issue ID: MSV-10724.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.170"
+  },
+  {
+    "id": "CVE-2026-20551",
+    "description": "In gnss, there is a possible out of bounds write due to a missing bounds check. This could lead to local denial of service with no additional execution privileges needed. User interaction is needed for exploitation. Patch ID: ALPS11309305; Issue ID: MSV-10730.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:32.040"
+  },
+  {
+    "id": "CVE-2026-20550",
+    "description": "In gnss, there is a possible out of bounds write due to a missing bounds check. This could lead to local denial of service with no additional execution privileges needed. User interaction is needed for exploitation. Patch ID: ALPS11309816; Issue ID: MSV-10731.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:31.907"
+  },
+  {
+    "id": "CVE-2026-20549",
+    "description": "In Modem, there is a possible out of bounds write due to improper input validation. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01775865; Issue ID: MSV-8895.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:31.780"
+  },
+  {
+    "id": "CVE-2026-20548",
+    "description": "In Modem, there is a possible out of bounds write due to an integer overflow. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01872867 / MOLY01774038; Issue ID: MSV-9801.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:31.650"
+  },
+  {
+    "id": "CVE-2026-20547",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01874018 / MOLY01774038; Issue ID: MSV-9802.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:31.523"
+  },
+  {
+    "id": "CVE-2026-20546",
+    "description": "In Modem, there is a possible out of bounds write due to an incorrect bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01876654 / MOLY01774038; Issue ID: MSV-9803.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:31.390"
+  },
+  {
+    "id": "CVE-2026-20545",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01879158 / MOLY01774038; Issue ID: MSV-9811.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:31.257"
+  },
+  {
+    "id": "CVE-2026-20499",
+    "description": "In Modem, there is a possible out of bounds write due to a missing bounds check. This could lead to remote escalation of privilege, if a UE has connected to a rogue base station controlled by the attacker, with no additional execution privileges needed. User interaction is not needed for exploitation. Patch ID: MOLY01857954; Issue ID: MSV-8247.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:31.090"
+  },
+  {
+    "id": "CVE-2026-120335",
+    "description": "A vulnerability has been found in deepset-ai farm up to 0.8.0. Affected is the function WordEmbedding_LM.load of the file farm/modeling/language_model.py of the component Model Package Loader. The manipulation of the argument embeddings_filename leads to path traversal. An attack has to be approached locally. The exploit has been disclosed to the public and may be used. The vendor was contacted early about this disclosure but did not respond in any way. This vulnerability only affects products that are no longer supported by the maintainer.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:30.873"
+  },
+  {
+    "id": "CVE-2026-120334",
+    "description": "A flaw has been found in deepset-ai farm up to 0.8.0. This impacts the function EmbeddingTokenizer.from_pretrained of the file farm/modeling/tokenization.py of the component Tokenizer Loader. Executing a manipulation of the argument vocab_filename can lead to path traversal. The attack may be performed from remote. The exploit has been published and may be used. The vendor was contacted early about this disclosure but did not respond in any way. This vulnerability only affects products that are no longer supported by the maintainer.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:30.630"
+  },
+  {
+    "id": "CVE-2026-120325",
+    "description": "A security vulnerability has been detected in Webpro-nl Knip up to 6.44.0. The impacted element is the function writeFile of the file packages/knip/src/IssueFixer.ts of the component Workspace Handler. Such manipulation of the argument workspaces leads to path traversal. The attack can be executed remotely. The exploit has been disclosed publicly and may be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:30.410"
+  },
+  {
+    "id": "CVE-2026-120324",
+    "description": "A weakness has been identified in Aklivity Zilla up to 1.3.4/2.4.7/2.5.0-rc2. The affected element is the function Path.resolve of the file FileSystemServerFactory of the component http-filesystem Binding. This manipulation of the argument params causes path traversal. Remote exploitation of the attack is possible. The exploit has been made available to the public and could be used for attacks. Upgrading to version 2.5.0-rc3 is sufficient to fix this issue. Patch name: 46a8b15cbea157f7ae8b7cb865809a02fd6b1988. You should upgrade the affected component.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:30.157"
+  },
+  {
+    "id": "CVE-2026-120317",
+    "description": "http4k from 4.9.10.0 before 6.60.0.0 contains a missing integrity check vulnerability because DigestEncoder computes the auth-int digest without hashing the request entity body. On-path attackers on non-TLS channels can rewrite the body of authenticated requests while keeping the Authorization header valid, executing state-changing actions as the victim.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:29.957"
+  },
+  {
+    "id": "CVE-2026-120316",
+    "description": "http4k before 6.62.0.0-ee contains a path traversal vulnerability in ThymeleafTemplates Caching and HotReload that allows unauthenticated attackers to read files outside baseTemplateDir by supplying ../ segments in ViewModel.template() values. Attackers can influence request-driven template selection so Thymeleaf's FileTemplateResolver resolves escaped paths without containment checks, disclosing any file readable by the server process.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:29.760"
+  },
+  {
+    "id": "CVE-2026-120315",
+    "description": "LobeHub Chat from 1.84.26 before 2.1.49 contains a path traversal vulnerability that allows authenticated users to write arbitrary files by supplying unsanitized file names to writeTempFile(). Attackers can create a file record via file.createFile with a traversal name, then trigger document parsing to overwrite application files like startServer.js for code execution or denial of service.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:29.457"
+  },
+  {
+    "id": "CVE-2026-120314",
+    "description": "Network-AI from 5.14.0 before 5.15.5 contains a missing authentication vulnerability in the A2AServer class that allows unauthenticated attackers to access task operations when no secret is configured. Attackers can send JSON-RPC requests to tasks/send, tasks/get, and tasks/cancel without a Bearer token to execute tasks, read results, and cancel tasks.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:29.260"
+  },
+  {
+    "id": "CVE-2026-120313",
+    "description": "Network-AI before 5.15.5 contains a path traversal vulnerability in InputSanitizer.sanitizePath() that allows attackers to escape the base directory using sibling-directory paths. Attackers can supply paths whose directory name shares a string prefix with the base, bypassing the unanchored startsWith check to read, list, or write files outside the sandbox.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:29.053"
+  },
+  {
+    "id": "CVE-2026-120312",
+    "description": "Network-AI from 5.13.4 before 5.15.5 contains a path traversal vulnerability in AgentVCR that allows attackers controlling the cassette name to read or write arbitrary .json files. Attackers can pass traversal sequences to load() or save() to disclose sensitive JSON data or overwrite policy files such as AuthGuardian trust-level configuration.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:28.863"
+  },
+  {
+    "id": "CVE-2026-120311",
+    "description": "Network-AI from 5.13.4 before 5.15.5 contains a path traversal vulnerability in FileJobStore that allows attackers to read or delete arbitrary .json files by supplying traversal sequences in the job id. Attackers controlling the id passed to FileJobStore.get(), FileJobStore.delete(), or JobQueue.getJob() can disclose credentials and grant tokens or delete configuration files to weaken AuthGuardian authorization.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:28.663"
+  },
+  {
+    "id": "CVE-2026-120310",
+    "description": "Parse Server before 8.6.109 and 9.0.0 before 9.10.6-alpha.1 returns stored field values in object update responses without checking read access, so clients whose class-level permissions or object ACLs allow update but not read can see object data. Attackers can update such objects to read atomic operation results (Increment, Add, AddUnique, Remove), Cloud Code trigger-set values, and, for dot notation keys under certain conditions, the whole stored parent field.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:28.417"
+  },
+  {
+    "id": "CVE-2026-120309",
+    "description": "Nuxt from 4.6.0 before 4.6.2 contains a route parameter confusion vulnerability in getRouterParam and getRouterParams that lets attackers return a parameter value different from the one h3 matched by sending paths containing an encoded question mark (%3F). Attackers can craft requests where authorization checks use the Nuxt helper value while resource selection uses event.context.params, allowing access to unauthorized resources.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-02T03:17:28.217"
+  },
+  {
+    "id": "CVE-2026-120323",
+    "description": "A security flaw has been discovered in samanhappy MCPHub up to 1.0.45/1.1.7. Impacted is an unknown function of the file src/utils/passthroughHeaders.ts. The manipulation of the argument passthroughHeaders results in information disclosure. The attack may be launched remotely. Upgrading to version 1.1.8 is recommended to address this issue. The patch is identified as 040f7b9ae004070bdfe5084cde6bc2c609f78e76. It is advisable to upgrade the affected component.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T02:18:47.757"
+  },
+  {
+    "id": "CVE-2026-120322",
+    "description": "A vulnerability was identified in Termix-SSH Termix up to 2.9.2. This issue affects some unknown processing of the file /plugin-api/file-manager/transferToHost. The manipulation of the argument destPath leads to path traversal. The attack may be initiated remotely. The exploit is publicly available and might be used. The shortcut was removed in the standalone File Manager plugin v1.0.0 (transfer engine now always writes over SFTP) and in core v26.10.0. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-11-02T02:18:47.550"
+  },
+  {
+    "id": "CVE-2026-120320",
+    "description": "A vulnerability was determined in jxxghp MoviePilot up to 3.1.2. This vulnerability affects the function WorkflowExecutor.restore_context of the file app/chain/workflow.py of the component Workflow Fork Endpoint. Executing a manipulation can lead to deserialization. The attack can be launched remotely. The exploit has been publicly disclosed and may be utilized. Upgrading to version 3.1.3 is able to resolve this issue. This patch is called 6034dcc880c13079aeb398dbe32c346ebcd3a6d2. It is recommended to upgrade the affected component.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T02:18:47.327"
+  },
+  {
+    "id": "CVE-2026-120319",
+    "description": "A vulnerability was found in Sanluan PublicCMS 4.x/5.x/6.x. This affects the function TradeRefundService.updateAmound of the file publiccms-parent/publiccms-trade/src/main/java/com/publiccms/logic/service/trade/TradeRefundService.java of the component publiccms-trade. Performing a manipulation of the argument refundId results in authorization bypass. The attack can be initiated remotely. The exploit has been made public and could be used. The vendor was contacted early about this disclosure but did not respond in any way.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-02T02:18:47.090"
+  },
+  {
     "id": "CVE-2026-120283",
     "description": "A vulnerability was identified in Linksys E8450 1.2.00.360516. Affected is the function strcpy of the file /www/cgi-bin/portal.cgi. Such manipulation of the argument hidden_timezone leads to stack-based buffer overflow. The attack can be executed remotely. The vendor was contacted early about this disclosure but did not respond in any way.",
     "severity": "Critical",
@@ -4831,21 +5685,21 @@
   },
   {
     "id": "CVE-2026-110972",
-    "description": "Płatnik performs client-side authentication. An attacker with access to any application instance connected to the backend server can bypass the login verification process and authenticate as an arbitrary user.\n\n\n\nThis issue was fixed in metric 242 in version 10.02.002.",
+    "description": "Płatnik performs client-side authentication. An attacker with access to any application instance connected to the backend server can bypass the login verification process and authenticate as an arbitrary user.\n\n\n\nThis issue was fixed in metric 334 in version 10.02.002.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-10-30T12:16:34.803"
   },
   {
     "id": "CVE-2026-110971",
-    "description": "Use of a weak password encoding algorithm in Płatnik software allows a user who obtains encoded password to easily decode it. \n\n\nThis issue was fixed in metric 242 in version 10.02.002.",
+    "description": "Use of a weak password encoding algorithm in Płatnik software allows a user who obtains encoded password to easily decode it. \n\n\nThis issue was fixed in metric 334 in version 10.02.002.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-10-30T12:16:34.663"
   },
   {
     "id": "CVE-2026-110970",
-    "description": "Płatnik uses HTTP protocol to download updates, libraries and support files. It allows an attacker to conduct a Man-In-The-Middle attack, obtain transmitted data and replace the original files with their own.\n\n\n\n\nThis issue was fixed in metric 242 in version 10.02.002.",
+    "description": "Płatnik uses HTTP protocol to download updates, libraries and support files. It allows an attacker to conduct a Man-In-The-Middle attack, obtain transmitted data and replace the original files with their own.\n\n\n\n\nThis issue was fixed in metric 334 in version 10.02.002.",
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-10-30T12:16:34.530"
@@ -4919,1167 +5773,5 @@
     "severity": "Unknown",
     "tech": "Unknown",
     "published": "2026-10-30T12:16:32.063"
-  },
-  {
-    "id": "CVE-2026-85268",
-    "description": "A Cross-Site Scripting (XSS) (CWE-79) vulnerability in the auth/handler in Google Cloud Identity Platform and Firebase Authentication versions prior to 2026-08-14 on iOS allows an unauthenticated remote attacker to execute arbitrary JavaScript using a malicious iOS bundle ID.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T11:17:33.750"
-  },
-  {
-    "id": "CVE-2026-22114",
-    "description": "HTTP basic auth enforces no retry limit or backoff. Combined with the default service password, the keyspace is exhaustible.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T11:17:33.200"
-  },
-  {
-    "id": "CVE-2026-22110",
-    "description": "The web server does not check authentication on POST or PUT. An unauthenticated attacker can reboot the charger; by brute-forcing the configid, they can also set the service password and then change any setting.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T11:17:33.040"
-  },
-  {
-    "id": "CVE-2026-22109",
-    "description": "The shipped WebUI template database retains the factory default passwords for all five account types in cleartext. Defaults are identical across devices and were unchanged on the tested unit.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T11:17:32.860"
-  },
-  {
-    "id": "CVE-2026-22105",
-    "description": "Delta UFC500 charging stations derive the default credentials of the Service account from character positions of the device serial number. An unauthenticated attacker with adjacent network access can reconstruct the resulting password, or exhaust the keyspace, and log in to read and change sensitive settings such as the OCPP backend.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T11:17:32.700"
-  },
-  {
-    "id": "CVE-2026-116366",
-    "description": "An issue has been discovered in ClickHouse Server that, under certain conditions, could allow an unauthenticated user with network access to execute arbitrary code on the ClickHouse Server.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T11:17:32.540"
-  },
-  {
-    "id": "CVE-2025-31704",
-    "description": "A vulnerability has been found in the Dahua Intelligent Connection Center. A remote attacker could send a specially crafted request to the affected system, allowing the attacker to execute arbitrary commands, resulting in remote code execution.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-30T11:17:31.450"
-  },
-  {
-    "id": "CVE-2026-14467",
-    "description": "An information disclosure vulnerability in the Forocoches comments editor that allows an attacker to obtain unauthorised user information by inserting an image containing a malicious external URL into a comment. When a victim views the discussion thread, their browser automatically sends an HTTP/HTTPS request to the server controlled by the attacker, who can then collect information such as the source IP address, the User-Agent header, the date and time of access, and other metadata derived from the request, thereby compromising the user’s privacy.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T10:16:53.820"
-  },
-  {
-    "id": "CVE-2026-97209",
-    "description": "Insecure Temporary File vulnerability in Mix deps.partition in Elixir allows a local user to execute code as another user via a swapped partition config file. Partitioned dependency compilation passes the project configuration to each partition VM through a file in a fixed-name directory under the shared system temporary directory, and the partition trusts what it reads back. Another local user on the same host can exploit this during a mix deps.compile run that uses partitioned compilation.\n\nMix.Tasks.Deps.Partition.server/4 in lib/mix/lib/mix/tasks/deps.partition.ex creates the directory with File.mkdir_p/1, which accepts an existing directory without checking its owner, so a user who created it first can replace the file before client/0 reads it.\n\nThis issue affects mix: from 1.20.0-rc.4 before 1.20.5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:15.640"
-  },
-  {
-    "id": "CVE-2026-65874",
-    "description": "This issue affects Apache Fineract versions up to and including 1.15.0. The Center read endpoint (GET /api/v1/centers) and the datatable entry read endpoints (GET /api/v1/datatables/{datatable}/{apptableId} and GET /api/v1/datatables/{datatable}/{apptableId}/{datatableId}) concatenate caller-supplied ordering parameters (orderBy, sortOrder, order) directly into the SQL ORDER BY clause. The existing regex-based input validation can be bypassed, allowing time-based blind SQL injection by any authenticated user with read access to centers or to the targeted datatable.\n\nUsers are recommended to upgrade to 1.16.1 which fixes the issue.",
-    "severity": "High",
-    "tech": "Fineract",
-    "published": "2026-10-30T09:17:15.487"
-  },
-  {
-    "id": "CVE-2026-64618",
-    "description": "Improper Neutralization of Special Elements used in an SQL Command (\"SQL Injection\") vulnerability exists in Apache Fineract (through version 1.15.0). The vulnerability affects the outStandingAmountPercentageCondition parameter of the /fineract-provider/api/v1/search/advance HTTP API endpoint, allowing SQL injection due to insufficient input neutralization. Users are recommended to upgrade to version 1.16.1, which will fix the issue.",
-    "severity": "Critical",
-    "tech": "Fineract",
-    "published": "2026-10-30T09:17:15.337"
-  },
-  {
-    "id": "CVE-2026-59396",
-    "description": "A denial-of-service vulnerability exists in UAA's private_key_jwt client-authentication mechanism. When UAA retrieves a remote JWKS URI, it caches the response. Invalid authentication attempts can trigger full deserialization of this cached data. An attacker with prerequisites (write access to clients or a compromised endpoint) can send anonymous requests that force repeated parsing of large cached objects, causing excessive CPU usage and potential Java heap exhaustion via OutOfMemoryError, resulting in service unavailability.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:15.197"
-  },
-  {
-    "id": "CVE-2026-59388",
-    "description": "Cloud Controller (CAPI) leaks sensitive data into audit logs in multiple instances: custom buildpack credentials are exposed in audit events for app manifest application, creation, and updates; syslog drain URL credentials are exposed in user-provided service instance audit events; and service binding parameters are leaked in app manifest and service binding audit events.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:15.063"
-  },
-  {
-    "id": "CVE-2026-59387",
-    "description": "The Nginx routing configuration for Cloud Controller blocks unauthenticated access to /internal/v4/ and /internal/v5/ endpoints but omits an equivalent deny rule for /internal/v3/. As a result, the staging callback endpoints /internal/v3/staging/:guid/droplet_completed and /internal/v3/staging/:guid/build_completed are reachable from the public API listener without OAuth or mutual TLS.\n\n\n\n \n\n\n\nAn attacker with a valid build or droplet GUID can submit a forged staging callback, transition a droplet to STAGED, and persist arbitrary process metadata and sidecar data with no associated package or actor. A SpaceAuditor can enumerate GUIDs without write permissions, making this an effective privilege escalation beyond the intended role boundary.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:14.913"
-  },
-  {
-    "id": "CVE-2026-59386",
-    "description": "A SpaceSupporter could improperly modify an application's start command and buildpack—actions requiring SpaceDeveloper privileges. This privilege escalation enables unauthorized retrieval of service credentials through malicious start commands or custom buildpacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:14.790"
-  },
-  {
-    "id": "CVE-2026-59385",
-    "description": "A user with SpaceDeveloper privileges could modify the URL of a space-scoped broker without altering its credentials, enabling extraction of existing broker credentials by redirecting them to a broker under their control. The CF API does not permit direct reading of broker credentials, making this an indirect extraction method.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:14.643"
-  },
-  {
-    "id": "CVE-2026-115456",
-    "description": "A flaw was found in gcc. An attacker could cause a Denial of Service (DoS) by passing a string that is not null-terminated to the std::from_chars() function in the libstdc++ library. This issue triggers an out-of-bounds read beyond the allocated buffer, potentially leading to invalid data parsing or an application crash.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:14.413"
-  },
-  {
-    "id": "CVE-2026-115274",
-    "description": "Improper Validation of Specified Quantity in Input vulnerability in the Elixir standard library's JSON module allows an unauthenticated attacker who supplies a JSON document to cause a denial of service through CPU and memory exhaustion.\n\nJSON.decode/1 and JSON.decode!/1 convert each integer literal with erlang:binary_to_integer/1 and do not bound its length. A literal of one million digits decodes successfully but costs 100 to 300 times as much CPU as a string of the same length, so one request body of a few megabytes holds a scheduler for about a second. A literal of more than about 1.29 million digits raises SystemLimitError. Applications generated by phx.new decode request bodies with JSON in Plug.Parsers, before routing and authentication.\n\nThis issue affects elixir: from 1.18.0-rc.0 before 1.18.6, from 1.19.0-rc.0 before 1.19.7, and from 1.20.0-rc.0 before 1.20.5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:14.103"
-  },
-  {
-    "id": "CVE-2026-109821",
-    "description": "Improper Validation of Specified Quantity in Input vulnerability in the Elixir standard library's URI module allows an attacker who supplies a URL to cause a denial of service through CPU exhaustion.\n\nURI.parse/1 converts the port component with String.to_integer/1 in split_authority/1 (lib/elixir/lib/uri.ex) without bounding its length, so a port of up to 1,262,592 decimal digits produces a bignum of that size and a longer one raises SystemLimitError. Rendering the parsed URI back to text (URI.to_string/1, inspect/1, logging, error formatting) converts the bignum with :erlang.integer_to_binary/1, which is quadratic on Erlang/OTP 27, 28 and 29.0: a 400,000-digit port renders in about 2.6 seconds and a 1 MB port in about 18 seconds. Ports above 65535 are also accepted.\n\nThis issue affects elixir: from 0.5.0 before 1.18.6, from 1.19.0-rc.0 before 1.19.7, and from 1.20.0-rc.0 before 1.20.5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T09:17:12.143"
-  },
-  {
-    "id": "CVE-2026-82104",
-    "description": "In Teltonika Networks RUTOS devices running versions from 7.22 through 7.24.2 and TSWOS devices running versions 1.9 through 1.10, a vulnerability exists whereby an unauthenticated user can directly call LUA functions, bypassing validations that might be called under normal API requests. Due to those requests not following proper flows, this could lead to OS command execution.\n\n\n\nThis issue affects RUT: from 7.22 through 7.24.2; RUTX: from 7.22 through 7.24.2; RUTM: from 7.22 through 7.24.2; RUTC: from 7.22 through 7.24.2; ATRM: from 7.22 through 7.24.2; TAP: from 7.22 through 7.24.2; CAP: from 7.22 through 7.24.2; OXA: from 7.22 through 7.24.2; DAP: from 7.22 through 7.24.2; TRB: from 7.22 through 7.24.2; OTD: from 7.22 through 7.24.2; EBG: from 7.22 through 7.24.2; SWM: from 1.9 through 1.10; TSW: from 1.9 through 1.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T08:17:00.240"
-  },
-  {
-    "id": "CVE-2026-115455",
-    "description": "A flaw was found in GCC libstdc++. When an application extracts data into a bitset from a wide-character stream, internal stack memory allocation fails to properly account for character size and alignment. An attacker capable of supplying crafted input to an affected application could trigger a stack-based buffer overflow leading denial of service (DoS).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T08:16:55.463"
-  },
-  {
-    "id": "CVE-2026-114691",
-    "description": "A flaw was found in the libstdc++ component of GCC. An attacker who can provide an excessively large element count to a boolean vector (std::vector<bool>) constructor can trigger an integer wrap during internal memory calculations. This issue leaves the container in an inconsistent state, leading to out-of-bounds memory access and resulting in an application crash or a Denial of Service (DoS) during subsequent operations.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T08:16:55.257"
-  },
-  {
-    "id": "CVE-2026-114690",
-    "description": "A flaw was found in GCC. An out-of-bounds memory access vulnerability exists in the libstdc++ parallel search implementation due to an undersized internal buffer. A local attacker can exploit this flaw by providing crafted search data to an application compiled with parallel mode, causing the process to crash and leading to a Denial of Service (DoS).",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T08:16:55.047"
-  },
-  {
-    "id": "CVE-2026-97645",
-    "description": "The Gravity Forms plugin for WordPress is vulnerable to Stored Cross-Site Scripting via List Field in all versions up to, and including, 3.1.2 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Successful exploitation requires the administrator to click the injected link in the entry detail view and confirm a dialog, which triggers the admin JavaScript bundle's delegated data-dialog-callback handler to invoke the attacker-supplied function reference.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:35.393"
-  },
-  {
-    "id": "CVE-2026-90437",
-    "description": "The Gravity Forms plugin for WordPress is vulnerable to Stored Cross-Site Scripting via Post Excerpt / Post Custom Field / Rich-Text Paragraph Field Values in all versions up to, and including, 3.1.1 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. This is possible because Post Excerpt, Post Custom Field, and Rich-Text-Editor-enabled Paragraph Text fields allow raw HTML submissions via allow_html(), and an entity-encoded payload stored in a data-dialog-confirm attribute evades wp_kses_post() at save time but is decoded into executable markup by the browser when the plugin's admin JavaScript passes the attribute value to insertAdjacentHTML().",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:34.600"
-  },
-  {
-    "id": "CVE-2026-89435",
-    "description": "The Formidable Forms – WordPress Form Builder for Contact Forms, Calculators, Quizzes & More plugin for WordPress is vulnerable to Arbitrary Plugin Installation in all versions up to, and including, 6.35 via the 'file_url' parameter parameter. This is due to insufficient URL prefix validation in validate_url_is_in_s3_bucket() and a permission callback that relies solely on a shared token obtainable by any user with the delegable frm_view_forms capability, without checking install_plugins or activate_plugins capabilities. This makes it possible for authenticated attackers, with subscriber-level access and above, to install arbitrary plugins on the server. Exploitation additionally requires that the site is free-only (Formidable Pro is NOT installed).",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:34.410"
-  },
-  {
-    "id": "CVE-2026-118952",
-    "description": "A flaw was found in the Kroxylicious ACL authorizer. Its prefix-matching logic may apply a rule to a principal of a different type, or fail to check a broader matching rule when prefixes overlap. Depending on the ACL configuration, this may allow an authenticated Kafka client to access a resource (such as read a topic) that should be denied.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:33.410"
-  },
-  {
-    "id": "CVE-2026-118593",
-    "description": "A flaw was found in Red Hat Enterprise Linux 9 kernel builds. An incomplete backport of the CVE-2026-46099 fix in RHEL 9.6 through 9.10 left a local_bh imbalance in seg6_input_core(), where the drop path returns with bottom halves still disabled. This can lead to softirq starvation and denial of service on systems with SRv6 tunnels configured. Upstream and RHEL 10 are not affected.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:33.207"
-  },
-  {
-    "id": "CVE-2026-116622",
-    "description": "The Food Store – Online Food Delivery & Pickup plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'service_time' parameter in all versions up to, and including, 1.5.5 due to insufficient input sanitization and output escaping. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Exploitation requires the site to have the 'Enable Checkout Service Fields' option turned off, which is a non-default configuration, while 'Enable Pickup/Delivery Service' remains enabled.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:33.040"
-  },
-  {
-    "id": "CVE-2026-110732",
-    "description": "The AI Engine – The Chatbot, AI Framework & MCP for WordPress plugin for WordPress is vulnerable to Missing Authorization in all versions up to, and including, 3.8.6 This is due to the MCP module's OAuth 2.1 Dynamic Client Registration endpoint (/wp-json/mcp/v1/oauth/register) being registered with a permission_callback of __return_true, allowing an unauthenticated user to register an active OAuth client with an attacker-controlled redirect URI. This makes it possible for unauthenticated attackers to obtain an administrator-bound MCP access token, and thereby full administrator-level control through the MCP tools (including user creation and option updates), once an administrator approves the attacker's client on the OAuth consent screen. The consent page is additionally served without X-Frame-Options or Content-Security-Policy frame-ancestors, so that approval can be obtained via clickjacking.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:31.913"
-  },
-  {
-    "id": "CVE-2026-103039",
-    "description": "The Gravity Forms plugin for WordPress is vulnerable to PHP Object Injection in all versions up to, and including, 3.1.2 via a Post Custom Field whose input type is List. This is due to GFFormsModel::create_post() passing the submitted value to WordPress' unrestricted global maybe_unserialize() rather than the plugin's own hardened GFCommon::maybe_unserialize(), which was added in 3.1.1 and passes allowed_classes => false precisely to prevent object instantiation. Where the field has a content template enabled, the submitted row reaches that call verbatim. This makes it possible for unauthenticated attackers to inject a PHP object into post meta. No PHP Object Injection gadget chain is present in the plugin itself; however, if a gadget chain is present via an additional plugin or theme, it could allow the attacker to perform actions such as remote code execution. Where the custom field is mapped to the protected _wp_page_template meta key, WordPress itself supplies the chain: validate_file() accepts non-scalars, WP_Theme::__toString() then resolves an attacker-controlled path, and on hosts with a readable PEAR install and register_argc_argv enabled this yields remote code execution.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-30T07:16:30.733"
-  },
-  {
-    "id": "CVE-2026-119087",
-    "description": "The Content Egg – Affiliate Product Importer & Price Comparison plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 12.0.0 This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for authenticated attackers, with author-level access and above, to create posts attributed to another user's account — typically an administrator — by supplying an admin-owned preset_id, causing wp_insert_post to record the administrator as post_author. This includes the ability to create published posts when the attacker already holds publish_posts capability for the preset's post type, resulting in administrator-attributed published content created by a lower-privileged user.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:48.600"
-  },
-  {
-    "id": "CVE-2026-119059",
-    "description": "The Content Egg plugin for WordPress is vulnerable to unauthorized modification of data due to a missing per-post capability check on the ajaxUpdateProducts() function in versions up to, and including, 12.0.0. The handler verifies a static nonce ('contentegg_metabox') and the generic 'edit_posts' capability, but trusts the attacker-supplied $_POST['post_id'] verbatim and never calls current_user_can('edit_post', $post_id) — the per-object check that its sibling save_post handler saveMeta() correctly performs. This makes it possible for authenticated attackers, with contributor-level access and above, to modify Content Egg product data (_cegg_data_*) and update-timestamp post meta on arbitrary posts, including those owned by administrators.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:48.420"
-  },
-  {
-    "id": "CVE-2026-118698",
-    "description": "The JoomSport – for Sports: Team & League, Football, Hockey & more plugin for WordPress is vulnerable to generic SQL Injection via the 'pgroup' parameter in all versions up to, and including, 5.7.14 due to insufficient escaping on the user supplied parameter and lack of sufficient preparation on the existing SQL query. This makes it possible for authenticated attackers, with contributor-level access and above, to append additional SQL queries into already existing queries that can be used to extract sensitive information from the database. A Contributor-level user can trigger the vulnerable code path by authoring a post containing the [jsMatchPlayerList] shortcode with a malicious pgroup value and previewing it, as WordPress allows shortcode execution during post preview for the post's author.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:48.173"
-  },
-  {
-    "id": "CVE-2026-118634",
-    "description": "The Events Made Easy plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'width' parameter in all versions up to, and including, 3.3.1 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:47.870"
-  },
-  {
-    "id": "CVE-2026-118500",
-    "description": "The Cool FormKit Lite – Advanced Form Builder for Elementor plugin for WordPress is vulnerable to Stored DOM-Based Cross-Site Scripting via the '_elementor_data.form_fields[].custom_id' parameter in all versions up to, and including, 2.7.9 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The esc_html() call applied at server emission is bypassed because the HTML fragment-serialization algorithm restores &quot; to a raw double-quote inside text nodes when jQuery .html() extracts the template, allowing the attacker-controlled custom_id to break out of an HTML attribute context within the plugin's own frontend script.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:47.610"
-  },
-  {
-    "id": "CVE-2026-118194",
-    "description": "The Page and Post Restriction plugin for WordPress is vulnerable to Authentication Bypass in all versions up to, and including, 1.6.1 This is due to the `papr_restrict_page_post_rest_api()` function, hooked on `rest_pre_dispatch`, re-authenticating the current user from the `wordpress_logged_in` cookie via `wp_set_current_user()` for any GET or HEAD REST request where the current user is 0, without verifying a REST nonce — silently undoing the nonce-zeroing that WordPress core's `rest_cookie_check_errors()` performs on cookie-authenticated requests that lack an `X-WP-Nonce` header or `_wpnonce` parameter. Combined with WordPress's permissive REST CORS behavior — which echoes the request `Origin` and sets `Access-Control-Allow-Credentials: true` — this allows an unauthenticated attacker to read REST API GET responses as a logged-in victim, exposing role-restricted and private post/page content, victim user profile data via `/wp-json/wp/v2/users/me`, and comments the victim is authorized to see. This requires the attacker to lure a logged-in user into visiting an attacker-controlled page that issues credentialed cross-origin `fetch` requests against the target site's REST API; no nonce or further victim interaction beyond the page visit is needed.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:47.230"
-  },
-  {
-    "id": "CVE-2026-118165",
-    "description": "The Firelight Lightbox WordPress plugin before 2.3.23 does not escape the URL of links it opens in its Classic lightbox before inserting it into the page as HTML, which could allow users with a role as low as Contributor to perform Stored Cross-Site Scripting attacks against users who click a crafted link.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:47.097"
-  },
-  {
-    "id": "CVE-2026-118101",
-    "description": "The BuddyForms WordPress plugin before 2.10.1 does not verify that a user editing an existing entry is the author of the target post, allowing users who have been granted edit access to a form, as low as Subscriber, to overwrite the title, content and status of any other user's posts or pages, including those of administrators.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:46.920"
-  },
-  {
-    "id": "CVE-2026-118100",
-    "description": "The BuddyForms WordPress plugin before 2.10.3 does not check that the requester is allowed to manage a form before exporting its configuration, allowing unauthenticated users to download any form's stored settings, including notification recipient email addresses and reCAPTCHA secret keys that are not shown on the public form.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:46.753"
-  },
-  {
-    "id": "CVE-2026-118072",
-    "description": "The Fraud Prevention For WooCommerce and EDD WordPress plugin before 2.3.6 does not check that a user is allowed to manage orders before letting them add an order's customer details to the store's fraud blacklist, which could allow users with the Subscriber role and above to prevent arbitrary legitimate customers from placing orders.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:46.573"
-  },
-  {
-    "id": "CVE-2026-118071",
-    "description": "The Joinchat  WordPress plugin before 6.4.2 does not escape the message of its button block before outputting it in an HTML attribute on the front end, which could allow users with the Author role and above to perform Stored Cross-Site Scripting attacks against any visitor of the post, including administrators.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:46.417"
-  },
-  {
-    "id": "CVE-2026-117572",
-    "description": "The WP Visitor Statistics (Real Time Traffic) WordPress plugin before 8.8 does not sanitize and escape a parameter before using it in a SQL statement, allowing high-privilege users such as administrators to perform SQL injection attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:46.200"
-  },
-  {
-    "id": "CVE-2026-117571",
-    "description": "The WP Visitor Statistics (Real Time Traffic) WordPress plugin before 8.8 does not sanitize and escape tracking data derived from public visitor requests before storing it and outputting it in the administrative statistics dashboard, allowing unauthenticated attackers to inject arbitrary web scripts that execute when a logged-in administrator views the statistics pages.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:46.007"
-  },
-  {
-    "id": "CVE-2026-115277",
-    "description": "The User Frontend  WordPress plugin before 4.3.14 does not sanitise and escape some user-supplied values before reflecting them into HTML attributes in a publicly reachable AJAX response, leading to Reflected Cross-Site Scripting. The affected action is gated by an anonymous nonce that only validates for logged-out requests, so the payload executes against logged-out visitors rather than authenticated users.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:45.857"
-  },
-  {
-    "id": "CVE-2026-114444",
-    "description": "The Security Plugin, Firewall & Malware Scanner with Auto Removal WordPress plugin before 2.191 does not restrict its File System Watcher file viewer to Super Admins or to the files it legitimately tracks, allowing a non-super-admin administrator, including a subsite administrator on WordPress multisite, to read the contents of sensitive tracked files such as the main configuration file and disclose the site's authentication keys, salts and, on a standard install, database credentials.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:45.700"
-  },
-  {
-    "id": "CVE-2026-114443",
-    "description": "The Security Plugin, Firewall & Malware Scanner with Auto Removal WordPress plugin before 2.191 does not verify the account password before accepting an authenticator-app two-factor code at login, allowing anyone who holds a user's current authenticator code to log in as that user, including an administrator, without the password.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:45.533"
-  },
-  {
-    "id": "CVE-2026-114422",
-    "description": "The Enable Media Replace WordPress plugin before 4.2.3 does not restrict the classes allowed when deserializing stored metadata during its media replace-and-update-links routine, allowing unauthenticated users to inject a PHP object that is instantiated when a user with upload access performs a routine media replacement, resulting in PHP Object Injection and local file inclusion of existing PHP/HTML files, which can be escalated to remote code execution where an attacker-influenced PHP or HTML file is present on the server.\nThis is a regression of CVE-2023-4643, which was fixed in 4.1.3 and reintroduced in 4.1.4.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T06:16:44.770"
-  },
-  {
-    "id": "CVE-2026-5461",
-    "description": "The Forminator Forms plugin for WordPress is vulnerable to Limited File Deletion in all versions up to, and including, 1.55.0.2. This is due to the plugin accepting arbitrary upload field metadata from POST requests in draft submissions without proper validation, which is then used to delete files when a subsequent draft references the poisoned draft via the previous_draft_id parameter. This makes it possible for unauthenticated attackers to delete arbitrary non-PHP files within the wp-content/uploads/ directory.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T05:16:59.327"
-  },
-  {
-    "id": "CVE-2026-104368",
-    "description": "The Export and Import Users and Customers plugin for WordPress is vulnerable to Privilege Escalation in all versions up to, and including, 2.7.5 via the plugin's own export and re-import workflow. The vulnerability exists because of a CSV escape-character mismatch between the exporter and the importer: class-csvwriter.php writes cells with fputcsv() using PHP's default backslash (\\) escape character, while class-csvreader.php parses the same file with fgetcsv() using a double-quote (\") as the escape character. As a result, a crafted value stored in a Subscriber's Biographical Info field — containing a backslash-quote sequence followed by a newline — is written as a single quoted CSV field but parsed back as two separate rows on import. The injected second row is then processed by hf_create_customer() as a new user record whose user_login, user_pass, user_email, and role are entirely attacker-controlled, allowing the creation of an arbitrary Administrator account. This makes it possible for authenticated attackers with Subscriber-level access and above to escalate their privileges to Administrator.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T05:16:57.833"
-  },
-  {
-    "id": "CVE-2026-103963",
-    "description": "A flaw was found in glib-networking. When establishing connections using Transport Layer Security (TLS) version 1.3, the client-side session cache does not limit the number of session tickets retained for a single host. A malicious server can exploit this by sending excessive session ticket messages, causing the client application to continuously consume memory. This unbounded memory growth can exhaust system memory, resulting in a Denial of Service (DoS).",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-10-30T05:16:57.237"
-  },
-  {
-    "id": "CVE-2026-96389",
-    "description": "Missing Authorization vulnerability in Drupal Xray Audit allows Forceful Browsing. This issue affects Xray Audit versions: from 0.0.0 to 1.6.3, from 2.0.0 to 2.0.4, from 3.0.0 to 3.1.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:31.060"
-  },
-  {
-    "id": "CVE-2026-118584",
-    "description": "Incorrect Authorization vulnerability in Drupal Field Permissions allows Forceful Browsing. This issue affects Field Permissions versions: from 0.0.0 to 1.6.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:24.243"
-  },
-  {
-    "id": "CVE-2026-118583",
-    "description": "Incorrect Authorization vulnerability in Drupal Field Permissions allows Forceful Browsing. This issue affects Field Permissions versions: from 0.0.0 to 1.6.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:24.110"
-  },
-  {
-    "id": "CVE-2026-118582",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Drupal CAPTCHA allows Functionality Bypass. This issue affects CAPTCHA versions: from 0.0.0 to 1.18.0, from 2.0.0 to 2.0.11.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:23.960"
-  },
-  {
-    "id": "CVE-2026-118576",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Stage File Proxy allows Cross-Site Scripting (XSS). This issue affects Stage File Proxy versions: from 0.0.0 to 3.1.7, from 4.0.0 to 4.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:23.817"
-  },
-  {
-    "id": "CVE-2026-118575",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Signature pad widget allows Stored XSS. This issue affects Signature pad widget versions: from 0.0.0 to 1.15.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:23.680"
-  },
-  {
-    "id": "CVE-2026-118574",
-    "description": "Incorrect Permission Assignment for Critical Resource vulnerability in Drupal S3 File System allows Exploiting Incorrectly Configured Access Control Security Levels. This issue affects S3 File System versions: from 0.0.0 to 3.12.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:23.540"
-  },
-  {
-    "id": "CVE-2026-118573",
-    "description": "Missing Authorization vulnerability in Drupal OAuth2 Token Manager allows Forceful Browsing. This issue affects OAuth2 Token Manager versions: from 0.0.0 to 1.2.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:23.393"
-  },
-  {
-    "id": "CVE-2026-118572",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Drupal OAuth Login - OAuth OIDC SSO allows Authentication Bypass. This issue affects OAuth Login - OAuth OIDC SSO versions: from 0.0.0 to 3.1.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:23.250"
-  },
-  {
-    "id": "CVE-2026-118571",
-    "description": "Use of Web Browser Cache Containing Sensitive Information vulnerability in Drupal Media Alias Display allows Exploiting Incorrectly Configured Access Control Security Levels. This issue affects Media Alias Display versions: from 0.0.0 to 2.1.3, from 3.0.0 to 3.0.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:23.110"
-  },
-  {
-    "id": "CVE-2026-118570",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in Drupal Fasttoggle allows Cross Site Request Forgery. This issue affects Fasttoggle versions: from 0.0.0 to 4.1.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:22.967"
-  },
-  {
-    "id": "CVE-2026-118569",
-    "description": "Incorrect Authorization vulnerability in Drupal Fasttoggle allows Forceful Browsing. This issue affects Fasttoggle versions: from 0.0.0 to 4.1.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:22.823"
-  },
-  {
-    "id": "CVE-2026-118568",
-    "description": "Insecure Storage of Sensitive Information vulnerability in Drupal Content Sync (content-sync.io) allows Retrieve Embedded Sensitive Data. This issue affects Content Sync (content-sync.io) versions: from 0.0.0 to 3.2.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:22.673"
-  },
-  {
-    "id": "CVE-2026-118567",
-    "description": "Incorrect Authorization vulnerability in Drupal Bulk Update User Roles allows Forceful Browsing. This issue affects Bulk Update User Roles versions: from 0.0.0 to 1.0.5.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:22.537"
-  },
-  {
-    "id": "CVE-2026-118565",
-    "description": "Vulnerability in Drupal GroupEx PRO ( Daxko )  integration. This issue affects GroupEx PRO ( Daxko )  integration versions: *.*.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:22.400"
-  },
-  {
-    "id": "CVE-2026-118564",
-    "description": "Vulnerability in Drupal PayUmoney for Drupal Commerce. This issue affects PayUmoney for Drupal Commerce versions: *.*.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:22.273"
-  },
-  {
-    "id": "CVE-2026-118563",
-    "description": "Vulnerability in Drupal CacheFlush. This issue affects CacheFlush versions: *.*.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:22.147"
-  },
-  {
-    "id": "CVE-2026-118562",
-    "description": "Deserialization of Untrusted Data vulnerability in Drupal Single Content Sync allows Object Injection. This issue affects Single Content Sync versions: from 0.0.0 to 1.4.19.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:21.990"
-  },
-  {
-    "id": "CVE-2026-118561",
-    "description": "External Control of File Name or Path vulnerability in Drupal Single Content Sync allows Path Traversal. This issue affects Single Content Sync versions: from 0.0.0 to 1.4.19.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:21.840"
-  },
-  {
-    "id": "CVE-2026-118560",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Commerce Stripe allows Cross-Site Scripting (XSS). This issue affects Commerce Stripe versions: from 2.0.0 to 2.2.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:21.690"
-  },
-  {
-    "id": "CVE-2026-118559",
-    "description": "Improper Verification of Cryptographic Signature vulnerability in Drupal Commerce Stripe allows Signature Spoof. This issue affects Commerce Stripe versions: from 0.0.0 to 1.4, from 2.0.0 to 2.2.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:21.557"
-  },
-  {
-    "id": "CVE-2026-118558",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in Drupal Commerce Stripe allows Cross Site Request Forgery. This issue affects Commerce Stripe versions: from 2.0.0 to 2.2.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:21.413"
-  },
-  {
-    "id": "CVE-2026-118557",
-    "description": "Incorrect Authorization vulnerability in Drupal Commerce Shipping allows Forceful Browsing. This issue affects Commerce Shipping versions: from 0.0.0 to 2.16.0, from 3.0.0 to 3.0.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:21.270"
-  },
-  {
-    "id": "CVE-2026-118556",
-    "description": "Incorrect Authorization vulnerability in Drupal Commerce Shipping allows Forceful Browsing. This issue affects Commerce Shipping versions: from 0.0.0 to 2.16.0, from 3.0.0 to 3.0.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:21.127"
-  },
-  {
-    "id": "CVE-2026-118555",
-    "description": "Incorrect Authorization vulnerability in Drupal Commerce License allows Forceful Browsing. This issue affects Commerce License versions: from 0.0.0 to 3.1.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:20.970"
-  },
-  {
-    "id": "CVE-2026-118554",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Drupal OpenID Connect Client allows Authentication Bypass. This issue affects OpenID Connect Client versions: from 0.0.0 to 2.3.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:20.840"
-  },
-  {
-    "id": "CVE-2026-118553",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal AI (Artificial Intelligence) allows Stored XSS. This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:20.690"
-  },
-  {
-    "id": "CVE-2026-118552",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal AI (Artificial Intelligence) allows Cross-Site Scripting (XSS). This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:20.547"
-  },
-  {
-    "id": "CVE-2026-118551",
-    "description": "Insecure Storage of Sensitive Information vulnerability in Drupal AI (Artificial Intelligence) allows Retrieve Embedded Sensitive Data. This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:20.397"
-  },
-  {
-    "id": "CVE-2026-118550",
-    "description": "Use of Web Browser Cache Containing Sensitive Information vulnerability in Drupal AI (Artificial Intelligence) allows Exploiting Incorrectly Configured Access Control Security Levels. This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:20.257"
-  },
-  {
-    "id": "CVE-2026-118549",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal AI (Artificial Intelligence) allows Cross-Site Scripting (XSS). This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:20.100"
-  },
-  {
-    "id": "CVE-2026-118548",
-    "description": "Incorrect Authorization vulnerability in Drupal AI (Artificial Intelligence) allows Resource Injection. This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:19.960"
-  },
-  {
-    "id": "CVE-2026-118546",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal AI (Artificial Intelligence) allows Cross-Site Scripting (XSS). This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:19.813"
-  },
-  {
-    "id": "CVE-2026-118545",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal AI (Artificial Intelligence) allows Cross-Site Scripting (XSS). This issue affects AI (Artificial Intelligence) versions: from 0.0.0 to 1.4.11, from 1.5.0 to 1.5.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:19.680"
-  },
-  {
-    "id": "CVE-2026-118544",
-    "description": "Exposure of Sensitive Information Through Data Queries vulnerability in Drupal Commerce Core allows Forceful Browsing. This issue affects Commerce Core versions: from 0.0.0 to 2.41.0, from 3.0.0 to 3.3.13.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:19.533"
-  },
-  {
-    "id": "CVE-2026-118543",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in Drupal Commerce Core allows Cross Site Request Forgery. This issue affects Commerce Core versions: from 0.0.0 to 2.41.0, from 3.0.0 to 3.3.13.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:19.390"
-  },
-  {
-    "id": "CVE-2026-118542",
-    "description": "Incorrect Authorization vulnerability in Drupal Commerce Core allows Forceful Browsing. This issue affects Commerce Core versions: from 0.0.0 to 2.41.0, from 3.0.0 to 3.3.13.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:19.240"
-  },
-  {
-    "id": "CVE-2026-118541",
-    "description": "Incorrect Authorization vulnerability in Drupal Commerce Core allows Forceful Browsing. This issue affects Commerce Core versions: from 0.0.0 to 2.41.0, from 3.0.0 to 3.3.13.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:19.100"
-  },
-  {
-    "id": "CVE-2026-118540",
-    "description": "Incorrect Authorization vulnerability in Drupal Commerce Core allows Forceful Browsing. This issue affects Commerce Core versions: from 0.0.0 to 2.41, from 3.0.0 to 3.2.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:18.963"
-  },
-  {
-    "id": "CVE-2026-118539",
-    "description": "Missing Authorization vulnerability in Drupal Commerce Core allows Forceful Browsing. This issue affects Commerce Core versions: from 0.0.0 to 2.41, from 3.0.0 to 3.3.13.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:18.830"
-  },
-  {
-    "id": "CVE-2026-114573",
-    "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Monster Menus allows Object Injection. This issue affects Monster Menus versions: from 0.0.0 to 9.5.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:17.740"
-  },
-  {
-    "id": "CVE-2026-114572",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Drupal Domain Login Restrict allows Authentication Bypass. This issue affects Domain Login Restrict versions: from 0.0.0 to 1.5.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:17.563"
-  },
-  {
-    "id": "CVE-2026-114571",
-    "description": "Incorrect Authorization vulnerability in Drupal Rabbit Hole allows Forceful Browsing. This issue affects Rabbit Hole versions: from 0.0.0 to 1.3.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:17.077"
-  },
-  {
-    "id": "CVE-2026-114555",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Data field allows Stored XSS. This issue affects Data field versions: from 0.0.0 to 2.0.14.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:16.667"
-  },
-  {
-    "id": "CVE-2026-114554",
-    "description": "Incorrect Authorization vulnerability in Drupal AI File to Text allows Forceful Browsing. This issue affects AI File to Text versions: from 0.0.0 to 1.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:16.417"
-  },
-  {
-    "id": "CVE-2026-114553",
-    "description": "Incorrect Authorization vulnerability in Drupal Frontend Editing allows Forceful Browsing. This issue affects Frontend Editing versions: from 0.0.0 to 1.9.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:15.593"
-  },
-  {
-    "id": "CVE-2026-114548",
-    "description": "Use of Web Browser Cache Containing Sensitive Information vulnerability in Drupal ImageAPI Optimize WebP allows Exploiting Incorrectly Configured Access Control Security Levels. This issue affects ImageAPI Optimize WebP versions: from 0.0.0 to 2.1.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:15.470"
-  },
-  {
-    "id": "CVE-2026-114547",
-    "description": "Missing Authorization vulnerability in Drupal TinyPNG allows Forceful Browsing. This issue affects TinyPNG versions: from 0.0.0 to 2.0.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:14.660"
-  },
-  {
-    "id": "CVE-2026-114546",
-    "description": "Use of Web Browser Cache Containing Sensitive Information vulnerability in Drupal Media Alias Display allows Exploiting Incorrectly Configured Access Control Security Levels. This issue affects Media Alias Display versions: from 0.0.0 to 2.1.2, from 3.0.0 to 3.0.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:14.520"
-  },
-  {
-    "id": "CVE-2026-114545",
-    "description": "Incorrect Authorization vulnerability in Drupal Fullcalendar View allows Forceful Browsing. This issue affects Fullcalendar View versions: from 0.0.0 to 5.2.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:14.350"
-  },
-  {
-    "id": "CVE-2026-114544",
-    "description": "Incorrect Authorization vulnerability in Drupal Media Bulk Upload allows Forceful Browsing. This issue affects Media Bulk Upload versions: from 0.0.0 to 3.0.6.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:14.200"
-  },
-  {
-    "id": "CVE-2026-114543",
-    "description": "Incorrect Authorization vulnerability in Drupal Simple User Management allows Forceful Browsing. This issue affects Simple User Management versions: from 0.0.0 to 1.11.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:13.267"
-  },
-  {
-    "id": "CVE-2026-114542",
-    "description": "Use of Web Browser Cache Containing Sensitive Information vulnerability in Drupal Simple OAuth (OAuth2) & OpenID Connect allows Exploiting Incorrectly Configured Access Control Security Levels. This issue affects Simple OAuth (OAuth2) & OpenID Connect versions: from 6.1.0 to 6.1.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:13.140"
-  },
-  {
-    "id": "CVE-2026-114541",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in Drupal Frontend Editing allows Cross Site Request Forgery. This issue affects Frontend Editing versions: from 0.0.0 to 1.9.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:13.023"
-  },
-  {
-    "id": "CVE-2026-114540",
-    "description": "Incorrect Authorization vulnerability in Drupal Domain allows Forceful Browsing. This issue affects Domain versions: from 3.0.0 to 3.0.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.907"
-  },
-  {
-    "id": "CVE-2026-114539",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Drupal DocCheck Basic allows Authentication Bypass. This issue affects DocCheck Basic versions: 7.x.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.797"
-  },
-  {
-    "id": "CVE-2026-114538",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Bootstrap allows Cross-Site Scripting (XSS). This issue affects Bootstrap versions: from 0.0.0 to 3.45.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.680"
-  },
-  {
-    "id": "CVE-2026-114537",
-    "description": "Incorrect Authorization vulnerability in Drupal View Unpublished allows Forceful Browsing. This issue affects View Unpublished versions: from 0.0.0 to 1.5.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.563"
-  },
-  {
-    "id": "CVE-2026-114536",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal USWDS Paragraph Components allows Stored XSS. This issue affects USWDS Paragraph Components versions: from 0.0.0 to 3.1.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.447"
-  },
-  {
-    "id": "CVE-2026-114535",
-    "description": "Missing Authorization vulnerability in Drupal Swiper formatter allows Forceful Browsing. This issue affects Swiper formatter versions: from 0.0.0 to 2.1.2, from 3.0.1 to 3.1.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.333"
-  },
-  {
-    "id": "CVE-2026-114534",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Block Attributes allows Stored XSS. This issue affects Block Attributes versions: from 0.0.0 to 2.1.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.217"
-  },
-  {
-    "id": "CVE-2026-114533",
-    "description": "Missing Authorization vulnerability in Drupal Ágora Transparency Theme allows Forceful Browsing. This issue affects Ágora Transparency Theme versions: from 0.0.0 to 1.2.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:12.100"
-  },
-  {
-    "id": "CVE-2026-114532",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal UI Icons allows Cross-Site Scripting (XSS). This issue affects UI Icons versions: from 0.0.0 to 1.1.3, from 2.0.0 to 2.0.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.980"
-  },
-  {
-    "id": "CVE-2026-114531",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Swiper formatter allows Stored XSS. This issue affects Swiper formatter versions: from 0.0.0 to 2.1.2, from 3.0.1 to 3.1.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.860"
-  },
-  {
-    "id": "CVE-2026-114530",
-    "description": "Incorrect Authorization vulnerability in Drupal Dopup allows Forceful Browsing. This issue affects Dopup versions: from 0.0.0 to 1.0.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.740"
-  },
-  {
-    "id": "CVE-2026-114529",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal CSV Field allows Stored XSS. This issue affects CSV Field versions: from 0.0.0 to 2.0.10, from 3.0.0 to 3.0.7.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.610"
-  },
-  {
-    "id": "CVE-2026-114528",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Zero Point allows Stored XSS. This issue affects Zero Point versions: from 0.0.0 to 1.30.0, from 2.0.0 to 2.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.490"
-  },
-  {
-    "id": "CVE-2026-114527",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal UI Icons allows Cross-Site Scripting (XSS). This issue affects UI Icons versions: from 0.0.0 to 1.1.3, from 2.0.0 to 2.0.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.377"
-  },
-  {
-    "id": "CVE-2026-114526",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Black Hole allows Stored XSS. This issue affects Black Hole versions: from 0.0.0 to 1.26.0, from 2.0.0 to 2.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.247"
-  },
-  {
-    "id": "CVE-2026-114525",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal ABC allows Stored XSS. This issue affects ABC versions: from 0.0.0 to 1.25.0, from 2.0.0 to 2.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:11.120"
-  },
-  {
-    "id": "CVE-2026-114524",
-    "description": "Privilege Defined With Unsafe Actions vulnerability in Drupal Custom Formatters allows Privilege Escalation. This issue affects Custom Formatters versions: from 0.0.0 to 4.2.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:10.953"
-  },
-  {
-    "id": "CVE-2026-114523",
-    "description": "Improper Neutralization of Special Elements used in an OS Command (\"OS Command Injection\") vulnerability in Drupal Ffmpeg Image Toolkit allows OS Command Injection. This issue affects Ffmpeg Image Toolkit versions: from 0.0.0 to 1.0.3.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:10.373"
-  },
-  {
-    "id": "CVE-2026-110738",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Gin Admin Theme allows Cross-Site Scripting (XSS). This issue affects Gin Admin Theme versions: from 0.0.0 to 4.1.4, from 5.0.0 to 5.0.16.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:09.667"
-  },
-  {
-    "id": "CVE-2026-108515",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Drupal core allows Cross-Site Scripting (XSS). This issue affects Drupal core versions: from 8.9.0 to 10.6.19, from 11.0.0 to 11.3.19, from 11.4.0 to 11.4.10, from 12.0.0-alpha1 to 12.0.0-beta2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:07.017"
-  },
-  {
-    "id": "CVE-2026-108514",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Drupal core allows Cross-Site Scripting (XSS). This issue affects Drupal core versions: from 10.3.0 to 10.6.19, from 11.0.0 to 11.3.19, from 11.4.0 to 11.4.10, from 12.0.0-alpha1 to 12.0.0-beta2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:05.750"
-  },
-  {
-    "id": "CVE-2026-108099",
-    "description": "Use of Externally-Controlled Input to Select Classes or Code ('Unsafe Reflection') vulnerability in Drupal Entity  List allows Reflection Injection. This issue affects Entity  List versions: from 0.0.0 to 3.0.10.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:04.260"
-  },
-  {
-    "id": "CVE-2026-108097",
-    "description": "Use of Externally-Controlled Input to Select Classes or Code ('Unsafe Reflection') vulnerability in Drupal Drupal core allows Reflection Injection. This issue affects Drupal core versions: from 8.9.0 to 10.6.19, from 11.0.0 to 11.3.19, from 11.4.0 to 11.4.10, from 12.0.0-alpha1 to 12.0.0-beta2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:18:04.130"
-  },
-  {
-    "id": "CVE-2026-107312",
-    "description": "Allocation of Resources Without Limits or Throttling vulnerability in Drupal Examples for Developers allows Excessive Allocation. This issue affects Examples for Developers versions: from 0.0.0 to 4.0.7.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:59.090"
-  },
-  {
-    "id": "CVE-2026-107311",
-    "description": "Improper Check for Unusual or Exceptional Conditions vulnerability in Drupal Permissions by Term allows Forceful Browsing. This issue affects Permissions by Term versions: from 0.0.0 to 3.1.41.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.963"
-  },
-  {
-    "id": "CVE-2026-107310",
-    "description": "Server-Side Request Forgery (SSRF) vulnerability in Drupal Freelinking allows Server Side Request Forgery. This issue affects Freelinking versions: from 0.0.0 to 4.0.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.833"
-  },
-  {
-    "id": "CVE-2026-107309",
-    "description": "Missing Authorization vulnerability in Drupal Easy Breadcrumb allows Forceful Browsing. This issue affects Easy Breadcrumb versions: from 0.0.0 to 2.0.11.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.720"
-  },
-  {
-    "id": "CVE-2026-107308",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Country allows Cross-Site Scripting (XSS). This issue affects Country versions: from 0.0.0 to 2.1.3, from 2.2.0 to 2.2.1.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.590"
-  },
-  {
-    "id": "CVE-2026-107307",
-    "description": "Incorrect Authorization vulnerability in Drupal SmartLinker AI allows Forceful Browsing. This issue affects SmartLinker AI versions: from 0.0.0 to 1.0.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.483"
-  },
-  {
-    "id": "CVE-2026-107306",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Menu Link Attributes allows Stored XSS. This issue affects Menu Link Attributes versions: from 0.0.0 to 1.8.0.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.360"
-  },
-  {
-    "id": "CVE-2026-107268",
-    "description": "Insertion of Sensitive Information Into Sent Data vulnerability in Drupal Two Factor Authentication - TFA / Passwordless Login allows Forceful Browsing. This issue affects Two Factor Authentication - TFA / Passwordless Login versions: from 0.0.0 to 5.4.1, from 5.5.0 to 5.5.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.230"
-  },
-  {
-    "id": "CVE-2026-107267",
-    "description": "Missing Authorization vulnerability in Drupal DKAN allows Forceful Browsing. This issue affects DKAN versions: from 0.0.0 to 4.0.4, from 4.1.0 to 4.1.5.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:58.113"
-  },
-  {
-    "id": "CVE-2026-107266",
-    "description": "Missing Authorization vulnerability in Drupal Views Share allows Forceful Browsing. This issue affects Views Share versions: from 0.0.0 to 2.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:57.663"
-  },
-  {
-    "id": "CVE-2026-107265",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Leaflet allows Stored XSS. This issue affects Leaflet versions: from 0.0.0 to 10.4.13.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:56.237"
-  },
-  {
-    "id": "CVE-2026-107264",
-    "description": "Improper Neutralization of Special Elements Used in a Template Engine vulnerability in Drupal Inline Formatter Field allows Code Injection. This issue affects Inline Formatter Field versions: from 0.0.0 to 4.2.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:56.113"
-  },
-  {
-    "id": "CVE-2026-107263",
-    "description": "Incorrect Authorization vulnerability in Drupal Gutenberg allows Forceful Browsing. This issue affects Gutenberg versions: from 0.0.0 to 2.15.0, from 3.0.0 to 3.0.7.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:55.993"
-  },
-  {
-    "id": "CVE-2026-107262",
-    "description": "Cross-Site Request Forgery (CSRF) vulnerability in Drupal Advanced Filesystem allows Cross Site Request Forgery. This issue affects Advanced Filesystem versions: from 0.0.0 to 1.0.28.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:55.620"
-  },
-  {
-    "id": "CVE-2026-107261",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Drupal Authenticator Login Plus (2FA) allows Authentication Bypass. This issue affects Authenticator Login Plus (2FA) versions: from 0.0.0 to 1.0.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:55.493"
-  },
-  {
-    "id": "CVE-2026-107260",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal Sector Distribution allows Stored XSS. This issue affects Sector Distribution versions: from 0.0.0 to 10.3.3, from 10.4.0 to 10.4.2.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:55.360"
-  },
-  {
-    "id": "CVE-2026-107259",
-    "description": "Improper Neutralization of Special Elements Used in a Template Engine vulnerability in Drupal Linked Field allows Code Injection. This issue affects Linked Field versions: from 0.0.0 to 1.8.0.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:55.090"
-  },
-  {
-    "id": "CVE-2026-107258",
-    "description": "Incorrect Authorization vulnerability in Drupal Inline Entity Form Dialog allows Forceful Browsing. This issue affects Inline Entity Form Dialog versions: from 0.0.0 to 1.0.6.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:54.913"
-  },
-  {
-    "id": "CVE-2026-107257",
-    "description": "Incorrect Authorization vulnerability in Drupal Actstream allows Forceful Browsing. This issue affects Actstream versions: from 0.0.0 to 2.0.1, from 2.1.0 to 2.1.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:53.833"
-  },
-  {
-    "id": "CVE-2026-107256",
-    "description": "Improper Restriction of Excessive Authentication Attempts vulnerability in Drupal Shield allows Brute Force. This issue affects Shield versions: from 0.0.0 to 1.9.0.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:52.230"
-  },
-  {
-    "id": "CVE-2026-107255",
-    "description": "Incorrect Authorization vulnerability in Drupal Restrict route by IP allows Forceful Browsing. This issue affects Restrict route by IP versions: from 0.0.0 to 1.3.1, from 2.0.0 to 2.0.1.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:51.290"
-  },
-  {
-    "id": "CVE-2026-107254",
-    "description": "Authentication Bypass Using an Alternate Path or Channel vulnerability in Drupal Authenticator Login Plus (2FA) allows Authentication Bypass. This issue affects Authenticator Login Plus (2FA) versions: from 0.0.0 to 1.0.1.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:48.483"
-  },
-  {
-    "id": "CVE-2026-107253",
-    "description": "Vulnerability in Drupal Orphans Media. This issue affects Orphans Media versions: *.*.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:47.927"
-  },
-  {
-    "id": "CVE-2026-107252",
-    "description": "Improper Neutralization of Input During Web Page Generation (\"Cross-site Scripting\") vulnerability in Drupal MathJax: LaTeX for Drupal allows Cross-Site Scripting (XSS). This issue affects MathJax: LaTeX for Drupal versions: from 0.0.0 to 4.1.2.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:47.337"
-  },
-  {
-    "id": "CVE-2026-107251",
-    "description": "Incorrect Authorization vulnerability in Drupal Entity Reference Manager (Merge entities) allows Forceful Browsing. This issue affects Entity Reference Manager (Merge entities) versions: from 0.0.0 to 1.0.3.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:45.453"
-  },
-  {
-    "id": "CVE-2026-107250",
-    "description": "Vulnerability in Drupal ECA Helper. This issue affects ECA Helper versions: *.*.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:45.330"
-  },
-  {
-    "id": "CVE-2026-107249",
-    "description": "Improperly Controlled Modification of Dynamically-Determined Object Attributes vulnerability in Drupal Block AJAX allows Object Injection. This issue affects Block AJAX versions: from 0.0.0 to 3.0.2.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-10-30T04:17:43.030"
-  },
-  {
-    "id": "CVE-2026-91920",
-    "description": "A flaw was found in the ChunkReader component of the Undertow web server, which is used to handle chunked transfer encoding in HTTP requests. The issue occurs because a security check for the chunk size is performed before the value is shifted, allowing a specifically crafted 15-digit chunk size to bypass the limit and overflow into internal state flags. This can cause the server to terminate a request body prematurely and interpret the remaining data as a separate, smuggled request.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:10.140"
-  },
-  {
-    "id": "CVE-2026-74915",
-    "description": "A web page that contains unusual WebGPU content loaded into the GPU GLES render process can trigger a OOB read and/or write crash in the GPU GLES user-space shared library. On certain platforms, when the process executing graphics workload has system privileges this could enable further exploits on the device.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:09.850"
-  },
-  {
-    "id": "CVE-2026-74912",
-    "description": "On GPU systems with the security vulnerability fix for CVE-2026-49746 applied, the mapping range of graphics buffers is limited which causes errors when the mapping outside of that range.\n\nInteger truncation caused when mapping GPU buffer pages in the buffer’s range 0GB - 4GB, produces error and limits the functionality of the kernel mode driver.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:09.727"
-  },
-  {
-    "id": "CVE-2026-65587",
-    "description": "A web page that contains unusual WebGPU content loaded into the GPU GLES render process can trigger an OOB write in the GPU user-space driver, leading to memory corruption and possible browser/GPU process crash.\n\n\n\nThe software writes data past the end of an intended memory offset. Writing outside the bounds of allocated memory can corrupt adjacent memory, crash the process, or cause undefined behaviour.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:09.607"
-  },
-  {
-    "id": "CVE-2026-65586",
-    "description": "Software installed and run as a non-privileged user may conduct improper GPU system calls to free memory in still in use, replace with another allocation and cause arbitrary memory reads or writes to physical memory pages.\n\n\n\nA memory buffer managed by a CPU thread of control (driver) and accessed by a GPU thread of control (firmware) can be freed while in use. Software installed and run as a non-privileged user may replace that buffer with another and replace a shared resource (memory page address list) managed by the CPU thread of control (driver) leading to the GPU accessing memory not managed by the CPU thread of control (driver).",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:09.493"
-  },
-  {
-    "id": "CVE-2026-65584",
-    "description": "Software installed and run as a non-privileged user may conduct improper GPU system calls causing a stack overflow in the kernel. The overflow occurs when processing resolved Linux/Android fence synchronization checkpoints, while user checkpoints are excluded from the stack array. Successful exploitation can cause kernel memory corruption and typically results in a denial-of-service condition through a kernel crash.\n\n\n\nThe code vulnerability is a buffer write beyond the allocated array on the stack caused by copying excessive data from an internal buffer.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:09.370"
-  },
-  {
-    "id": "CVE-2026-19199",
-    "description": "Software installed and run as a non-privileged user may conduct improper system calls to allocate physical memory. A 32-bit integer overflow in the KM driver during page-to-byte conversion of an allocation size can result in an undersized kernel buffer allocation. This may allow unallocated or previously allocated physical pages to be mapped into an attacker-controlled GPU MMU context, leading to disclosure of sensitive kernel data.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:09.237"
-  },
-  {
-    "id": "CVE-2026-18629",
-    "description": "A web page that contains unusual GPU shader code is loaded into the GPU compiler process and can lead memory allocation failure. If the allocation failure is not properly handled, the compiler may dereference a NULL pointer at a controlled offset, resulting in a crash of the compiler process. On certain platforms, when the compiler process has system privileges this could lead to crashes or enable further exploits on the device.\n\n\n\nThe weakness results from performing arithmetic operations on values derived from the shader program without properly preventing integer overflow. The overflow can cause incorrect memory size calculations, leading to memory allocation failures and subsequent invalid program behaviour. Integer overflow can produce unexpected values that affect memory allocation and other security-relevant operations.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:09.117"
-  },
-  {
-    "id": "CVE-2026-15466",
-    "description": "Software installed and run as a non-privileged user may conduct improper GPU system calls to cause race condition in hardware performance counters buffer’s destruction path leading to read and/or write UAF.\n\n\n\nThe race condition in the destruction path could lead to reference counter being decremented in non-atomical way allowing other code paths using a freed object to read and/or write kernel heap memory.",
-    "severity": "Unknown",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:08.980"
-  },
-  {
-    "id": "CVE-2026-118475",
-    "description": "A flaw was found in Eye of GNOME. When parsing a specially crafted PNG image containing malformed color profile metadata, the application fails to validate chunk boundaries while searching for a null terminator. An attacker could trick a user into opening a malicious image, causing the application to read past the allocated buffer. This issue can lead to an application crash, resulting in a Denial of Service (DoS), or potentially expose sensitive memory contents.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:08.583"
-  },
-  {
-    "id": "CVE-2026-112922",
-    "description": "A flaw was found in Ghostscript. A remote attacker could exploit this vulnerability by enticing a user to process a specially crafted PDF or PostScript document containing malicious mesh shading data. Due to improper bounds validation during the processing of indexed color values, Ghostscript triggers an out-of-bounds memory read. Successful exploitation can lead to a Denial of Service (DoS) through an application crash or result in limited information disclosure.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-10-30T02:17:08.303"
   }
 ]
