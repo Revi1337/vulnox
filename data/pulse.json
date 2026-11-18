@@ -1,5 +1,761 @@
 [
   {
+    "id": "CVE-2026-35190",
+    "description": "Issue summary: A server configured with the Suite B certificate flag through\nSSL_CTX_set_cert_flags() and with TLS 1.3 enabled may read past the end of a\nfixed group list when it processes a ClientHello whose supported_groups and\nkey_share contain no Suite B group.\n\nImpact summary: A remote client can send a ClientHello that makes the server\nread past the end of a static array. The values read are never returned to the\nclient, so no memory is disclosed; on builds with sanitizers or hardened\nallocators the read may crash the process, causing Denial of Service.\n\nCWE: CWE-125: Out-of-bounds Read\n\nDescription: When the Suite B certificate flag is set, OpenSSL restricts the\naccepted groups to P-256 and P-384 by substituting a fixed two-element list\nfor the configured group list. The tuple machinery used for key-share\nselection was not updated for this substitution: tls1_get_group_tuples() still\nreturns the configured tuples, which by default describe eight groups. The\nserver-side walk in tls_parse_ctos_key_share() then advances through the\ntwo-element list using those tuple counts without checking the cumulative\noffset against the number of groups present.\n\nOnly applications that call SSL_CTX_set_cert_flags() with\nSSL_CERT_FLAG_SUITEB_128_LOS and leave TLS 1.3 enabled are affected. The\nopenssl s_server -suiteB_128 option sets an X.509 verification parameter\ninstead, so the stock command line server is not vulnerable. Default\nconfigurations do not reach this code.\n\nA client that offers only groups outside the Suite B set, such as X25519,\nforces every tuple to be walked and the read to run past the array. The bytes\nread are compared against client group IDs and never sent back, so no memory\nis disclosed. On builds with address sanitizers or hardened allocators the\nread can abort the process; in ordinary release builds it reads a few bytes of\nadjacent constant data.\n\nFIPS impact: no\nThe affected code is outside the FIPS module boundary.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:27.560"
+  },
+  {
+    "id": "CVE-2026-124709",
+    "description": "Issue summary: A QUIC server that rejects a stream opened by the peer may\nretain that stream's state for the lifetime of the connection if the peer\nresets the stream before the rejection is signalled, even though the peer's\nstream credit is returned.\n\nImpact summary: A remote client that completes a QUIC handshake can repeatedly\nopen and reset streams, causing server memory to grow without bound until the\nprocess runs out of memory and every connection on it is lost. This is a\nDenial of Service.\n\nCWE: CWE-401: Missing Release of Memory after Effective Lifetime\n\nDescription: QUIC servers track each stream the peer opens. When the incoming\nstream policy rejects a stream, OpenSSL schedules a STOP_SENDING frame, marks\nthe stream deleted and returns the peer's stream credit. A deleted stream is\ncollected only once its receive part is fully drained, which for a rejected\nstream means the STOP_SENDING has been acknowledged. If the peer sends\nRESET_STREAM first, the reset cancels the pending STOP_SENDING, so it is never\nsent or acknowledged and the stream is never collected.\n\nThe default configuration reaches this path. Once a connection has a default\nstream, meaning the application has read from or written to the connection as\nthe tutorial server does, the effective incoming stream policy rejects streams\nthe application does not accept. Applications that set the REJECT policy\nexplicitly are affected too.\n\nEach retained stream costs about 300 bytes, and the peer's stream credit\nwindow paces how quickly they accumulate. A client that keeps the connection\nopen and keeps opening and resetting streams grows server memory without\nbound. The severity is Low because growth is slow, needs a long-lived\nconnection, and causes no memory corruption or disclosure.\n\nFIPS impact: no\nThe affected code is outside the FIPS module boundary.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:27.227"
+  },
+  {
+    "id": "CVE-2026-121865",
+    "description": "In nanobot, the WebSocket gateway allows a standard client holding a valid client token to select an existing directory outside the operator-configured workspace as the root of a new conversation. The agent can then read and expose files in that directory that are readable by the nanobot service account.\n\nThis issue affects nanobot (nanobot-ai) from 0.3.5 before 0.4.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:27.057"
+  },
+  {
+    "id": "CVE-2026-121864",
+    "description": "In nanobot, when sandboxed exec is enabled, the shell executable used to run commands can be selected by the caller and is launched before the sandbox is applied. An attacker who can induce the agent to create an executable in the workspace and select it as the shell can cause that executable to run outside the sandbox (e.g. Linux bubblewrap), with the operating-system permissions of the nanobot process.\n\nThis issue affects nanobot (nanobot-ai) from 0.2.1 before 0.4.1.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:26.857"
+  },
+  {
+    "id": "CVE-2026-119643",
+    "description": "The MembershipWorks - Membership, Events & Directory plugin for WordPress is vulnerable to Stored Cross-Site Scripting in all versions up to, and including, 6.17. This is due to insufficient output escaping on member-supplied data retrieved from the MembershipWorks SaaS API in the sf_shortcode(), sf_widget_event_do(), and sf_widget_folder_do() functions, where the 'nam' (member name), 'ttl' (event title), 'url', 'adn' (venue name), 'szp', and 'ezp' fields are output into page HTML without escaping, or, in sf_widget_folder_do(), placed in an image alt attribute that an onerror handler copies into innerHTML. This makes it possible for unauthenticated attackers to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:26.677"
+  },
+  {
+    "id": "CVE-2026-109154",
+    "description": "In the Matter door lock applications of\n  the Nordic Semiconductor nRF Door Lock and Access Control Add-on v1.0.0\n  through v1.1.1, AccessManager::ValidateCredential() checks only credential\n  occupancy and the secret bytes, and never reads the owning user's UserStatus.\n  It also returns success when no owning user can be resolved. A user suspended\n  by setting their status to OccupiedDisabled can continue to unlock the door\n  with their previously assigned credential, and an orphaned but occupied\n  credential is also accepted. Fixed in v1.2.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:26.540"
+  },
+  {
+    "id": "CVE-2026-109151",
+    "description": "In\nthe Matter and Aliro Door Lock Application of the Nordic Semiconductor nRF Door\nLock and Access Control Add-on v1.0.0 through v1.1.1 with\nCONFIG_DOOR_LOCK_STEP_UP_PHASE enabled, deleting a Credential Issuer passes the\n1-based Matter credential index to ClearValidityIterations(), which expects a\n0-based storage index. The intended issuer's ValidityIteration state is left in\nplace, and the state of the adjacent, still-provisioned issuer is cleared. This\nresets that issuer's rollback protection. An attacker holding an older but correctly\nsigned Access Document from the adjacent issuer, whose validity iteration had\nbeen superseded, can then potentially obtain physical access. Fixed in v1.2.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:26.407"
+  },
+  {
+    "id": "CVE-2026-109148",
+    "description": "In the Aliro access control reference\n  applications of the Nordic Semiconductor nRF Door Lock and Access Control\n  Add-on v1.0.0 through v1.1.1, the stored Access Document record does not\n  retain validFrom and validUntil. The cached public key path (VerifyPublicKey())\n  and the Kpersistent fast path (_VerifyKPersistentKey()) therefore never\n  re-evaluate the Access Document validity period. An attacker who held a\n  time-limited Aliro credential that was valid when first presented can\n  continue to obtain physical access after the Access Document has expired, for\n  as long as the cached record remains available. Fixed in v1.2.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:26.253"
+  },
+  {
+    "id": "CVE-2026-109138",
+    "description": "In the Aliro access control reference\n  applications of the Nordic Semiconductor nRF Door Lock and Access Control\n  Add-on v1.0.0 through v1.1.1, built with Credential Issuer CA\n  certificate-based issuer trust (CONFIG_DOOR_LOCK_CREDENTIAL_ISSUER_CA) and\n  the Aliro Step-up phase (CONFIG_DOOR_LOCK_STEP_UP_PHASE) enabled,\n  AccessManagerImpl::ProcessValidityIteration() treats a failed lookup of the\n  Credential Issuer in the provisioned issuer array as success. For an issuer\n  trusted through a certificate chain but not provisioned, the\n  ValidityIteration (credential-rollback) check is therefore skipped. A former\n  authorized holder with an old but correctly issuer-signed Access Document can\n  be granted physical access after the issuer has advanced its iteration to\n  revoke that credential. The default Matter provisioning configuration is not\n  affected. Fixed in v1.2.0.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:26.057"
+  },
+  {
+    "id": "CVE-2026-107493",
+    "description": "Issue summary: When an application passes a stack to\nPEM_X509_INFO_read_bio_ex() to add entries to, and reading fails,\nOpenSSL frees every entry in the stack, both the old ones and any new\nones, but leaves them in the stack.\n\nImpact summary: An application that passes an existing stack to\nPEM_X509_INFO_read_bio_ex() and keeps using it after a failed read may\nuse memory that was already freed. This can cause a crash or, in\nprinciple, memory corruption. Malformed PEM data can make the read fail,\nbut only applications that pass an existing stack are affected, and\nOpenSSL itself does not do this.\n\nCWE: CWE-416: Use After Free\n\nDescription: PEM_X509_INFO_read_bio_ex() reads certificates, CRLs and\nprivate keys from PEM data and adds them to a stack of X509_INFO\nstructures. If the application passes a stack that is not NULL, the\nfunction adds the new entries to it and must leave the entries that are\nalready there unchanged.\n\nIf reading fails, the function frees every entry in the stack. This\nincludes the entries that were there before the call, and the entries\nadded by the call. It does not remove these entries from the stack, so\nthe stack keeps pointers to freed memory. The failure can happen at any\npoint, even before any entry was added. A PEM item with invalid content\nis enough.  This also happens if the stack was empty: entries added\nbefore the failure are freed but stay in the stack.\n\nAn application that then reads or frees the stack will use memory that\nwas already freed. This can crash the application or, in principle,\ncorrupt memory.\n\nOnly applications that pass a stack that is not NULL are affected.\nOpenSSL itself never does this. Its own callers, including the code that\nTLS uses to load CA certificates, always pass NULL. When the stack is\nNULL, the function frees only the entries that it created itself, which\nis safe. We expect that very few applications pass an existing stack. An\nattacker can make the read fail with malformed PEM data, but cannot make\nan application pass an existing stack.\n\nThe same problem affects PEM_X509_INFO_read_bio(), PEM_X509_INFO_read()\nand PEM_X509_INFO_read_ex(), which use the same code. OpenSSL 1.1.1 and\n1.0.2 have only the first two of these functions.\n\nFIPS impact: no\nThe affected code is outside the FIPS module boundary.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T09:17:25.870"
+  },
+  {
+    "id": "CVE-2026-129031",
+    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in Cool Plugins Conditional Fields for Elementor Form – Display Conditions conditional-fields-for-elementor-form allows Stored XSS.This issue affects Conditional Fields for Elementor Form – Display Conditions: from n/a through 1.7.7.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T08:17:00.007"
+  },
+  {
+    "id": "CVE-2026-129012",
+    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in LeapWorx Premium Addons for Elementor premium-addons-for-elementor allows Stored XSS.This issue affects Premium Addons for Elementor: from n/a through 4.11.118.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T08:16:59.867"
+  },
+  {
+    "id": "CVE-2026-129008",
+    "description": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') vulnerability in WPExperts Gutena Forms – Contact Form, Survey Form, Feedback Form, Booking Form, and Custom Form Builder gutena-forms allows Stored XSS.This issue affects Gutena Forms – Contact Form, Survey Form, Feedback Form, Booking Form, and Custom Form Builder: from n/a through 2.1.1.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T08:16:59.700"
+  },
+  {
+    "id": "CVE-2026-128038",
+    "description": "The All in One SEO – AI SEO Plugin to Boost SEO Rankings & Traffic (Schema, Local SEO, Sitemap & SEO Insights) plugin for WordPress is vulnerable to Stored Cross-Site Scripting via the 'name' parameter in all versions up to, and including, 5.0.5 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with subscriber-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. Successful exploitation requires that an administrator has placed the AIOSEO breadcrumb on the author template, that the site is running WordPress 6.6 or later with the core Interactivity runtime loaded (e.g., via a block theme or core/navigation block), and that a victim clicks the rendered breadcrumb link on the author archive page.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T07:17:24.743"
+  },
+  {
+    "id": "CVE-2026-107904",
+    "description": "Joomla Extension - valorapps.com - Unauthenticated Remote Code Execution in Easy File Uploader < 2.9.7 - An unauthenticated remote attacker can upload a PHP-executable file to the Joomla web root with a single multipart POST request, requiring no credentials and no CSRF token.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-11-17T07:17:23.257"
+  },
+  {
+    "id": "CVE-2026-111973",
+    "description": "The RSS Feed Retriever WordPress plugin through 1.6.10 does not validate a user-supplied URL before fetching it server-side with a bundled HTTP library that lacks WordPress's private-network protections, allowing unauthenticated users to make the site retrieve arbitrary internal or external resources and read the response.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T06:16:50.550"
+  },
+  {
+    "id": "CVE-2026-97639",
+    "description": "The Everest Backup – WordPress Cloud Backup, Migration, Restore & Cloning Plugin plugin for WordPress is vulnerable to authorization bypass in all versions up to, and including, 2.3.14 This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to activate any already-installed inactive plugin on the site.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:39.520"
+  },
+  {
+    "id": "CVE-2026-97187",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.6 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read Kubernetes Secrets from other namespaces in clusters connected through the GitLab agent for Kubernetes due to incorrect authorization in workspaces.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:39.370"
+  },
+  {
+    "id": "CVE-2026-85778",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.1 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to run code in protected pipelines through a scheduled pipeline execution policy after the policy had been unassigned due to incorrect authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:38.057"
+  },
+  {
+    "id": "CVE-2026-18491",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 19.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user holding a granular personal access token with limited scope to authorize Kubernetes API proxy access beyond the token's intended boundaries due to missing granular scope enforcement in the Kubernetes agent proxy-user authorization flow.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:37.000"
+  },
+  {
+    "id": "CVE-2026-18241",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 9.3 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to access protected CI/CD variables and resources due to a race condition in pipeline job authorization.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:36.843"
+  },
+  {
+    "id": "CVE-2026-16609",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 13.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user with owner-role permissions to execute arbitrary JavaScript in another user's browser through the Confluence integration due to improper input validation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:36.683"
+  },
+  {
+    "id": "CVE-2026-16545",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 12.10 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an unauthenticated user to read private project metadata from packages published by other projects due to incorrect authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:36.527"
+  },
+  {
+    "id": "CVE-2026-129321",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.8 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user with planner-role permissions to set a future merge scheduling date on merge requests they authored, a capability restricted to developer-role permissions and above, due to insufficient permission enforcement on the merge scheduling field during merge request updates.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:36.373"
+  },
+  {
+    "id": "CVE-2026-129253",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.1 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user with developer-role permissions to bypass admin-configured AI tool governance controls in a governed namespace due to improper binding of authorization tokens to their intended workflow execution context.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:36.220"
+  },
+  {
+    "id": "CVE-2026-129252",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user with an unconfirmed email address to be automatically granted Group Owner-level membership during a group import operation, due to insufficient email verification enforcement in the member identity mapping process.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:36.063"
+  },
+  {
+    "id": "CVE-2026-128849",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to start a Duo Workflow session with elevated privileges beyond those declared by the foundational flow due to improper enforcement of privilege boundaries in certain client environments.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:35.913"
+  },
+  {
+    "id": "CVE-2026-126141",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 11.11 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to make requests to internal network services through repository import functionality due to insufficient validation of destination addresses.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:35.190"
+  },
+  {
+    "id": "CVE-2026-125920",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.4 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to cause a denial of service affecting Duo usage analytics due to improper input validation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:35.043"
+  },
+  {
+    "id": "CVE-2026-123142",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 18.4 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user holding an MCP-scoped OAuth token to perform unauthorized issuable state changes on issues and merge requests, including approving and merging, due to incorrect authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:34.390"
+  },
+  {
+    "id": "CVE-2026-122226",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.8 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to access GitLab Duo features restricted by group-based access rules due to improper handling of failed updates to those rules.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:34.233"
+  },
+  {
+    "id": "CVE-2026-122045",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 16.10 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to configure GitLab Duo settings for groups without an eligible license due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:34.080"
+  },
+  {
+    "id": "CVE-2026-121948",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to change the GitLab Duo Code Review consent setting of a parent group due to incorrect authorization checks.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:33.923"
+  },
+  {
+    "id": "CVE-2026-121684",
+    "description": "The Soledad theme for WordPress is vulnerable to unauthenticated Remote Code Execution in versions up to, and including, 8.7.7 The public penci_more_post_ajax AJAX action feeds infeedads[ads_code] (base64+urldecoded) to penci_safe_shortcode(), whose allowlist regex inspects only the hyphen-truncated outer shortcode name (e.g. 'adinserter') and never the nested [elementor-element k=.. data=..] tag, so do_shortcode() renders an attacker-chosen Elementor element. The rendered penci-featured-sliders widget passes its unsanitized 'style' setting to include dirname(__FILE__).\"/{$style}.php\", a path-traversal local file inclusion.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:33.697"
+  },
+  {
+    "id": "CVE-2026-121533",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 13.8 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an unauthenticated user to read restricted job artifact data due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:33.543"
+  },
+  {
+    "id": "CVE-2026-120387",
+    "description": "An improper JWT signature verification vulnerability in CIRCUTOR PowerStudio SCADA WAVE desktop version allows an unauthenticated remote attacker to bypass authentication by submitting an unsigned JWT with the algorithm set to “none”. The shared JWT validation component accepts the token without verifying a cryptographic signature, allowing the attacker to impersonate another user and access protected functionality with that user's privileges.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:33.067"
+  },
+  {
+    "id": "CVE-2026-11768",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 12.4 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read private CI/CD job artifacts belonging to other projects through GitLab Pages due to improper validation of file paths.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:32.903"
+  },
+  {
+    "id": "CVE-2026-118961",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.11 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an unauthenticated user to read commit comments from a private source fork through a public project's merge request discussions due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:32.753"
+  },
+  {
+    "id": "CVE-2026-115736",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.1 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to view unredacted secret values from secret detection findings they had access to through GitLab Duo Agent Platform due to improper authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:32.603"
+  },
+  {
+    "id": "CVE-2026-115428",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user with a valid agent token to cause a denial of service in the GitLab agent server (KAS) due to improper input validation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:32.453"
+  },
+  {
+    "id": "CVE-2026-115219",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 19.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to enable Amazon Q automatic code reviews on a project despite an administrator lock due to improper enforcement of instance-level settings.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:32.283"
+  },
+  {
+    "id": "CVE-2026-115218",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 13.8 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read NuGet package metadata that should not have been accessible due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:32.123"
+  },
+  {
+    "id": "CVE-2026-112203",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 18.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an individual controlling an upstream repository to alter cached Maven packages from other repositories in the same virtual registry due to improper response validation.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:31.773"
+  },
+  {
+    "id": "CVE-2026-111747",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 19.0 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to hide changes from reviewers in merge request diffs due to improper handling of file names.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:31.447"
+  },
+  {
+    "id": "CVE-2026-110990",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.1.7 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed sensitive credential values submitted in GraphQL requests to be written to logs in plaintext due to incomplete filtering of sensitive data.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:31.273"
+  },
+  {
+    "id": "CVE-2026-110750",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 11.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read Git LFS objects from projects restricted by External Authorization due to missing authorization checks.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:31.113"
+  },
+  {
+    "id": "CVE-2026-108155",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 8.12 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read Git LFS objects from restricted projects due to incorrect authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:30.810"
+  },
+  {
+    "id": "CVE-2026-108154",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 8.0 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to import Git repositories into projects despite administrator restrictions on import sources due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:30.667"
+  },
+  {
+    "id": "CVE-2026-108153",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 16.1 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to execute arbitrary JavaScript in the browser of users viewing Error Tracking pages due to improper sanitization of user input.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:30.500"
+  },
+  {
+    "id": "CVE-2026-108150",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 13.12 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read private CI/CD template files from projects they did not have access to due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:30.347"
+  },
+  {
+    "id": "CVE-2026-105739",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 17.2 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to execute arbitrary JavaScript in the browser of users viewing a wiki page due to improper sanitization of user input.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:29.513"
+  },
+  {
+    "id": "CVE-2026-104934",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 19.0 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an unauthenticated user to read files from a project's private repository due to missing authorization checks in snippets.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:29.350"
+  },
+  {
+    "id": "CVE-2026-104902",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.7 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read GitLab Duo seat assignments and usage data from other groups due to improper authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:29.063"
+  },
+  {
+    "id": "CVE-2026-104717",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 13.4 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to view iteration details from private groups they did not have access to due to missing authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:28.910"
+  },
+  {
+    "id": "CVE-2026-102907",
+    "description": "GitLab has remediated an issue in GitLab CE/EE affecting all versions from 14.0 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to create issues with locked discussions despite lacking the required permissions due to improper authorization checks.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:28.463"
+  },
+  {
+    "id": "CVE-2026-101358",
+    "description": "GitLab has remediated an issue in GitLab EE affecting all versions from 17.10 before 19.3.9, 19.4 before 19.4.8, and 19.5 before 19.5.6 that under certain conditions could have allowed an authenticated user to read CI/CD variable metadata from projects they did not have access to due to improper authorization in pipeline execution policies.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T05:18:27.950"
+  },
+  {
+    "id": "CVE-2026-107902",
+    "description": "TELLUS and TELLUS Lite provided by FUJI ELECTRIC CO., LTD. contain a use after free vulnerability. Opening a specially crafted V9 file may lead to information exposure or arbitrary code execution on the affected product.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T04:17:26.497"
+  },
+  {
+    "id": "CVE-2026-107901",
+    "description": "TELLUS and TELLUS Lite provided by FUJI ELECTRIC CO., LTD. contain an out-of-bounds read vulnerability. Opening a specially crafted V9 file may lead to information exposure or arbitrary code execution on the affected product.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T04:17:25.930"
+  },
+  {
+    "id": "CVE-2026-125275",
+    "description": "Loop with Unreachable Exit Condition ('Infinite Loop') vulnerability in device certificate verification in nerves-hub nerves_hub_web allows an unauthenticated remote attacker to cause a denial of service via a TLS client certificate whose CA is not registered. When a client certificate chains to a root in the device endpoint's trust store but no CA in the chain is registered in NervesHub, NervesHub.SSL.decide/2 refuses it with the reason :unknown_ca. Erlang/OTP ssl reads that reason as a missing trust anchor, looks for an alternative root, finds the same root and validates again without end. The handshake process queries the database on each pass and keeps running after the client disconnects, until the node restarts.\n\nThe device endpoint trusts the public roots from CAStore unless DEVICE_SSL_CACERTFILE is set, so a client certificate from a public CA whose chain allows client authentication is sufficient. A chain that ends at a root outside the trust store is refused once.\n\nThis issue affects nerves_hub: from 1.0.0 before 2.5.4.",
+    "severity": "Unknown",
+    "tech": "Unknown",
+    "published": "2026-11-17T03:17:00.513"
+  },
+  {
+    "id": "CVE-2026-86676",
+    "description": "A post-authentication command injection vulnerability in the “Description” parameter of a CGI program  in Zyxel DX3300-T0 firmware versions through 5.50(ABVY.8.3)C0 could allow an authenticated attacker with administrator privileges to execute OS commands by sending a crafted HTTP request.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:22.880"
+  },
+  {
+    "id": "CVE-2026-79614",
+    "description": "An out-of-bounds write vulnerability in “libclinkc.so” in Zyxel DX3301-T0/EX3301-T0 firmware versions through 5.50(ABVY.8.3)C0 could allow an unauthenticated attacker to elevate privileges and potentially execute arbitrary commands by sending a crafted HTTP request. WAN access is disabled by default on these devices.",
+    "severity": "Critical",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:22.743"
+  },
+  {
+    "id": "CVE-2026-130383",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha.2 before 4.2.0-RC.2 contains an authorization bypass vulnerability that allows authenticated editors to manipulate search index documents by supplying an arbitrary solutionId to the /admin/api/faq/update endpoint. On Elasticsearch or OpenSearch deployments, category-restricted editors can remove published FAQs from search, overwrite other FAQs' search documents, or plant entries that remain searchable after unpublishing.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:22.550"
+  },
+  {
+    "id": "CVE-2026-130382",
+    "description": "AdminNeo before 5.9.1 contains an authentication bypass vulnerability in OtpLoginPlugin that allows attackers knowing the database password to skip TOTP verification by abusing the permanent-login cookie. Attackers can submit a login with a wrong OTP and permanent=1 to obtain a neo_permanent cookie, then replay it to gain full authenticated database access.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:22.380"
+  },
+  {
+    "id": "CVE-2026-130381",
+    "description": "phpMyFAQ from 4.2.0-alpha.2 before 4.2.0-RC.2 contains an authorization bypass vulnerability that allows language-scoped editors to read other translations by checking FAQ_EDIT against the route language but loading the ?lang= UI-language row. Attackers can request the admin.faq.edit route with an authorized language and a different lang parameter to read drafts, private notes, author e-mails and revisions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:22.210"
+  },
+  {
+    "id": "CVE-2026-130380",
+    "description": "AdminNeo before 5.9.1 contains an authentication bypass vulnerability in the sqlsrv-based MS SQL driver that allows unauthenticated attackers to log in by submitting an empty username. Attackers can supply any non-empty password, triggering Windows integrated authentication that grants a full session with the web server identity's SQL Server privileges.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:22.037"
+  },
+  {
+    "id": "CVE-2026-130379",
+    "description": "AdminNeo before 5.9.1 contains a server-side request forgery vulnerability that allows unauthenticated attackers to bypass the privileged-port restriction by injecting separator characters or connection-string keywords into the login server field. Attackers can make pgsql, Mongo, Oracle and PDO drivers parse a different host and port, reaching internal services and leaking limited information through driver responses and errors.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:21.870"
+  },
+  {
+    "id": "CVE-2026-130378",
+    "description": "AdminNeo before 5.9.1 contains a filter injection vulnerability in its MongoDB driver that allows attackers to affect other documents by embedding ' AND ' or ') OR (' delimiters in a string _id or searched value. Attackers who can store a crafted document can cause a victim's delete or edit to match unintended documents, deleting the entire collection or modifying another document.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:21.690"
+  },
+  {
+    "id": "CVE-2026-130377",
+    "description": "phpMyFAQ from 4.2.0-alpha.2 before 4.2.0-RC.2 contains an incorrect authorization vulnerability in DELETE /admin/api/faq/delete that lets language-scoped FAQ_DELETE admins bypass their language scope. Attackers can submit a faqId with an in-scope faqLanguage lacking a translation to wipe shared ACL, tags, votes, comments, and attachments of other translations.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:21.520"
+  },
+  {
+    "id": "CVE-2026-130376",
+    "description": "AdminNeo before 5.9.1 contains a stored cross-site scripting vulnerability in FileUploadPlugin that allows database users to store script-bearing SVG files by uploading unsanitized content. Attackers can upload a malicious SVG to a *_path field, executing script in the same-origin session of any administrator who opens the file link.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:21.350"
+  },
+  {
+    "id": "CVE-2026-130375",
+    "description": "AdminNeo before 5.9.1 contains a remote code execution vulnerability that allows authenticated SQLite users to bypass the check_sqlite_name() extension guard using PDO_SQLite file: URI database names. Attackers can select the PDO driver with ext=pdo and submit names like file:/webroot/x.php?x=.db to create a .php file, then store PHP source as table data for code execution.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:21.180"
+  },
+  {
+    "id": "CVE-2026-130374",
+    "description": "AdminNeo before 5.9.1 contains an sql injection vulnerability that allows remote attackers to inject SQL by supplying crafted IN and NOT IN search values that process_length() passes unescaped. Attackers can send a logged-in user a cross-site GET link using a backslash-escaped apostrophe to run blind SQL with that user's database rights on PostgreSQL, SQLite, MS SQL, Oracle, or MySQL in NO_BACKSLASH_ESCAPES mode.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:21.003"
+  },
+  {
+    "id": "CVE-2026-130373",
+    "description": "AdminNeo before 5.9.1 contains a stored HTML injection vulnerability that allows database users to inject markup by creating FULLTEXT indexes with crafted names. Attackers with CREATE, ALTER or INDEX rights can store markup rendered unescaped in the selection search form, enabling meta refresh redirects, content spoofing and form tampering against other users.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:20.840"
+  },
+  {
+    "id": "CVE-2026-130372",
+    "description": "AdminNeo before 5.9.1 contains an open redirect vulnerability that allows unauthenticated attackers to redirect authenticated users by injecting an external URL through the HTTP Referer header into the hidden referer field of the edit form. Attackers can lure users from a page with an unsafe-url referrer policy whose URL contains &select=, redirecting them to phishing sites after record edits.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:20.667"
+  },
+  {
+    "id": "CVE-2026-130371",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an authentication bypass vulnerability because the web installer ignores the legacy config/database.php during 3.x upgrades. Unauthenticated attackers can reinstall the site against an attacker-controlled database and create their own administrator account to take over the application.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:20.490"
+  },
+  {
+    "id": "CVE-2026-130370",
+    "description": "phpMyFAQ 4.1.9 before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains a missing authentication vulnerability that allows attackers holding a hijacked session to enroll passkeys using only the session and webauthn CSRF token. Attackers can call /api/webauthn/prepare and /api/webauthn/register to replace the owner's passkeys, gaining persistent passwordless login that survives password changes and resets.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:20.307"
+  },
+  {
+    "id": "CVE-2026-130369",
+    "description": "phpMyFAQ 4.1.9 before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an authorization bypass vulnerability in multisite deployments that allows attackers to overwrite passkeys of accounts on other tenants via a shared PHP session store. Attackers can run WebAuthn prepare() for a login on one tenant, then replay the session against /api/webauthn/register on another tenant or the master to replace that user's passkeys and log in as admin.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:20.130"
+  },
+  {
+    "id": "CVE-2026-130368",
+    "description": "phpMyFAQ 4.1.9 before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an improper restriction of excessive authentication attempts vulnerability in PasswordChangeController::update() that bypasses the step-up throttle. Attackers holding a hijacked admin-area session can repeatedly guess faqpassword_old with a reusable CSRF token to learn the original password and take over the account.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:19.950"
+  },
+  {
+    "id": "CVE-2026-130367",
+    "description": "phpMyFAQ through 4.1.12 and from 4.2.0-alpha before 4.2.0-RC.2 contains an authorization bypass vulnerability in the admin FAQ copy and translate pages, which check only global FAQ_ADD or FAQ_TRANSLATE rights. Authenticated add-only or category-scoped editors can open any FAQ to read drafts, ACL-restricted records, private notes, and author e-mail addresses.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:19.767"
+  },
+  {
+    "id": "CVE-2026-130366",
+    "description": "AdminNeo before 5.9.1 contains an authentication bypass vulnerability in the ClickHouse driver that allows remote attackers to log in to passwordless accounts without the configured defaultPasswordHash password. Attackers who know the name of a ClickHouse no_password account can submit any non-empty password, because connect() skips openPasswordless(), and obtain a session with that account's rights.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:19.593"
+  },
+  {
+    "id": "CVE-2026-130365",
+    "description": "phpMyFAQ from 4.2.0-alpha before 4.2.0-RC.2 contains a stored cross-site scripting vulnerability that allows FAQ_EDIT users to bypass SvgSanitizer using namespace-prefixed elements like <x:script>. Attackers can upload malicious SVGs through the admin image upload so script runs in the site origin on IIS, hijacking sessions of users like super-admins.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:19.420"
+  },
+  {
+    "id": "CVE-2026-130364",
+    "description": "AdminNeo before 5.9.1 contains a reflected HTML injection vulnerability that allows remote attackers to inject markup by supplying crafted array keys in the where URL parameter. Attackers can trick logged-in users into opening a link whose unescaped keys land in select search form name attributes, enabling meta refresh redirects and content spoofing.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:19.243"
+  },
+  {
+    "id": "CVE-2026-130363",
+    "description": "phpMyFAQ from 4.2.0-alpha.2 before 4.2.0-RC.2 contains an incorrect authorization vulnerability that lets scoped editors view out-of-scope draft FAQs because the dashboard and admin search ignore category/language-scoped FAQ_EDIT rights. Authenticated editors can load the unpublished FAQs widget with the lang parameter or query /admin/api/faq/search to leak draft titles, ids, and confirm words in draft bodies.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:19.063"
+  },
+  {
+    "id": "CVE-2026-130362",
+    "description": "phpMyFAQ 4.1.9 before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an account enumeration vulnerability that allows unauthenticated attackers to identify valid logins through differing POST /api/webauthn/prepare responses. Attackers can submit wordlists of usernames, reusing one unconsumed CSRF token without rate limiting, to discover administrator logins for password spraying and phishing.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:18.860"
+  },
+  {
+    "id": "CVE-2026-130361",
+    "description": "AdminNeo before 5.9.1 contains a parameter injection vulnerability in its ClickHouse driver that allows attackers to inject ClickHouse HTTP query parameters through an unencoded db GET parameter. Attackers can lure a logged-in victim into opening a crafted GET link that injects a query parameter, bypassing the POST-only CSRF token. ClickHouse then executes attacker-chosen SQL under the victim's credentials to read, modify, or drop data.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:18.690"
+  },
+  {
+    "id": "CVE-2026-130360",
+    "description": "AdminNeo before 5.9.1 contains a reflected cross-site scripting vulnerability in EditorNeo that allows remote attackers to execute JavaScript by injecting quote characters into the request URI. Attackers can lure authenticated users to crafted edit links whose path breaks out of the CSP-nonced whisper script in editor/core/Admin.php, enabling session theft and database credential disclosure.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:18.520"
+  },
+  {
+    "id": "CVE-2026-130359",
+    "description": "AdminNeo before 5.9.1 contains a stored cross-site scripting vulnerability in SlugifyEditPlugin::getFieldInput() that embeds column names unescaped in an inline initSlugField() call. Attackers with DDL privileges can create a slug column whose name contains a single quote, injecting JavaScript that runs under the page's CSP nonce when victims open the table's edit form.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:18.343"
+  },
+  {
+    "id": "CVE-2026-130358",
+    "description": "AdminNeo before 5.9.1 contains a missing authentication vulnerability in the ClaudeSqlPlugin, GeminiSqlPlugin, and OpenWebUiPlugin sendHeaders() handlers that run on the login page. Unauthenticated attackers can POST claude, gemini, or openwebui fields to relay arbitrary prompts using the operator's API key or bearer token, including to internal Open WebUI endpoints.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:18.180"
+  },
+  {
+    "id": "CVE-2026-130357",
+    "description": "phpMyFAQ from 4.2.0-alpha.2 before 4.2.0-RC.2 contains an improper authorization vulnerability in updateUserRights that lets USER_EDIT admins drop category restrictions on group rights. Attackers can re-save rights through the user update-rights API to convert category-restricted group rights into global direct rights, then edit, publish or delete FAQs in withheld categories.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:18.017"
+  },
+  {
+    "id": "CVE-2026-130356",
+    "description": "phpMyFAQ from 4.2.0-alpha.2 before 4.2.0-RC.2 contains an authorization bypass that lets category- or language-restricted editors rewrite visibility ACLs and tags of any FAQ. Attackers send faq/update requests with a target faqId and an untranslated lang to expose restricted FAQs, wipe tags, or overwrite orphaned FAQs.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:17.850"
+  },
+  {
+    "id": "CVE-2026-130355",
+    "description": "phpMyFAQ from 4.2.0-alpha.2 before 4.2.0-RC.2 contains an incorrect authorization vulnerability in POST /admin/api/faq/import that lets FAQ_ADD users bypass the FAQ_PUBLISH right. Authenticated contributors can upload a CSV with column 8 set to true to publish unreviewed, optionally sticky FAQs such as phishing content.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:17.683"
+  },
+  {
+    "id": "CVE-2026-130354",
+    "description": "phpMyFAQ 4.1.0 before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an authentication bypass vulnerability in POST /api/webauthn/prepare that creates accounts as active, bypassing manual activation and domain whitelisting. Anonymous attackers can obtain the freely issued CSRF token and register an activated account with an unverified email to access registered-user-only content and functions.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:17.510"
+  },
+  {
+    "id": "CVE-2026-130353",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an information disclosure vulnerability in its public FAQ REST API that exposes author names and e-mail addresses to unauthenticated callers. Attackers can query the faq and paginated faqs endpoints to bulk-harvest e-mails and de-anonymise users who opted out of GDPR author visibility.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:17.353"
+  },
+  {
+    "id": "CVE-2026-130352",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an information disclosure vulnerability that allows unauthenticated attackers to read editor-only Private Notes by querying the public FAQ list API. Attackers can page through GET /api/v4.0/faqs or /api/v3.1/faqs without credentials to retrieve the notes field of every anonymously readable FAQ, exposing internal remarks and ticket details.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:17.153"
+  },
+  {
+    "id": "CVE-2026-130351",
+    "description": "phpMyFAQ from 4.2.0-alpha before 4.2.0-RC.2 contains an authorization bypass vulnerability in the multisite Redis configuration store that is not tenant-scoped. As a result, tenant administrators can read and overwrite the master instance's effective configuration. Attackers can save configuration through /admin/api/configuration, optionally resetting storage.redisPrefix, to redirect master SMTP, set a known API token, or alter authentication settings.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:16.963"
+  },
+  {
+    "id": "CVE-2026-130350",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an incorrect authorization vulnerability that allows delegated group or user admins to remove rights they do not hold by submitting empty rights lists. Attackers can send an empty rightIds or userRights array to group/permissions or user/update-rights to wipe all rights of more-privileged groups or administrators.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:16.790"
+  },
+  {
+    "id": "CVE-2026-130349",
+    "description": "phpMyFAQ from 4.2.0-alpha.2 before 4.2.0-RC.2 contains an incorrect authorization vulnerability that allows category- or language-restricted editors to bypass scoped rights via public REST write endpoints. Attackers with a scoped right and the shared API token can use PUT faq/update, POST faq/create, and POST category to rewrite published FAQs and create root categories outside their scope.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:16.620"
+  },
+  {
+    "id": "CVE-2026-130348",
+    "description": "phpMyFAQ 4.1.0 before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains a missing authorization vulnerability that exposes restricted and inactive category metadata to unauthenticated visitors. Attackers can enumerate category IDs via /category/{id}/{slug}.html or query /api/v4.0/categories to read names, descriptions, images and FAQ counts of restricted categories.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:16.423"
+  },
+  {
+    "id": "CVE-2026-130347",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an authentication bypass in password reset, letting external-identity accounts receive local passwords. Attackers with mailbox access can request reset tokens for OIDC, Keycloak, Entra ID, LDAP, SSO, or WebAuthn accounts and log in locally, skipping IdP MFA and deprovisioning.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:16.247"
+  },
+  {
+    "id": "CVE-2026-130346",
+    "description": "AdminNeo before 5.9.1 contains an sql injection vulnerability in the ClickHouse driver because idf_escape() doubles backticks but does not escape backslashes in identifiers. Attackers can lure a logged-in user into opening a GET link with a column name ending in a backslash in columns, where, or order parameters, causing query text to be parsed as SQL.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:16.077"
+  },
+  {
+    "id": "CVE-2026-130345",
+    "description": "phpMyFAQ 4.2.0-alpha before 4.2.0-RC.2 contains an information disclosure vulnerability that allows authenticated frontend users to receive restricted FAQ titles by subscribing to Web Push notifications. When editors publish user/group-restricted FAQs, WebPushService::sendToAll() delivers the question, FAQ id, category, and slugified URL to every subscriber, bypassing the FAQ ACL.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:15.907"
+  },
+  {
+    "id": "CVE-2026-130344",
+    "description": "AdminNeo before 5.9.1 contains a stored cross-site scripting vulnerability in Admin::printTablePartitions() that allows authenticated users to inject HTML by placing markup in partition column names. Attackers with CREATE or ALTER privileges can create a partitioned table whose unescaped partition expression executes script when another user opens the table-structure page.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:15.727"
+  },
+  {
+    "id": "CVE-2026-130343",
+    "description": "phpMyFAQ 3.2.5 before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an authorization bypass vulnerability in the user/request-removal API endpoint that lets authenticated users file account removal requests as other users. The ownership check calls getUserById() with the attacker-supplied userId on the session user object, so it compares the input against the target's own record. Attackers who know a victim's login name and email can submit that userId, loginname, and email, sending administrators a spoofed Remove User Request email. This may lead an admin to delete the victim's account and data.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:15.543"
+  },
+  {
+    "id": "CVE-2026-130342",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an improper reference counting flaw on multisite deployments, allowing editors to delete other instances' attachment files. Because linkedRecords() counts only the local faqattachment table, deleting an attachment with shared md5 content makes File::delete() unlink the shared blob, destroying another instance's files.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:15.367"
+  },
+  {
+    "id": "CVE-2026-130341",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains a stored cross-site scripting vulnerability that allows registered users to inject javascript: links via FAQ comments. When the comment editor is enabled, Utils::parseUrl() strips https:// from sanitized hrefs, turning an allowed https://javascript:443/ link into executable script that runs on the shared admin origin when clicked.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:15.200"
+  },
+  {
+    "id": "CVE-2026-130340",
+    "description": "AdminNeo before 5.9.1 contains a stored HTML injection vulnerability that allows database users to inject markup into another user's session via column type names rendered with innerHTML. Attackers can create a PostgreSQL type or table with markup in its name to render live elements in the help popup, enabling content spoofing and requests to attacker servers.",
+    "severity": "Low",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:15.000"
+  },
+  {
+    "id": "CVE-2026-130339",
+    "description": "phpMyFAQ before 4.1.12 and 4.2.0-alpha before 4.2.0-RC.2 contains an information disclosure vulnerability that allows authenticated low-privilege users to read unpublished FAQ titles via bookmark_action. Attackers can request FAQ detail pages with bookmark_action=add across sequential ids, then view /user/bookmarks to reveal draft and pending submission question text.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:14.817"
+  },
+  {
+    "id": "CVE-2026-130338",
+    "description": "AdminNeo before 5.9.1 contains a stored sql injection vulnerability in the MySQL driver that allows database users with table creation rights to inject SQL through unescaped geometry column names in unconvert_field(). Attackers can craft a column name containing an SQL expression that executes with another AdminNeo user's privileges when they edit a row, save it, or export the table.",
+    "severity": "Medium",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:14.600"
+  },
+  {
+    "id": "CVE-2026-12487",
+    "description": "An incorrect authorization vulnerability in the SNMP parameter of Zyxel EE5301-00 customized firmware version 5.63(ACLD.2)b3_D0 could allow an unauthenticated attacker to cause a denial-of-service (DoS) condition on an affected device.",
+    "severity": "High",
+    "tech": "Unknown",
+    "published": "2026-11-17T02:17:13.527"
+  },
+  {
     "id": "CVE-2026-130335",
     "description": "Info-ZIP Zip 3.0 (and 3.1 beta through 3.1c) allows OS command injection by an attacker who controls the command line. The victim must use the -T option followed by a filename containing shell metacharacters, on a platform (such as Linux) where a suitable shell is run. This occurs because the system C library function is used. NOTE: there is no known common scenario in which an untrusted filename reaches a zip -T call.",
     "severity": "Low",
@@ -3582,159 +4338,5 @@
     "severity": "Medium",
     "tech": "Unknown",
     "published": "2026-11-14T11:17:06.250"
-  },
-  {
-    "id": "CVE-2026-18742",
-    "description": "The Flatsome theme for WordPress is vulnerable to Stored Cross-Site Scripting via 'data-text-sec', 'data-title', and 'title' Attributes via Custom HTML Block in all versions up to, and including, 3.20.12 due to insufficient input sanitization and output escaping. This makes it possible for authenticated attackers, with contributor-level access and above, to inject arbitrary web scripts in pages that will execute whenever a user accesses an injected page. The payload survives server-side sanitization because wp_kses_post permits data-* attributes globally via _wp_add_global_attributes, allowing attacker-controlled values in data-text-sec, data-title, and title attributes to persist in saved post content and be later interpreted as HTML by the ux-countdown, scroll-to, and lightbox-gallery JavaScript behaviors.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T09:16:47.910"
-  },
-  {
-    "id": "CVE-2026-129181",
-    "description": "A vulnerability has been found in projectworlds Visitor Management System 1.0. This issue affects the function mysqli_query of the file /img/user%20page.php of the component Login Endpoint. Such manipulation of the argument Username leads to sql injection. It is possible to launch the attack remotely. The exploit has been disclosed to the public and may be used.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-11-14T08:17:18.090"
-  },
-  {
-    "id": "CVE-2026-129319",
-    "description": "create-ecdh is a browserifiable implementation of Node.js crypto.createECDH. In versions 4.0.4 and below, the JavaScript implementation (browser.js, used by browser bundlers and on Node.js versions without a working native crypto.createECDH) did not validate peer public keys in ECDH.prototype.computeSecret or ECDH.prototype.setPublicKey. The peer point was multiplied by the local private key without checking that it was on the configured curve or in its prime-order subgroup. An attacker who can submit public keys to a party that reuses a static private key can perform an invalid-curve or small-subgroup attack and recover the private key modulo small factors, eventually recovering the full key via the Chinese Remainder Theorem. For the ed25519 and curve25519 curves, low-order points were also accepted, which could force a predictable shared secret. On modern Node.js, create-ecdh re-exports the native implementation, which is not affected. This issue is fixed in version 4.0.5.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:21.370"
-  },
-  {
-    "id": "CVE-2026-126697",
-    "description": "The Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4 was distributed with a hidden update mechanism that fetched Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4 updates from its author's own server instead of WordPress.org, which was used to push a backdoored build to sites, allowing the attacker controlling that server to inject arbitrary content into pages and to deliver arbitrary code to affected sites.\n\nVersion 5.2.1, as published on WordPress.org, bundled the Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4 Update Checker library (updater/ directory) configured to poll https://anadnet.com/updates/?action=get_metadata&slug=quick-pagepost-redirect-Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4. In March 2021 that server delivered a modified 5.2.3 build, different from the 5.2.3 later published on WordPress.org, which kept the update channel and added a the_content filter that, for logged-out visitors on single posts and pages, fetched content from https://w.anadnet.com/bro/3/ (passing the site host, request URI and visitor User-Agent) and prepended the response to the post (observed serving SEO spam links to search engine crawlers). Because the version string matched a later WordPress.org release, affected sites were not offered a clean update until 5.2.4.\n\nIndicators of compromise:\n- Outbound requests to anadnet.com or w.anadnet.com\n- An updater/ directory (Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4 Update Checker, Puc v4p10) inside wp-content/Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4/quick-pagepost-redirect-Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4/\n- The strings filter_the_content_in_the_main_loop, ppr_pro, QQQEND or w.anadnet.com in page_post_redirect_Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4.php\n- page_post_redirect_Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4.php with MD5 ad717da18cf8a2b69899c0d7dafee05a (tampered 5.2.3)\n\nRemediation: remove the Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4 (it has been closed on WordPress.org), or at minimum reinstall the clean 5.2.4 from WordPress.org, delete any leftover updater/ directory, verify the files with \"wp Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4 verify-checksums quick-pagepost-redirect-Quick Page/Post Redirect Plugin WordPress plugin before 5.2.4\", clear the opcode cache, and treat any site that ran the tampered build as potentially compromised.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:21.043"
-  },
-  {
-    "id": "CVE-2026-126640",
-    "description": "The WP Ultimate CSV Importer  WordPress plugin before 9.3 does not escape values from imported files before using them in SQL queries when importing LifterLMS content, allowing high privilege users such as admin, including the administrator of a single site on a multisite network, to perform SQL injection attacks.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:20.820"
-  },
-  {
-    "id": "CVE-2026-126639",
-    "description": "The WP Ultimate CSV Importer  WordPress plugin before 9.2, WP Ultimate CSV Importer Pro WordPress plugin before 9.0.7 do not protect the files created by their single post export feature, writing them to a publicly accessible location under a predictable name, allowing unauthenticated attackers to download the content and custom fields of any exported post, including non-public content.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:20.567"
-  },
-  {
-    "id": "CVE-2026-124649",
-    "description": "The Lightbox with PhotoSwipe WordPress plugin before 5.19.0 does not properly sanitise link titles and other caption sources before inserting them as HTML into the image lightbox caption, allowing unauthenticated users to perform Stored Cross-Site Scripting attacks via comments.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:19.700"
-  },
-  {
-    "id": "CVE-2026-123122",
-    "description": "The Checkout Files Upload for WooCommerce WordPress plugin before 2.4.1 does not verify that a file uploaded at checkout is really one of its allowed image types, and serves stored uploads inline using their detected content type, allowing unauthenticated users to upload an HTML file disguised as an image that executes JavaScript in the browser of a shop manager or administrator who opens it from the order screen.\nThis is a regression of CVE-2025-4212, reintroduced in 2.4.0.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:19.513"
-  },
-  {
-    "id": "CVE-2026-123046",
-    "description": "The SEOJuice WordPress plugin before 2.12.0 does not correctly restrict a REST API authentication filter, disabling WordPress's REST nonce protection for the whole site and allowing unauthenticated attackers to perform any cookie-authenticated REST action, including creating a new administrator account, by tricking a logged-in administrator into opening a crafted page (CSRF).",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:19.350"
-  },
-  {
-    "id": "CVE-2026-119258",
-    "description": "The Swipe WordPress plugin through 1.4 does not properly authenticate a login request before issuing a WordPress session cookie, allowing unauthenticated attackers to log in as an existing user, including an administrator, when that user has an active app session.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:19.140"
-  },
-  {
-    "id": "CVE-2026-118183",
-    "description": "The Duplicate Post WordPress plugin before 1.5.8 does not check whether a user may publish posts when duplicating one, allowing users of a role an administrator has given Duplicate Post WordPress plugin before 1.5.8 access to, such as Contributors, to create published posts, including posts attributed to other users.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:18.760"
-  },
-  {
-    "id": "CVE-2026-118182",
-    "description": "The Duplicate Post WordPress plugin before 1.5.8 does not check that a user duplicating a post is allowed to edit it, which, when the slug takeover option is enabled, allows users of a role an administrator has given Duplicate Post WordPress plugin before 1.5.8 access to, such as Contributor, to move any readable post off its permalink and publish their copy at that address.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:18.530"
-  },
-  {
-    "id": "CVE-2026-118181",
-    "description": "The Duplicate Post WordPress plugin before 1.5.8 does not perform a capability check when saving its global settings, relying only on its own role-access list, which allows users of any role an administrator has given Duplicate Post WordPress plugin before 1.5.8 access to, as low as Subscriber, to overwrite those settings, including the role-access list itself.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:18.333"
-  },
-  {
-    "id": "CVE-2026-117490",
-    "description": "The Flatsome WordPress theme before 3.20.13 does not enforce the acting user's publish and post-type restrictions on an AJAX save action, allowing users with a role as low as Contributor to publish their own content and change its post type (for example to a product) without holding the required capabilities.",
-    "severity": "Low",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:18.140"
-  },
-  {
-    "id": "CVE-2026-117487",
-    "description": "The Flatsome WordPress theme before 3.20.13 does not perform a capability or nonce check on an AJAX action available to unauthenticated users, and does not restrict the status of the posts it returns by ID, allowing unauthenticated users to disclose the content of unpublished (draft and pending) posts.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:17.850"
-  },
-  {
-    "id": "CVE-2026-116528",
-    "description": "The Chargely Free Subscriptions For Woocommernce WordPress plugin through 1.0 does not perform any authorization check on a REST API route that returns its stored configuration, allowing unauthenticated attackers to retrieve the live WooCommerce REST API consumer key and secret it holds, which grant read and write access to the whole store.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:17.223"
-  },
-  {
-    "id": "CVE-2026-111034",
-    "description": "The Countdown, Coming Soon, Maintenance  WordPress plugin through 3.0.8 does not check that the user is allowed to browse content before returning post titles from one of its AJAX actions, allowing any authenticated user, such as a subscriber, to list the titles of published entries of any post type, including types that WordPress does not expose to them. Draft, private and pending content is not returned; only published entries are disclosed.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:17.023"
-  },
-  {
-    "id": "CVE-2026-111033",
-    "description": "The Countdown, Coming Soon, Maintenance  WordPress plugin through 3.0.8 does not perform authorization or nonce checks when saving countdown data on post save, and its output-sanitization allowlist permits script tags, allowing users with Author-level access and above to store arbitrary web scripts that execute when the affected content is viewed on the front end or in an administrator session.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:16.417"
-  },
-  {
-    "id": "CVE-2026-105984",
-    "description": "The Email Marketing 4Dem WordPress plugin through 2.0.5 does not perform authorization or capability checks on several of its AJAX actions, allowing unauthenticated users to destroy its stored configuration and delete its records.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:16.137"
-  },
-  {
-    "id": "CVE-2026-105983",
-    "description": "The Email Marketing 4Dem WordPress plugin through 2.0.5 does not perform authorization or capability checks on several of its AJAX actions and REST routes, allowing unauthenticated users to disclose the Email Marketing 4Dem WordPress plugin through 2.0.5's stored configuration and data and to modify its stored settings.",
-    "severity": "Medium",
-    "tech": "Unknown",
-    "published": "2026-11-14T07:17:12.540"
-  },
-  {
-    "id": "CVE-2026-126173",
-    "description": "The AutomatorWP Pro plugin for WordPress' webhook addon is vulnerable to authorization bypass in all versions up to, and including, 1.4.4. This is due to the plugin not properly verifying that a user is authorized to perform an action. This makes it possible for unauthenticated attackers to reset the password of any WordPress account, including administrators, resulting in full account takeover. This is only exploitable when an administrator has configured an automation pairing a Receive Webhook trigger — with an 'Is the user ID' field — to an Update-User action whose User ID field is left blank and whose Password field is mapped to the webhook password tag, which is a documented, supported plugin configuration.",
-    "severity": "Critical",
-    "tech": "Unknown",
-    "published": "2026-11-14T05:18:37.750"
-  },
-  {
-    "id": "CVE-2026-124969",
-    "description": "The Optimole – Optimize Images | Convert WebP & AVIF | CDN & Lazy Load | Image Optimization plugin for WordPress is vulnerable to arbitrary file deletion due to insufficient file path validation in the replace_urls_in_value function in all versions up to, and including, 4.2.19. This makes it possible for unauthenticated attackers to delete arbitrary files on the server, which can easily lead to remote code execution when the right file is deleted (such as wp-config.php). Successful exploitation requires PEAR's Archive_Tar library to be present and loadable on the host (common in official WordPress Docker images and many PHP distributions), and an administrator must subsequently use the plugin's Rename control on any attachment after the attacker has staged a malicious payload in a comment. Successful exploitation additionally requires an action by an administrator — the attacker cannot trigger the vulnerability on their own.",
-    "severity": "High",
-    "tech": "Unknown",
-    "published": "2026-11-14T05:18:32.480"
   }
 ]
